@@ -455,7 +455,12 @@ export default function TogetherApp() {
 
   const dragTaskId    = useRef(null);
   const dragTargetCol = useRef(null);
-  const [highlightCol, setHighlightCol] = useState(null);
+  const dragType      = useRef(null);   // "task" | "board"
+  const dragBoardId   = useRef(null);   // section id being dragged
+  const [highlightCol,  setHighlightCol]  = useState(null);
+  const [highlightBoard,setHighlightBoard]= useState(null); // board reorder highlight
+  const [sectionOrder,  setSectionOrder]  = useState(null); // custom board order
+  const sectionOrderRef = useRef(null);
   const tasksRef = useRef(null);
   const namesRef  = useRef({ A:"Amen", B:"Gloria" }); // always-fresh ref for poll closure
   const pollRef  = useRef(null);
@@ -500,7 +505,7 @@ export default function TogetherApp() {
     const ti = setInterval(() => { i++; if (msgs[i]) setLoadMsg(msgs[i]); }, 900);
     (async () => {
       try {
-        const [t, n, m] = await Promise.all([dbGet("tasks"), dbGet("names"), dbGet("mode")]);
+        const [t, n, m, so] = await Promise.all([dbGet("tasks"), dbGet("names"), dbGet("mode"), dbGet("sectionOrder")]);
         let loaded = (t ?? SAMPLES).map((tk, i) => ({ order:i, createdAt:TODAY, dueDate:"", lastReset:"", ...tk }));
         loaded = resetDailies(loaded);
         tasksRef.current = loaded;
@@ -508,6 +513,8 @@ export default function TogetherApp() {
         if (!t) await dbSet("tasks", loaded); else await dbSet("tasks", loaded);
         if (n) setNamesState(n);
         if (m) setMode(m);
+        if (so) { setSectionOrder(so); sectionOrderRef.current = so; }
+        else { const def = SECTIONS.map(s=>s.id); setSectionOrder(def); sectionOrderRef.current = def; await dbSet("sectionOrder", def); }
         setStatus("live");
         // init seenIds AFTER first load so poll doesn't toast on startup
         seenIdsRef.current = (tasksRef.current || []).map(t => t.id);
@@ -555,6 +562,7 @@ export default function TogetherApp() {
         }
         const n = await dbGet("names"); if (n) setNamesState(n);
         const m = await dbGet("mode");  if (m) setMode(m);
+        const so = await dbGet("sectionOrder"); if (so) { setSectionOrder(so); sectionOrderRef.current = so; }
         setStatus("live");
       } catch { setStatus("error"); }
     }, 4000);
@@ -603,26 +611,108 @@ export default function TogetherApp() {
     setShowAdd(false); setAddSec(null);
   }
 
-  // ── Drag ──────────────────────────────────────────────────────────────────
-  function handleDragStart(e, id) { dragTaskId.current=id; e.dataTransfer.effectAllowed="move"; e.dataTransfer.setData("text/plain",id); }
-  function handleDragOverCol(e, colId) {
-    e.preventDefault(); e.stopPropagation(); e.dataTransfer.dropEffect="move";
-    if (dragTargetCol.current!==colId) { dragTargetCol.current=colId; setHighlightCol(colId); }
+  // ── Drag handlers ──────────────────────────────────────────────────────────
+  // -- TASK drag --
+  function handleDragStart(e, taskId) {
+    dragType.current    = "task";
+    dragTaskId.current  = taskId;
+    dragBoardId.current = null;
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("dragtype", "task");
+    e.dataTransfer.setData("text/plain", taskId);
   }
+
+  // -- BOARD drag --
+  function handleBoardDragStart(e, sectionId) {
+    dragType.current    = "board";
+    dragBoardId.current = sectionId;
+    dragTaskId.current  = null;
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("dragtype", "board");
+    e.dataTransfer.setData("text/plain", sectionId);
+    e.stopPropagation();
+  }
+
+  function handleDragOverCol(e, colId) {
+    e.preventDefault(); e.stopPropagation();
+    e.dataTransfer.dropEffect = "move";
+    if (dragType.current === "board") {
+      if (highlightBoard !== colId) setHighlightBoard(colId);
+    } else {
+      if (dragTargetCol.current !== colId) { dragTargetCol.current = colId; setHighlightCol(colId); }
+    }
+  }
+
   function handleDropOnCol(e, colId) {
     e.preventDefault(); e.stopPropagation();
-    const taskId=dragTaskId.current; const targetCol=dragTargetCol.current??colId;
-    dragTaskId.current=null; dragTargetCol.current=null; setHighlightCol(null);
+
+    if (dragType.current === "board") {
+      // ── Reorder boards ────────────────────────────────────────────────────
+      const fromId = dragBoardId.current;
+      dragBoardId.current = null; dragType.current = null;
+      setHighlightBoard(null);
+      if (!fromId || fromId === colId || colId === DONE_COL) return;
+      const cur = sectionOrderRef.current ?? SECTIONS.map(s=>s.id);
+      const fi = cur.indexOf(fromId);
+      const ti = cur.indexOf(colId);
+      if (fi === -1 || ti === -1) return;
+      const next = [...cur];
+      next.splice(fi, 1);
+      next.splice(ti, 0, fromId);
+      sectionOrderRef.current = next;
+      setSectionOrder(next);
+      dbSet("sectionOrder", next);
+      return;
+    }
+
+    // ── Move/reorder tasks ────────────────────────────────────────────────
+    const taskId    = dragTaskId.current;
+    const targetCol = dragTargetCol.current ?? colId;
+    dragTaskId.current = null; dragTargetCol.current = null;
+    dragType.current = null; setHighlightCol(null);
     if (!taskId) return;
-    const updated=(tasksRef.current??[]).map(t=>{
-      if (t.id!==taskId) return t;
-      if (targetCol===DONE_COL) return {...t,done:true,streak:(t.type==="habit"||t.type==="daily")?t.streak+1:t.streak};
-      return {...t,section:targetCol,done:false};
+    const current = tasksRef.current ?? [];
+    const updated = current.map(t => {
+      if (t.id !== taskId) return t;
+      if (targetCol === DONE_COL) return { ...t, done:true, streak:(t.type==="habit"||t.type==="daily"||t.type==="weekly")?t.streak+1:t.streak };
+      return { ...t, section:targetCol, done:false };
     });
-    const reordered=updated.map((t,i)=>({...t,order:i}));
-    tasksRef.current=reordered; setTasksState(reordered); dbSet("tasks",reordered);
+    const reordered = updated.map((t,i) => ({ ...t, order:i }));
+    tasksRef.current = reordered; setTasksState(reordered); dbSet("tasks", reordered);
   }
-  function handleDragEnd() { dragTaskId.current=null; dragTargetCol.current=null; setHighlightCol(null); }
+
+  // -- Drop over a specific TASK (for reordering within a column) --
+  function handleDropOnTask(e, overTaskId, colId) {
+    e.preventDefault(); e.stopPropagation();
+    if (dragType.current === "board") { handleDropOnCol(e, colId); return; }
+    const taskId    = dragTaskId.current;
+    const targetCol = dragTargetCol.current ?? colId;
+    dragTaskId.current = null; dragTargetCol.current = null;
+    dragType.current = null; setHighlightCol(null);
+    if (!taskId || taskId === overTaskId) return;
+    const current = tasksRef.current ?? [];
+    // First update section/done
+    let items = current.map(t => {
+      if (t.id !== taskId) return t;
+      if (targetCol === DONE_COL) return { ...t, done:true, streak:(t.type==="habit"||t.type==="daily"||t.type==="weekly")?t.streak+1:t.streak };
+      return { ...t, section:targetCol, done:false };
+    });
+    // Then reorder: insert dragged task before the task it was dropped on
+    const fi = items.findIndex(t => t.id === taskId);
+    const ti = items.findIndex(t => t.id === overTaskId);
+    if (fi !== -1 && ti !== -1) {
+      const [moved] = items.splice(fi, 1);
+      items.splice(ti, 0, moved);
+    }
+    const reordered = items.map((t,i) => ({ ...t, order:i }));
+    tasksRef.current = reordered; setTasksState(reordered); dbSet("tasks", reordered);
+  }
+
+  function handleDragEnd() {
+    dragTaskId.current = null; dragTargetCol.current = null;
+    dragBoardId.current = null; dragType.current = null;
+    setHighlightCol(null); setHighlightBoard(null);
+  }
 
   const sec    = id => SECTIONS.find(s=>s.id===id)||SECTIONS[0];
   const aLabel = a  => a==="both"?`${names.A} & ${names.B}`:names[a]||a;
@@ -711,22 +801,82 @@ export default function TogetherApp() {
 
   // ── Grid Card ─────────────────────────────────────────────────────────────
   function GridCard({ colId, label, emoji, color, colTasks, isDone=false }) {
-    const isOver=highlightCol===colId, allSec=isDone?[]:tasks.filter(t=>t.section===colId), dnCount=isDone?doneTasks.length:allSec.filter(t=>t.done).length, total=isDone?tasks.length:allSec.length, pct=total?Math.round((dnCount/total)*100):0;
+    const isTaskOver  = highlightCol === colId;
+    const isBoardOver = highlightBoard === colId && !isDone;
+    const isOver      = isTaskOver;
+    const allSec  = isDone ? [] : tasks.filter(t=>t.section===colId);
+    const dnCount = isDone ? doneTasks.length : allSec.filter(t=>t.done).length;
+    const total   = isDone ? tasks.length : allSec.length;
+    const pct     = total ? Math.round((dnCount/total)*100) : 0;
+
     return (
-      <div onDragOver={e=>handleDragOverCol(e,colId)} onDrop={e=>handleDropOnCol(e,colId)} style={{ background:T.colBg,border:`1px solid ${isOver?color+"99":T.border}`,borderRadius:14,display:"flex",flexDirection:"column",boxShadow:isOver?`0 0 0 2px ${color}55`:"none",transition:"border 0.1s,box-shadow 0.1s",overflow:"hidden",minHeight:180 }}>
-        <div style={{ padding:"13px 14px 10px",borderBottom:`1px solid ${T.border}`,flexShrink:0 }}>
+      <div
+        // Board-level drag: grab the header to drag the whole card
+        draggable={!isDone}
+        onDragStart={!isDone ? e=>handleBoardDragStart(e, colId) : undefined}
+        onDragOver={e=>handleDragOverCol(e, colId)}
+        onDrop={e=>handleDropOnCol(e, colId)}
+        onDragEnd={handleDragEnd}
+        style={{
+          background:T.colBg,
+          border:`1px solid ${isBoardOver?color+"cc":isTaskOver?color+"99":T.border}`,
+          borderRadius:14, display:"flex", flexDirection:"column",
+          boxShadow:isBoardOver?`0 0 0 3px ${color}66`:isTaskOver?`0 0 0 2px ${color}55`:"none",
+          transition:"border 0.1s,box-shadow 0.1s,transform 0.1s",
+          transform: isBoardOver ? "scale(1.02)" : "scale(1)",
+          overflow:"hidden", minHeight:180,
+          cursor: isBoardOver ? "grabbing" : "default",
+        }}
+      >
+        {/* Header — drag handle for board reordering */}
+        <div
+          style={{ padding:"13px 14px 10px",borderBottom:`1px solid ${T.border}`,flexShrink:0, cursor:isDone?"default":"grab" }}
+          title={isDone ? "" : "Drag to reorder board"}
+        >
           <div style={{ display:"flex",alignItems:"center",gap:9 }}>
+            {/* Drag grip indicator */}
+            {!isDone && (
+              <div style={{ display:"flex",flexDirection:"column",gap:2,flexShrink:0,opacity:0.3 }}>
+                <div style={{ width:12,height:1.5,borderRadius:1,background:T.text }}/>
+                <div style={{ width:12,height:1.5,borderRadius:1,background:T.text }}/>
+                <div style={{ width:12,height:1.5,borderRadius:1,background:T.text }}/>
+              </div>
+            )}
             <div style={{ width:32,height:32,borderRadius:9,background:color+"22",display:"flex",alignItems:"center",justifyContent:"center",fontSize:15,flexShrink:0 }}>{emoji}</div>
             <div style={{ flex:1,minWidth:0 }}>
               <div style={{ fontFamily:"'DM Sans',sans-serif",fontWeight:700,fontSize:14,color:T.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap" }}>{label}</div>
               <div style={{ fontSize:11,color:T.textSub,marginTop:1 }}>{isDone?`${dnCount} completed`:`${dnCount}/${total} done`}</div>
             </div>
-            {!isDone&&<button onClick={()=>{setAddSec(colId);setNew(p=>({...p,section:colId}));setShowAdd(true);}} style={{ width:26,height:26,borderRadius:7,background:T.inputBg,border:`1px solid ${T.border}`,cursor:"pointer",color:T.textSub,fontSize:16,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontWeight:700 }}>+</button>}
+            {!isDone&&<button
+              onClick={e=>{e.stopPropagation();setAddSec(colId);setNew(p=>({...p,section:colId}));setShowAdd(true);}}
+              onMouseDown={e=>e.stopPropagation()}
+              style={{ width:26,height:26,borderRadius:7,background:T.inputBg,border:`1px solid ${T.border}`,cursor:"pointer",color:T.textSub,fontSize:16,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontWeight:700 }}>+</button>}
           </div>
           {!isDone&&<div style={{ height:3,background:T.inputBg,borderRadius:3,marginTop:9,overflow:"hidden" }}><div style={{ height:"100%",width:`${pct}%`,background:color,borderRadius:3,transition:"width 0.4s" }}/></div>}
         </div>
-        <div style={{ flex:1,overflowY:"auto",padding:"10px 12px",minHeight:50 }}>
-          {colTasks.length===0?<div style={{ border:`2px dashed ${isOver?color+"88":T.border}`,borderRadius:9,padding:"18px 10px",textAlign:"center",color:T.textMuted,fontSize:12,fontStyle:"italic",background:isOver?color+"0A":"transparent",transition:"all 0.1s" }}>{isDone?"✓ Drop tasks here to complete":"Drop tasks here"}</div>:colTasks.map(t=><TaskPill key={t.id} t={t} showSec={isDone}/>)}
+
+        {/* Task list — each task supports drag-over for reordering */}
+        <div
+          style={{ flex:1,overflowY:"auto",padding:"10px 12px",minHeight:50 }}
+          onDragOver={e=>{ e.preventDefault(); handleDragOverCol(e,colId); }}
+        >
+          {colTasks.length===0 ? (
+            <div style={{ border:`2px dashed ${isOver?color+"88":T.border}`,borderRadius:9,padding:"18px 10px",textAlign:"center",color:T.textMuted,fontSize:12,fontStyle:"italic",background:isOver?color+"0A":"transparent",transition:"all 0.1s" }}>
+              {isDone?"✓ Drop tasks here to complete":"Drop tasks here"}
+            </div>
+          ) : colTasks.map((t,i) => (
+            <div
+              key={t.id}
+              onDragOver={e=>{ e.preventDefault(); e.stopPropagation(); handleDragOverCol(e,colId); }}
+              onDrop={e=>handleDropOnTask(e, t.id, colId)}
+              style={{
+                borderTop: highlightCol===colId && dragTaskId.current && i===0 ? `2px solid ${color}` : "none",
+                transition:"border 0.1s",
+              }}
+            >
+              <TaskPill t={t} showSec={isDone}/>
+            </div>
+          ))}
         </div>
       </div>
     );
@@ -769,10 +919,24 @@ export default function TogetherApp() {
   const userTasks=tasks.filter(t=>t.assignee===activeUser||t.assignee==="both");
   const userActive=userTasks.filter(t=>!t.done);
   const userDone=userTasks.filter(t=>t.done);
-  const filteredSec=filter?SECTIONS.filter(s=>s.id===filter):SECTIONS;
+
+  // Apply custom section order — sections sorted by sectionOrder, filtered if needed
+  const orderedSections = (() => {
+    const order = sectionOrder ?? SECTIONS.map(s=>s.id);
+    const base  = order.map(id=>SECTIONS.find(s=>s.id===id)).filter(Boolean);
+    // Append any new sections not yet in order
+    SECTIONS.forEach(s=>{ if (!base.find(b=>b.id===s.id)) base.push(s); });
+    return filter ? base.filter(s=>s.id===filter) : base;
+  })();
+
+  // Sort tasks within each column by their order field
+  const sortedActive = [...userActive].sort((a,b)=>a.order-b.order);
+
   const gridCols=[
-    {colId:DONE_COL,label:"Done",emoji:"✓",color:"#3DBF8A",isDone:true,colTasks:filter?userDone.filter(t=>t.section===filter):userDone},
-    ...filteredSec.map(s=>({colId:s.id,label:s.label,emoji:s.emoji,color:s.color,isDone:false,colTasks:userActive.filter(t=>t.section===s.id)}))
+    {colId:DONE_COL,label:"Done",emoji:"✓",color:"#3DBF8A",isDone:true,
+      colTasks:[...userDone].sort((a,b)=>a.order-b.order).filter(t=>!filter||t.section===filter)},
+    ...orderedSections.map(s=>({colId:s.id,label:s.label,emoji:s.emoji,color:s.color,isDone:false,
+      colTasks:sortedActive.filter(t=>t.section===s.id)}))
   ];
 
   const navViews=[
