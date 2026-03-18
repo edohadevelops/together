@@ -494,7 +494,7 @@ export default function TogetherApp() {
       <div style={{ padding:"24px 16px",maxWidth:780,margin:"0 auto" }}>
         <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:28,color:T.text,marginBottom:4 }}>{label}</div>
         <div style={{ fontSize:13,color:T.textSub,marginBottom:20 }}>{sub}</div>
-        <div style={{ display:"flex",gap:8,marginBottom:24,flexWrap:"wrap" }}>
+        <div className="stats-row" style={{marginBottom:24}}>
           {[{l:"Total",v:tl.length,c:"#E8A838"},{l:"Overdue",v:overdue.length,c:"#E84E8A"},{l:"Due Today",v:dueToday.length,c:"#E8704A"},{l:"Upcoming",v:upcoming.length,c:"#3DBF8A"}].map(s=>(
             <div key={s.l} style={cardBase({padding:"10px 14px",flex:"1 1 80px",borderLeft:`3px solid ${s.c}`})}>
               <div style={{fontSize:20,fontWeight:700,color:T.text,lineHeight:1}}>{s.v}</div>
@@ -539,17 +539,22 @@ export default function TogetherApp() {
         input[type="date"]::-webkit-calendar-picker-indicator{filter:${mode==="dark"?"invert(1)":"none"}}
         button:active{transform:scale(0.97)}
         .grid-board{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,280px),1fr));gap:12px;align-items:start;}
-        .grid-stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(45%,140px),1fr));gap:8px;}
+        .stats-row{display:flex;gap:8px;width:100%;flex-wrap:wrap;}.stats-row>*{flex:1 1 120px;min-width:0;}
         .grid-tools{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr));gap:12px;}
         .grid-accountability{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:14px;}
         .pill-scroll{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
         .pill-scroll::-webkit-scrollbar{display:none;}
-        .desktop-nav{display:flex;}
+        .desktop-nav{display:flex;overflow-x:auto;scrollbar-width:none;}
+        .desktop-nav::-webkit-scrollbar{display:none;}
         .mobile-tabs{display:none;}
+        .topbar-desktop-actions{display:flex;align-items:center;gap:5px;}
+        .topbar-menu-btn{display:none!important;}
         @media(max-width:768px){
           .desktop-nav{display:none!important;}
           .mobile-tabs{display:flex!important;}
           .page-content{padding-bottom:80px!important;}
+          .topbar-desktop-actions{display:none!important;}
+          .topbar-menu-btn{display:flex!important;}
         }
       `}</style>
 
@@ -559,8 +564,8 @@ export default function TogetherApp() {
           <span style={{ fontFamily:"'DM Serif Display',serif",fontSize:19,color:T.accent,whiteSpace:"nowrap" }}>Together ♡</span>
           <div style={{ width:6,height:6,borderRadius:"50%",background:status==="live"?(pulse?"#3DBF8A":"#2A6644"):status==="error"?"#E8704A":T.textMuted,transition:"background 0.4s",flexShrink:0 }} title={status}/>
         </div>
-        <div style={{ display:"flex",alignItems:"center",gap:5,flexShrink:0 }}>
-          {/* User toggle */}
+        {/* Desktop actions — hidden on mobile */}
+        <div className="topbar-desktop-actions">
           <div style={{ display:"flex",background:T.inputBg,borderRadius:8,padding:2,border:`1px solid ${T.border}` }}>
             {["A","B"].map(u=>(
               <button key={u} onClick={()=>setUser(u)} style={{ padding:"4px 10px",borderRadius:6,border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:600,background:activeUser===u?T.accent:"transparent",color:activeUser===u?T.accentFg:T.textSub,transition:"all 0.15s",whiteSpace:"nowrap" }}>
@@ -574,6 +579,18 @@ export default function TogetherApp() {
           <button onClick={()=>setShowSett(true)} style={{ width:32,height:32,borderRadius:8,border:`1px solid ${T.border}`,background:T.inputBg,cursor:"pointer",fontSize:14,display:"flex",alignItems:"center",justifyContent:"center",color:T.textSub,flexShrink:0 }}>⚙</button>
           <button onClick={()=>setShowAdd(true)} style={{ height:32,padding:"0 12px",borderRadius:8,border:"none",background:T.accent,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,color:T.accentFg,display:"flex",alignItems:"center",gap:4,flexShrink:0,whiteSpace:"nowrap" }}>
             + Task
+          </button>
+        </div>
+
+        {/* Mobile menu button — shown only on mobile */}
+        <div style={{ display:"flex",alignItems:"center",gap:6,flexShrink:0 }} className="topbar-menu-btn">
+          <button onClick={()=>setShowAdd(true)} style={{ height:32,padding:"0 12px",borderRadius:8,border:"none",background:T.accent,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,color:T.accentFg,display:"flex",alignItems:"center",gap:4,whiteSpace:"nowrap" }}>
+            + Task
+          </button>
+          <button onClick={()=>setShowNav(true)} style={{ width:36,height:36,borderRadius:9,border:`1px solid ${T.border}`,background:T.inputBg,cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:4,flexShrink:0,padding:"9px 8px" }}>
+            <span style={{ width:16,height:2,borderRadius:1,background:T.textSub,display:"block" }}/>
+            <span style={{ width:16,height:2,borderRadius:1,background:T.textSub,display:"block" }}/>
+            <span style={{ width:16,height:2,borderRadius:1,background:T.textSub,display:"block" }}/>
           </button>
         </div>
       </div>
@@ -601,7 +618,7 @@ export default function TogetherApp() {
 
         {/* STATS */}
         {view==="board"&&(
-          <div className="grid-stats" style={{ margin:"16px 0" }}>
+          <div className="stats-row" style={{ margin:"16px 0" }}>
             {[{label:"Open",value:activeTasks.length,color:"#E8A838"},{label:"Done %",value:`${compRate}%`,color:"#3DBF8A"},{label:"Streaks",value:tasks.filter(t=>(t.type==="habit"||t.type==="daily")&&t.streak>0).reduce((a,t)=>a+t.streak,0),color:"#9B6EE8"},{label:"Urgent",value:urgentTasks.length,color:"#E84E8A"}].map(s=>(
               <div key={s.label} style={cardBase({padding:"12px 14px",flex:"1 1 80px",borderLeft:`3px solid ${s.color}`})}>
                 <div style={{fontSize:22,fontWeight:700,color:T.text,lineHeight:1}}>{s.value}</div>
@@ -795,11 +812,34 @@ export default function TogetherApp() {
               <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:17,color:greeting.accent }}>{greeting.text}</div>
               <div style={{ fontSize:12,color:T.textSub,marginTop:2 }}>{greeting.sub}</div>
             </div>
+            {/* User switch */}
+            <div style={{ padding:"14px 20px 10px",borderBottom:`1px solid ${T.border}`,marginBottom:4 }}>
+              <div style={{ fontSize:11,fontWeight:600,letterSpacing:"0.1em",textTransform:"uppercase",color:T.textMuted,marginBottom:8,fontFamily:"'DM Sans',sans-serif" }}>Viewing as</div>
+              <div style={{ display:"flex",gap:8 }}>
+                {["A","B"].map(u=>(
+                  <button key={u} onClick={()=>{setUser(u);setShowNav(false);}} style={{ flex:1,padding:"10px",borderRadius:10,border:`1px solid ${activeUser===u?T.accent:T.border}`,background:activeUser===u?T.accent+"18":"transparent",color:activeUser===u?T.accent:T.text,fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:600,cursor:"pointer",transition:"all 0.15s" }}>
+                    {names[u]}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Nav items */}
             {navViews.filter(([v])=>!["board","today","accountability","urgent"].includes(v)).map(([v,l])=>(
               <button key={v} onClick={()=>{setView(v);setShowNav(false);}} style={{ display:"flex",alignItems:"center",width:"100%",padding:"14px 20px",border:"none",background:view===v?T.accent+"15":"transparent",color:view===v?T.accent:T.text,fontFamily:"'DM Sans',sans-serif",fontSize:15,fontWeight:view===v?700:400,cursor:"pointer",textAlign:"left",borderLeft:view===v?`3px solid ${T.accent}`:"3px solid transparent",transition:"all 0.12s" }}>
                 {l}
               </button>
             ))}
+
+            {/* Bottom actions */}
+            <div style={{ padding:"10px 20px 4px",borderTop:`1px solid ${T.border}`,marginTop:8,display:"flex",gap:10 }}>
+              <button onClick={()=>{toggleMode();setShowNav(false);}} style={{ flex:1,padding:"10px",borderRadius:10,border:`1px solid ${T.border}`,background:T.inputBg,color:T.text,fontFamily:"'DM Sans',sans-serif",fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,fontWeight:500 }}>
+                {mode==="dark"?"☀ Light Mode":"☾ Dark Mode"}
+              </button>
+              <button onClick={()=>{setShowSett(true);setShowNav(false);}} style={{ flex:1,padding:"10px",borderRadius:10,border:`1px solid ${T.border}`,background:T.inputBg,color:T.text,fontFamily:"'DM Sans',sans-serif",fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,fontWeight:500 }}>
+                ⚙ Settings
+              </button>
+            </div>
           </div>
         </div>
       )}
