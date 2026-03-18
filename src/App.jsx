@@ -49,6 +49,7 @@ const SECTIONS = [
   { id: "home",       label: "Home & Chores",        emoji: "⌂",  color: "#5BAD4E" },
   { id: "hobbies",    label: "Hobbies & Fun",        emoji: "◐",  color: "#E8883A" },
   { id: "mentorship", label: "Mentorship",           emoji: "🤝", color: "#20B2AA" },
+  { id: "church",     label: "Church & Fellowship",  emoji: "⛪", color: "#8B5CF6" },
 ];
 
 const TASK_TYPES = [
