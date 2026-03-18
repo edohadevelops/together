@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 
 // ── Google Fonts ──────────────────────────────────────────────────────────────
 const fontLink = document.createElement("link");
@@ -50,6 +50,7 @@ const SECTIONS = [
   { id: "hobbies",    label: "Hobbies & Fun",        emoji: "◐",  color: "#E8883A" },
   { id: "mentorship", label: "Mentorship",           emoji: "🤝", color: "#20B2AA" },
   { id: "church",     label: "Church & Fellowship",  emoji: "⛪", color: "#8B5CF6" },
+  { id: "life",       label: "Life",                 emoji: "🌱", color: "#06B6D4" },
 ];
 
 const TASK_TYPES = [
@@ -156,6 +157,283 @@ function dueBadgeLabel(d) {
 }
 
 // ── Main App ──────────────────────────────────────────────────────────────────
+// ── PrayerView — standalone prayer requests board ────────────────────────────
+function PrayerView({ tasks, setTasks, names, activeUser, T, mode, aColor, aLabel, TODAY, genId, toasts, setToasts, SECTIONS }) {
+  // showAdd is managed internally below
+  const [prayers, setPrayersState] = useState(null);
+  const [showForm, setShowForm]   = useState(false);
+  const [editPrayer, setEditPrayer] = useState(null);
+  const [newPrayer, setNewPrayer]  = useState({ title:"", body:"", assignee:"both", answered:false });
+  const titleRef = useRef(null);
+
+  useEffect(() => {
+    (async () => {
+      const stored = await dbGet("prayers");
+      setPrayersState(stored ?? []);
+    })();
+  }, []);
+
+  function savePrayers(list) {
+    setPrayersState(list);
+    dbSet("prayers", list);
+  }
+
+  function addPrayer() {
+    if (!newPrayer.title.trim()) return;
+    const p = { ...newPrayer, id: genId(), createdAt: TODAY, answeredAt: "", createdBy: activeUser };
+    savePrayers([...(prayers||[]), p]);
+    setNewPrayer({ title:"", body:"", assignee:"both", answered:false });
+    setShowForm(false);
+  }
+
+  function toggleAnswered(id) {
+    savePrayers((prayers||[]).map(p => p.id===id ? { ...p, answered:!p.answered, answeredAt:!p.answered?TODAY:"" } : p));
+  }
+
+  function deletePrayer(id) { savePrayers((prayers||[]).filter(p=>p.id!==id)); }
+
+  function saveEdit() {
+    savePrayers((prayers||[]).map(p=>p.id===editPrayer.id?editPrayer:p));
+    setEditPrayer(null);
+  }
+
+  const aColor2 = a => a==="A"?"#E8A838":a==="B"?"#E84E8A":"#3DBF8A";
+  const aLabel2 = a => a==="both"?`${names.A} & ${names.B}`:names[a]||a;
+  const cardBase = (x={}) => ({ background:T.surface, border:`1px solid ${T.border}`, borderRadius:14, boxShadow:"0 2px 8px rgba(0,0,0,0.1)", ...x });
+  const inpStyle = { width:"100%", background:T.inputBg, border:`1px solid ${T.border}`, borderRadius:9, padding:"10px 13px", color:T.text, fontFamily:"'DM Sans',sans-serif", fontSize:14, outline:"none", boxSizing:"border-box" };
+  const lblStyle = { fontSize:11, fontWeight:600, letterSpacing:"0.1em", textTransform:"uppercase", color:T.textMuted, display:"block", marginBottom:5, marginTop:14, fontFamily:"'DM Sans',sans-serif" };
+  const btnStyle = p => ({ padding:"9px 20px", borderRadius:9, border:"none", cursor:"pointer", fontFamily:"'DM Sans',sans-serif", fontSize:14, fontWeight:600, background:p?T.accent:T.inputBg, color:p?T.accentFg:T.textSub });
+
+  const open   = (prayers||[]).filter(p=>!p.answered);
+  const answered = (prayers||[]).filter(p=>p.answered);
+
+  function PrayerForm({ data, setData, onSave, onClose, title }) {
+    const ref = useRef(null);
+    useEffect(() => { const t = setTimeout(()=>{ if(ref.current) ref.current.focus(); },80); return ()=>clearTimeout(t); }, []);
+    return (
+      <div style={{ position:"fixed",inset:0,zIndex:40,background:"rgba(0,0,0,0.6)",backdropFilter:"blur(6px)",display:"flex",alignItems:"flex-end",justifyContent:"center" }}
+        onClick={e=>e.target===e.currentTarget&&onClose()}>
+        <div style={{ background:T.surface,border:`1px solid ${T.border}`,borderRadius:"18px 18px 0 0",width:"100%",maxWidth:520,maxHeight:"90vh",overflowY:"auto",padding:"24px 20px 36px" }}>
+          <div style={{ width:40,height:4,borderRadius:2,background:T.textMuted,margin:"0 auto 20px",opacity:0.4 }}/>
+          <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:22,color:T.text,marginBottom:4 }}>{title}</div>
+          <div style={{ height:2,width:40,background:"#9B6EE8",borderRadius:2,marginBottom:20 }}/>
+          <label style={lblStyle}>Prayer Title</label>
+          <input ref={ref} style={inpStyle} value={data.title} onChange={e=>setData(p=>({...p,title:e.target.value}))}
+            onKeyDown={e=>{ if(e.key==="Enter"&&data.title.trim()){e.preventDefault();onSave();}}}
+            placeholder="What are you praying for? (Enter to save)"/>
+          <label style={lblStyle}>Details (optional)</label>
+          <textarea style={{...inpStyle,minHeight:80,resize:"vertical"}} value={data.body} onChange={e=>setData(p=>({...p,body:e.target.value}))} placeholder="Share more details..."/>
+          <label style={lblStyle}>For</label>
+          <select style={{...inpStyle,background:mode==="dark"?"#181B23":"#fff",cursor:"pointer"}} value={data.assignee} onChange={e=>setData(p=>({...p,assignee:e.target.value}))}>
+            <option value="A">{names.A}</option>
+            <option value="B">{names.B}</option>
+            <option value="both">{names.A} & {names.B}</option>
+          </select>
+          <div style={{ display:"flex",gap:10,marginTop:24,justifyContent:"flex-end" }}>
+            <button style={btnStyle(false)} onClick={onClose}>Cancel</button>
+            <button style={btnStyle(true)} onClick={onSave}>Save</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (prayers === null) return (
+    <div style={{ padding:"40px 16px",textAlign:"center",color:T.textMuted,fontFamily:"'DM Sans',sans-serif" }}>Loading prayers...</div>
+  );
+
+  return (
+    <div style={{ padding:"24px 16px",maxWidth:780,margin:"0 auto" }}>
+      {/* Header */}
+      <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6,flexWrap:"wrap",gap:10 }}>
+        <div>
+          <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:28,color:T.text }}>🙏 Prayer Requests</div>
+          <div style={{ fontSize:13,color:T.textSub,marginTop:3 }}>Bring your requests before God together</div>
+        </div>
+        <button onClick={()=>setShowForm(true)} style={{ height:36,padding:"0 16px",borderRadius:9,border:"none",background:"#9B6EE8",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,color:"#fff",whiteSpace:"nowrap" }}>
+          + Add Prayer
+        </button>
+      </div>
+
+      {/* Stats */}
+      <div style={{ display:"flex",gap:8,margin:"20px 0",flexWrap:"wrap" }}>
+        {[{l:"Open",v:open.length,c:"#9B6EE8"},{l:"Answered 🙌",v:answered.length,c:"#3DBF8A"},{l:"Total",v:prayers.length,c:"#E8A838"}].map(s=>(
+          <div key={s.l} style={cardBase({padding:"12px 16px",flex:"1 1 90px",borderLeft:`3px solid ${s.c}`})}>
+            <div style={{fontSize:22,fontWeight:700,color:T.text,lineHeight:1}}>{s.v}</div>
+            <div style={{fontSize:10,fontWeight:600,color:T.textSub,marginTop:3,textTransform:"uppercase",letterSpacing:"0.08em"}}>{s.l}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Open requests */}
+      {open.length>0&&(
+        <div style={{marginBottom:28}}>
+          <div style={{fontSize:12,fontWeight:700,color:"#9B6EE8",textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:12,display:"flex",alignItems:"center",gap:8}}>
+            <div style={{width:8,height:8,borderRadius:"50%",background:"#9B6EE8"}}/>
+            Open Requests · {open.length}
+          </div>
+          <div style={{display:"flex",flexDirection:"column",gap:10}}>
+            {open.map(p=>(
+              <div key={p.id} style={cardBase({padding:"16px",borderLeft:"3px solid #9B6EE8"})}>
+                <div style={{display:"flex",alignItems:"flex-start",gap:10}}>
+                  {/* Answered checkbox */}
+                  <div onClick={()=>toggleAnswered(p.id)} title="Mark as answered" style={{width:22,height:22,borderRadius:6,border:"2px solid #9B6EE855",background:"transparent",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0,marginTop:1,transition:"all 0.15s"}}>
+                    <span style={{fontSize:12,color:"#9B6EE8"}}>🙏</span>
+                  </div>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontSize:15,fontWeight:600,color:T.text,fontFamily:"'DM Sans',sans-serif",lineHeight:1.3,marginBottom:4}}>{p.title}</div>
+                    {p.body&&<div style={{fontSize:13,color:T.textSub,lineHeight:1.5,marginBottom:6}}>{p.body}</div>}
+                    <div style={{display:"flex",gap:5,flexWrap:"wrap",alignItems:"center"}}>
+                      <span style={{fontSize:10,padding:"2px 7px",borderRadius:5,background:aColor2(p.assignee)+"20",color:aColor2(p.assignee),fontWeight:600,fontFamily:"'DM Sans',sans-serif"}}>For {aLabel2(p.assignee)}</span>
+                      {p.createdBy&&<span style={{fontSize:10,padding:"2px 7px",borderRadius:5,background:aColor2(p.createdBy)+"15",color:aColor2(p.createdBy),fontWeight:600,fontFamily:"'DM Sans',sans-serif"}}>By {names[p.createdBy]||p.createdBy}</span>}
+                      <span style={{fontSize:10,color:T.textMuted}}>Added {p.createdAt}</span>
+                    </div>
+                  </div>
+                  <div style={{display:"flex",gap:2,flexShrink:0}}>
+                    <button onClick={()=>setEditPrayer({...p})} style={{background:"none",border:"none",color:T.textMuted,cursor:"pointer",fontSize:13,padding:"3px 5px",borderRadius:4}}>✎</button>
+                    <button onClick={()=>deletePrayer(p.id)} style={{background:"none",border:"none",color:T.textMuted,cursor:"pointer",fontSize:13,padding:"3px 5px",borderRadius:4}}>✕</button>
+                  </div>
+                </div>
+                <div style={{marginTop:10}}>
+                  <button onClick={()=>toggleAnswered(p.id)} style={{fontSize:11,padding:"5px 12px",borderRadius:8,border:"1px solid #3DBF8A44",background:"#3DBF8A12",color:"#3DBF8A",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontWeight:600}}>
+                    ✓ Mark Answered
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Answered */}
+      {answered.length>0&&(
+        <div>
+          <div style={{fontSize:12,fontWeight:700,color:"#3DBF8A",textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:12,display:"flex",alignItems:"center",gap:8}}>
+            <div style={{width:8,height:8,borderRadius:"50%",background:"#3DBF8A"}}/>
+            Answered Prayers 🙌 · {answered.length}
+          </div>
+          <div style={{display:"flex",flexDirection:"column",gap:10}}>
+            {answered.map(p=>(
+              <div key={p.id} style={cardBase({padding:"16px",borderLeft:"3px solid #3DBF8A",opacity:0.75})}>
+                <div style={{display:"flex",alignItems:"flex-start",gap:10}}>
+                  <div style={{width:22,height:22,borderRadius:6,background:"#3DBF8A22",border:"2px solid #3DBF8A",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:1}}>
+                    <span style={{fontSize:12}}>✓</span>
+                  </div>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontSize:15,fontWeight:600,color:T.textSub,textDecoration:"line-through",fontFamily:"'DM Sans',sans-serif",lineHeight:1.3,marginBottom:4}}>{p.title}</div>
+                    {p.body&&<div style={{fontSize:13,color:T.textMuted,lineHeight:1.5,marginBottom:6}}>{p.body}</div>}
+                    <div style={{display:"flex",gap:5,flexWrap:"wrap",alignItems:"center"}}>
+                      <span style={{fontSize:10,padding:"2px 7px",borderRadius:5,background:"#3DBF8A20",color:"#3DBF8A",fontWeight:600,fontFamily:"'DM Sans',sans-serif"}}>Answered {p.answeredAt||""}</span>
+                      <span style={{fontSize:10,color:T.textMuted}}>Added {p.createdAt}</span>
+                    </div>
+                  </div>
+                  <div style={{display:"flex",gap:2,flexShrink:0}}>
+                    <button onClick={()=>toggleAnswered(p.id)} title="Reopen" style={{background:"none",border:"none",color:T.textMuted,cursor:"pointer",fontSize:11,padding:"3px 5px",borderRadius:4}}>↩</button>
+                    <button onClick={()=>deletePrayer(p.id)} style={{background:"none",border:"none",color:T.textMuted,cursor:"pointer",fontSize:13,padding:"3px 5px",borderRadius:4}}>✕</button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {prayers.length===0&&(
+        <div style={cardBase({padding:"60px 20px",textAlign:"center"})}>
+          <div style={{fontSize:40,marginBottom:12}}>🙏</div>
+          <div style={{fontSize:17,fontWeight:600,color:T.text,fontFamily:"'DM Serif Display',serif"}}>No prayer requests yet</div>
+          <div style={{fontSize:13,color:T.textSub,marginTop:6}}>Add your first prayer request above.</div>
+        </div>
+      )}
+
+      {showForm&&<PrayerForm data={newPrayer} setData={setNewPrayer} onSave={addPrayer} onClose={()=>setShowForm(false)} title="New Prayer Request"/>}
+      {editPrayer&&<PrayerForm data={editPrayer} setData={setEditPrayer} onSave={saveEdit} onClose={()=>setEditPrayer(null)} title="Edit Prayer Request"/>}
+    </div>
+  );
+}
+
+// ── FormModal — defined OUTSIDE TogetherApp so it never remounts on parent re-render ──
+// This is the fix for the autofocus stealing bug. When FormModal was defined
+// inside TogetherApp, every keystroke caused a full remount, re-triggering autoFocus.
+function FormModal({ data, setData, onSave, onClose, title, names, sections, taskTypes, priorities, T, mode }) {
+  const titleRef = useRef(null);
+
+  // Focus title input only on first mount — not on every re-render
+  useEffect(() => {
+    const t = setTimeout(() => { if (titleRef.current) titleRef.current.focus(); }, 80);
+    return () => clearTimeout(t);
+  }, []); // empty deps = runs once on mount only
+
+  const inpStyle = { width:"100%", background:T.inputBg, border:`1px solid ${T.border}`, borderRadius:9, padding:"10px 13px", color:T.text, fontFamily:"'DM Sans',sans-serif", fontSize:15, outline:"none", boxSizing:"border-box" };
+  const selStyle = { ...inpStyle, background:mode==="dark"?"#181B23":"#fff", cursor:"pointer" };
+  const lblStyle = { fontSize:11, fontWeight:600, letterSpacing:"0.1em", textTransform:"uppercase", color:T.textMuted, display:"block", marginBottom:5, marginTop:14, fontFamily:"'DM Sans',sans-serif" };
+  const btnStyle = p => ({ padding:"10px 20px", borderRadius:9, border:"none", cursor:"pointer", fontFamily:"'DM Sans',sans-serif", fontSize:14, fontWeight:600, background:p?T.accent:T.inputBg, color:p?T.accentFg:T.textSub, transition:"all 0.15s" });
+
+  return (
+    <div style={{ position:"fixed",inset:0,zIndex:40,background:"rgba(0,0,0,0.6)",backdropFilter:"blur(6px)",display:"flex",alignItems:"flex-end",justifyContent:"center",padding:"0" }}
+      onClick={e=>e.target===e.currentTarget&&onClose()}>
+      <div style={{ background:T.surface, border:`1px solid ${T.border}`, borderRadius:"18px 18px 0 0", boxShadow:"0 -4px 32px rgba(0,0,0,0.3)", width:"100%", maxWidth:520, maxHeight:"92vh", overflowY:"auto", padding:"24px 20px 36px" }}>
+        <div style={{ width:40,height:4,borderRadius:2,background:T.textMuted,margin:"0 auto 20px",opacity:0.4 }}/>
+        <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:22,color:T.text,marginBottom:4 }}>{title}</div>
+        <div style={{ height:2,width:40,background:T.accent,borderRadius:2,marginBottom:20 }}/>
+
+        <label style={lblStyle}>Title</label>
+        <input
+          ref={titleRef}
+          style={inpStyle}
+          value={data.title}
+          onChange={e=>setData(p=>({...p,title:e.target.value}))}
+          onKeyDown={e=>{ if(e.key==="Enter" && data.title.trim()) { e.preventDefault(); onSave(); } }}
+          placeholder="What needs to be done? (Enter to save)"
+        />
+
+        <label style={lblStyle}>Life Area</label>
+        <select style={selStyle} value={data.section} onChange={e=>setData(p=>({...p,section:e.target.value}))}>
+          {sections.map(s=><option key={s.id} value={s.id}>{s.emoji} {s.label}</option>)}
+        </select>
+
+        <label style={lblStyle}>Type</label>
+        <select style={selStyle} value={data.type} onChange={e=>setData(p=>({...p,type:e.target.value}))}>
+          {taskTypes.map(t=><option key={t.id} value={t.id}>{t.icon} {t.label}{t.id==="daily"?" — resets daily":t.id==="weekly"?" — resets every Monday":""}</option>)}
+        </select>
+
+        <label style={lblStyle}>Assigned To</label>
+        <select style={selStyle} value={data.assignee} onChange={e=>setData(p=>({...p,assignee:e.target.value}))}>
+          <option value="A">{names.A}</option>
+          <option value="B">{names.B}</option>
+          <option value="both">{names.A} & {names.B}</option>
+        </select>
+
+        <label style={lblStyle}>Priority</label>
+        <select style={selStyle} value={data.priority} onChange={e=>setData(p=>({...p,priority:e.target.value}))}>
+          {priorities.map(p=><option key={p} value={p}>{p}</option>)}
+        </select>
+
+        <label style={lblStyle}>Due Date (optional)</label>
+        <input
+          type="date"
+          style={selStyle}
+          value={data.dueDate||""}
+          onChange={e=>setData(p=>({...p,dueDate:e.target.value}))}
+        />
+
+        <label style={lblStyle}>Notes (optional)</label>
+        <input
+          style={inpStyle}
+          value={data.notes}
+          onChange={e=>setData(p=>({...p,notes:e.target.value}))}
+          placeholder="Any extra details..."
+        />
+
+        <div style={{ display:"flex",gap:10,marginTop:24,justifyContent:"flex-end" }}>
+          <button style={btnStyle(false)} onClick={onClose}>Cancel</button>
+          <button style={btnStyle(true)} onClick={onSave}>Save Task</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function TogetherApp() {
   const [tasks,      setTasksState] = useState(null);
   const [names,      setNamesState] = useState({ A:"Amen", B:"Gloria" });
@@ -454,48 +732,7 @@ export default function TogetherApp() {
     );
   }
 
-  // ── Form Modal ────────────────────────────────────────────────────────────
-  function FormModal({ data, setData, onSave, onClose, title }) {
-    return (
-      <div style={{ position:"fixed",inset:0,zIndex:40,background:"rgba(0,0,0,0.6)",backdropFilter:"blur(6px)",display:"flex",alignItems:"flex-end",justifyContent:"center",padding:"0" }} onClick={e=>e.target===e.currentTarget&&onClose()}>
-        {/* Sheet slides up from bottom on mobile, centered on desktop */}
-        <div style={{ ...cardBase(), width:"100%", maxWidth:520, maxHeight:"92vh", overflowY:"auto", borderRadius:"18px 18px 0 0", padding:"24px 20px 32px" }}>
-          {/* Handle */}
-          <div style={{ width:40,height:4,borderRadius:2,background:T.textMuted,margin:"0 auto 20px",opacity:0.4 }}/>
-          <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:22,color:T.text,marginBottom:4 }}>{title}</div>
-          <div style={{ height:2,width:40,background:T.accent,borderRadius:2,marginBottom:20 }}/>
-          <label style={lblStyle}>Title</label>
-          <input style={inpStyle} value={data.title} onChange={e=>setData(p=>({...p,title:e.target.value}))} onKeyDown={e=>{if(e.key==="Enter"&&data.title.trim())onSave();}} placeholder="What needs to be done? (Enter to save)" autoFocus/>
-          <label style={lblStyle}>Life Area</label>
-          <select style={selStyle} value={data.section} onChange={e=>setData(p=>({...p,section:e.target.value}))}>
-            {SECTIONS.map(s=><option key={s.id} value={s.id}>{s.emoji} {s.label}</option>)}
-          </select>
-          <label style={lblStyle}>Type</label>
-          <select style={selStyle} value={data.type} onChange={e=>setData(p=>({...p,type:e.target.value}))}>
-            {TASK_TYPES.map(t=><option key={t.id} value={t.id}>{t.icon} {t.label}{t.id==="daily"?" — resets daily":t.id==="weekly"?" — resets every Monday":""}</option>)}
-          </select>
-          <label style={lblStyle}>Assigned To</label>
-          <select style={selStyle} value={data.assignee} onChange={e=>setData(p=>({...p,assignee:e.target.value}))}>
-            <option value="A">{names.A}</option>
-            <option value="B">{names.B}</option>
-            <option value="both">{names.A} & {names.B}</option>
-          </select>
-          <label style={lblStyle}>Priority</label>
-          <select style={selStyle} value={data.priority} onChange={e=>setData(p=>({...p,priority:e.target.value}))}>
-            {PRIORITIES.map(p=><option key={p} value={p}>{p}</option>)}
-          </select>
-          <label style={lblStyle}>Due Date (optional)</label>
-          <input type="date" style={selStyle} value={data.dueDate||""} onChange={e=>setData(p=>({...p,dueDate:e.target.value}))}/>
-          <label style={lblStyle}>Notes (optional)</label>
-          <input style={inpStyle} value={data.notes} onChange={e=>setData(p=>({...p,notes:e.target.value}))} placeholder="Any extra details..."/>
-          <div style={{ display:"flex",gap:10,marginTop:24,justifyContent:"flex-end" }}>
-            <button style={btnStyle(false)} onClick={onClose}>Cancel</button>
-            <button style={btnStyle(true)} onClick={onSave}>Save Task</button>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // FormModal is defined outside TogetherApp (see below export) to prevent remounting
 
   // ── Timeline helpers ──────────────────────────────────────────────────────
   const now=new Date();
@@ -540,10 +777,11 @@ export default function TogetherApp() {
 
   const navViews=[
     ["board","Board"],["today","Today"],["accountability","Us"],
+    ["prayer","🙏 Prayer"],
     ["urgent","🔴 Urgent"],["week","This Week"],["month","This Month"],
     ["quarter","Next 3 Months"],["year","This Year"],["aitools","AI Tools"],
   ];
-  const isFullScreen=["today","accountability","aitools","urgent","week","month","quarter","year"].includes(view);
+  const isFullScreen=["today","accountability","aitools","urgent","week","month","quarter","year","prayer"].includes(view);
   const pad=isFullScreen?"0":"16px 16px";
 
   // ── Reusable timeline section renderer ────────────────────────────────────
@@ -836,6 +1074,11 @@ export default function TogetherApp() {
           </div>
         )}
 
+        {/* ── PRAYER REQUESTS ── */}
+        {view==="prayer"&&(
+          <PrayerView tasks={tasks} setTasks={setTasks} names={names} activeUser={activeUser} T={T} mode={mode} aColor={aColor} aLabel={aLabel} TODAY={TODAY} genId={genId} toasts={toasts} setToasts={setToasts} SECTIONS={SECTIONS}/>
+        )}
+
         {/* ── AI TOOLS ── */}
         {view==="aitools"&&(
           <div style={{padding:"24px 16px"}}>
@@ -870,7 +1113,7 @@ export default function TogetherApp() {
           ["board","⊞","Board"],
           ["today","◎","Today"],
           ["accountability","♡","Us"],
-          ["urgent","🔴","Urgent"],
+          ["prayer","🙏","Prayer"],
           ["more","•••","More"],
         ].map(([v,icon,label])=>(
           <button key={v} onClick={()=>{if(v==="more"){setShowNav(true);}else{setView(v);}}} style={{ display:"flex",flexDirection:"column",alignItems:"center",gap:3,background:"none",border:"none",cursor:"pointer",padding:"4px 8px",minWidth:52,color:view===v&&v!=="more"?T.accent:T.textSub,transition:"color 0.15s" }}>
@@ -971,8 +1214,8 @@ export default function TogetherApp() {
       </div>
 
       {/* Modals */}
-      {showAdd&&<FormModal data={newTask} setData={setNew} onSave={()=>doAdd(newTask)} onClose={()=>{setShowAdd(false);setAddSec(null);}} title="New Task"/>}
-      {editTask&&<FormModal data={editTask} setData={setEdit} onSave={saveEdit} onClose={()=>setEdit(null)} title="Edit Task"/>}
+      {showAdd&&<FormModal data={newTask} setData={setNew} onSave={()=>doAdd(newTask)} onClose={()=>{setShowAdd(false);setAddSec(null);}} title="New Task" names={names} sections={SECTIONS} taskTypes={TASK_TYPES} priorities={PRIORITIES} T={T} mode={mode}/>}
+      {editTask&&<FormModal data={editTask} setData={setEdit} onSave={saveEdit} onClose={()=>setEdit(null)} title="Edit Task" names={names} sections={SECTIONS} taskTypes={TASK_TYPES} priorities={PRIORITIES} T={T} mode={mode}/>}
 
       {/* Settings */}
       {showSett&&(
