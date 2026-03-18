@@ -166,6 +166,8 @@ export default function TogetherApp() {
   const [editTask,   setEdit]       = useState(null);
   const [showSett,   setShowSett]   = useState(false);
   const [showNav,    setShowNav]    = useState(false); // mobile nav drawer
+  const [toasts,     setToasts]     = useState([]);   // notification toasts
+  const seenIdsRef   = useRef(null); // track task ids we've already seen
   const [newTask,    setNew]        = useState({ title:"", section:"faith", type:"todo", assignee:"A", priority:"Medium", notes:"", dueDate:"" });
   const [pulse,      setPulse]      = useState(false);
   const [status,     setStatus]     = useState("connecting");
@@ -175,6 +177,7 @@ export default function TogetherApp() {
   const dragTargetCol = useRef(null);
   const [highlightCol, setHighlightCol] = useState(null);
   const tasksRef = useRef(null);
+  const namesRef  = useRef({ A:"Amen", B:"Gloria" }); // always-fresh ref for poll closure
   const pollRef  = useRef(null);
   const T = THEMES[mode];
 
@@ -213,8 +216,11 @@ export default function TogetherApp() {
         if (n) setNamesState(n);
         if (m) setMode(m);
         setStatus("live");
+        // init seenIds AFTER first load so poll doesn't toast on startup
+        seenIdsRef.current = (tasksRef.current || []).map(t => t.id);
       } catch {
         const fb = resetDailies(SAMPLES);
+        seenIdsRef.current = fb.map(t => t.id);
         tasksRef.current = fb;
         setTasksState(fb);
         setStatus("error");
@@ -233,6 +239,23 @@ export default function TogetherApp() {
           setTasksState(prev => {
             if (JSON.stringify(prev) === JSON.stringify(r)) return prev;
             setPulse(true); setTimeout(() => setPulse(false), 900);
+
+            // ── Detect brand-new tasks assigned to current user ──────────────
+            // seenIdsRef starts null until first poll so we don't spam on load
+            if (seenIdsRef.current !== null) {
+              const prevIds = new Set(seenIdsRef.current);
+              r.forEach(task => {
+                const isNew      = !prevIds.has(task.id);
+                const forme      = task.assignee === activeUser || task.assignee === "both";
+                const byPartner  = task.createdBy && task.createdBy !== activeUser;
+                if (isNew && forme && byPartner) {
+                  // Read names from ref so closure is always fresh
+                  const creatorName = namesRef.current?.[task.createdBy] || "Your partner";
+                  showToast(task, creatorName);
+                }
+              });
+            }
+            seenIdsRef.current = r.map(t => t.id);
             tasksRef.current = r;
             return r;
           });
@@ -245,8 +268,17 @@ export default function TogetherApp() {
     return () => clearInterval(pollRef.current);
   }, []);
 
-  const setNames   = n => { setNamesState(n); dbSet("names", n); };
+  const setNames   = n => { setNamesState(n); namesRef.current = n; dbSet("names", n); };
   const toggleMode = () => { const m = mode==="dark"?"light":"dark"; setMode(m); dbSet("mode",m); };
+
+  // ── Toast notifications ────────────────────────────────────────────────────
+  function showToast(task, creatorName) {
+    const id = genId();
+    const s  = SECTIONS.find(sec => sec.id === task.section) || SECTIONS[0];
+    setToasts(prev => [...prev, { id, task, creatorName, section: s }]);
+    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 5000);
+  }
+  function dismissToast(id) { setToasts(prev => prev.filter(t => t.id !== id)); }
 
   function toggleDone(id) {
     setTasks(prev => prev.map(t => {
@@ -259,7 +291,7 @@ export default function TogetherApp() {
   function saveEdit()     { setTasks(prev => prev.map(t => t.id===editTask.id?editTask:t)); setEdit(null); }
   function doAdd() {
     if (!newTask.title.trim()) return;
-    setTasks(prev => [...prev, { ...newTask, id:genId(), done:false, streak:0, order:prev.length, createdAt:TODAY, lastReset:newTask.type==="daily"?TODAY:"" }]);
+    setTasks(prev => [...prev, { ...newTask, id:genId(), done:false, streak:0, order:prev.length, createdAt:TODAY, lastReset:newTask.type==="daily"?TODAY:"", createdBy:activeUser }]);
     setNew({ title:"", section:"faith", type:"todo", assignee:"A", priority:"Medium", notes:"", dueDate:"" });
     setShowAdd(false); setAddSec(null);
   }
@@ -353,9 +385,10 @@ export default function TogetherApp() {
               {(t.type==="habit"||t.type==="daily")&&t.streak>0&&<span style={{ fontSize:10,padding:"2px 7px",borderRadius:5,background:"#E8A83820",color:"#E8A838",fontWeight:600 }}>🔥 {t.streak}d</span>}
               {dLbl&&<span style={{ fontSize:10,padding:"2px 7px",borderRadius:5,background:dCol+"22",color:dCol,fontWeight:700 }}>📅 {dLbl}</span>}
             </div>
-            <div style={{ display:"flex",gap:8,marginTop:3,flexWrap:"wrap" }}>
+            <div style={{ display:"flex",gap:8,marginTop:3,flexWrap:"wrap",alignItems:"center" }}>
               {t.notes&&<span style={{ fontSize:11,color:T.textMuted,fontStyle:"italic",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:200 }}>{t.notes}</span>}
               {t.createdAt&&<span style={{ fontSize:10,color:T.textMuted }}>Created {formatDate(t.createdAt)}</span>}
+              {t.createdBy&&<span style={{ fontSize:10,padding:"1px 6px",borderRadius:5,background:aColor(t.createdBy)+"18",color:aColor(t.createdBy),fontWeight:600,fontFamily:"'DM Sans',sans-serif",flexShrink:0 }}>by {names[t.createdBy]||t.createdBy}</span>}
             </div>
           </div>
           <div style={{ display:"flex",flexShrink:0,gap:1 }}>
@@ -530,6 +563,8 @@ export default function TogetherApp() {
         @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
         @keyframes slideUp{from{transform:translateY(100%);opacity:0}to{transform:translateY(0);opacity:1}}
         @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+        @keyframes slideInRight{from{transform:translateX(110%);opacity:0}to{transform:translateX(0);opacity:1}}
+        @keyframes drainBar{from{width:100%}to{width:0%}}
         html,body,#root{width:100%;max-width:100%;overflow-x:hidden;margin:0;padding:0;}
         *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
         img,video,iframe{max-width:100%;}
@@ -843,6 +878,38 @@ export default function TogetherApp() {
           </div>
         </div>
       )}
+
+      {/* ── TOAST NOTIFICATIONS ── */}
+      <div style={{ position:"fixed",top:70,right:16,zIndex:100,display:"flex",flexDirection:"column",gap:10,maxWidth:"calc(100vw - 32px)",width:340,pointerEvents:"none" }}>
+        {toasts.map(toast => {
+          const s = toast.section;
+          const assigneeLabel = toast.task.assignee==="both"
+            ? `${names.A} & ${names.B}`
+            : names[toast.task.assignee]||toast.task.assignee;
+          return (
+            <div key={toast.id} style={{ background:T.surface,border:`1px solid ${s.color}55`,borderLeft:`4px solid ${s.color}`,borderRadius:14,padding:"14px 16px",boxShadow:`0 8px 32px rgba(0,0,0,${mode==="dark"?0.5:0.15})`,pointerEvents:"all",animation:"slideInRight 0.3s ease",cursor:"pointer" }}
+              onClick={()=>dismissToast(toast.id)}>
+              <div style={{ display:"flex",alignItems:"flex-start",gap:10 }}>
+                <div style={{ width:36,height:36,borderRadius:10,background:s.color+"22",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0 }}>{s.emoji}</div>
+                <div style={{ flex:1,minWidth:0 }}>
+                  <div style={{ fontSize:12,fontWeight:700,color:s.color,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:2,fontFamily:"'DM Sans',sans-serif" }}>New task from {toast.creatorName} ✨</div>
+                  <div style={{ fontSize:14,fontWeight:600,color:T.text,lineHeight:1.3,marginBottom:4,fontFamily:"'DM Sans',sans-serif",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap" }}>{toast.task.title}</div>
+                  <div style={{ display:"flex",gap:5,flexWrap:"wrap" }}>
+                    <span style={{ fontSize:10,padding:"2px 7px",borderRadius:5,background:s.color+"22",color:s.color,fontWeight:600,fontFamily:"'DM Sans',sans-serif" }}>{s.emoji} {s.label}</span>
+                    <span style={{ fontSize:10,padding:"2px 7px",borderRadius:5,background:PRI_COLOR[toast.task.priority]+"20",color:PRI_COLOR[toast.task.priority],fontWeight:600,fontFamily:"'DM Sans',sans-serif" }}>{toast.task.priority}</span>
+                    <span style={{ fontSize:10,padding:"2px 7px",borderRadius:5,background:aColor(toast.task.assignee)+"20",color:aColor(toast.task.assignee),fontWeight:600,fontFamily:"'DM Sans',sans-serif" }}>for {assigneeLabel}</span>
+                  </div>
+                </div>
+                <button onClick={e=>{e.stopPropagation();dismissToast(toast.id);}} style={{ background:"none",border:"none",color:T.textMuted,cursor:"pointer",fontSize:14,lineHeight:1,padding:"0 2px",flexShrink:0 }}>✕</button>
+              </div>
+              {/* Progress bar that drains over 5s */}
+              <div style={{ height:2,background:T.inputBg,borderRadius:2,marginTop:12,overflow:"hidden" }}>
+                <div style={{ height:"100%",background:s.color,borderRadius:2,animation:"drainBar 5s linear forwards" }}/>
+              </div>
+            </div>
+          );
+        })}
+      </div>
 
       {/* Modals */}
       {showAdd&&<FormModal data={newTask} setData={setNew} onSave={doAdd} onClose={()=>{setShowAdd(false);setAddSec(null);}} title="New Task"/>}
