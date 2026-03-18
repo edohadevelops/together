@@ -811,32 +811,48 @@ export default function TogetherApp() {
   const [names,      setNamesState] = useState({ A:"Amen", B:"Gloria" });
   const [mode,       setMode]       = useState("dark");
   const [view,       setView]       = useState("board");
-  const [activeUser, setUser]       = useState("A");
+
+  // ── Identity: stored in localStorage so each device remembers who it is ───
+  const [activeUser, setActiveUserState] = useState(() => {
+    try { return localStorage.getItem("together_identity") || null; }
+    catch { return null; }
+  });
+  const [showIdentityPicker, setShowIdentityPicker] = useState(!(() => {
+    try { return localStorage.getItem("together_identity"); } catch { return false; }
+  })());
+
+  function setUser(u) {
+    setActiveUserState(u);
+    try { localStorage.setItem("together_identity", u); } catch {}
+    setShowIdentityPicker(false);
+  }
+
   const [filter,     setFilter]     = useState(null);
   const [showAdd,    setShowAdd]    = useState(false);
   const [addSection, setAddSec]     = useState(null);
   const [editTask,   setEdit]       = useState(null);
   const [showSett,   setShowSett]   = useState(false);
-  const [showNav,    setShowNav]    = useState(false); // mobile nav drawer
-  const [toasts,     setToasts]     = useState([]);   // notification toasts
-  const seenIdsRef   = useRef(null); // track task ids we've already seen
+  const [showNav,    setShowNav]    = useState(false);
+  const [toasts,     setToasts]     = useState([]);
+  const seenIdsRef   = useRef(null);
   const [newTask,    setNew]        = useState({ title:"", section:"faith", type:"todo", assignee:"A", priority:"Medium", notes:"", dueDate:"" });
   const [pulse,      setPulse]      = useState(false);
-  const [completedLog, setCompletedLog] = useState([]); // permanent completion history
+  const [completedLog, setCompletedLog] = useState([]);
   const completedLogRef = useRef([]);
   const [status,     setStatus]     = useState("connecting");
   const [loadMsg,    setLoadMsg]    = useState("Connecting to your board...");
 
   const dragTaskId    = useRef(null);
   const dragTargetCol = useRef(null);
-  const dragType      = useRef(null);   // "task" | "board"
-  const dragBoardId   = useRef(null);   // section id being dragged
+  const dragType      = useRef(null);
+  const dragBoardId   = useRef(null);
   const [highlightCol,  setHighlightCol]  = useState(null);
-  const [highlightBoard,setHighlightBoard]= useState(null); // board reorder highlight
-  const [sectionOrder,  setSectionOrder]  = useState(null); // custom board order
+  const [highlightBoard,setHighlightBoard]= useState(null);
+  // Per-user section order — each person has their own board layout
+  const [sectionOrder,  setSectionOrder]  = useState(null);
   const sectionOrderRef = useRef(null);
   const tasksRef = useRef(null);
-  const namesRef  = useRef({ A:"Amen", B:"Gloria" }); // always-fresh ref for poll closure
+  const namesRef  = useRef({ A:"Amen", B:"Gloria" });
   const pollRef  = useRef(null);
   const T = THEMES[mode];
 
@@ -879,7 +895,9 @@ export default function TogetherApp() {
     const ti = setInterval(() => { i++; if (msgs[i]) setLoadMsg(msgs[i]); }, 900);
     (async () => {
       try {
-        const [t, n, m, so, cl] = await Promise.all([dbGet("tasks"), dbGet("names"), dbGet("mode"), dbGet("sectionOrder"), dbGet("completedLog")]);
+        const myId  = (() => { try { return localStorage.getItem("together_identity"); } catch { return null; } })();
+        const soKey = myId ? `sectionOrder_${myId}` : "sectionOrder";
+        const [t, n, m, so, cl] = await Promise.all([dbGet("tasks"), dbGet("names"), dbGet("mode"), dbGet(soKey), dbGet("completedLog")]);
         let loaded = (t ?? SAMPLES).map((tk, i) => ({ order:i, createdAt:TODAY, dueDate:"", lastReset:"", ...tk }));
         loaded = resetDailies(loaded);
         tasksRef.current = loaded;
@@ -888,7 +906,7 @@ export default function TogetherApp() {
         if (n) setNamesState(n);
         if (m) setMode(m);
         if (so) { setSectionOrder(so); sectionOrderRef.current = so; }
-        else { const def = SECTIONS.map(s=>s.id); setSectionOrder(def); sectionOrderRef.current = def; await dbSet("sectionOrder", def); }
+        else { const def = SECTIONS.map(s=>s.id); setSectionOrder(def); sectionOrderRef.current = def; await dbSet(soKey, def); }
         if (cl) { setCompletedLog(cl); completedLogRef.current = cl; }
         setStatus("live");
         // init seenIds AFTER first load so poll doesn't toast on startup
@@ -937,7 +955,9 @@ export default function TogetherApp() {
         }
         const n = await dbGet("names"); if (n) setNamesState(n);
         const m = await dbGet("mode");  if (m) setMode(m);
-        const so = await dbGet("sectionOrder"); if (so) { setSectionOrder(so); sectionOrderRef.current = so; }
+        const myIdP = (() => { try { return localStorage.getItem("together_identity"); } catch { return null; } })();
+        const soKeyP = myIdP ? `sectionOrder_${myIdP}` : "sectionOrder";
+        const so = await dbGet(soKeyP); if (so) { setSectionOrder(so); sectionOrderRef.current = so; }
         const cl = await dbGet("completedLog"); if (cl) { setCompletedLog(cl); completedLogRef.current = cl; }
         setStatus("live");
       } catch { setStatus("error"); }
@@ -1066,7 +1086,8 @@ export default function TogetherApp() {
       next.splice(ti, 0, fromId);
       sectionOrderRef.current = next;
       setSectionOrder(next);
-      dbSet("sectionOrder", next);
+      const myIdB = (() => { try { return localStorage.getItem("together_identity"); } catch { return null; } })();
+      dbSet(myIdB ? `sectionOrder_${myIdB}` : "sectionOrder", next);
       return;
     }
 
@@ -1455,12 +1476,14 @@ export default function TogetherApp() {
         </div>
         {/* Desktop actions — hidden on mobile */}
         <div className="topbar-desktop-actions">
-          <div style={{ display:"flex",background:T.inputBg,borderRadius:8,padding:2,border:`1px solid ${T.border}` }}>
-            {["A","B"].map(u=>(
-              <button key={u} onClick={()=>setUser(u)} style={{ padding:"4px 10px",borderRadius:6,border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:600,background:activeUser===u?T.accent:"transparent",color:activeUser===u?T.accentFg:T.textSub,transition:"all 0.15s",whiteSpace:"nowrap" }}>
-                {names[u]}
-              </button>
-            ))}
+          {/* Identity badge — shows who this device is; tap to switch */}
+          <div style={{ display:"flex",alignItems:"center",gap:6,background:T.inputBg,borderRadius:8,padding:"4px 10px",border:`1px solid ${T.border}`,cursor:"pointer" }}
+            onClick={()=>setShowIdentityPicker(true)} title="Switch identity">
+            <div style={{ width:22,height:22,borderRadius:"50%",background:(activeUser==="A"?"#E8A838":"#E84E8A")+"33",border:`2px solid ${activeUser==="A"?"#E8A838":"#E84E8A"}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,color:activeUser==="A"?"#E8A838":"#E84E8A",flexShrink:0 }}>
+              {activeUser?names[activeUser][0]:"?"}
+            </div>
+            <span style={{ fontSize:12,fontWeight:600,color:T.text }}>{activeUser?names[activeUser]:"Choose"}</span>
+            <span style={{ fontSize:10,color:T.textMuted }}>▾</span>
           </div>
           <button onClick={toggleMode} style={{ width:32,height:32,borderRadius:8,border:`1px solid ${T.border}`,background:T.inputBg,cursor:"pointer",fontSize:15,display:"flex",alignItems:"center",justifyContent:"center",color:T.textSub,flexShrink:0 }}>
             {mode==="dark"?"☀":"☾"}
@@ -1723,16 +1746,17 @@ export default function TogetherApp() {
               <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:17,color:greeting.accent }}>{greeting.text}</div>
               <div style={{ fontSize:12,color:T.textSub,marginTop:2 }}>{greeting.sub}</div>
             </div>
-            {/* User switch */}
+            {/* Identity — tap to switch who this device is */}
             <div style={{ padding:"14px 20px 10px",borderBottom:`1px solid ${T.border}`,marginBottom:4 }}>
-              <div style={{ fontSize:11,fontWeight:600,letterSpacing:"0.1em",textTransform:"uppercase",color:T.textMuted,marginBottom:8,fontFamily:"'DM Sans',sans-serif" }}>Viewing as</div>
+              <div style={{ fontSize:11,fontWeight:600,letterSpacing:"0.1em",textTransform:"uppercase",color:T.textMuted,marginBottom:8,fontFamily:"'DM Sans',sans-serif" }}>This device is</div>
               <div style={{ display:"flex",gap:8 }}>
                 {["A","B"].map(u=>(
-                  <button key={u} onClick={()=>{setUser(u);setShowNav(false);}} style={{ flex:1,padding:"10px",borderRadius:10,border:`1px solid ${activeUser===u?T.accent:T.border}`,background:activeUser===u?T.accent+"18":"transparent",color:activeUser===u?T.accent:T.text,fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:600,cursor:"pointer",transition:"all 0.15s" }}>
-                    {names[u]}
+                  <button key={u} onClick={()=>{setUser(u);setShowNav(false);}} style={{ flex:1,padding:"10px",borderRadius:10,border:`1px solid ${activeUser===u?(u==="A"?"#E8A838":"#E84E8A"):T.border}`,background:activeUser===u?(u==="A"?"#E8A838":"#E84E8A")+"18":"transparent",color:activeUser===u?(u==="A"?"#E8A838":"#E84E8A"):T.text,fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:600,cursor:"pointer",transition:"all 0.15s" }}>
+                    {u==="A"?"👤 ":""}{u==="B"?"👤 ":""}{names[u]}
                   </button>
                 ))}
               </div>
+              <div style={{ fontSize:11,color:T.textMuted,marginTop:6,textAlign:"center" }}>Each device remembers its identity</div>
             </div>
 
             {/* Nav items */}
@@ -1802,6 +1826,41 @@ export default function TogetherApp() {
           );
         })}
       </div>
+
+      {/* ── IDENTITY PICKER (first time + on demand) ── */}
+      {(showIdentityPicker || !activeUser) && (
+        <div style={{ position:"fixed",inset:0,zIndex:60,background:"rgba(0,0,0,0.85)",backdropFilter:"blur(8px)",display:"flex",alignItems:"center",justifyContent:"center",padding:24 }}>
+          <div style={{ background:T.surface,border:`1px solid ${T.border}`,borderRadius:20,padding:"36px 28px",width:"100%",maxWidth:400,textAlign:"center",boxShadow:"0 24px 64px rgba(0,0,0,0.5)" }}>
+            <div style={{ fontSize:36,marginBottom:12 }}>♡</div>
+            <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:26,color:T.accent,marginBottom:8 }}>Together</div>
+            <div style={{ fontSize:14,color:T.textSub,marginBottom:28,lineHeight:1.6 }}>
+              {!activeUser ? "Welcome! Who are you on this device?" : "Switch identity for this device"}
+            </div>
+            <div style={{ display:"flex",flexDirection:"column",gap:12,marginBottom:20 }}>
+              {["A","B"].map(u=>{
+                const uc = u==="A"?"#E8A838":"#E84E8A";
+                return (
+                  <button key={u} onClick={()=>setUser(u)} style={{ padding:"16px 20px",borderRadius:14,border:`2px solid ${uc}44`,background:uc+"12",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:16,fontWeight:700,color:uc,transition:"all 0.15s",display:"flex",alignItems:"center",gap:14 }}>
+                    <div style={{ width:40,height:40,borderRadius:"50%",background:uc+"22",border:`2px solid ${uc}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,fontWeight:700,color:uc,flexShrink:0 }}>{names[u][0]}</div>
+                    <div style={{ textAlign:"left" }}>
+                      <div style={{ fontSize:16,fontWeight:700 }}>{names[u]}</div>
+                      <div style={{ fontSize:12,color:T.textSub,fontWeight:400,marginTop:2 }}>This is my device</div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+            {activeUser && (
+              <button onClick={()=>setShowIdentityPicker(false)} style={{ fontSize:13,color:T.textMuted,background:"none",border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif" }}>
+                Cancel
+              </button>
+            )}
+            <div style={{ fontSize:11,color:T.textMuted,marginTop:16,lineHeight:1.5 }}>
+              Each device remembers your identity. You won't need to switch again.
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modals */}
       {showAdd&&<FormModal data={newTask} setData={setNew} onSave={()=>doAdd(newTask)} onClose={()=>{setShowAdd(false);setAddSec(null);}} title="New Task" names={names} sections={SECTIONS} taskTypes={TASK_TYPES} priorities={PRIORITIES} T={T} mode={mode}/>}
