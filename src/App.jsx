@@ -371,7 +371,7 @@ function AnalyticsView({ log, tasks, names, T, mode, SECTIONS, PRI_COLOR, TODAY 
                   <div key={u} style={{ marginBottom:16 }}>
                     <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:6 }}>
                       <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-                        <div style={{ width:28,height:28,borderRadius:"50%",background:uc+"22",border:`2px solid ${uc}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,color:uc,fontWeight:700 }}>{names[u][0]}</div>
+                        <div style={{ width:28,height:28,borderRadius:"50%",background:uc+"22",border:`2px solid ${uc}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,color:uc,fontWeight:700 }}>{(names[u]||"?")[0]}</div>
                         <span style={{ fontSize:14, fontWeight:600, color:T.text }}>{names[u]}</span>
                       </div>
                       <span style={{ fontSize:18, fontWeight:700, color:uc }}>{uDone}</span>
@@ -491,7 +491,7 @@ function AnalyticsView({ log, tasks, names, T, mode, SECTIONS, PRI_COLOR, TODAY 
             return (
               <div key={u} style={{ ...card({ marginBottom:16 }), borderTop:`3px solid ${uc}` }}>
                 <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:16 }}>
-                  <div style={{ width:38,height:38,borderRadius:"50%",background:uc+"22",border:`2px solid ${uc}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,color:uc,fontWeight:700 }}>{names[u][0]}</div>
+                  <div style={{ width:38,height:38,borderRadius:"50%",background:uc+"22",border:`2px solid ${uc}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,color:uc,fontWeight:700 }}>{(names[u]||"?")[0]}</div>
                   <div>
                     <div style={{ fontSize:16,fontWeight:700,color:T.text }}>{names[u]}'s Report</div>
                     <div style={{ fontSize:12,color:T.textSub }}>{uLog.length} tasks completed</div>
@@ -835,7 +835,7 @@ export default function TogetherApp() {
   const [showNav,    setShowNav]    = useState(false);
   const [toasts,     setToasts]     = useState([]);
   const seenIdsRef   = useRef(null);
-  const [newTask,    setNew]        = useState({ title:"", section:"faith", type:"todo", assignee:"A", priority:"Medium", notes:"", dueDate:"" });
+  const [newTask,    setNew]        = useState({ title:"", section:"faith", type:"todo", assignee:"A", priority:"Medium", notes:"", dueDate:"" }); // assignee default stays "A" regardless of identity
   const [pulse,      setPulse]      = useState(false);
   const [completedLog, setCompletedLog] = useState([]);
   const completedLogRef = useRef([]);
@@ -857,9 +857,10 @@ export default function TogetherApp() {
   const T = THEMES[mode];
 
   // ── Greeting ────────────────────────────────────────────────────────────────
+  const safeUser  = activeUser || "A";
   const greeting = mode === "dark"
-    ? getGreeting(names[activeUser])
-    : getGreetingLight(names[activeUser]);
+    ? getGreeting(names[safeUser])
+    : getGreetingLight(names[safeUser]);
 
   // ── setTasks write-through ───────────────────────────────────────────────
   function setTasks(fn) {
@@ -993,7 +994,7 @@ export default function TogetherApp() {
           assignee: task.assignee,
           priority: task.priority,
           createdBy: task.createdBy || activeUser,
-          completedBy: activeUser,
+          completedBy: activeUser||"A",
           completedAt: new Date().toISOString(),
           completedDate: TODAY,
         };
@@ -1020,7 +1021,7 @@ export default function TogetherApp() {
     const data = taskData || newTask;
     if (!data.title.trim()) return;
     const lastReset = data.type==="daily" ? TODAY : data.type==="weekly" ? THIS_WEEK : "";
-    const added = { ...data, id:genId(), done:false, streak:0, order:(tasksRef.current||[]).length, createdAt:TODAY, lastReset, createdBy:activeUser };
+    const added = { ...data, id:genId(), done:false, streak:0, order:(tasksRef.current||[]).length, createdAt:TODAY, lastReset, createdBy:activeUser||"A" };
     setTasks(prev => [...prev, added]);
     // Success toast
     const sid = genId();
@@ -1102,7 +1103,7 @@ export default function TogetherApp() {
     if (targetCol === DONE_COL) {
       const task = current.find(t => t.id === taskId);
       if (task && !task.done) {
-        const logEntry = { id:genId(), taskId:task.id, title:task.title, section:task.section, type:task.type, assignee:task.assignee, priority:task.priority, createdBy:task.createdBy||activeUser, completedBy:activeUser, completedAt:new Date().toISOString(), completedDate:TODAY };
+        const logEntry = { id:genId(), taskId:task.id, title:task.title, section:task.section, type:task.type, assignee:task.assignee, priority:task.priority, createdBy:task.createdBy||activeUser, completedBy:activeUser||"A", completedAt:new Date().toISOString(), completedDate:TODAY };
         const newLog = [...completedLogRef.current, logEntry];
         completedLogRef.current = newLog; setCompletedLog(newLog); dbSet("completedLog", newLog);
       }
@@ -1518,7 +1519,7 @@ export default function TogetherApp() {
       </div>
 
       {/* ── GREETING BANNER (board view only) ── */}
-      {view==="board"&&(
+      {view==="board"&&activeUser&&(
         <div style={{ background:greeting.bg,padding:"18px 16px",borderBottom:`1px solid ${T.border}` }}>
           <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:22,color:greeting.accent }}>{greeting.text}</div>
           <div style={{ fontSize:13,color:T.textSub,marginTop:3 }}>{greeting.sub}</div>
@@ -1552,8 +1553,8 @@ export default function TogetherApp() {
               ))}
             </div>
             <div style={{ display:"flex",alignItems:"center",gap:8,marginBottom:12 }}>
-              <div style={{ width:28,height:28,borderRadius:"50%",background:(activeUser==="A"?"#E8A838":"#E84E8A")+"22",border:`2px solid ${activeUser==="A"?"#E8A838":"#E84E8A"}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700,color:activeUser==="A"?"#E8A838":"#E84E8A" }}>{names[activeUser][0]}</div>
-              <span style={{ fontFamily:"'DM Serif Display',serif",fontSize:17,color:T.text }}>{names[activeUser]}'s Board</span>
+              <div style={{ width:28,height:28,borderRadius:"50%",background:(activeUser==="A"?"#E8A838":"#E84E8A")+"22",border:`2px solid ${activeUser==="A"?"#E8A838":"#E84E8A"}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700,color:activeUser==="A"?"#E8A838":"#E84E8A" }}>{(names[activeUser]||"?")[0]}</div>
+              <span style={{ fontFamily:"'DM Serif Display',serif",fontSize:17,color:T.text }}>{(names[activeUser]||"…")}'s Board</span>
             </div>
             <div className="grid-board">
               {gridCols.map(c=><GridCard key={c.colId} {...c}/>)}
@@ -1647,7 +1648,7 @@ export default function TogetherApp() {
                 return (
                   <div key={u} style={cardBase({padding:"20px"})}>
                     <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:14}}>
-                      <div style={{width:44,height:44,borderRadius:"50%",background:uc+"20",border:`2px solid ${uc}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,color:uc,fontWeight:700}}>{names[u][0]}</div>
+                      <div style={{width:44,height:44,borderRadius:"50%",background:uc+"20",border:`2px solid ${uc}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,color:uc,fontWeight:700}}>{(names[u]||"?")[0]}</div>
                       <div style={{flex:1}}>
                         <div style={{fontSize:16,fontWeight:700,color:T.text}}>{names[u]}</div>
                         <div style={{fontSize:12,color:T.textSub,marginTop:2}}>{ud}/{ut.length} done · {ut.filter(t=>(t.type==="habit"||t.type==="daily")&&t.streak>0).length} streaks</div>
@@ -1828,7 +1829,7 @@ export default function TogetherApp() {
       </div>
 
       {/* ── IDENTITY PICKER (first time + on demand) ── */}
-      {(showIdentityPicker || !activeUser) && (
+      {(showIdentityPicker || !activeUser) && tasks && (
         <div style={{ position:"fixed",inset:0,zIndex:60,background:"rgba(0,0,0,0.85)",backdropFilter:"blur(8px)",display:"flex",alignItems:"center",justifyContent:"center",padding:24 }}>
           <div style={{ background:T.surface,border:`1px solid ${T.border}`,borderRadius:20,padding:"36px 28px",width:"100%",maxWidth:400,textAlign:"center",boxShadow:"0 24px 64px rgba(0,0,0,0.5)" }}>
             <div style={{ fontSize:36,marginBottom:12 }}>♡</div>
@@ -1841,7 +1842,7 @@ export default function TogetherApp() {
                 const uc = u==="A"?"#E8A838":"#E84E8A";
                 return (
                   <button key={u} onClick={()=>setUser(u)} style={{ padding:"16px 20px",borderRadius:14,border:`2px solid ${uc}44`,background:uc+"12",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:16,fontWeight:700,color:uc,transition:"all 0.15s",display:"flex",alignItems:"center",gap:14 }}>
-                    <div style={{ width:40,height:40,borderRadius:"50%",background:uc+"22",border:`2px solid ${uc}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,fontWeight:700,color:uc,flexShrink:0 }}>{names[u][0]}</div>
+                    <div style={{ width:40,height:40,borderRadius:"50%",background:uc+"22",border:`2px solid ${uc}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,fontWeight:700,color:uc,flexShrink:0 }}>{(names[u]||"?")[0]}</div>
                     <div style={{ textAlign:"left" }}>
                       <div style={{ fontSize:16,fontWeight:700 }}>{names[u]}</div>
                       <div style={{ fontSize:12,color:T.textSub,fontWeight:400,marginTop:2 }}>This is my device</div>
