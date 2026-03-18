@@ -6,6 +6,11 @@ fontLink.rel = "stylesheet";
 fontLink.href = "https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=DM+Serif+Display:ital@0;1&display=swap";
 document.head.appendChild(fontLink);
 
+// ── Viewport meta (critical for mobile scaling) ───────────────────────────────
+let vp = document.querySelector('meta[name="viewport"]');
+if (!vp) { vp = document.createElement("meta"); vp.name = "viewport"; document.head.appendChild(vp); }
+vp.content = "width=device-width, initial-scale=1, maximum-scale=1";
+
 // ── Supabase ──────────────────────────────────────────────────────────────────
 const SUPABASE_URL = "https://sonbphyeomzzcdyuiotl.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNvbmJwaHllb216emNkeXVpb3RsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyMzkxMjksImV4cCI6MjA4ODgxNTEyOX0.CtcZAFtqCQUOrzPBfhSfN5BZ1EQDJFVxa-FsjMX5IRg";
@@ -525,60 +530,63 @@ export default function TogetherApp() {
         @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
         @keyframes slideUp{from{transform:translateY(100%);opacity:0}to{transform:translateY(0);opacity:1}}
         @keyframes fadeIn{from{opacity:0}to{opacity:1}}
-        * { box-sizing: border-box; }
+        html,body,#root{width:100%;max-width:100%;overflow-x:hidden;margin:0;padding:0;}
+        *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+        img,video,iframe{max-width:100%;}
         ::-webkit-scrollbar{width:4px;height:4px}
         ::-webkit-scrollbar-track{background:transparent}
         ::-webkit-scrollbar-thumb{background:${T.textMuted};border-radius:2px}
         input[type="date"]::-webkit-calendar-picker-indicator{filter:${mode==="dark"?"invert(1)":"none"}}
         button:active{transform:scale(0.97)}
+        .grid-board{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,280px),1fr));gap:12px;align-items:start;}
+        .grid-stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(45%,140px),1fr));gap:8px;}
+        .grid-tools{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr));gap:12px;}
+        .grid-accountability{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:14px;}
+        .pill-scroll{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+        .pill-scroll::-webkit-scrollbar{display:none;}
+        .desktop-nav{display:flex;}
+        .mobile-tabs{display:none;}
+        @media(max-width:768px){
+          .desktop-nav{display:none!important;}
+          .mobile-tabs{display:flex!important;}
+          .page-content{padding-bottom:80px!important;}
+        }
       `}</style>
 
       {/* ── TOP BAR ── */}
-      <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 16px",borderBottom:`1px solid ${T.border}`,position:"sticky",top:0,zIndex:20,background:T.topbar,backdropFilter:"blur(12px)" }}>
-        <div style={{ display:"flex",alignItems:"center",gap:8 }}>
-          {/* Hamburger on mobile */}
-          <button onClick={()=>setShowNav(true)} style={{ width:36,height:36,borderRadius:9,border:`1px solid ${T.border}`,background:T.inputBg,cursor:"pointer",fontSize:16,display:"flex",alignItems:"center",justifyContent:"center",color:T.textSub,flexShrink:0 }}>☰</button>
-          <span style={{ fontFamily:"'DM Serif Display',serif",fontSize:20,color:T.accent }}>Together</span>
-          <span style={{ fontSize:14,color:T.accent }}>♡</span>
-          <div style={{ width:7,height:7,borderRadius:"50%",background:status==="live"?(pulse?"#3DBF8A":"#2A6644"):status==="error"?"#E8704A":T.textMuted,transition:"background 0.4s",flexShrink:0 }} title={status}/>
+      <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 14px",borderBottom:`1px solid ${T.border}`,position:"sticky",top:0,zIndex:20,background:T.topbar,backdropFilter:"blur(12px)",width:"100%" }}>
+        <div style={{ display:"flex",alignItems:"center",gap:7,minWidth:0 }}>
+          <span style={{ fontFamily:"'DM Serif Display',serif",fontSize:19,color:T.accent,whiteSpace:"nowrap" }}>Together ♡</span>
+          <div style={{ width:6,height:6,borderRadius:"50%",background:status==="live"?(pulse?"#3DBF8A":"#2A6644"):status==="error"?"#E8704A":T.textMuted,transition:"background 0.4s",flexShrink:0 }} title={status}/>
         </div>
-        <div style={{ display:"flex",alignItems:"center",gap:6 }}>
+        <div style={{ display:"flex",alignItems:"center",gap:5,flexShrink:0 }}>
           {/* User toggle */}
-          <div style={{ display:"flex",background:T.inputBg,borderRadius:9,padding:2,border:`1px solid ${T.border}` }}>
+          <div style={{ display:"flex",background:T.inputBg,borderRadius:8,padding:2,border:`1px solid ${T.border}` }}>
             {["A","B"].map(u=>(
-              <button key={u} onClick={()=>setUser(u)} style={{ padding:"5px 12px",borderRadius:7,border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:600,background:activeUser===u?T.accent:"transparent",color:activeUser===u?T.accentFg:T.textSub,transition:"all 0.15s",whiteSpace:"nowrap" }}>
+              <button key={u} onClick={()=>setUser(u)} style={{ padding:"4px 10px",borderRadius:6,border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:600,background:activeUser===u?T.accent:"transparent",color:activeUser===u?T.accentFg:T.textSub,transition:"all 0.15s",whiteSpace:"nowrap" }}>
                 {names[u]}
               </button>
             ))}
           </div>
-          <button onClick={toggleMode} style={{ width:34,height:34,borderRadius:9,border:`1px solid ${T.border}`,background:T.inputBg,cursor:"pointer",fontSize:16,display:"flex",alignItems:"center",justifyContent:"center",color:T.textSub }}>
+          <button onClick={toggleMode} style={{ width:32,height:32,borderRadius:8,border:`1px solid ${T.border}`,background:T.inputBg,cursor:"pointer",fontSize:15,display:"flex",alignItems:"center",justifyContent:"center",color:T.textSub,flexShrink:0 }}>
             {mode==="dark"?"☀":"☾"}
           </button>
-          <button onClick={()=>setShowSett(true)} style={{ width:34,height:34,borderRadius:9,border:`1px solid ${T.border}`,background:T.inputBg,cursor:"pointer",fontSize:15,display:"flex",alignItems:"center",justifyContent:"center",color:T.textSub }}>⚙</button>
-          <button onClick={()=>setShowAdd(true)} style={{ height:34,padding:"0 14px",borderRadius:9,border:"none",background:T.accent,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:700,color:T.accentFg,display:"flex",alignItems:"center",gap:5,whiteSpace:"nowrap" }}>
+          <button onClick={()=>setShowSett(true)} style={{ width:32,height:32,borderRadius:8,border:`1px solid ${T.border}`,background:T.inputBg,cursor:"pointer",fontSize:14,display:"flex",alignItems:"center",justifyContent:"center",color:T.textSub,flexShrink:0 }}>⚙</button>
+          <button onClick={()=>setShowAdd(true)} style={{ height:32,padding:"0 12px",borderRadius:8,border:"none",background:T.accent,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,color:T.accentFg,display:"flex",alignItems:"center",gap:4,flexShrink:0,whiteSpace:"nowrap" }}>
             + Task
           </button>
         </div>
       </div>
 
-      {/* ── MOBILE NAV DRAWER ── */}
-      {showNav&&(
-        <div style={{ position:"fixed",inset:0,zIndex:50,display:"flex" }} onClick={()=>setShowNav(false)}>
-          <div style={{ background:"rgba(0,0,0,0.5)",backdropFilter:"blur(4px)",position:"absolute",inset:0 }}/>
-          <div style={{ position:"relative",background:T.surface,width:"80%",maxWidth:280,height:"100%",overflowY:"auto",padding:"20px 0",animation:"slideUp 0.25s ease",boxShadow:"4px 0 24px rgba(0,0,0,0.3)" }} onClick={e=>e.stopPropagation()}>
-            {/* Greeting inside drawer */}
-            <div style={{ padding:"16px 20px 20px",borderBottom:`1px solid ${T.border}`,marginBottom:8,background:greeting.bg }}>
-              <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:17,color:greeting.accent,lineHeight:1.3 }}>{greeting.text}</div>
-              <div style={{ fontSize:12,color:T.textSub,marginTop:4 }}>{greeting.sub}</div>
-            </div>
-            {navViews.map(([v,l])=>(
-              <button key={v} onClick={()=>{setView(v);setShowNav(false);}} style={{ display:"flex",alignItems:"center",gap:12,width:"100%",padding:"13px 20px",border:"none",background:view===v?T.accent+"18":"transparent",color:view===v?T.accent:T.text,fontFamily:"'DM Sans',sans-serif",fontSize:15,fontWeight:view===v?700:400,cursor:"pointer",textAlign:"left",borderLeft:view===v?`3px solid ${T.accent}`:"3px solid transparent",transition:"all 0.15s" }}>
-                {l}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
+      {/* ── DESKTOP NAV TABS (hidden on mobile) ── */}
+      <div style={{ display:"flex",gap:0,padding:"0 14px",borderBottom:`1px solid ${T.border}`,background:T.topbar,overflowX:"auto",scrollbarWidth:"none" }}
+        className="desktop-nav">
+        {navViews.map(([v,l])=>(
+          <button key={v} onClick={()=>setView(v)} style={{ padding:"11px 14px 10px",border:"none",cursor:"pointer",background:"none",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:view===v?700:400,color:view===v?T.accent:T.textSub,borderBottom:view===v?`2px solid ${T.accent}`:"2px solid transparent",transition:"all 0.15s",whiteSpace:"nowrap",flexShrink:0 }}>
+            {l}
+          </button>
+        ))}
+      </div>
 
       {/* ── GREETING BANNER (board view only) ── */}
       {view==="board"&&(
@@ -589,11 +597,11 @@ export default function TogetherApp() {
       )}
 
       {/* ── CONTENT ── */}
-      <div style={{ padding:pad }}>
+      <div className="page-content" style={{ padding:pad }}>
 
         {/* STATS */}
         {view==="board"&&(
-          <div style={{ display:"flex",gap:8,margin:"16px 0",flexWrap:"wrap" }}>
+          <div className="grid-stats" style={{ margin:"16px 0" }}>
             {[{label:"Open",value:activeTasks.length,color:"#E8A838"},{label:"Done %",value:`${compRate}%`,color:"#3DBF8A"},{label:"Streaks",value:tasks.filter(t=>(t.type==="habit"||t.type==="daily")&&t.streak>0).reduce((a,t)=>a+t.streak,0),color:"#9B6EE8"},{label:"Urgent",value:urgentTasks.length,color:"#E84E8A"}].map(s=>(
               <div key={s.label} style={cardBase({padding:"12px 14px",flex:"1 1 80px",borderLeft:`3px solid ${s.color}`})}>
                 <div style={{fontSize:22,fontWeight:700,color:T.text,lineHeight:1}}>{s.value}</div>
@@ -606,7 +614,7 @@ export default function TogetherApp() {
         {/* ── BOARD ── */}
         {view==="board"&&(
           <>
-            <div style={{ display:"flex",gap:6,overflowX:"auto",paddingBottom:8,marginBottom:14,WebkitOverflowScrolling:"touch" }}>
+            <div className="pill-scroll" style={{marginBottom:14}}>
               <button onClick={()=>setFilter(null)} style={{ padding:"5px 12px",borderRadius:20,cursor:"pointer",fontSize:12,fontFamily:"'DM Sans',sans-serif",fontWeight:500,border:"none",background:!filter?T.accent:"transparent",color:!filter?T.accentFg:T.textSub,outline:!filter?"none":`1px solid ${T.border}`,transition:"all 0.15s",flexShrink:0 }}>All</button>
               {SECTIONS.map(s=>(
                 <button key={s.id} onClick={()=>setFilter(filter===s.id?null:s.id)} style={{ padding:"5px 12px",borderRadius:20,cursor:"pointer",fontSize:12,fontFamily:"'DM Sans',sans-serif",fontWeight:500,border:"none",background:filter===s.id?s.color:"transparent",color:filter===s.id?"#fff":T.textSub,outline:filter===s.id?"none":`1px solid ${T.border}`,transition:"all 0.15s",whiteSpace:"nowrap",flexShrink:0 }}>
@@ -618,7 +626,7 @@ export default function TogetherApp() {
               <div style={{ width:28,height:28,borderRadius:"50%",background:(activeUser==="A"?"#E8A838":"#E84E8A")+"22",border:`2px solid ${activeUser==="A"?"#E8A838":"#E84E8A"}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700,color:activeUser==="A"?"#E8A838":"#E84E8A" }}>{names[activeUser][0]}</div>
               <span style={{ fontFamily:"'DM Serif Display',serif",fontSize:17,color:T.text }}>{names[activeUser]}'s Board</span>
             </div>
-            <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(260px,1fr))",gap:12,alignItems:"start" }}>
+            <div className="grid-board">
               {gridCols.map(c=><GridCard key={c.colId} {...c}/>)}
             </div>
           </>
@@ -692,7 +700,7 @@ export default function TogetherApp() {
           <div style={{padding:"24px 16px"}}>
             <div style={{fontFamily:"'DM Serif Display',serif",fontSize:28,color:T.text,marginBottom:4}}>Accountability</div>
             <div style={{fontSize:13,color:T.textSub,marginBottom:24}}>{names.A} & {names.B} · Growing Together</div>
-            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(300px,1fr))",gap:14,marginBottom:14}}>
+            <div className="grid-accountability" style={{marginBottom:14}}>
               {["A","B"].map(u=>{
                 const ut=tasks.filter(t=>t.assignee===u||t.assignee==="both"),ud=ut.filter(t=>t.done).length,uc=u==="A"?"#E8A838":"#E84E8A",pct=ut.length?Math.round((ud/ut.length)*100):0,uu=urgentTasks.filter(t=>t.assignee===u||t.assignee==="both");
                 return (
@@ -738,7 +746,7 @@ export default function TogetherApp() {
           <div style={{padding:"24px 16px"}}>
             <div style={{fontFamily:"'DM Serif Display',serif",fontSize:28,color:T.text,marginBottom:4}}>AI Tools</div>
             <div style={{fontSize:13,color:T.textSub,marginBottom:24}}>Your curated toolkit — tap any card to open</div>
-            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(260px,1fr))",gap:12}}>
+            <div className="grid-tools">
               {AI_TOOLS.map(tool=>(
                 <a key={tool.name} href={tool.url} target="_blank" rel="noreferrer" style={{textDecoration:"none"}}>
                   <div style={{...cardBase(),padding:"16px",borderLeft:`3px solid ${tool.color}`,cursor:"pointer",transition:"transform 0.15s,box-shadow 0.15s",active:{transform:"scale(0.98)"}}}
@@ -760,6 +768,41 @@ export default function TogetherApp() {
           </div>
         )}
       </div>
+
+      {/* ── MOBILE BOTTOM TAB BAR ── */}
+      <div className="mobile-tabs" style={{ position:"fixed",bottom:0,left:0,right:0,zIndex:30,background:T.topbar,borderTop:`1px solid ${T.border}`,backdropFilter:"blur(12px)",padding:"6px 0 max(6px,env(safe-area-inset-bottom))",display:"none",alignItems:"center",justifyContent:"space-around" }}>
+        {[
+          ["board","⊞","Board"],
+          ["today","◎","Today"],
+          ["accountability","♡","Us"],
+          ["urgent","🔴","Urgent"],
+          ["more","•••","More"],
+        ].map(([v,icon,label])=>(
+          <button key={v} onClick={()=>{if(v==="more"){setShowNav(true);}else{setView(v);}}} style={{ display:"flex",flexDirection:"column",alignItems:"center",gap:3,background:"none",border:"none",cursor:"pointer",padding:"4px 8px",minWidth:52,color:view===v&&v!=="more"?T.accent:T.textSub,transition:"color 0.15s" }}>
+            <span style={{ fontSize:v==="more"?18:17,lineHeight:1 }}>{icon}</span>
+            <span style={{ fontSize:10,fontWeight:view===v&&v!=="more"?700:400,fontFamily:"'DM Sans',sans-serif",letterSpacing:"0.02em" }}>{label}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* ── MORE DRAWER (mobile only) ── */}
+      {showNav&&(
+        <div style={{ position:"fixed",inset:0,zIndex:50 }} onClick={()=>setShowNav(false)}>
+          <div style={{ background:"rgba(0,0,0,0.5)",backdropFilter:"blur(4px)",position:"absolute",inset:0 }}/>
+          <div style={{ position:"absolute",bottom:0,left:0,right:0,background:T.surface,borderRadius:"18px 18px 0 0",padding:"16px 0 max(24px,env(safe-area-inset-bottom))",maxHeight:"75vh",overflowY:"auto",animation:"slideUp 0.22s ease" }} onClick={e=>e.stopPropagation()}>
+            <div style={{ width:40,height:4,borderRadius:2,background:T.textMuted,margin:"0 auto 16px",opacity:0.4 }}/>
+            <div style={{ padding:"0 16px 12px",borderBottom:`1px solid ${T.border}`,marginBottom:8,background:greeting.bg }}>
+              <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:17,color:greeting.accent }}>{greeting.text}</div>
+              <div style={{ fontSize:12,color:T.textSub,marginTop:2 }}>{greeting.sub}</div>
+            </div>
+            {navViews.filter(([v])=>!["board","today","accountability","urgent"].includes(v)).map(([v,l])=>(
+              <button key={v} onClick={()=>{setView(v);setShowNav(false);}} style={{ display:"flex",alignItems:"center",width:"100%",padding:"14px 20px",border:"none",background:view===v?T.accent+"15":"transparent",color:view===v?T.accent:T.text,fontFamily:"'DM Sans',sans-serif",fontSize:15,fontWeight:view===v?700:400,cursor:"pointer",textAlign:"left",borderLeft:view===v?`3px solid ${T.accent}`:"3px solid transparent",transition:"all 0.12s" }}>
+                {l}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Modals */}
       {showAdd&&<FormModal data={newTask} setData={setNew} onSave={doAdd} onClose={()=>{setShowAdd(false);setAddSec(null);}} title="New Task"/>}
