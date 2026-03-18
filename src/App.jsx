@@ -157,6 +157,378 @@ function dueBadgeLabel(d) {
 }
 
 // ── Main App ──────────────────────────────────────────────────────────────────
+// ── AnalyticsView ─────────────────────────────────────────────────────────────
+function AnalyticsView({ log, tasks, names, T, mode, SECTIONS, PRI_COLOR, TODAY }) {
+  const [period,   setPeriod]   = useState("month"); // week | month | year | all
+  const [focus,    setFocus]    = useState("both");  // "A" | "B" | "both"
+  const [tab,      setTab]      = useState("overview"); // overview | history | report
+
+  const sec = id => SECTIONS.find(s => s.id === id) || SECTIONS[0];
+
+  // ── Date ranges ────────────────────────────────────────────────────────────
+  const now = new Date();
+  function getRangeStart(p) {
+    if (p === "week") {
+      const d = new Date(now); d.setDate(now.getDate()-((now.getDay()+6)%7)); d.setHours(0,0,0,0); return d;
+    }
+    if (p === "month")  return new Date(now.getFullYear(), now.getMonth(), 1);
+    if (p === "year")   return new Date(now.getFullYear(), 0, 1);
+    return new Date("2000-01-01");
+  }
+  function getPrevRangeStart(p) {
+    if (p === "week") { const d = getRangeStart(p); d.setDate(d.getDate()-7); return d; }
+    if (p === "month") return new Date(now.getFullYear(), now.getMonth()-1, 1);
+    if (p === "year")  return new Date(now.getFullYear()-1, 0, 1);
+    return new Date("2000-01-01");
+  }
+  function getPrevRangeEnd(p) {
+    if (p === "week") { const d = getRangeStart(p); d.setDate(d.getDate()-1); d.setHours(23,59,59,999); return d; }
+    if (p === "month") return new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+    if (p === "year")  return new Date(now.getFullYear()-1, 11, 31, 23, 59, 59, 999);
+    return new Date(getRangeStart(p).getTime()-1);
+  }
+
+  const rangeStart = getRangeStart(period);
+  const prevStart  = getPrevRangeStart(period);
+  const prevEnd    = getPrevRangeEnd(period);
+
+  // Filter log by period and focus
+  function filterLog(entries, start, end) {
+    return entries.filter(e => {
+      const d = new Date(e.completedAt);
+      const inTime = d >= start && (!end || d <= end);
+      const inFocus = focus === "both" || e.completedBy === focus || e.assignee === focus || e.assignee === "both";
+      return inTime && inFocus;
+    });
+  }
+
+  const curLog  = filterLog(log, rangeStart, new Date());
+  const prevLog = period !== "all" ? filterLog(log, prevStart, prevEnd) : [];
+
+  // ── Key metrics ────────────────────────────────────────────────────────────
+  const totalDone   = curLog.length;
+  const prevDone    = prevLog.length;
+  const pctChange   = prevDone > 0 ? Math.round(((totalDone - prevDone) / prevDone) * 100) : null;
+  const aDone       = curLog.filter(e => e.completedBy === "A" || e.assignee === "A").length;
+  const bDone       = curLog.filter(e => e.completedBy === "B" || e.assignee === "B").length;
+  const totalTasks  = tasks.length;
+  const overallRate = totalTasks > 0 ? Math.round((tasks.filter(t=>t.done).length / totalTasks)*100) : 0;
+
+  // ── Category breakdown ─────────────────────────────────────────────────────
+  const bySec = SECTIONS.map(s => ({
+    ...s,
+    count: curLog.filter(e => e.section === s.id).length,
+  })).filter(s => s.count > 0).sort((a,b) => b.count - a.count);
+
+  const maxSecCount = bySec.length ? bySec[0].count : 1;
+
+  // ── Daily activity for chart (last 14 days or weekly buckets) ─────────────
+  function getDailyBuckets() {
+    const days = period === "week" ? 7 : period === "month" ? 30 : period === "year" ? 52 : 30;
+    const buckets = [];
+    if (period === "year") {
+      // Weekly buckets for year view
+      for (let w = 51; w >= 0; w--) {
+        const wStart = new Date(now); wStart.setDate(now.getDate() - w*7 - ((now.getDay()+6)%7)); wStart.setHours(0,0,0,0);
+        const wEnd   = new Date(wStart); wEnd.setDate(wStart.getDate()+6); wEnd.setHours(23,59,59,999);
+        const count  = filterLog(log, wStart, wEnd).length;
+        buckets.push({ label: wStart.toLocaleDateString("en-US",{month:"short",day:"numeric"}), count, aCount: filterLog(log,wStart,wEnd).filter(e=>e.completedBy==="A").length, bCount: filterLog(log,wStart,wEnd).filter(e=>e.completedBy==="B").length });
+      }
+    } else {
+      for (let d = days-1; d >= 0; d--) {
+        const day = new Date(now); day.setDate(now.getDate()-d); day.setHours(0,0,0,0);
+        const dayEnd = new Date(day); dayEnd.setHours(23,59,59,999);
+        const dayStr = day.toISOString().slice(0,10);
+        const entries = filterLog(log, day, dayEnd);
+        buckets.push({ label: day.toLocaleDateString("en-US",{month:"short",day:"numeric"}), date: dayStr, count: entries.length, aCount: entries.filter(e=>e.completedBy==="A").length, bCount: entries.filter(e=>e.completedBy==="B").length });
+      }
+    }
+    return buckets;
+  }
+  const buckets = getDailyBuckets();
+  const maxBucket = Math.max(...buckets.map(b=>b.count), 1);
+
+  // ── Priority breakdown ─────────────────────────────────────────────────────
+  const byPri = ["Urgent","High","Medium","Low"].map(p => ({
+    label: p, color: PRI_COLOR[p],
+    count: curLog.filter(e => e.priority === p).length,
+  })).filter(p => p.count > 0);
+
+  // ── Streaks ────────────────────────────────────────────────────────────────
+  const topStreaks = [...tasks].filter(t=>t.streak>0).sort((a,b)=>b.streak-a.streak).slice(0,5);
+
+  // ── Styles ────────────────────────────────────────────────────────────────
+  const card = (x={}) => ({ background:T.surface, border:`1px solid ${T.border}`, borderRadius:14, boxShadow:"0 2px 8px rgba(0,0,0,0.08)", padding:"18px 20px", ...x });
+  const subBtn = (active, color="#E8A838") => ({ padding:"6px 14px", borderRadius:20, border:"none", cursor:"pointer", fontFamily:"'DM Sans',sans-serif", fontSize:13, fontWeight:active?700:400, background:active?color+"22":"transparent", color:active?color:T.textSub, outline:active?`1px solid ${color}44`:"none", transition:"all 0.15s" });
+
+  return (
+    <div style={{ padding:"24px 16px", maxWidth:1100, margin:"0 auto" }}>
+      {/* ── Header ── */}
+      <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", flexWrap:"wrap", gap:12, marginBottom:24 }}>
+        <div>
+          <div style={{ fontFamily:"'DM Serif Display',serif", fontSize:28, color:T.text }}>📊 Analytics</div>
+          <div style={{ fontSize:13, color:T.textSub, marginTop:3 }}>Track your progress together</div>
+        </div>
+        <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
+          {/* Period */}
+          <div style={{ display:"flex", background:T.inputBg, borderRadius:10, padding:3, border:`1px solid ${T.border}`, gap:2 }}>
+            {[["week","Week"],["month","Month"],["year","Year"],["all","All Time"]].map(([p,l])=>(
+              <button key={p} onClick={()=>setPeriod(p)} style={{ padding:"5px 12px", borderRadius:8, border:"none", cursor:"pointer", fontFamily:"'DM Sans',sans-serif", fontSize:12, fontWeight:period===p?700:400, background:period===p?T.accent:"transparent", color:period===p?T.accentFg:T.textSub, transition:"all 0.15s" }}>{l}</button>
+            ))}
+          </div>
+          {/* Focus */}
+          <div style={{ display:"flex", background:T.inputBg, borderRadius:10, padding:3, border:`1px solid ${T.border}`, gap:2 }}>
+            {[["both","Both"],["A",names.A],["B",names.B]].map(([f,l])=>(
+              <button key={f} onClick={()=>setFocus(f)} style={{ padding:"5px 12px", borderRadius:8, border:"none", cursor:"pointer", fontFamily:"'DM Sans',sans-serif", fontSize:12, fontWeight:focus===f?700:400, background:focus===f?(f==="A"?"#E8A838":f==="B"?"#E84E8A":"#9B6EE8"):"transparent", color:focus===f?"#fff":T.textSub, transition:"all 0.15s" }}>{l}</button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Sub tabs ── */}
+      <div style={{ display:"flex", gap:4, marginBottom:24, borderBottom:`1px solid ${T.border}`, paddingBottom:0 }}>
+        {[["overview","Overview"],["history","History"],["report","Report"]].map(([t,l])=>(
+          <button key={t} onClick={()=>setTab(t)} style={{ padding:"9px 18px 10px", border:"none", cursor:"pointer", background:"none", fontFamily:"'DM Sans',sans-serif", fontSize:14, fontWeight:tab===t?700:400, color:tab===t?"#9B6EE8":T.textSub, borderBottom:tab===t?"2px solid #9B6EE8":"2px solid transparent", transition:"all 0.15s" }}>{l}</button>
+        ))}
+      </div>
+
+      {/* ── OVERVIEW TAB ── */}
+      {tab==="overview"&&(
+        <>
+          {/* Stat cards */}
+          <div className="stats-row" style={{ marginBottom:20 }}>
+            {[
+              { label:"Tasks Completed", value:totalDone, color:"#9B6EE8", sub: pctChange!==null ? `${pctChange>=0?"+":""}${pctChange}% vs last ${period}` : "All time" },
+              { label:`${names.A} Completed`, value:curLog.filter(e=>e.completedBy==="A").length, color:"#E8A838", sub:`${tasks.filter(t=>t.done&&(t.assignee==="A"||t.assignee==="both")).length} tasks currently done` },
+              { label:`${names.B} Completed`, value:curLog.filter(e=>e.completedBy==="B").length, color:"#E84E8A", sub:`${tasks.filter(t=>t.done&&(t.assignee==="B"||t.assignee==="both")).length} tasks currently done` },
+              { label:"Overall Rate", value:`${overallRate}%`, color:"#3DBF8A", sub:`${tasks.filter(t=>t.done).length} of ${totalTasks} tasks done` },
+            ].map(s=>(
+              <div key={s.label} style={card({ flex:"1 1 140px", borderLeft:`3px solid ${s.color}`, padding:"16px 18px" })}>
+                <div style={{ fontSize:28, fontWeight:700, color:T.text, lineHeight:1 }}>{s.value}</div>
+                <div style={{ fontSize:11, fontWeight:600, color:T.textSub, marginTop:4, textTransform:"uppercase", letterSpacing:"0.08em" }}>{s.label}</div>
+                {pctChange!==null&&s.label==="Tasks Completed"&&(
+                  <div style={{ fontSize:11, marginTop:4, color:pctChange>=0?"#3DBF8A":"#E84E8A", fontWeight:600 }}>{s.sub}</div>
+                )}
+                {s.label!=="Tasks Completed"&&<div style={{ fontSize:11, marginTop:4, color:T.textMuted }}>{s.sub}</div>}
+              </div>
+            ))}
+          </div>
+
+          {/* Activity chart */}
+          <div style={card({ marginBottom:20, padding:"20px" })}>
+            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:16 }}>
+              <div style={{ fontFamily:"'DM Serif Display',serif", fontSize:17, color:T.text }}>Activity</div>
+              <div style={{ display:"flex", gap:12, fontSize:11, color:T.textSub }}>
+                <span style={{ display:"flex", alignItems:"center", gap:4 }}><span style={{ width:10,height:10,borderRadius:3,background:"#E8A838",display:"inline-block" }}/>{names.A}</span>
+                <span style={{ display:"flex", alignItems:"center", gap:4 }}><span style={{ width:10,height:10,borderRadius:3,background:"#E84E8A",display:"inline-block" }}/>{names.B}</span>
+              </div>
+            </div>
+            <div style={{ display:"flex", alignItems:"flex-end", gap:3, height:120, overflowX:"auto", paddingBottom:24, position:"relative" }}>
+              {buckets.map((b,i)=>(
+                <div key={i} style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:0, flex:"1 0 auto", minWidth: period==="year"?12:period==="month"?16:28, maxWidth: period==="year"?20:period==="month"?28:50 }}>
+                  <div style={{ width:"100%", display:"flex", flexDirection:"column", justifyContent:"flex-end", height:100, gap:1 }}>
+                    {/* Amen bar */}
+                    <div style={{ width:"100%", height:`${maxBucket>0?(b.aCount/maxBucket)*100:0}%`, minHeight:b.aCount>0?3:0, background:"#E8A838", borderRadius:"3px 3px 0 0", transition:"height 0.3s" }}/>
+                    {/* Gloria bar */}
+                    <div style={{ width:"100%", height:`${maxBucket>0?(b.bCount/maxBucket)*100:0}%`, minHeight:b.bCount>0?3:0, background:"#E84E8A", borderRadius:"3px 3px 0 0", transition:"height 0.3s" }}/>
+                  </div>
+                  {(period==="week"||(period==="month"&&i%5===0)||(period==="year"&&i%4===0))&&(
+                    <div style={{ fontSize:9, color:T.textMuted, marginTop:4, whiteSpace:"nowrap", transform:"rotate(-30deg)", transformOrigin:"top left", position:"absolute", bottom:0 }}>{b.label}</div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(min(100%,300px),1fr))", gap:16 }}>
+            {/* Category breakdown */}
+            <div style={card({})}>
+              <div style={{ fontFamily:"'DM Serif Display',serif", fontSize:17, color:T.text, marginBottom:16 }}>By Category</div>
+              {bySec.length===0
+                ? <div style={{ fontSize:13, color:T.textMuted, fontStyle:"italic" }}>No completions this period</div>
+                : bySec.map(s=>(
+                  <div key={s.id} style={{ marginBottom:12 }}>
+                    <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:4 }}>
+                      <span style={{ fontSize:13, color:T.text, fontWeight:500 }}>{s.emoji} {s.label}</span>
+                      <span style={{ fontSize:13, fontWeight:700, color:s.color }}>{s.count}</span>
+                    </div>
+                    <div style={{ height:6, background:T.inputBg, borderRadius:6, overflow:"hidden" }}>
+                      <div style={{ height:"100%", width:`${(s.count/maxSecCount)*100}%`, background:s.color, borderRadius:6, transition:"width 0.4s" }}/>
+                    </div>
+                  </div>
+                ))
+              }
+            </div>
+
+            {/* Head to head */}
+            <div style={card({})}>
+              <div style={{ fontFamily:"'DM Serif Display',serif", fontSize:17, color:T.text, marginBottom:16 }}>Head to Head</div>
+              {[["A","#E8A838"],["B","#E84E8A"]].map(([u,uc])=>{
+                const uDone = curLog.filter(e=>e.completedBy===u).length;
+                const total = curLog.length;
+                const pct   = total>0 ? Math.round((uDone/total)*100) : 0;
+                return (
+                  <div key={u} style={{ marginBottom:16 }}>
+                    <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:6 }}>
+                      <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                        <div style={{ width:28,height:28,borderRadius:"50%",background:uc+"22",border:`2px solid ${uc}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,color:uc,fontWeight:700 }}>{names[u][0]}</div>
+                        <span style={{ fontSize:14, fontWeight:600, color:T.text }}>{names[u]}</span>
+                      </div>
+                      <span style={{ fontSize:18, fontWeight:700, color:uc }}>{uDone}</span>
+                    </div>
+                    <div style={{ height:8, background:T.inputBg, borderRadius:8, overflow:"hidden" }}>
+                      <div style={{ height:"100%", width:`${pct}%`, background:uc, borderRadius:8, transition:"width 0.4s" }}/>
+                    </div>
+                    <div style={{ fontSize:11, color:T.textMuted, marginTop:3 }}>{pct}% of period completions</div>
+                  </div>
+                );
+              })}
+              {curLog.length===0&&<div style={{ fontSize:13, color:T.textMuted, fontStyle:"italic" }}>No data for this period</div>}
+            </div>
+
+            {/* Priority breakdown */}
+            {byPri.length>0&&(
+              <div style={card({})}>
+                <div style={{ fontFamily:"'DM Serif Display',serif", fontSize:17, color:T.text, marginBottom:16 }}>By Priority</div>
+                {byPri.map(p=>(
+                  <div key={p.label} style={{ display:"flex", alignItems:"center", gap:10, marginBottom:10 }}>
+                    <div style={{ width:8,height:8,borderRadius:"50%",background:p.color,flexShrink:0 }}/>
+                    <span style={{ fontSize:13, color:T.text, flex:1 }}>{p.label}</span>
+                    <div style={{ width:80, height:6, background:T.inputBg, borderRadius:6, overflow:"hidden" }}>
+                      <div style={{ height:"100%", width:`${(p.count/totalDone)*100}%`, background:p.color, borderRadius:6 }}/>
+                    </div>
+                    <span style={{ fontSize:13, fontWeight:700, color:p.color, minWidth:20 }}>{p.count}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Top streaks */}
+            {topStreaks.length>0&&(
+              <div style={card({})}>
+                <div style={{ fontFamily:"'DM Serif Display',serif", fontSize:17, color:T.text, marginBottom:16 }}>🔥 Top Streaks</div>
+                {topStreaks.map((t,i)=>{
+                  const s=SECTIONS.find(sec=>sec.id===t.section)||SECTIONS[0];
+                  return (
+                    <div key={t.id} style={{ display:"flex", alignItems:"center", gap:10, marginBottom:10 }}>
+                      <span style={{ fontSize:16, fontWeight:700, color:T.textMuted, minWidth:20 }}>#{i+1}</span>
+                      <div style={{ flex:1,minWidth:0 }}>
+                        <div style={{ fontSize:13, fontWeight:500, color:T.text, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{t.title}</div>
+                        <div style={{ fontSize:11, color:s.color }}>{s.emoji} {s.label}</div>
+                      </div>
+                      <span style={{ fontSize:14, fontWeight:700, color:"#E8A838", background:"#E8A83820", padding:"3px 9px", borderRadius:8 }}>🔥 {t.streak}d</span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </>
+      )}
+
+      {/* ── HISTORY TAB ── */}
+      {tab==="history"&&(
+        <div>
+          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:16, flexWrap:"wrap", gap:8 }}>
+            <div style={{ fontFamily:"'DM Serif Display',serif", fontSize:20, color:T.text }}>Completion History</div>
+            <div style={{ fontSize:13, color:T.textSub }}>{curLog.length} tasks completed this {period}</div>
+          </div>
+          {curLog.length===0
+            ? <div style={card({ padding:"50px 20px", textAlign:"center" })}>
+                <div style={{ fontSize:36, marginBottom:10 }}>📭</div>
+                <div style={{ fontSize:16, fontWeight:600, color:T.text }}>No completions yet</div>
+                <div style={{ fontSize:13, color:T.textSub, marginTop:4 }}>Start checking off tasks!</div>
+              </div>
+            : [...curLog].reverse().map(e=>{
+                const s=sec(e.section);
+                const completer = names[e.completedBy]||e.completedBy;
+                const completerColor = e.completedBy==="A"?"#E8A838":"#E84E8A";
+                return (
+                  <div key={e.id} style={{ ...card({ padding:"14px 16px", marginBottom:8 }), borderLeft:`3px solid ${s.color}` }}>
+                    <div style={{ display:"flex", alignItems:"flex-start", gap:10 }}>
+                      <div style={{ width:32,height:32,borderRadius:9,background:s.color+"22",display:"flex",alignItems:"center",justifyContent:"center",fontSize:15,flexShrink:0 }}>{s.emoji}</div>
+                      <div style={{ flex:1, minWidth:0 }}>
+                        <div style={{ fontSize:14, fontWeight:600, color:T.text, marginBottom:4 }}>{e.title}</div>
+                        <div style={{ display:"flex", gap:5, flexWrap:"wrap" }}>
+                          <span style={{ fontSize:10,padding:"2px 7px",borderRadius:5,background:s.color+"22",color:s.color,fontWeight:600 }}>{s.label}</span>
+                          <span style={{ fontSize:10,padding:"2px 7px",borderRadius:5,background:completerColor+"20",color:completerColor,fontWeight:600 }}>✓ {completer}</span>
+                          {e.priority&&<span style={{ fontSize:10,padding:"2px 7px",borderRadius:5,background:PRI_COLOR[e.priority]+"20",color:PRI_COLOR[e.priority],fontWeight:600 }}>{e.priority}</span>}
+                          <span style={{ fontSize:10,color:T.textMuted }}>{new Date(e.completedAt).toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric",hour:"2-digit",minute:"2-digit"})}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+          }
+        </div>
+      )}
+
+      {/* ── REPORT TAB ── */}
+      {tab==="report"&&(
+        <div style={{ maxWidth:680 }}>
+          <div style={{ fontFamily:"'DM Serif Display',serif", fontSize:24, color:T.text, marginBottom:6 }}>
+            {period==="week"?"Weekly":period==="month"?"Monthly":period==="year"?"Yearly":"All Time"} Report
+          </div>
+          <div style={{ fontSize:13, color:T.textSub, marginBottom:24 }}>{names.A} & {names.B} · {new Date().toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"})}</div>
+
+          {/* Summary block */}
+          <div style={{ background:mode==="dark"?"linear-gradient(135deg,#1a1408,#140a18)":"linear-gradient(135deg,#fff8e6,#f3eeff)", borderRadius:16, padding:"24px", marginBottom:20, border:`1px solid ${T.border}` }}>
+            <div style={{ fontSize:13, fontWeight:700, color:T.accent, textTransform:"uppercase", letterSpacing:"0.1em", marginBottom:12 }}>📋 Summary</div>
+            <div style={{ fontSize:15, color:T.text, lineHeight:1.8 }}>
+              <p style={{ margin:"0 0 8px" }}>During this {period}, <strong style={{color:"#E8A838"}}>{names.A}</strong> and <strong style={{color:"#E84E8A"}}>{names.B}</strong> completed a total of <strong style={{color:"#9B6EE8"}}>{totalDone} tasks</strong> together.</p>
+              {pctChange!==null&&<p style={{ margin:"0 0 8px", color:pctChange>=0?"#3DBF8A":"#E84E8A" }}>{pctChange>=0?"📈":"📉"} That's a <strong>{Math.abs(pctChange)}% {pctChange>=0?"increase":"decrease"}</strong> compared to the previous {period}.</p>}
+              <p style={{ margin:"0 0 8px" }}><strong style={{color:"#E8A838"}}>{names.A}</strong> completed <strong>{curLog.filter(e=>e.completedBy==="A").length}</strong> tasks · <strong style={{color:"#E84E8A"}}>{names.B}</strong> completed <strong>{curLog.filter(e=>e.completedBy==="B").length}</strong> tasks.</p>
+              {bySec.length>0&&<p style={{ margin:"0" }}>Top category: <strong style={{color:bySec[0].color}}>{bySec[0].emoji} {bySec[0].label}</strong> with <strong>{bySec[0].count}</strong> completions.</p>}
+            </div>
+          </div>
+
+          {/* Per person report */}
+          {["A","B"].map(u=>{
+            const uLog = curLog.filter(e=>e.completedBy===u);
+            const uc   = u==="A"?"#E8A838":"#E84E8A";
+            const uSec = SECTIONS.map(s=>({ ...s, count:uLog.filter(e=>e.section===s.id).length })).filter(s=>s.count>0).sort((a,b)=>b.count-a.count);
+            return (
+              <div key={u} style={{ ...card({ marginBottom:16 }), borderTop:`3px solid ${uc}` }}>
+                <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:16 }}>
+                  <div style={{ width:38,height:38,borderRadius:"50%",background:uc+"22",border:`2px solid ${uc}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,color:uc,fontWeight:700 }}>{names[u][0]}</div>
+                  <div>
+                    <div style={{ fontSize:16,fontWeight:700,color:T.text }}>{names[u]}'s Report</div>
+                    <div style={{ fontSize:12,color:T.textSub }}>{uLog.length} tasks completed</div>
+                  </div>
+                  <div style={{ marginLeft:"auto", fontSize:26, fontWeight:700, color:uc }}>{uLog.length}</div>
+                </div>
+                {uSec.length>0
+                  ? uSec.map(s=>(
+                    <div key={s.id} style={{ display:"flex", alignItems:"center", gap:8, marginBottom:8 }}>
+                      <span style={{ fontSize:14 }}>{s.emoji}</span>
+                      <span style={{ fontSize:13, color:T.text, flex:1 }}>{s.label}</span>
+                      <div style={{ width:60,height:5,background:T.inputBg,borderRadius:5,overflow:"hidden" }}>
+                        <div style={{ height:"100%",width:`${uLog.length?(s.count/uLog.length)*100:0}%`,background:s.color,borderRadius:5 }}/>
+                      </div>
+                      <span style={{ fontSize:12,fontWeight:700,color:s.color,minWidth:16 }}>{s.count}</span>
+                    </div>
+                  ))
+                  : <div style={{ fontSize:13,color:T.textMuted,fontStyle:"italic" }}>No completions this period</div>
+                }
+              </div>
+            );
+          })}
+
+          {/* Encouragement */}
+          <div style={{ background:mode==="dark"?"rgba(61,191,138,0.08)":"rgba(61,191,138,0.06)", border:"1px solid #3DBF8A33", borderRadius:14, padding:"18px 20px", textAlign:"center" }}>
+            <div style={{ fontSize:24, marginBottom:8 }}>{totalDone>=10?"🏆":totalDone>=5?"⭐":"💪"}</div>
+            <div style={{ fontSize:15, fontWeight:600, color:"#3DBF8A", marginBottom:4 }}>
+              {totalDone>=20?"You two are absolutely crushing it!":totalDone>=10?"Great teamwork this period!":totalDone>=5?"Solid progress together!":"Every step forward counts!"}
+            </div>
+            <div style={{ fontSize:13, color:T.textSub }}>Keep growing together, one task at a time. ♡</div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── PrayerView — standalone prayer requests board ────────────────────────────
 function PrayerView({ tasks, setTasks, names, activeUser, T, mode, aColor, aLabel, TODAY, genId, toasts, setToasts, SECTIONS }) {
   // showAdd is managed internally below
@@ -450,6 +822,8 @@ export default function TogetherApp() {
   const seenIdsRef   = useRef(null); // track task ids we've already seen
   const [newTask,    setNew]        = useState({ title:"", section:"faith", type:"todo", assignee:"A", priority:"Medium", notes:"", dueDate:"" });
   const [pulse,      setPulse]      = useState(false);
+  const [completedLog, setCompletedLog] = useState([]); // permanent completion history
+  const completedLogRef = useRef([]);
   const [status,     setStatus]     = useState("connecting");
   const [loadMsg,    setLoadMsg]    = useState("Connecting to your board...");
 
@@ -505,7 +879,7 @@ export default function TogetherApp() {
     const ti = setInterval(() => { i++; if (msgs[i]) setLoadMsg(msgs[i]); }, 900);
     (async () => {
       try {
-        const [t, n, m, so] = await Promise.all([dbGet("tasks"), dbGet("names"), dbGet("mode"), dbGet("sectionOrder")]);
+        const [t, n, m, so, cl] = await Promise.all([dbGet("tasks"), dbGet("names"), dbGet("mode"), dbGet("sectionOrder"), dbGet("completedLog")]);
         let loaded = (t ?? SAMPLES).map((tk, i) => ({ order:i, createdAt:TODAY, dueDate:"", lastReset:"", ...tk }));
         loaded = resetDailies(loaded);
         tasksRef.current = loaded;
@@ -515,6 +889,7 @@ export default function TogetherApp() {
         if (m) setMode(m);
         if (so) { setSectionOrder(so); sectionOrderRef.current = so; }
         else { const def = SECTIONS.map(s=>s.id); setSectionOrder(def); sectionOrderRef.current = def; await dbSet("sectionOrder", def); }
+        if (cl) { setCompletedLog(cl); completedLogRef.current = cl; }
         setStatus("live");
         // init seenIds AFTER first load so poll doesn't toast on startup
         seenIdsRef.current = (tasksRef.current || []).map(t => t.id);
@@ -563,6 +938,7 @@ export default function TogetherApp() {
         const n = await dbGet("names"); if (n) setNamesState(n);
         const m = await dbGet("mode");  if (m) setMode(m);
         const so = await dbGet("sectionOrder"); if (so) { setSectionOrder(so); sectionOrderRef.current = so; }
+        const cl = await dbGet("completedLog"); if (cl) { setCompletedLog(cl); completedLogRef.current = cl; }
         setStatus("live");
       } catch { setStatus("error"); }
     }, 4000);
@@ -582,11 +958,35 @@ export default function TogetherApp() {
   function dismissToast(id) { setToasts(prev => prev.filter(t => t.id !== id)); }
 
   function toggleDone(id) {
-    setTasks(prev => prev.map(t => {
-      if (t.id !== id) return t;
-      const nowDone = !t.done;
-      return { ...t, done:nowDone, streak:nowDone&&(t.type==="habit"||t.type==="daily"||t.type==="weekly")?t.streak+1:t.streak, lastReset:t.type==="daily"?TODAY:t.type==="weekly"?THIS_WEEK:t.lastReset };
-    }));
+    setTasks(prev => {
+      const task = prev.find(t => t.id === id);
+      if (!task) return prev;
+      const nowDone = !task.done;
+      // Log to permanent completion history when marking done
+      if (nowDone) {
+        const logEntry = {
+          id: genId(),
+          taskId: task.id,
+          title: task.title,
+          section: task.section,
+          type: task.type,
+          assignee: task.assignee,
+          priority: task.priority,
+          createdBy: task.createdBy || activeUser,
+          completedBy: activeUser,
+          completedAt: new Date().toISOString(),
+          completedDate: TODAY,
+        };
+        const newLog = [...completedLogRef.current, logEntry];
+        completedLogRef.current = newLog;
+        setCompletedLog(newLog);
+        dbSet("completedLog", newLog);
+      }
+      return prev.map(t => {
+        if (t.id !== id) return t;
+        return { ...t, done:nowDone, streak:nowDone&&(t.type==="habit"||t.type==="daily"||t.type==="weekly")?t.streak+1:t.streak, lastReset:t.type==="daily"?TODAY:t.type==="weekly"?THIS_WEEK:t.lastReset };
+      });
+    });
   }
   function deleteTask(id) { setTasks(prev => prev.filter(t => t.id !== id)); }
   function saveEdit() {
@@ -677,6 +1077,15 @@ export default function TogetherApp() {
     dragType.current = null; setHighlightCol(null);
     if (!taskId) return;
     const current = tasksRef.current ?? [];
+    // Log if dragging to Done
+    if (targetCol === DONE_COL) {
+      const task = current.find(t => t.id === taskId);
+      if (task && !task.done) {
+        const logEntry = { id:genId(), taskId:task.id, title:task.title, section:task.section, type:task.type, assignee:task.assignee, priority:task.priority, createdBy:task.createdBy||activeUser, completedBy:activeUser, completedAt:new Date().toISOString(), completedDate:TODAY };
+        const newLog = [...completedLogRef.current, logEntry];
+        completedLogRef.current = newLog; setCompletedLog(newLog); dbSet("completedLog", newLog);
+      }
+    }
     const updated = current.map(t => {
       if (t.id !== taskId) return t;
       if (targetCol === DONE_COL) return { ...t, done:true, streak:(t.type==="habit"||t.type==="daily"||t.type==="weekly")?t.streak+1:t.streak };
@@ -952,11 +1361,12 @@ export default function TogetherApp() {
 
   const navViews=[
     ["board","Board"],["today","Today"],["accountability","Us"],
+    ["analytics","📊 Analytics"],
     ["prayer","🙏 Prayer"],
     ["urgent","🔴 Urgent"],["week","This Week"],["month","This Month"],
     ["quarter","Next 3 Months"],["year","This Year"],["aitools","AI Tools"],
   ];
-  const isFullScreen=["today","accountability","aitools","urgent","week","month","quarter","year","prayer"].includes(view);
+  const isFullScreen=["today","accountability","aitools","urgent","week","month","quarter","year","prayer","analytics"].includes(view);
   const pad=isFullScreen?"0":"16px 16px";
 
   // ── Reusable timeline section renderer ────────────────────────────────────
@@ -1254,6 +1664,11 @@ export default function TogetherApp() {
           <PrayerView tasks={tasks} setTasks={setTasks} names={names} activeUser={activeUser} T={T} mode={mode} aColor={aColor} aLabel={aLabel} TODAY={TODAY} genId={genId} toasts={toasts} setToasts={setToasts} SECTIONS={SECTIONS}/>
         )}
 
+        {/* ── ANALYTICS ── */}
+        {view==="analytics"&&(
+          <AnalyticsView log={completedLog} tasks={tasks} names={names} T={T} mode={mode} SECTIONS={SECTIONS} PRI_COLOR={PRI_COLOR} TODAY={TODAY}/>
+        )}
+
         {/* ── AI TOOLS ── */}
         {view==="aitools"&&(
           <div style={{padding:"24px 16px"}}>
@@ -1288,7 +1703,7 @@ export default function TogetherApp() {
           ["board","⊞","Board"],
           ["today","◎","Today"],
           ["accountability","♡","Us"],
-          ["prayer","🙏","Prayer"],
+          ["analytics","📊","Analytics"],
           ["more","•••","More"],
         ].map(([v,icon,label])=>(
           <button key={v} onClick={()=>{if(v==="more"){setShowNav(true);}else{setView(v);}}} style={{ display:"flex",flexDirection:"column",alignItems:"center",gap:3,background:"none",border:"none",cursor:"pointer",padding:"4px 8px",minWidth:52,color:view===v&&v!=="more"?T.accent:T.textSub,transition:"color 0.15s" }}>
