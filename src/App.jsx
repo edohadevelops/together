@@ -52,10 +52,11 @@ const SECTIONS = [
 ];
 
 const TASK_TYPES = [
-  { id: "todo",  label: "To-Do",  icon: "☐" },
-  { id: "habit", label: "Habit",  icon: "↺" },
-  { id: "daily", label: "Daily",  icon: "⟳" },
-  { id: "goal",  label: "Goal",   icon: "◎" },
+  { id: "todo",   label: "To-Do",   icon: "☐" },
+  { id: "habit",  label: "Habit",   icon: "↺" },
+  { id: "daily",  label: "Daily",   icon: "⟳" },
+  { id: "weekly", label: "Weekly",  icon: "⟲" },
+  { id: "goal",   label: "Goal",    icon: "◎" },
 ];
 
 const PRIORITIES = ["Low", "Medium", "High", "Urgent"];
@@ -196,8 +197,21 @@ export default function TogetherApp() {
     });
   }
 
+  // Which ISO week string is "this week" e.g. "2026-W11"
+  const THIS_WEEK = (() => {
+    const d = new Date();
+    const thu = new Date(d); thu.setDate(d.getDate() - ((d.getDay()+6)%7) + 3);
+    const y = thu.getFullYear();
+    const w = Math.ceil(((thu - new Date(y,0,1)) / 86400000 + 1) / 7);
+    return `${y}-W${String(w).padStart(2,"0")}`;
+  })();
+
   function resetDailies(list) {
-    return list.map(t => t.type === "daily" && t.lastReset !== TODAY ? { ...t, done:false, lastReset:TODAY } : t);
+    return list.map(t => {
+      if (t.type === "daily"  && t.lastReset !== TODAY)     return { ...t, done:false, lastReset:TODAY };
+      if (t.type === "weekly" && t.lastReset !== THIS_WEEK) return { ...t, done:false, lastReset:THIS_WEEK };
+      return t;
+    });
   }
 
   // ── Load ──────────────────────────────────────────────────────────────────
@@ -284,14 +298,28 @@ export default function TogetherApp() {
     setTasks(prev => prev.map(t => {
       if (t.id !== id) return t;
       const nowDone = !t.done;
-      return { ...t, done:nowDone, streak:nowDone&&(t.type==="habit"||t.type==="daily")?t.streak+1:t.streak, lastReset:t.type==="daily"?TODAY:t.lastReset };
+      return { ...t, done:nowDone, streak:nowDone&&(t.type==="habit"||t.type==="daily"||t.type==="weekly")?t.streak+1:t.streak, lastReset:t.type==="daily"?TODAY:t.type==="weekly"?THIS_WEEK:t.lastReset };
     }));
   }
   function deleteTask(id) { setTasks(prev => prev.filter(t => t.id !== id)); }
-  function saveEdit()     { setTasks(prev => prev.map(t => t.id===editTask.id?editTask:t)); setEdit(null); }
-  function doAdd() {
-    if (!newTask.title.trim()) return;
-    setTasks(prev => [...prev, { ...newTask, id:genId(), done:false, streak:0, order:prev.length, createdAt:TODAY, lastReset:newTask.type==="daily"?TODAY:"", createdBy:activeUser }]);
+  function saveEdit() {
+    setTasks(prev => prev.map(t => t.id===editTask.id?editTask:t));
+    const sid=genId(), sec=SECTIONS.find(s=>s.id===editTask.section)||SECTIONS[0];
+    setToasts(prev=>[...prev,{id:sid,type:"success",title:editTask.title,section:sec}]);
+    setTimeout(()=>setToasts(prev=>prev.filter(t=>t.id!==sid)),3500);
+    setEdit(null);
+  }
+  function doAdd(taskData) {
+    const data = taskData || newTask;
+    if (!data.title.trim()) return;
+    const lastReset = data.type==="daily" ? TODAY : data.type==="weekly" ? THIS_WEEK : "";
+    const added = { ...data, id:genId(), done:false, streak:0, order:(tasksRef.current||[]).length, createdAt:TODAY, lastReset, createdBy:activeUser };
+    setTasks(prev => [...prev, added]);
+    // Success toast
+    const sid = genId();
+    const sec = SECTIONS.find(s=>s.id===data.section)||SECTIONS[0];
+    setToasts(prev => [...prev, { id:sid, type:"success", title:data.title, section:sec }]);
+    setTimeout(() => setToasts(prev => prev.filter(t=>t.id!==sid)), 3500);
     setNew({ title:"", section:"faith", type:"todo", assignee:"A", priority:"Medium", notes:"", dueDate:"" });
     setShowAdd(false); setAddSec(null);
   }
@@ -348,6 +376,7 @@ export default function TogetherApp() {
   const doneTasks   = tasks.filter(t=>t.done);
   const activeTasks = tasks.filter(t=>!t.done);
   const dailyTasks  = tasks.filter(t=>t.type==="daily");
+  const weeklyTasks = tasks.filter(t=>t.type==="weekly");
   const compRate    = tasks.length?Math.round((doneTasks.length/tasks.length)*100):0;
   const urgentTasks = activeTasks.filter(t=>t.priority==="Urgent"||(daysUntil(t.dueDate)!==null&&daysUntil(t.dueDate)<=3)||t.priority==="High")
     .sort((a,b)=>{const da=daysUntil(a.dueDate)??999,db=daysUntil(b.dueDate)??999,pa=["Urgent","High","Medium","Low"].indexOf(a.priority),pb=["Urgent","High","Medium","Low"].indexOf(b.priority);return da!==db?da-db:pa-pb;});
@@ -377,6 +406,7 @@ export default function TogetherApp() {
             <div style={{ display:"flex",alignItems:"center",gap:6,flexWrap:"wrap" }}>
               <span style={{ fontSize:14,fontWeight:500,lineHeight:1.4,fontFamily:"'DM Sans',sans-serif",color:t.done?T.textMuted:T.text,textDecoration:t.done?"line-through":"none",wordBreak:"break-word" }}>{t.title}</span>
               {isDaily&&<span style={{ fontSize:10,padding:"1px 6px",borderRadius:5,background:"#3DBF8A22",color:"#3DBF8A",fontWeight:700,flexShrink:0 }}>⟳ Daily</span>}
+              {t.type==="weekly"&&<span style={{ fontSize:10,padding:"1px 6px",borderRadius:5,background:"#3B9EDB22",color:"#3B9EDB",fontWeight:700,flexShrink:0 }}>⟲ Weekly</span>}
             </div>
             <div style={{ display:"flex",gap:4,marginTop:5,flexWrap:"wrap",alignItems:"center" }}>
               {showSec&&<span style={{ fontSize:10,padding:"2px 7px",borderRadius:5,background:s.color+"22",color:s.color,fontWeight:600,fontFamily:"'DM Sans',sans-serif" }}>{s.emoji} {s.label}</span>}
@@ -434,14 +464,14 @@ export default function TogetherApp() {
           <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:22,color:T.text,marginBottom:4 }}>{title}</div>
           <div style={{ height:2,width:40,background:T.accent,borderRadius:2,marginBottom:20 }}/>
           <label style={lblStyle}>Title</label>
-          <input style={inpStyle} value={data.title} onChange={e=>setData(p=>({...p,title:e.target.value}))} placeholder="What needs to be done?" autoFocus/>
+          <input style={inpStyle} value={data.title} onChange={e=>setData(p=>({...p,title:e.target.value}))} onKeyDown={e=>{if(e.key==="Enter"&&data.title.trim())onSave();}} placeholder="What needs to be done? (Enter to save)" autoFocus/>
           <label style={lblStyle}>Life Area</label>
           <select style={selStyle} value={data.section} onChange={e=>setData(p=>({...p,section:e.target.value}))}>
             {SECTIONS.map(s=><option key={s.id} value={s.id}>{s.emoji} {s.label}</option>)}
           </select>
           <label style={lblStyle}>Type</label>
           <select style={selStyle} value={data.type} onChange={e=>setData(p=>({...p,type:e.target.value}))}>
-            {TASK_TYPES.map(t=><option key={t.id} value={t.id}>{t.icon} {t.label}{t.id==="daily"?" — resets daily":""}</option>)}
+            {TASK_TYPES.map(t=><option key={t.id} value={t.id}>{t.icon} {t.label}{t.id==="daily"?" — resets daily":t.id==="weekly"?" — resets every Monday":""}</option>)}
           </select>
           <label style={lblStyle}>Assigned To</label>
           <select style={selStyle} value={data.assignee} onChange={e=>setData(p=>({...p,assignee:e.target.value}))}>
@@ -693,7 +723,7 @@ export default function TogetherApp() {
               <div style={{ fontSize:12,color:T.textMuted,marginTop:6 }}>{new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"})}</div>
             </div>
             {dailyTasks.filter(t=>t.assignee===activeUser||t.assignee==="both").length>0&&(
-              <div style={{marginBottom:24}}>
+              <div style={{marginBottom:20}}>
                 <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
                   <span style={{fontSize:15}}>⟳</span>
                   <span style={{fontSize:12,fontWeight:700,color:"#3DBF8A",textTransform:"uppercase",letterSpacing:"0.1em"}}>Daily Habits</span>
@@ -701,6 +731,18 @@ export default function TogetherApp() {
                 </div>
                 <div style={cardBase({padding:"6px 12px",border:"1px solid #3DBF8A33"})}>
                   {dailyTasks.filter(t=>t.assignee===activeUser||t.assignee==="both").map(t=><TaskPill key={t.id} t={t} showSec draggable={false}/>)}
+                </div>
+              </div>
+            )}
+            {weeklyTasks.filter(t=>t.assignee===activeUser||t.assignee==="both").length>0&&(
+              <div style={{marginBottom:20}}>
+                <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
+                  <span style={{fontSize:15}}>⟲</span>
+                  <span style={{fontSize:12,fontWeight:700,color:"#3B9EDB",textTransform:"uppercase",letterSpacing:"0.1em"}}>Weekly Routines</span>
+                  <span style={{fontSize:12,color:T.textMuted}}>· resets every Monday</span>
+                </div>
+                <div style={cardBase({padding:"6px 12px",border:"1px solid #3B9EDB33"})}>
+                  {weeklyTasks.filter(t=>t.assignee===activeUser||t.assignee==="both").map(t=><TaskPill key={t.id} t={t} showSec draggable={false}/>)}
                 </div>
               </div>
             )}
@@ -882,6 +924,22 @@ export default function TogetherApp() {
       {/* ── TOAST NOTIFICATIONS ── */}
       <div style={{ position:"fixed",top:70,right:16,zIndex:100,display:"flex",flexDirection:"column",gap:10,maxWidth:"calc(100vw - 32px)",width:340,pointerEvents:"none" }}>
         {toasts.map(toast => {
+          // ── Success toast (task added) ───────────────────────────────────
+          if (toast.type === "success") {
+            const s = toast.section;
+            return (
+              <div key={toast.id} style={{ background:T.surface,border:`1px solid ${s.color}44`,borderLeft:`4px solid ${s.color}`,borderRadius:14,padding:"12px 16px",boxShadow:`0 8px 32px rgba(0,0,0,${mode==="dark"?0.4:0.12})`,pointerEvents:"all",animation:"slideInRight 0.3s ease",cursor:"pointer",display:"flex",alignItems:"center",gap:12 }}
+                onClick={()=>dismissToast(toast.id)}>
+                <div style={{ width:32,height:32,borderRadius:9,background:s.color+"22",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,flexShrink:0 }}>✓</div>
+                <div style={{ flex:1,minWidth:0 }}>
+                  <div style={{ fontSize:12,fontWeight:700,color:"#3DBF8A",fontFamily:"'DM Sans',sans-serif",marginBottom:1 }}>Task added! 🎉</div>
+                  <div style={{ fontSize:13,color:T.text,fontWeight:500,fontFamily:"'DM Sans',sans-serif",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap" }}>{toast.title}</div>
+                </div>
+                <button onClick={e=>{e.stopPropagation();dismissToast(toast.id);}} style={{ background:"none",border:"none",color:T.textMuted,cursor:"pointer",fontSize:14,lineHeight:1,padding:"0 2px",flexShrink:0 }}>✕</button>
+              </div>
+            );
+          }
+          // ── Partner notification toast ───────────────────────────────────
           const s = toast.section;
           const assigneeLabel = toast.task.assignee==="both"
             ? `${names.A} & ${names.B}`
@@ -912,7 +970,7 @@ export default function TogetherApp() {
       </div>
 
       {/* Modals */}
-      {showAdd&&<FormModal data={newTask} setData={setNew} onSave={doAdd} onClose={()=>{setShowAdd(false);setAddSec(null);}} title="New Task"/>}
+      {showAdd&&<FormModal data={newTask} setData={setNew} onSave={()=>doAdd(newTask)} onClose={()=>{setShowAdd(false);setAddSec(null);}} title="New Task"/>}
       {editTask&&<FormModal data={editTask} setData={setEdit} onSave={saveEdit} onClose={()=>setEdit(null)} title="Edit Task"/>}
 
       {/* Settings */}
