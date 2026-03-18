@@ -627,19 +627,24 @@ export default function TogetherApp() {
     dragType.current    = "board";
     dragBoardId.current = sectionId;
     dragTaskId.current  = null;
+    dragTargetCol.current = null;
     e.dataTransfer.effectAllowed = "move";
     e.dataTransfer.setData("dragtype", "board");
     e.dataTransfer.setData("text/plain", sectionId);
-    e.stopPropagation();
+    // Don't stopPropagation here — let it bubble so dragover on other cards fires
   }
 
   function handleDragOverCol(e, colId) {
-    e.preventDefault(); e.stopPropagation();
+    e.preventDefault();
     e.dataTransfer.dropEffect = "move";
     if (dragType.current === "board") {
       if (highlightBoard !== colId) setHighlightBoard(colId);
+      // clear task highlight when board dragging
+      if (highlightCol !== null) setHighlightCol(null);
     } else {
       if (dragTargetCol.current !== colId) { dragTargetCol.current = colId; setHighlightCol(colId); }
+      // clear board highlight when task dragging
+      if (highlightBoard !== null) setHighlightBoard(null);
     }
   }
 
@@ -763,8 +768,9 @@ export default function TogetherApp() {
     return (
       <div
         draggable={draggable}
-        onDragStart={draggable?e=>handleDragStart(e,t.id):undefined}
-        onDragEnd={draggable?handleDragEnd:undefined}
+        onDragStart={draggable?e=>{e.stopPropagation();handleDragStart(e,t.id);}:undefined}
+        onDragOver={draggable?e=>{e.stopPropagation();e.preventDefault();}:undefined}
+        onDragEnd={draggable?e=>{e.stopPropagation();handleDragEnd();}:undefined}
         style={{ background:isDaily?(mode==="dark"?"rgba(61,191,138,0.06)":"rgba(61,191,138,0.05)"):(mode==="dark"?"rgba(255,255,255,0.03)":"rgba(0,0,0,0.025)"), border:`1px solid ${isDaily?"#3DBF8A33":T.border}`, borderLeft:`3px solid ${t.done?T.textMuted:s.color}`, borderRadius:9, padding:"10px 12px", marginBottom:6, cursor:draggable?"grab":"default", opacity:t.done?0.55:1, userSelect:"none" }}
       >
         <div style={{ display:"flex", alignItems:"flex-start", gap:9 }}>
@@ -811,12 +817,8 @@ export default function TogetherApp() {
 
     return (
       <div
-        // Board-level drag: grab the header to drag the whole card
-        draggable={!isDone}
-        onDragStart={!isDone ? e=>handleBoardDragStart(e, colId) : undefined}
         onDragOver={e=>handleDragOverCol(e, colId)}
         onDrop={e=>handleDropOnCol(e, colId)}
-        onDragEnd={handleDragEnd}
         style={{
           background:T.colBg,
           border:`1px solid ${isBoardOver?color+"cc":isTaskOver?color+"99":T.border}`,
@@ -825,21 +827,25 @@ export default function TogetherApp() {
           transition:"border 0.1s,box-shadow 0.1s,transform 0.1s",
           transform: isBoardOver ? "scale(1.02)" : "scale(1)",
           overflow:"hidden", minHeight:180,
-          cursor: isBoardOver ? "grabbing" : "default",
         }}
       >
-        {/* Header — drag handle for board reordering */}
-        <div
-          style={{ padding:"13px 14px 10px",borderBottom:`1px solid ${T.border}`,flexShrink:0, cursor:isDone?"default":"grab" }}
-          title={isDone ? "" : "Drag to reorder board"}
-        >
+        {/* Header */}
+        <div style={{ padding:"13px 14px 10px",borderBottom:`1px solid ${T.border}`,flexShrink:0 }}>
           <div style={{ display:"flex",alignItems:"center",gap:9 }}>
-            {/* Drag grip indicator */}
+            {/* Dedicated board drag grip — ONLY this element is draggable for board reorder */}
             {!isDone && (
-              <div style={{ display:"flex",flexDirection:"column",gap:2,flexShrink:0,opacity:0.3 }}>
-                <div style={{ width:12,height:1.5,borderRadius:1,background:T.text }}/>
-                <div style={{ width:12,height:1.5,borderRadius:1,background:T.text }}/>
-                <div style={{ width:12,height:1.5,borderRadius:1,background:T.text }}/>
+              <div
+                draggable
+                onDragStart={e=>{e.stopPropagation();handleBoardDragStart(e,colId);}}
+                onDragEnd={e=>{e.stopPropagation();handleDragEnd();}}
+                title="Drag to reorder board"
+                style={{ display:"flex",flexDirection:"column",gap:2.5,flexShrink:0,opacity:0.35,cursor:"grab",padding:"4px 2px",borderRadius:4,transition:"opacity 0.15s" }}
+                onMouseEnter={e=>e.currentTarget.style.opacity="0.8"}
+                onMouseLeave={e=>e.currentTarget.style.opacity="0.35"}
+              >
+                <div style={{ width:14,height:2,borderRadius:1,background:T.text }}/>
+                <div style={{ width:14,height:2,borderRadius:1,background:T.text }}/>
+                <div style={{ width:14,height:2,borderRadius:1,background:T.text }}/>
               </div>
             )}
             <div style={{ width:32,height:32,borderRadius:9,background:color+"22",display:"flex",alignItems:"center",justifyContent:"center",fontSize:15,flexShrink:0 }}>{emoji}</div>
@@ -855,25 +861,30 @@ export default function TogetherApp() {
           {!isDone&&<div style={{ height:3,background:T.inputBg,borderRadius:3,marginTop:9,overflow:"hidden" }}><div style={{ height:"100%",width:`${pct}%`,background:color,borderRadius:3,transition:"width 0.4s" }}/></div>}
         </div>
 
-        {/* Task list — each task supports drag-over for reordering */}
+        {/* Task list — each task wrapper is a drop zone for reordering */}
         <div
           style={{ flex:1,overflowY:"auto",padding:"10px 12px",minHeight:50 }}
-          onDragOver={e=>{ e.preventDefault(); handleDragOverCol(e,colId); }}
+          onDragOver={e=>{ e.preventDefault(); e.stopPropagation(); if(dragType.current==="task") handleDragOverCol(e,colId); }}
+          onDrop={e=>{ e.stopPropagation(); handleDropOnCol(e,colId); }}
         >
           {colTasks.length===0 ? (
             <div style={{ border:`2px dashed ${isOver?color+"88":T.border}`,borderRadius:9,padding:"18px 10px",textAlign:"center",color:T.textMuted,fontSize:12,fontStyle:"italic",background:isOver?color+"0A":"transparent",transition:"all 0.1s" }}>
               {isDone?"✓ Drop tasks here to complete":"Drop tasks here"}
             </div>
-          ) : colTasks.map((t,i) => (
+          ) : colTasks.map((t) => (
             <div
               key={t.id}
-              onDragOver={e=>{ e.preventDefault(); e.stopPropagation(); handleDragOverCol(e,colId); }}
-              onDrop={e=>handleDropOnTask(e, t.id, colId)}
-              style={{
-                borderTop: highlightCol===colId && dragTaskId.current && i===0 ? `2px solid ${color}` : "none",
-                transition:"border 0.1s",
+              onDragOver={e=>{
+                e.preventDefault(); e.stopPropagation();
+                if(dragType.current==="task") handleDragOverCol(e,colId);
               }}
+              onDrop={e=>{ e.stopPropagation(); handleDropOnTask(e, t.id, colId); }}
+              style={{ position:"relative" }}
             >
+              {/* Drop indicator line above this task */}
+              {dragTaskId.current && dragTaskId.current!==t.id && highlightCol===colId && (
+                <div style={{ height:2,background:color,borderRadius:2,marginBottom:3,opacity:0,transition:"opacity 0.1s" }}/>
+              )}
               <TaskPill t={t} showSec={isDone}/>
             </div>
           ))}
