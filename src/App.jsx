@@ -529,6 +529,564 @@ function AnalyticsView({ log, tasks, names, T, mode, SECTIONS, PRI_COLOR, TODAY 
   );
 }
 
+// ── AppTour — interactive step-by-step guided tour ──────────────────────────
+// Each step highlights a specific area with a spotlight overlay + tooltip card
+function AppTour({ step, setStep, onClose, setView, setShowAdd, toggleMode, T, mode, names, activeUser }) {
+  const safeUser = activeUser || "A";
+
+  // Tour steps: each describes what to highlight and what to say
+  const steps = [
+    {
+      title: "Welcome to the Tour! 🗺️",
+      body: "This quick tour walks you through every major feature of Together. Use the arrows to go at your own pace, or press Skip any time.",
+      target: null, // no spotlight — center modal
+      action: null,
+      tip: null,
+    },
+    {
+      title: "Your Life Board ⊞",
+      body: "This is your main board. Each card represents a life area — Faith, Health, Finance, School and more. Tasks live inside each card.",
+      target: ".grid-board",
+      action: () => setView("board"),
+      tip: "Try dragging the ≡ handle on a card header to reorder your boards!",
+    },
+    {
+      title: "Adding a Task ✚",
+      body: "Tap '+ Task' in the top bar to add a new task. You can set a title, life area, type, priority, due date, and assign it to yourself, your partner, or both.",
+      target: null,
+      action: () => setView("board"),
+      tip: "Press Enter in the title field to save quickly!",
+      highlight: "add-task-btn",
+    },
+    {
+      title: "Task Types 🔄",
+      body: "Tasks come in 5 types: To-Do (one-off), Habit (manual streak), Daily (resets every morning), Weekly (resets every Monday), and Goal (long-term).",
+      target: null,
+      action: () => setView("board"),
+      tip: "Daily and Weekly tasks automatically reset — perfect for routines like morning devotion or weekly budget review.",
+    },
+    {
+      title: "Today's Focus ◎",
+      body: "The Today tab shows your tasks for the day grouped by priority — Urgent, High, Medium, Low. Daily and Weekly habits appear at the top.",
+      target: null,
+      action: () => setView("today"),
+      tip: "Switch between Amen and Gloria using the identity badge in the top bar.",
+    },
+    {
+      title: "Accountability — Us ♡",
+      body: "The Us tab shows both of your progress side by side — completion rates, active habits, streaks, and shared goals. Great for checking in on each other.",
+      target: null,
+      action: () => setView("accountability"),
+      tip: "The urgency indicator (⚠) shows if someone has overdue or high-priority tasks.",
+    },
+    {
+      title: "📊 Analytics",
+      body: "Track your completions over time. Switch between Week, Month, Year or All Time. See a bar chart, category breakdown, head-to-head comparison, and a written report.",
+      target: null,
+      action: () => setView("analytics"),
+      tip: "Every task you check off is recorded permanently — even after it's deleted from the board.",
+    },
+    {
+      title: "💭 Reflections",
+      body: "Add questions for each other, personal planning notes, career goals, pet peeves, compatibility prompts — anything you want to think through together.",
+      target: null,
+      action: () => setView("reflections"),
+      tip: "Questions let both of you answer independently. Your answer stays private until saved.",
+    },
+    {
+      title: "🙏 Prayer Requests",
+      body: "Log prayer requests for yourself or each other. Mark them as Answered when God comes through — they stay in your answered list as a testimony.",
+      target: null,
+      action: () => setView("prayer"),
+      tip: "Both of you can add and answer prayers. It all syncs in real time.",
+    },
+    {
+      title: "🔴 Urgent & Timelines",
+      body: "The Urgent tab surfaces overdue and due-soon tasks. The timeline tabs (This Week, Month, Year) let you plan ahead and see what's coming.",
+      target: null,
+      action: () => setView("urgent"),
+      tip: "Add due dates to tasks to make the timeline views really powerful.",
+    },
+    {
+      title: "Light & Dark Mode ☀☾",
+      body: "Toggle between light and dark mode using the ☀/☾ button in the top bar. Your preference syncs to your partner's device too.",
+      target: null,
+      action: null,
+      tip: "The mode even syncs between devices — if Amen switches to light, Gloria sees it too.",
+    },
+    {
+      title: "Push Notifications 🔔",
+      body: "Enable push notifications in Settings (⚙) to get alerts when tasks are due today, tomorrow, or overdue. Works on desktop and Android.",
+      target: null,
+      action: null,
+      tip: "Tap ⚙ → Push Notifications → Enable. You'll get a test notification right away.",
+    },
+    {
+      title: "You're all set! 🚀",
+      body: `That's the full tour, ${names[safeUser]||safeUser}! You now know everything Together can do. Go ahead and start adding your tasks and reflections.`,
+      target: null,
+      action: () => setView("board"),
+      tip: "You can restart this tour anytime from ⚙ Settings → Take the App Tour.",
+    },
+  ];
+
+  const current = steps[step];
+  const isLast  = step === steps.length - 1;
+  const total   = steps.length;
+
+  // Run the step's action when step changes
+  useEffect(() => {
+    if (current.action) current.action();
+  }, [step]);
+
+  const accentColors = ["#E8A838","#3DBF8A","#9B6EE8","#3B9EDB","#E84E8A","#E8704A","#3DBF8A","#9B6EE8","#C8B030","#E8883A","#E8A838","#3DBF8A","#E84E8A"];
+  const accent = accentColors[step % accentColors.length];
+
+  return (
+    <>
+      {/* Dim overlay — doesn't block interaction so user can see what we're pointing at */}
+      <div style={{ position:"fixed", inset:0, zIndex:80, pointerEvents:"none", background:"rgba(0,0,0,0.55)", backdropFilter:"blur(2px)" }}/>
+
+      {/* Tour card — bottom sheet on mobile, centered lower panel on desktop */}
+      <div style={{ position:"fixed", bottom:0, left:0, right:0, zIndex:81, display:"flex", justifyContent:"center", padding:"0 16px 16px", pointerEvents:"none" }}>
+        <div style={{
+          background:T.surface, border:`1px solid ${T.border}`,
+          borderRadius:20, width:"100%", maxWidth:520,
+          boxShadow:"0 -8px 40px rgba(0,0,0,0.4)",
+          pointerEvents:"all",
+          animation:"slideUp 0.3s ease",
+        }}>
+          {/* Progress bar */}
+          <div style={{ height:3, background:T.inputBg, borderRadius:"20px 20px 0 0", overflow:"hidden" }}>
+            <div style={{ height:"100%", width:`${((step+1)/total)*100}%`, background:accent, transition:"width 0.4s ease", borderRadius:"20px 20px 0 0" }}/>
+          </div>
+
+          <div style={{ padding:"22px 22px 20px" }}>
+            {/* Step counter + close */}
+            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:14 }}>
+              <div style={{ display:"flex", alignItems:"center", gap:6 }}>
+                <div style={{ width:28, height:28, borderRadius:"50%", background:accent+"22", border:`2px solid ${accent}`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:12, fontWeight:700, color:accent }}>{step+1}</div>
+                <span style={{ fontSize:12, color:T.textMuted, fontFamily:"'DM Sans',sans-serif" }}>of {total}</span>
+              </div>
+              <button onClick={onClose} style={{ fontSize:13, color:T.textMuted, background:"none", border:`1px solid ${T.border}`, borderRadius:8, cursor:"pointer", fontFamily:"'DM Sans',sans-serif", padding:"5px 12px" }}>✕ Exit Tour</button>
+            </div>
+
+            {/* Content */}
+            <div style={{ fontFamily:"'DM Serif Display',serif", fontSize:19, color:T.text, marginBottom:8, lineHeight:1.3 }}>{current.title}</div>
+            <p style={{ fontSize:14, color:T.text, lineHeight:1.65, margin:"0 0 12px", fontFamily:"'DM Sans',sans-serif" }}>{current.body}</p>
+
+            {/* Tip box */}
+            {current.tip && (
+              <div style={{ background:accent+"12", border:`1px solid ${accent}33`, borderRadius:10, padding:"10px 13px", marginBottom:16, display:"flex", gap:8, alignItems:"flex-start" }}>
+                <span style={{ fontSize:15, flexShrink:0 }}>💡</span>
+                <span style={{ fontSize:13, color:T.text, lineHeight:1.5, fontFamily:"'DM Sans',sans-serif" }}>{current.tip}</span>
+              </div>
+            )}
+
+            {/* Dot indicators */}
+            <div style={{ display:"flex", gap:4, marginBottom:16, flexWrap:"wrap" }}>
+              {steps.map((_,i) => (
+                <div key={i} onClick={()=>setStep(i)} style={{ width:i===step?16:6, height:6, borderRadius:3, background:i===step?accent:T.border, transition:"all 0.25s", cursor:"pointer" }}/>
+              ))}
+            </div>
+
+            {/* Navigation */}
+            <div style={{ display:"flex", gap:10, alignItems:"center" }}>
+              <button onClick={onClose} style={{ fontSize:13, color:T.textMuted, background:"none", border:"none", cursor:"pointer", fontFamily:"'DM Sans',sans-serif", padding:"8px 0", flexShrink:0 }}>Skip</button>
+              <div style={{ flex:1 }}/>
+              {step > 0 && (
+                <button onClick={()=>setStep(s=>s-1)} style={{ padding:"10px 20px", borderRadius:10, border:`1px solid ${T.border}`, background:T.inputBg, color:T.textSub, fontFamily:"'DM Sans',sans-serif", fontSize:14, fontWeight:600, cursor:"pointer" }}>
+                  ← Back
+                </button>
+              )}
+              <button
+                onClick={()=>{ if(isLast){setView("board");onClose();}else{setStep(s=>s+1);} }}
+                style={{ padding:"10px 24px", borderRadius:10, border:"none", background:accent, color:"#fff", fontFamily:"'DM Sans',sans-serif", fontSize:14, fontWeight:700, cursor:"pointer" }}
+              >
+                {isLast ? "Finish 🎉" : "Next →"}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ── OnboardingFlow ────────────────────────────────────────────────────────────
+function OnboardingFlow({ names, onFinish, T, mode }) {
+  const [step, setStep] = useState(0);
+
+  const slides = [
+    {
+      emoji: "♡",
+      title: "Welcome to Together",
+      body: `Hey ${names.A} & ${names.B}! This app is your shared space to grow, plan, and stay connected — across every area of life.`,
+      accent: "#E8A838",
+      bg: mode==="dark" ? "linear-gradient(135deg,#1a1200 0%,#2a1800 100%)" : "linear-gradient(135deg,#fff8e6 0%,#fff0cc 100%)",
+    },
+    {
+      emoji: "⊞",
+      title: "Your Life Board",
+      body: "Tasks are organized into life areas — Faith, School, Work, Health, Relationship and more. Drag cards to reorder your board. Each of you has your own layout.",
+      accent: "#3DBF8A",
+      bg: mode==="dark" ? "linear-gradient(135deg,#001a0e 0%,#002814 100%)" : "linear-gradient(135deg,#e6fff4 0%,#ccffe8 100%)",
+    },
+    {
+      emoji: "💭",
+      title: "Reflections",
+      body: "Ask each other questions, store personal answers, plan your PhD, career, or relationship goals. A private-yet-shared journal space for the deep conversations.",
+      accent: "#9B6EE8",
+      bg: mode==="dark" ? "linear-gradient(135deg,#0e0014 0%,#180020 100%)" : "linear-gradient(135deg,#f3eeff 0%,#e8d8ff 100%)",
+    },
+    {
+      emoji: "📱",
+      title: "Two Devices, One App",
+      body: "Open this app on your own device — it remembers who you are. Changes sync between you both in real time. Your boards, your order, your identity.",
+      accent: "#3B9EDB",
+      bg: mode==="dark" ? "linear-gradient(135deg,#001018 0%,#001a28 100%)" : "linear-gradient(135deg,#e6f4ff 0%,#cce8ff 100%)",
+    },
+    {
+      emoji: "🚀",
+      title: "You're all set!",
+      body: "Start by setting your names in ⚙ Settings, then pick your identity when prompted. Add your first task and grow together — one day at a time.",
+      accent: "#E84E8A",
+      bg: mode==="dark" ? "linear-gradient(135deg,#1a0010 0%,#28001a 100%)" : "linear-gradient(135deg,#fff0f6 0%,#ffd6ea 100%)",
+    },
+  ];
+
+  const slide = slides[step];
+  const isLast = step === slides.length - 1;
+
+  return (
+    <div style={{ position:"fixed", inset:0, zIndex:70, display:"flex", alignItems:"center", justifyContent:"center", padding:20, background:"rgba(0,0,0,0.85)", backdropFilter:"blur(10px)" }}>
+      <div style={{ width:"100%", maxWidth:460, background:T.surface, borderRadius:24, overflow:"hidden", boxShadow:"0 32px 80px rgba(0,0,0,0.5)", border:`1px solid ${T.border}` }}>
+        {/* Slide hero */}
+        <div style={{ background:slide.bg, padding:"44px 32px 36px", textAlign:"center", position:"relative" }}>
+          <div style={{ fontSize:56, marginBottom:16, lineHeight:1 }}>{slide.emoji}</div>
+          <div style={{ fontFamily:"'DM Serif Display',serif", fontSize:26, color:slide.accent, lineHeight:1.2, marginBottom:0 }}>{slide.title}</div>
+        </div>
+
+        {/* Body */}
+        <div style={{ padding:"28px 32px 24px" }}>
+          <p style={{ fontSize:15, color:T.text, lineHeight:1.7, margin:"0 0 28px", fontFamily:"'DM Sans',sans-serif", textAlign:"center" }}>{slide.body}</p>
+
+          {/* Step dots */}
+          <div style={{ display:"flex", justifyContent:"center", gap:7, marginBottom:24 }}>
+            {slides.map((_,i) => (
+              <div key={i} onClick={()=>setStep(i)} style={{ width:i===step?20:7, height:7, borderRadius:4, background:i===step?slide.accent:T.border, transition:"all 0.3s", cursor:"pointer" }}/>
+            ))}
+          </div>
+
+          {/* Buttons */}
+          <div style={{ display:"flex", gap:10, alignItems:"center" }}>
+            {/* Skip */}
+            <button
+              onClick={onFinish}
+              style={{ fontSize:13, color:T.textMuted, background:"none", border:"none", cursor:"pointer", fontFamily:"'DM Sans',sans-serif", padding:"8px 4px", flexShrink:0 }}
+            >
+              Skip
+            </button>
+            <div style={{ flex:1 }}/>
+            {/* Back */}
+            {step > 0 && (
+              <button
+                onClick={()=>setStep(s=>s-1)}
+                style={{ padding:"11px 22px", borderRadius:10, border:`1px solid ${T.border}`, background:T.inputBg, color:T.textSub, fontFamily:"'DM Sans',sans-serif", fontSize:14, fontWeight:600, cursor:"pointer" }}
+              >
+                Back
+              </button>
+            )}
+            {/* Next / Done */}
+            <button
+              onClick={()=>{ if(isLast) onFinish(); else setStep(s=>s+1); }}
+              style={{ padding:"11px 28px", borderRadius:10, border:"none", background:slide.accent, color:"#fff", fontFamily:"'DM Sans',sans-serif", fontSize:14, fontWeight:700, cursor:"pointer", transition:"opacity 0.15s" }}
+            >
+              {isLast ? "Let's go! 🚀" : "Next →"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── ReflectionsView ───────────────────────────────────────────────────────────
+// Categories of reflections
+const REFLECT_CATS = [
+  { id:"relationship", label:"Relationship",    emoji:"♡",  color:"#E84E8A" },
+  { id:"compatibility",label:"Compatibility",   emoji:"🧩", color:"#9B6EE8" },
+  { id:"personal",     label:"Personal",        emoji:"🌱", color:"#3DBF8A" },
+  { id:"career",       label:"Career & Purpose",emoji:"🎯", color:"#3B9EDB" },
+  { id:"phd",          label:"PhD & School",    emoji:"🎓", color:"#7B61FF" },
+  { id:"peeves",       label:"Pet Peeves",      emoji:"😬", color:"#E8883A" },
+  { id:"goals",        label:"Shared Goals",    emoji:"⭐", color:"#E8A838" },
+  { id:"planning",     label:"Life Planning",   emoji:"🗺️", color:"#20B2AA" },
+  { id:"misc",         label:"Misc Thoughts",   emoji:"💡", color:"#C8B030" },
+];
+
+function ReflectionsView({ activeUser, names, T, mode, TODAY, genId }) {
+  const [entries,    setEntriesState] = useState(null);
+  const [catFilter,  setCatFilter]    = useState(null);
+  const [showForm,   setShowForm]     = useState(false);
+  const [editEntry,  setEditEntry]    = useState(null);
+  const [expanded,   setExpanded]     = useState({}); // which entries are expanded
+  const [newEntry,   setNewEntry]     = useState({ title:"", body:"", category:"relationship", isQuestion:false, answers:{} });
+
+  useEffect(() => {
+    (async () => {
+      const stored = await dbGet("reflections");
+      setEntriesState(stored ?? []);
+    })();
+  }, []);
+
+  function save(list) { setEntriesState(list); dbSet("reflections", list); }
+
+  function addEntry() {
+    if (!newEntry.title.trim()) return;
+    const e = { ...newEntry, id:genId(), createdBy:activeUser||"A", createdAt:TODAY, answers:{} };
+    save([...(entries||[]), e]);
+    setNewEntry({ title:"", body:"", category:"relationship", isQuestion:false, answers:{} });
+    setShowForm(false);
+  }
+
+  function saveEdit() {
+    save((entries||[]).map(e => e.id===editEntry.id ? editEntry : e));
+    setEditEntry(null);
+  }
+
+  function deleteEntry(id) { save((entries||[]).filter(e=>e.id!==id)); }
+
+  function saveAnswer(entryId, answer) {
+    const user = activeUser || "A";
+    save((entries||[]).map(e => e.id===entryId ? { ...e, answers:{ ...e.answers, [user]:answer } } : e));
+  }
+
+  const cat   = id => REFLECT_CATS.find(c=>c.id===id)||REFLECT_CATS[0];
+  const inpSt = { width:"100%", background:T.inputBg, border:`1px solid ${T.border}`, borderRadius:9, padding:"10px 13px", color:T.text, fontFamily:"'DM Sans',sans-serif", fontSize:14, outline:"none", boxSizing:"border-box" };
+  const selSt = { ...inpSt, background:mode==="dark"?"#181B23":"#fff", cursor:"pointer" };
+  const lblSt = { fontSize:11, fontWeight:600, letterSpacing:"0.1em", textTransform:"uppercase", color:T.textMuted, display:"block", marginBottom:5, marginTop:14, fontFamily:"'DM Sans',sans-serif" };
+  const card  = (x={}) => ({ background:T.surface, border:`1px solid ${T.border}`, borderRadius:14, boxShadow:"0 2px 8px rgba(0,0,0,0.08)", ...x });
+  const btnSt = p => ({ padding:"9px 20px", borderRadius:9, border:"none", cursor:"pointer", fontFamily:"'DM Sans',sans-serif", fontSize:14, fontWeight:600, background:p?"#9B6EE8":T.inputBg, color:p?"#fff":T.textSub });
+
+  const filtered = (entries||[]).filter(e => !catFilter || e.category===catFilter);
+
+  function EntryForm({ data, setData, onSave, onClose, title }) {
+    const ref = useRef(null);
+    useEffect(()=>{ const t=setTimeout(()=>{ if(ref.current) ref.current.focus(); },80); return ()=>clearTimeout(t); },[]);
+    return (
+      <div style={{ position:"fixed",inset:0,zIndex:40,background:"rgba(0,0,0,0.6)",backdropFilter:"blur(6px)",display:"flex",alignItems:"flex-end",justifyContent:"center" }}
+        onClick={e=>e.target===e.currentTarget&&onClose()}>
+        <div style={{ ...card(), width:"100%", maxWidth:520, maxHeight:"92vh", overflowY:"auto", borderRadius:"18px 18px 0 0", padding:"24px 20px 36px" }}>
+          <div style={{ width:40,height:4,borderRadius:2,background:T.textMuted,margin:"0 auto 20px",opacity:0.4 }}/>
+          <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:22,color:T.text,marginBottom:4 }}>{title}</div>
+          <div style={{ height:2,width:40,background:"#9B6EE8",borderRadius:2,marginBottom:20 }}/>
+
+          <label style={lblSt}>Title / Prompt</label>
+          <input ref={ref} style={inpSt} value={data.title} onChange={e=>setData(p=>({...p,title:e.target.value}))}
+            onKeyDown={e=>{ if(e.key==="Enter"&&data.title.trim()){e.preventDefault();onSave();}}}
+            placeholder="e.g. What are your top 3 love languages? (Enter to save)"/>
+
+          <label style={lblSt}>Category</label>
+          <select style={selSt} value={data.category} onChange={e=>setData(p=>({...p,category:e.target.value}))}>
+            {REFLECT_CATS.map(c=><option key={c.id} value={c.id}>{c.emoji} {c.label}</option>)}
+          </select>
+
+          <label style={lblSt}>Type</label>
+          <div style={{ display:"flex",gap:8 }}>
+            {[{v:false,l:"📝 Note / Thought"},{v:true,l:"❓ Question (both answer)"}].map(opt=>(
+              <button key={String(opt.v)} onClick={()=>setData(p=>({...p,isQuestion:opt.v}))}
+                style={{ flex:1,padding:"10px",borderRadius:10,border:`1px solid ${data.isQuestion===opt.v?"#9B6EE8":T.border}`,background:data.isQuestion===opt.v?"#9B6EE822":"transparent",color:data.isQuestion===opt.v?"#9B6EE8":T.text,fontFamily:"'DM Sans',sans-serif",fontSize:13,cursor:"pointer",fontWeight:data.isQuestion===opt.v?700:400 }}>
+                {opt.l}
+              </button>
+            ))}
+          </div>
+
+          <label style={lblSt}>{data.isQuestion?"Additional context (optional)":"Your thoughts / notes"}</label>
+          <textarea style={{...inpSt,minHeight:90,resize:"vertical"}} value={data.body}
+            onChange={e=>setData(p=>({...p,body:e.target.value}))}
+            placeholder={data.isQuestion?"Any background or guidance for answering...":"Write freely here..."}/>
+
+          <div style={{ display:"flex",gap:10,marginTop:24,justifyContent:"flex-end" }}>
+            <button style={btnSt(false)} onClick={onClose}>Cancel</button>
+            <button style={btnSt(true)} onClick={onSave}>Save</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  function AnswerBox({ entry }) {
+    const user    = activeUser||"A";
+    const partner = user==="A"?"B":"A";
+    const [draft, setDraft] = useState(entry.answers?.[user]||"");
+    const [editing, setEditing] = useState(!entry.answers?.[user]);
+
+    return (
+      <div style={{ marginTop:14 }}>
+        {/* Your answer */}
+        <div style={{ marginBottom:12 }}>
+          <div style={{ fontSize:11,fontWeight:700,color:user==="A"?"#E8A838":"#E84E8A",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:6 }}>
+            {(names[user]||user)}'s Answer
+          </div>
+          {editing ? (
+            <div>
+              <textarea
+                value={draft}
+                onChange={e=>setDraft(e.target.value)}
+                placeholder="Write your answer here..."
+                style={{...inpSt,minHeight:70,resize:"vertical",border:`1px solid ${user==="A"?"#E8A838":"#E84E8A"}44`}}
+              />
+              <div style={{ display:"flex",gap:8,marginTop:8,justifyContent:"flex-end" }}>
+                {entry.answers?.[user]&&<button onClick={()=>setEditing(false)} style={{ fontSize:12,padding:"5px 12px",borderRadius:8,border:`1px solid ${T.border}`,background:T.inputBg,color:T.textSub,cursor:"pointer",fontFamily:"'DM Sans',sans-serif" }}>Cancel</button>}
+                <button onClick={()=>{ saveAnswer(entry.id,draft); setEditing(false); }} style={{ fontSize:12,padding:"5px 14px",borderRadius:8,border:"none",background:"#9B6EE8",color:"#fff",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontWeight:600 }}>
+                  Save Answer
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div style={{ background:T.inputBg,borderRadius:10,padding:"12px 14px",position:"relative" }}>
+              <div style={{ fontSize:14,color:T.text,lineHeight:1.6,whiteSpace:"pre-wrap",fontFamily:"'DM Sans',sans-serif" }}>{entry.answers[user]}</div>
+              <button onClick={()=>setEditing(true)} style={{ position:"absolute",top:8,right:8,fontSize:12,background:"none",border:"none",color:T.textMuted,cursor:"pointer" }}>✎</button>
+            </div>
+          )}
+        </div>
+
+        {/* Partner's answer */}
+        {entry.answers?.[partner] && (
+          <div>
+            <div style={{ fontSize:11,fontWeight:700,color:partner==="A"?"#E8A838":"#E84E8A",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:6 }}>
+              {(names[partner]||partner)}'s Answer
+            </div>
+            <div style={{ background:T.inputBg,borderRadius:10,padding:"12px 14px",border:`1px solid ${partner==="A"?"#E8A83822":"#E84E8A22"}` }}>
+              <div style={{ fontSize:14,color:T.text,lineHeight:1.6,whiteSpace:"pre-wrap",fontFamily:"'DM Sans',sans-serif" }}>{entry.answers[partner]}</div>
+            </div>
+          </div>
+        )}
+
+        {entry.isQuestion && !entry.answers?.[partner] && (
+          <div style={{ fontSize:12,color:T.textMuted,fontStyle:"italic",marginTop:4 }}>{names[partner]||partner} hasn't answered yet...</div>
+        )}
+      </div>
+    );
+  }
+
+  if (entries===null) return (
+    <div style={{ padding:"40px 16px",textAlign:"center",color:T.textMuted,fontFamily:"'DM Sans',sans-serif" }}>Loading...</div>
+  );
+
+  return (
+    <div style={{ padding:"24px 16px", maxWidth:820, margin:"0 auto" }}>
+      {/* Header */}
+      <div style={{ display:"flex",alignItems:"flex-start",justifyContent:"space-between",flexWrap:"wrap",gap:12,marginBottom:6 }}>
+        <div>
+          <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:28,color:T.text }}>💭 Reflections</div>
+          <div style={{ fontSize:13,color:T.textSub,marginTop:3 }}>Questions, plans, thoughts — yours and each other's</div>
+        </div>
+        <button onClick={()=>setShowForm(true)} style={{ height:36,padding:"0 16px",borderRadius:9,border:"none",background:"#9B6EE8",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,color:"#fff",whiteSpace:"nowrap" }}>
+          + Add Reflection
+        </button>
+      </div>
+
+      {/* Category filter pills */}
+      <div className="pill-scroll" style={{ marginBottom:20,marginTop:16 }}>
+        <button onClick={()=>setCatFilter(null)} style={{ padding:"5px 13px",borderRadius:20,cursor:"pointer",fontSize:12,fontFamily:"'DM Sans',sans-serif",fontWeight:500,border:"none",background:!catFilter?"#9B6EE8":"transparent",color:!catFilter?"#fff":T.textSub,outline:!catFilter?"none":`1px solid ${T.border}`,transition:"all 0.15s",flexShrink:0 }}>All</button>
+        {REFLECT_CATS.map(rc=>(
+          <button key={rc.id} onClick={()=>setCatFilter(catFilter===rc.id?null:rc.id)} style={{ padding:"5px 13px",borderRadius:20,cursor:"pointer",fontSize:12,fontFamily:"'DM Sans',sans-serif",fontWeight:500,border:"none",background:catFilter===rc.id?rc.color:"transparent",color:catFilter===rc.id?"#fff":T.textSub,outline:catFilter===rc.id?"none":`1px solid ${T.border}`,transition:"all 0.15s",whiteSpace:"nowrap",flexShrink:0 }}>
+            {rc.emoji} {rc.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Stats row */}
+      <div className="stats-row" style={{ marginBottom:20 }}>
+        {[
+          { l:"Total", v:entries.length, c:"#9B6EE8" },
+          { l:"Questions", v:entries.filter(e=>e.isQuestion).length, c:"#E84E8A" },
+          { l:"Notes", v:entries.filter(e=>!e.isQuestion).length, c:"#3DBF8A" },
+          { l:"Answered", v:entries.filter(e=>e.isQuestion&&e.answers&&Object.keys(e.answers).length===2).length, c:"#E8A838" },
+        ].map(s=>(
+          <div key={s.l} style={{ background:T.surface,border:`1px solid ${T.border}`,borderRadius:12,boxShadow:"0 2px 8px rgba(0,0,0,0.06)",padding:"12px 16px",flex:"1 1 90px",borderLeft:`3px solid ${s.c}` }}>
+            <div style={{ fontSize:22,fontWeight:700,color:T.text,lineHeight:1 }}>{s.v}</div>
+            <div style={{ fontSize:10,fontWeight:600,color:T.textSub,marginTop:3,textTransform:"uppercase",letterSpacing:"0.08em" }}>{s.l}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Entries */}
+      {filtered.length===0 ? (
+        <div style={{ background:T.surface,border:`1px solid ${T.border}`,borderRadius:14,padding:"50px 20px",textAlign:"center",boxShadow:"0 2px 8px rgba(0,0,0,0.06)" }}>
+          <div style={{ fontSize:40,marginBottom:12 }}>💭</div>
+          <div style={{ fontSize:17,fontWeight:600,color:T.text,fontFamily:"'DM Serif Display',serif" }}>Nothing here yet</div>
+          <div style={{ fontSize:13,color:T.textSub,marginTop:6 }}>Add a question or reflection to get started.</div>
+        </div>
+      ) : (
+        <div style={{ display:"flex",flexDirection:"column",gap:12 }}>
+          {[...filtered].reverse().map(e=>{
+            const rc = cat(e.category);
+            const isExp = expanded[e.id];
+            const answeredCount = e.answers ? Object.keys(e.answers).length : 0;
+            const bothAnswered = e.isQuestion && answeredCount===2;
+            return (
+              <div key={e.id} style={{ background:T.surface,border:`1px solid ${T.border}`,borderLeft:`3px solid ${rc.color}`,borderRadius:14,padding:"16px 18px",boxShadow:"0 2px 8px rgba(0,0,0,0.06)" }}>
+                {/* Entry header */}
+                <div style={{ display:"flex",alignItems:"flex-start",gap:10 }}>
+                  <div style={{ width:34,height:34,borderRadius:10,background:rc.color+"22",display:"flex",alignItems:"center",justifyContent:"center",fontSize:17,flexShrink:0 }}>{rc.emoji}</div>
+                  <div style={{ flex:1,minWidth:0 }}>
+                    <div style={{ display:"flex",alignItems:"center",gap:6,flexWrap:"wrap" }}>
+                      {e.isQuestion && <span style={{ fontSize:10,padding:"2px 7px",borderRadius:5,background:"#9B6EE822",color:"#9B6EE8",fontWeight:700,flexShrink:0 }}>❓ Question</span>}
+                      {bothAnswered && <span style={{ fontSize:10,padding:"2px 7px",borderRadius:5,background:"#3DBF8A22",color:"#3DBF8A",fontWeight:700,flexShrink:0 }}>✓ Both answered</span>}
+                      {e.isQuestion && !bothAnswered && answeredCount===1 && <span style={{ fontSize:10,padding:"2px 7px",borderRadius:5,background:"#E8A83822",color:"#E8A838",fontWeight:700,flexShrink:0 }}>½ 1 answered</span>}
+                    </div>
+                    <div style={{ fontSize:15,fontWeight:600,color:T.text,lineHeight:1.4,marginTop:4,fontFamily:"'DM Sans',sans-serif" }}>{e.title}</div>
+                    {e.body && !isExp && <div style={{ fontSize:13,color:T.textSub,marginTop:4,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:"100%" }}>{e.body}</div>}
+                    <div style={{ display:"flex",gap:5,marginTop:6,flexWrap:"wrap" }}>
+                      <span style={{ fontSize:10,padding:"2px 7px",borderRadius:5,background:rc.color+"20",color:rc.color,fontWeight:600,fontFamily:"'DM Sans',sans-serif" }}>{rc.emoji} {rc.label}</span>
+                      <span style={{ fontSize:10,color:T.textMuted }}>{e.createdAt} · by {names[e.createdBy]||e.createdBy}</span>
+                    </div>
+                  </div>
+                  <div style={{ display:"flex",gap:2,flexShrink:0 }}>
+                    <button onClick={()=>setEditEntry({...e})} style={{ background:"none",border:"none",color:T.textMuted,cursor:"pointer",fontSize:13,padding:"3px 5px",borderRadius:4 }}>✎</button>
+                    <button onClick={()=>deleteEntry(e.id)} style={{ background:"none",border:"none",color:T.textMuted,cursor:"pointer",fontSize:13,padding:"3px 5px",borderRadius:4 }}>✕</button>
+                  </div>
+                </div>
+
+                {/* Expand / collapse */}
+                <button
+                  onClick={()=>setExpanded(prev=>({...prev,[e.id]:!prev[e.id]}))}
+                  style={{ marginTop:10,fontSize:12,color:"#9B6EE8",background:"none",border:`1px solid #9B6EE844`,borderRadius:8,padding:"5px 12px",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontWeight:600,width:"100%" }}
+                >
+                  {isExp ? "▲ Collapse" : `▼ ${e.isQuestion?"View / Answer":"Read more"}`}
+                </button>
+
+                {/* Expanded content */}
+                {isExp && (
+                  <div style={{ marginTop:14 }}>
+                    {e.body && (
+                      <div style={{ background:T.inputBg,borderRadius:10,padding:"12px 14px",marginBottom:12 }}>
+                        <div style={{ fontSize:13,color:T.textSub,marginBottom:4,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.08em",fontSize:10 }}>Context</div>
+                        <div style={{ fontSize:14,color:T.text,lineHeight:1.6,whiteSpace:"pre-wrap" }}>{e.body}</div>
+                      </div>
+                    )}
+                    {e.isQuestion ? (
+                      <AnswerBox entry={e}/>
+                    ) : (
+                      <div style={{ fontSize:13,color:T.textMuted,fontStyle:"italic",textAlign:"center",padding:"8px 0" }}>This is a personal note. No answers needed.</div>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {showForm && <EntryForm data={newEntry} setData={setNewEntry} onSave={addEntry} onClose={()=>setShowForm(false)} title="New Reflection"/>}
+      {editEntry && <EntryForm data={editEntry} setData={setEditEntry} onSave={saveEdit} onClose={()=>setEditEntry(null)} title="Edit Reflection"/>}
+    </div>
+  );
+}
+
 // ── PrayerView — standalone prayer requests board ────────────────────────────
 function PrayerView({ tasks, setTasks, names, activeUser, T, mode, aColor, aLabel, TODAY, genId, toasts, setToasts, SECTIONS }) {
   // showAdd is managed internally below
@@ -832,6 +1390,17 @@ export default function TogetherApp() {
   const [addSection, setAddSec]     = useState(null);
   const [editTask,   setEdit]       = useState(null);
   const [showSett,   setShowSett]   = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(() => {
+    try { return !localStorage.getItem("together_onboarded"); }
+    catch { return false; }
+  });
+  function finishOnboarding() {
+    try { localStorage.setItem("together_onboarded","1"); } catch {}
+    setShowOnboarding(false);
+  }
+  const [showTour,   setShowTour]   = useState(false);
+  const [tourStep,   setTourStep]   = useState(0);
+  const [notifPerm,  setNotifPerm]  = useState(() => { try { return Notification?.permission||"default"; } catch { return "default"; } });
   const [showNav,    setShowNav]    = useState(false);
   const [toasts,     setToasts]     = useState([]);
   const seenIdsRef   = useRef(null);
@@ -968,6 +1537,56 @@ export default function TogetherApp() {
 
   const setNames   = n => { setNamesState(n); namesRef.current = n; dbSet("names", n); };
   const toggleMode = () => { const m = mode==="dark"?"light":"dark"; setMode(m); dbSet("mode",m); };
+
+  // ── Push Notifications ────────────────────────────────────────────────────
+  async function requestNotifPermission() {
+    try {
+      const p = await Notification.requestPermission();
+      setNotifPerm(p);
+      if (p === "granted") {
+        new Notification("Together ♡", { body:"Notifications enabled! You'll get reminders for tasks due soon.", icon:"/favicon.ico" });
+        // Schedule check immediately
+        checkDueNotifications();
+      }
+    } catch(e) { console.warn("Notifications not supported",e); }
+  }
+
+  function checkDueNotifications() {
+    if (typeof Notification === "undefined" || Notification.permission !== "granted") return;
+    const myUser = activeUser || "A";
+    const myTasks = (tasksRef.current||[]).filter(t =>
+      !t.done &&
+      t.dueDate &&
+      (t.assignee === myUser || t.assignee === "both")
+    );
+    myTasks.forEach(t => {
+      const n = daysUntil(t.dueDate);
+      if (n === 1) {
+        new Notification(`Due tomorrow: ${t.title}`, {
+          body: `📅 ${t.title} is due tomorrow. Tap to open Together.`,
+          icon: "/favicon.ico", tag: `due-${t.id}`,
+        });
+      } else if (n === 0) {
+        new Notification(`Due today: ${t.title}`, {
+          body: `⚡ ${t.title} is due today!`,
+          icon: "/favicon.ico", tag: `due-${t.id}`,
+        });
+      } else if (n < 0) {
+        new Notification(`Overdue: ${t.title}`, {
+          body: `🔴 ${t.title} is ${Math.abs(n)} day${Math.abs(n)>1?"s":""} overdue.`,
+          icon: "/favicon.ico", tag: `due-${t.id}`,
+        });
+      }
+    });
+  }
+
+  // Run notification check once on load and every hour
+  useEffect(() => {
+    const run = () => checkDueNotifications();
+    const t = setTimeout(run, 3000); // 3s after load
+    const i = setInterval(run, 3600000); // every hour
+    return () => { clearTimeout(t); clearInterval(i); };
+  }, []);
 
   // ── Toast notifications ────────────────────────────────────────────────────
   function showToast(task, creatorName) {
@@ -1384,11 +2003,12 @@ export default function TogetherApp() {
   const navViews=[
     ["board","Board"],["today","Today"],["accountability","Us"],
     ["analytics","📊 Analytics"],
+    ["reflections","💭 Reflections"],
     ["prayer","🙏 Prayer"],
     ["urgent","🔴 Urgent"],["week","This Week"],["month","This Month"],
     ["quarter","Next 3 Months"],["year","This Year"],["aitools","AI Tools"],
   ];
-  const isFullScreen=["today","accountability","aitools","urgent","week","month","quarter","year","prayer","analytics"].includes(view);
+  const isFullScreen=["today","accountability","aitools","urgent","week","month","quarter","year","prayer","analytics","reflections"].includes(view);
   const pad=isFullScreen?"0":"16px 16px";
 
   // ── Reusable timeline section renderer ────────────────────────────────────
@@ -1693,6 +2313,11 @@ export default function TogetherApp() {
           <AnalyticsView log={completedLog} tasks={tasks} names={names} T={T} mode={mode} SECTIONS={SECTIONS} PRI_COLOR={PRI_COLOR} TODAY={TODAY}/>
         )}
 
+        {/* ── REFLECTIONS ── */}
+        {view==="reflections"&&(
+          <ReflectionsView activeUser={activeUser} names={names} T={T} mode={mode} TODAY={TODAY} genId={genId}/>
+        )}
+
         {/* ── AI TOOLS ── */}
         {view==="aitools"&&(
           <div style={{padding:"24px 16px"}}>
@@ -1727,7 +2352,7 @@ export default function TogetherApp() {
           ["board","⊞","Board"],
           ["today","◎","Today"],
           ["accountability","♡","Us"],
-          ["analytics","📊","Analytics"],
+          ["reflections","💭","Reflect"],
           ["more","•••","More"],
         ].map(([v,icon,label])=>(
           <button key={v} onClick={()=>{if(v==="more"){setShowNav(true);}else{setView(v);}}} style={{ display:"flex",flexDirection:"column",alignItems:"center",gap:3,background:"none",border:"none",cursor:"pointer",padding:"4px 8px",minWidth:52,color:view===v&&v!=="more"?T.accent:T.textSub,transition:"color 0.15s" }}>
@@ -1828,6 +2453,12 @@ export default function TogetherApp() {
         })}
       </div>
 
+      {/* ── APP TOUR ── */}
+      {showTour && <AppTour step={tourStep} setStep={setTourStep} onClose={()=>setShowTour(false)} setView={setView} setShowAdd={setShowAdd} toggleMode={toggleMode} T={T} mode={mode} names={names} activeUser={activeUser}/>}
+
+      {/* ── ONBOARDING ── */}
+      {showOnboarding && <OnboardingFlow names={names} onFinish={finishOnboarding} T={T} mode={mode}/>}
+
       {/* ── IDENTITY PICKER (first time + on demand) ── */}
       {(showIdentityPicker || !activeUser) && tasks && (
         <div style={{ position:"fixed",inset:0,zIndex:60,background:"rgba(0,0,0,0.85)",backdropFilter:"blur(8px)",display:"flex",alignItems:"center",justifyContent:"center",padding:24 }}>
@@ -1881,6 +2512,37 @@ export default function TogetherApp() {
             <input style={inpStyle} value={names.A} onChange={e=>setNames({...names,A:e.target.value})} placeholder="Name"/>
             <label style={lblStyle}>Partner B Name</label>
             <input style={inpStyle} value={names.B} onChange={e=>setNames({...names,B:e.target.value})} placeholder="Name"/>
+            {/* Tour */}
+            <div style={{marginTop:20,paddingTop:16,borderTop:`1px solid ${T.border}`}}>
+              <div style={{fontSize:12,fontWeight:600,color:T.textMuted,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:10}}>App Tour</div>
+              <button onClick={()=>{setShowSett(false);setTourStep(0);setShowTour(true);}} style={{width:"100%",padding:"11px",borderRadius:10,border:`1px solid #9B6EE844`,background:"#9B6EE812",color:"#9B6EE8",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+                🗺️ Take the App Tour
+              </button>
+            </div>
+
+            {/* Push Notifications */}
+            <div style={{marginTop:16,paddingTop:16,borderTop:`1px solid ${T.border}`}}>
+              <div style={{fontSize:12,fontWeight:600,color:T.textMuted,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:10}}>Push Notifications</div>
+              {notifPerm==="granted" ? (
+                <div style={{display:"flex",alignItems:"center",gap:10,padding:"11px 14px",borderRadius:10,background:"#3DBF8A12",border:"1px solid #3DBF8A44"}}>
+                  <span style={{fontSize:18}}>🔔</span>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:13,fontWeight:600,color:"#3DBF8A"}}>Notifications enabled</div>
+                    <div style={{fontSize:11,color:T.textSub,marginTop:1}}>You'll get alerts for tasks due today, tomorrow, and overdue</div>
+                  </div>
+                  <button onClick={checkDueNotifications} style={{fontSize:11,padding:"4px 10px",borderRadius:7,border:"1px solid #3DBF8A44",background:"transparent",color:"#3DBF8A",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontWeight:600}}>Test</button>
+                </div>
+              ) : notifPerm==="denied" ? (
+                <div style={{padding:"11px 14px",borderRadius:10,background:T.inputBg,border:`1px solid ${T.border}`,fontSize:13,color:T.textSub}}>
+                  🔕 Notifications blocked. Please enable them in your browser settings.
+                </div>
+              ) : (
+                <button onClick={requestNotifPermission} style={{width:"100%",padding:"11px",borderRadius:10,border:"1px solid #E8A83844",background:"#E8A83812",color:"#E8A838",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+                  🔔 Enable Due Date Notifications
+                </button>
+              )}
+            </div>
+
             <div style={{display:"flex",gap:10,marginTop:22,justifyContent:"flex-end"}}>
               <button style={btnStyle(true)} onClick={()=>setShowSett(false)}>Done</button>
             </div>
