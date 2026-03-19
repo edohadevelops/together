@@ -2451,13 +2451,12 @@ export default function TogetherApp() {
     ["analytics","📊 Analytics"],
     ["reflections","💭 Reflections"],
     ["tracker","🔗 Tracker"],
-    ["notes","📓 Notes"],
     ["cookbook","👨‍🍳 Cookbook"],
     ["prayer","🙏 Prayer"],
     ["urgent","🔴 Urgent"],["week","This Week"],["month","This Month"],
     ["quarter","Next 3 Months"],["year","This Year"],["aitools","AI Tools"],
   ];
-  const isFullScreen=["today","accountability","aitools","urgent","week","month","quarter","year","prayer","analytics","reflections","tracker","notes","cookbook"].includes(view);
+  const isFullScreen=["today","accountability","aitools","urgent","week","month","quarter","year","prayer","analytics","reflections","tracker","cookbook"].includes(view);
   const pad=isFullScreen?"0":"16px 16px";
 
   // ── Reusable timeline section renderer ────────────────────────────────────
@@ -2663,26 +2662,55 @@ export default function TogetherApp() {
                 </div>
               </div>
             )}
-            {["Urgent","High","Medium","Low"].map(p=>{
-              const pt=activeTasks.filter(t=>t.type!=="daily"&&t.priority===p&&(t.assignee===activeUser||t.assignee==="both"));
-              if (!pt.length) return null;
-              const pc=PRI_COLOR[p];
-              return (
-                <div key={p} style={{marginBottom:20}}>
-                  <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
-                    <div style={{width:7,height:7,borderRadius:"50%",background:pc}}/>
-                    <span style={{fontSize:12,fontWeight:700,color:pc,textTransform:"uppercase",letterSpacing:"0.1em"}}>{p}</span>
-                    <span style={{fontSize:12,color:T.textMuted}}>· {pt.length} task{pt.length!==1?"s":""}</span>
+            {(() => {
+              // Only show tasks that are relevant TODAY:
+              // 1. Due today or overdue (has a dueDate <= today)
+              // 2. No due date but created today
+              // 3. Marked Urgent priority (always show regardless of date)
+              // Exclude daily/weekly — they have their own section above
+              const todayTasks = activeTasks.filter(t => {
+                if (t.type === "daily" || t.type === "weekly") return false;
+                if (t.assignee !== activeUser && t.assignee !== "both") return false;
+                if (t.priority === "Urgent") return true;
+                if (t.dueDate) {
+                  const n = daysUntil(t.dueDate);
+                  return n !== null && n <= 0; // due today or overdue
+                }
+                // No due date — only show if created today
+                return t.createdAt === TODAY;
+              });
+
+              if (todayTasks.length === 0) return null;
+
+              return ["Urgent","High","Medium","Low"].map(p=>{
+                const pt = todayTasks.filter(t => t.priority === p);
+                if (!pt.length) return null;
+                const pc = PRI_COLOR[p];
+                return (
+                  <div key={p} style={{marginBottom:20}}>
+                    <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
+                      <div style={{width:7,height:7,borderRadius:"50%",background:pc}}/>
+                      <span style={{fontSize:12,fontWeight:700,color:pc,textTransform:"uppercase",letterSpacing:"0.1em"}}>{p}</span>
+                      <span style={{fontSize:12,color:T.textMuted}}>· {pt.length} task{pt.length!==1?"s":""}</span>
+                    </div>
+                    <div style={cardBase({padding:"6px 12px"})}>{pt.map(t=><TaskPill key={t.id} t={t} showSec draggable={false}/>)}</div>
                   </div>
-                  <div style={cardBase({padding:"6px 12px"})}>{pt.map(t=><TaskPill key={t.id} t={t} showSec draggable={false}/>)}</div>
-                </div>
-              );
-            })}
-            {activeTasks.filter(t=>t.assignee===activeUser||t.assignee==="both").length===0&&(
+                );
+              });
+            })()}
+
+            {/* Empty state — nothing due today and no dailies */}
+            {activeTasks.filter(t=>{
+              if (t.type==="daily"||t.type==="weekly") return t.assignee===activeUser||t.assignee==="both";
+              if (t.assignee!==activeUser&&t.assignee!=="both") return false;
+              if (t.priority==="Urgent") return true;
+              if (t.dueDate) return daysUntil(t.dueDate)<=0;
+              return t.createdAt===TODAY;
+            }).length===0&&(
               <div style={cardBase({padding:"50px 20px",textAlign:"center"})}>
                 <div style={{fontSize:36,marginBottom:10}}>🎉</div>
-                <div style={{fontSize:17,fontWeight:600,color:T.text}}>All caught up!</div>
-                <div style={{fontSize:13,color:T.textSub,marginTop:4}}>Nothing left for today.</div>
+                <div style={{fontSize:17,fontWeight:600,color:T.text}}>All caught up for today!</div>
+                <div style={{fontSize:13,color:T.textSub,marginTop:4}}>No tasks due today. Check the Board or Urgent tab for everything else.</div>
               </div>
             )}
           </div>
@@ -2781,8 +2809,6 @@ export default function TogetherApp() {
         {view==="tracker"&&<TrackerView activeUser={activeUser} names={names} T={T} mode={mode} TODAY={TODAY} genId={genId}/>}
 
         {/* ── NOTES ── */}
-        {view==="notes"&&<NotesView activeUser={activeUser} names={names} T={T} mode={mode} TODAY={TODAY} genId={genId}/>}
-
         {/* ── COOKBOOK ── */}
         {view==="cookbook"&&<CookbookView activeUser={activeUser} names={names} T={T} mode={mode} TODAY={TODAY} genId={genId}/>}
 
