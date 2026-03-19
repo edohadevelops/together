@@ -871,105 +871,9 @@ function ReflectionsView({ activeUser, names, T, mode, TODAY, genId }) {
 
   const filtered = (entries||[]).filter(e => !catFilter || e.category===catFilter);
 
-  function EntryForm({ data, setData, onSave, onClose, title }) {
-    const ref = useRef(null);
-    useEffect(()=>{ const t=setTimeout(()=>{ if(ref.current) ref.current.focus(); },80); return ()=>clearTimeout(t); },[]);
-    return (
-      <div style={{ position:"fixed",inset:0,zIndex:40,background:"rgba(0,0,0,0.6)",backdropFilter:"blur(6px)",display:"flex",alignItems:"flex-end",justifyContent:"center" }}
-        onClick={e=>e.target===e.currentTarget&&onClose()}>
-        <div style={{ ...card(), width:"100%", maxWidth:520, maxHeight:"92vh", overflowY:"auto", borderRadius:"18px 18px 0 0", padding:"24px 20px 36px" }}>
-          <div style={{ width:40,height:4,borderRadius:2,background:T.textMuted,margin:"0 auto 20px",opacity:0.4 }}/>
-          <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:22,color:T.text,marginBottom:4 }}>{title}</div>
-          <div style={{ height:2,width:40,background:"#9B6EE8",borderRadius:2,marginBottom:20 }}/>
+  // EntryForm extracted to module level — see ReflectionEntryForm below
 
-          <label style={lblSt}>Title / Prompt</label>
-          <input ref={ref} style={inpSt} value={data.title} onChange={e=>setData(p=>({...p,title:e.target.value}))}
-            onKeyDown={e=>{ if(e.key==="Enter"&&data.title.trim()){e.preventDefault();onSave();}}}
-            placeholder="e.g. What are your top 3 love languages? (Enter to save)"/>
-
-          <label style={lblSt}>Category</label>
-          <select style={selSt} value={data.category} onChange={e=>setData(p=>({...p,category:e.target.value}))}>
-            {REFLECT_CATS.map(c=><option key={c.id} value={c.id}>{c.emoji} {c.label}</option>)}
-          </select>
-
-          <label style={lblSt}>Type</label>
-          <div style={{ display:"flex",gap:8 }}>
-            {[{v:false,l:"📝 Note / Thought"},{v:true,l:"❓ Question (both answer)"}].map(opt=>(
-              <button key={String(opt.v)} onClick={()=>setData(p=>({...p,isQuestion:opt.v}))}
-                style={{ flex:1,padding:"10px",borderRadius:10,border:`1px solid ${data.isQuestion===opt.v?"#9B6EE8":T.border}`,background:data.isQuestion===opt.v?"#9B6EE822":"transparent",color:data.isQuestion===opt.v?"#9B6EE8":T.text,fontFamily:"'DM Sans',sans-serif",fontSize:13,cursor:"pointer",fontWeight:data.isQuestion===opt.v?700:400 }}>
-                {opt.l}
-              </button>
-            ))}
-          </div>
-
-          <label style={lblSt}>{data.isQuestion?"Additional context (optional)":"Your thoughts / notes"}</label>
-          <textarea style={{...inpSt,minHeight:90,resize:"vertical"}} value={data.body}
-            onChange={e=>setData(p=>({...p,body:e.target.value}))}
-            placeholder={data.isQuestion?"Any background or guidance for answering...":"Write freely here..."}/>
-
-          <div style={{ display:"flex",gap:10,marginTop:24,justifyContent:"flex-end" }}>
-            <button style={btnSt(false)} onClick={onClose}>Cancel</button>
-            <button style={btnSt(true)} onClick={onSave}>Save</button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  function AnswerBox({ entry }) {
-    const user    = activeUser||"A";
-    const partner = user==="A"?"B":"A";
-    const [draft, setDraft] = useState(entry.answers?.[user]||"");
-    const [editing, setEditing] = useState(!entry.answers?.[user]);
-
-    return (
-      <div style={{ marginTop:14 }}>
-        {/* Your answer */}
-        <div style={{ marginBottom:12 }}>
-          <div style={{ fontSize:11,fontWeight:700,color:user==="A"?"#E8A838":"#E84E8A",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:6 }}>
-            {(names[user]||user)}'s Answer
-          </div>
-          {editing ? (
-            <div>
-              <textarea
-                value={draft}
-                onChange={e=>setDraft(e.target.value)}
-                placeholder="Write your answer here..."
-                style={{...inpSt,minHeight:70,resize:"vertical",border:`1px solid ${user==="A"?"#E8A838":"#E84E8A"}44`}}
-              />
-              <div style={{ display:"flex",gap:8,marginTop:8,justifyContent:"flex-end" }}>
-                {entry.answers?.[user]&&<button onClick={()=>setEditing(false)} style={{ fontSize:12,padding:"5px 12px",borderRadius:8,border:`1px solid ${T.border}`,background:T.inputBg,color:T.textSub,cursor:"pointer",fontFamily:"'DM Sans',sans-serif" }}>Cancel</button>}
-                <button onClick={()=>{ saveAnswer(entry.id,draft); setEditing(false); }} style={{ fontSize:12,padding:"5px 14px",borderRadius:8,border:"none",background:"#9B6EE8",color:"#fff",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontWeight:600 }}>
-                  Save Answer
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div style={{ background:T.inputBg,borderRadius:10,padding:"12px 14px",position:"relative" }}>
-              <div style={{ fontSize:14,color:T.text,lineHeight:1.6,whiteSpace:"pre-wrap",fontFamily:"'DM Sans',sans-serif" }}>{entry.answers[user]}</div>
-              <button onClick={()=>setEditing(true)} style={{ position:"absolute",top:8,right:8,fontSize:12,background:"none",border:"none",color:T.textMuted,cursor:"pointer" }}>✎</button>
-            </div>
-          )}
-        </div>
-
-        {/* Partner's answer */}
-        {entry.answers?.[partner] && (
-          <div>
-            <div style={{ fontSize:11,fontWeight:700,color:partner==="A"?"#E8A838":"#E84E8A",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:6 }}>
-              {(names[partner]||partner)}'s Answer
-            </div>
-            <div style={{ background:T.inputBg,borderRadius:10,padding:"12px 14px",border:`1px solid ${partner==="A"?"#E8A83822":"#E84E8A22"}` }}>
-              <div style={{ fontSize:14,color:T.text,lineHeight:1.6,whiteSpace:"pre-wrap",fontFamily:"'DM Sans',sans-serif" }}>{entry.answers[partner]}</div>
-            </div>
-          </div>
-        )}
-
-        {entry.isQuestion && !entry.answers?.[partner] && (
-          <div style={{ fontSize:12,color:T.textMuted,fontStyle:"italic",marginTop:4 }}>{names[partner]||partner} hasn't answered yet...</div>
-        )}
-      </div>
-    );
-  }
+  // AnswerBox extracted to module level — see ReflectionAnswerBox below
 
   if (entries===null) return (
     <div style={{ padding:"40px 16px",textAlign:"center",color:T.textMuted,fontFamily:"'DM Sans',sans-serif" }}>Loading...</div>
@@ -1069,7 +973,7 @@ function ReflectionsView({ activeUser, names, T, mode, TODAY, genId }) {
                       </div>
                     )}
                     {e.isQuestion ? (
-                      <AnswerBox entry={e}/>
+                      <ReflectionAnswerBox entry={e} activeUser={activeUser} names={names} T={T} saveAnswer={saveAnswer}/>
                     ) : (
                       <div style={{ fontSize:13,color:T.textMuted,fontStyle:"italic",textAlign:"center",padding:"8px 0" }}>This is a personal note. No answers needed.</div>
                     )}
@@ -1081,8 +985,550 @@ function ReflectionsView({ activeUser, names, T, mode, TODAY, genId }) {
         </div>
       )}
 
-      {showForm && <EntryForm data={newEntry} setData={setNewEntry} onSave={addEntry} onClose={()=>setShowForm(false)} title="New Reflection"/>}
-      {editEntry && <EntryForm data={editEntry} setData={setEditEntry} onSave={saveEdit} onClose={()=>setEditEntry(null)} title="Edit Reflection"/>}
+      {showForm && <ReflectionEntryForm data={newEntry} setData={setNewEntry} onSave={addEntry} onClose={()=>setShowForm(false)} title="New Reflection" T={T} mode={mode}/>}
+      {editEntry && <ReflectionEntryForm data={editEntry} setData={setEditEntry} onSave={saveEdit} onClose={()=>setEditEntry(null)} title="Edit Reflection" T={T} mode={mode}/>}
+    </div>
+  );
+}
+
+// ── ReflectionAnswerBox — extracted to module level to prevent focus bugs ─────
+function ReflectionAnswerBox({ entry, activeUser, names, T, saveAnswer }) {
+  const user    = activeUser||"A";
+  const partner = user==="A"?"B":"A";
+  const [draft,   setDraft]   = useState(entry.answers?.[user]||"");
+  const [editing, setEditing] = useState(!entry.answers?.[user]);
+  const taRef = useRef(null);
+
+  // Focus textarea only on first mount (when editing starts)
+  useEffect(() => {
+    if (editing && taRef.current) {
+      const t = setTimeout(()=>{ if(taRef.current) taRef.current.focus(); }, 60);
+      return ()=>clearTimeout(t);
+    }
+  }, [editing]);
+
+  const inpSt = { width:"100%", background:T.inputBg, border:`1px solid ${T.border}`, borderRadius:9, padding:"10px 13px", color:T.text, fontFamily:"'DM Sans',sans-serif", fontSize:14, outline:"none", boxSizing:"border-box" };
+
+  return (
+    <div style={{ marginTop:14 }}>
+      <div style={{ marginBottom:12 }}>
+        <div style={{ fontSize:11,fontWeight:700,color:user==="A"?"#E8A838":"#E84E8A",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:6 }}>
+          {(names[user]||user)}'s Answer
+        </div>
+        {editing ? (
+          <div>
+            <textarea
+              ref={taRef}
+              value={draft}
+              onChange={e=>setDraft(e.target.value)}
+              placeholder="Write your answer here..."
+              style={{...inpSt, minHeight:70, resize:"vertical", border:`1px solid ${user==="A"?"#E8A838":"#E84E8A"}44`}}
+            />
+            <div style={{ display:"flex",gap:8,marginTop:8,justifyContent:"flex-end" }}>
+              {entry.answers?.[user]&&(
+                <button onClick={()=>setEditing(false)} style={{ fontSize:12,padding:"5px 12px",borderRadius:8,border:`1px solid ${T.border}`,background:T.inputBg,color:T.textSub,cursor:"pointer",fontFamily:"'DM Sans',sans-serif" }}>Cancel</button>
+              )}
+              <button onClick={()=>{ saveAnswer(entry.id,draft); setEditing(false); }} style={{ fontSize:12,padding:"5px 14px",borderRadius:8,border:"none",background:"#9B6EE8",color:"#fff",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontWeight:600 }}>
+                Save Answer
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div style={{ background:T.inputBg,borderRadius:10,padding:"12px 14px",position:"relative" }}>
+            <div style={{ fontSize:14,color:T.text,lineHeight:1.6,whiteSpace:"pre-wrap",fontFamily:"'DM Sans',sans-serif" }}>{entry.answers[user]}</div>
+            <button onClick={()=>setEditing(true)} style={{ position:"absolute",top:8,right:8,fontSize:12,background:"none",border:"none",color:T.textMuted,cursor:"pointer" }}>✎</button>
+          </div>
+        )}
+      </div>
+      {entry.answers?.[partner] && (
+        <div>
+          <div style={{ fontSize:11,fontWeight:700,color:partner==="A"?"#E8A838":"#E84E8A",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:6 }}>
+            {(names[partner]||partner)}'s Answer
+          </div>
+          <div style={{ background:T.inputBg,borderRadius:10,padding:"12px 14px",border:`1px solid ${partner==="A"?"#E8A83822":"#E84E8A22"}` }}>
+            <div style={{ fontSize:14,color:T.text,lineHeight:1.6,whiteSpace:"pre-wrap",fontFamily:"'DM Sans',sans-serif" }}>{entry.answers[partner]}</div>
+          </div>
+        </div>
+      )}
+      {entry.isQuestion && !entry.answers?.[partner] && (
+        <div style={{ fontSize:12,color:T.textMuted,fontStyle:"italic",marginTop:4 }}>{(names[partner]||partner)} hasn't answered yet...</div>
+      )}
+    </div>
+  );
+}
+
+// ── ReflectionEntryForm — extracted to module level to fix focus bug ─────────
+function ReflectionEntryForm({ data, setData, onSave, onClose, title, T, mode }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    const t = setTimeout(() => { if (ref.current) ref.current.focus(); }, 80);
+    return () => clearTimeout(t);
+  }, []); // only on mount
+
+  const inpSt = { width:"100%", background:T.inputBg, border:`1px solid ${T.border}`, borderRadius:9, padding:"10px 13px", color:T.text, fontFamily:"'DM Sans',sans-serif", fontSize:14, outline:"none", boxSizing:"border-box" };
+  const selSt = { ...inpSt, background:mode==="dark"?"#181B23":"#fff", cursor:"pointer" };
+  const lblSt = { fontSize:11, fontWeight:600, letterSpacing:"0.1em", textTransform:"uppercase", color:T.textMuted, display:"block", marginBottom:5, marginTop:14, fontFamily:"'DM Sans',sans-serif" };
+
+  return (
+    <div style={{ position:"fixed",inset:0,zIndex:40,background:"rgba(0,0,0,0.6)",backdropFilter:"blur(6px)",display:"flex",alignItems:"flex-end",justifyContent:"center" }}
+      onClick={e=>e.target===e.currentTarget&&onClose()}>
+      <div style={{ background:T.surface,border:`1px solid ${T.border}`,borderRadius:"18px 18px 0 0",boxShadow:"0 -4px 32px rgba(0,0,0,0.3)",width:"100%",maxWidth:520,maxHeight:"92vh",overflowY:"auto",padding:"24px 20px 36px" }}>
+        <div style={{ width:40,height:4,borderRadius:2,background:T.textMuted,margin:"0 auto 20px",opacity:0.4 }}/>
+        <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:22,color:T.text,marginBottom:4 }}>{title}</div>
+        <div style={{ height:2,width:40,background:"#9B6EE8",borderRadius:2,marginBottom:20 }}/>
+        <label style={lblSt}>Title / Prompt</label>
+        <input ref={ref} style={inpSt} value={data.title}
+          onChange={e=>setData(p=>({...p,title:e.target.value}))}
+          onKeyDown={e=>{ if(e.key==="Enter"&&data.title.trim()){e.preventDefault();onSave();} }}
+          placeholder="e.g. What are your top 3 love languages? (Enter to save)"/>
+        <label style={lblSt}>Category</label>
+        <select style={selSt} value={data.category} onChange={e=>setData(p=>({...p,category:e.target.value}))}>
+          {REFLECT_CATS.map(rc=><option key={rc.id} value={rc.id}>{rc.emoji} {rc.label}</option>)}
+        </select>
+        <label style={lblSt}>Type</label>
+        <div style={{ display:"flex",gap:8 }}>
+          {[{v:false,l:"📝 Note / Thought"},{v:true,l:"❓ Question (both answer)"}].map(opt=>(
+            <button key={String(opt.v)} onClick={()=>setData(p=>({...p,isQuestion:opt.v}))}
+              style={{ flex:1,padding:"10px",borderRadius:10,border:`1px solid ${data.isQuestion===opt.v?"#9B6EE8":T.border}`,background:data.isQuestion===opt.v?"#9B6EE822":"transparent",color:data.isQuestion===opt.v?"#9B6EE8":T.text,fontFamily:"'DM Sans',sans-serif",fontSize:13,cursor:"pointer",fontWeight:data.isQuestion===opt.v?700:400 }}>
+              {opt.l}
+            </button>
+          ))}
+        </div>
+        <label style={lblSt}>{data.isQuestion?"Additional context (optional)":"Your thoughts / notes"}</label>
+        <textarea style={{...inpSt,minHeight:90,resize:"vertical"}} value={data.body}
+          onChange={e=>setData(p=>({...p,body:e.target.value}))}
+          placeholder={data.isQuestion?"Any background or guidance for answering...":"Write freely here..."}/>
+        <div style={{ display:"flex",gap:10,marginTop:24,justifyContent:"flex-end" }}>
+          <button style={{ padding:"9px 20px",borderRadius:9,border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:600,background:T.inputBg,color:T.textSub }} onClick={onClose}>Cancel</button>
+          <button style={{ padding:"9px 20px",borderRadius:9,border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:600,background:"#9B6EE8",color:"#fff" }} onClick={onSave}>Save</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Shared mini modal for all three new views ─────────────────────────────────
+function MiniModal({ title, accent, onClose, onSave, children, T }) {
+  return (
+    <div style={{ position:"fixed",inset:0,zIndex:40,background:"rgba(0,0,0,0.6)",backdropFilter:"blur(6px)",display:"flex",alignItems:"flex-end",justifyContent:"center" }}
+      onClick={e=>e.target===e.currentTarget&&onClose()}>
+      <div style={{ background:T.surface,border:`1px solid ${T.border}`,borderRadius:"18px 18px 0 0",boxShadow:"0 -4px 32px rgba(0,0,0,0.3)",width:"100%",maxWidth:540,maxHeight:"92vh",overflowY:"auto",padding:"24px 20px 36px" }}>
+        <div style={{ width:40,height:4,borderRadius:2,background:T.textMuted,margin:"0 auto 20px",opacity:0.4 }}/>
+        <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:22,color:T.text,marginBottom:4 }}>{title}</div>
+        <div style={{ height:2,width:40,background:accent,borderRadius:2,marginBottom:20 }}/>
+        {children}
+        <div style={{ display:"flex",gap:10,marginTop:24,justifyContent:"flex-end" }}>
+          <button style={{ padding:"9px 20px",borderRadius:9,border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:600,background:T.inputBg,color:T.textSub }} onClick={onClose}>Cancel</button>
+          <button style={{ padding:"9px 20px",borderRadius:9,border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:600,background:accent,color:"#fff" }} onClick={onSave}>Save</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── TrackerView — links + application tracking ────────────────────────────────
+const TRACKER_CATS = [
+  { id:"phd",    label:"PhD Programs",  emoji:"🎓", color:"#7B61FF" },
+  { id:"opt",    label:"OPT / CPT",     emoji:"📋", color:"#3B9EDB" },
+  { id:"jobs",   label:"Jobs",          emoji:"💼", color:"#9B6EE8" },
+  { id:"grants", label:"Grants",        emoji:"💰", color:"#E8A838" },
+  { id:"housing",label:"Housing",       emoji:"🏠", color:"#5BAD4E" },
+  { id:"other",  label:"Other",         emoji:"🔗", color:"#888D9B" },
+];
+const TRACKER_STATUSES = [
+  { id:"saved",    label:"Saved",     color:"#888D9B" },
+  { id:"applied",  label:"Applied",   color:"#3B9EDB" },
+  { id:"waiting",  label:"Waiting",   color:"#E8A838" },
+  { id:"interview",label:"Interview", color:"#9B6EE8" },
+  { id:"accepted", label:"Accepted",  color:"#3DBF8A" },
+  { id:"rejected", label:"Rejected",  color:"#E84E8A" },
+  { id:"withdrawn",label:"Withdrawn", color:"#888D9B" },
+];
+
+function TrackerView({ activeUser, names, T, mode, TODAY, genId }) {
+  const [items,    setItemsState] = useState(null);
+  const [catFilter,setCatFilter]  = useState(null);
+  const [stFilter, setStFilter]   = useState(null);
+  const [showAdd,  setShowAdd]    = useState(false);
+  const [editItem, setEditItem]   = useState(null);
+  const [expandedNotes, setExpandedNotes] = useState({});
+  const [newNote, setNewNote] = useState({});
+  const blankItem = { title:"", url:"", category:"phd", status:"saved", notes:[], deadline:"", notes_text:"", createdBy:"", createdAt:"" };
+  const [newItem, setNewItem] = useState({...blankItem});
+
+  useEffect(()=>{ (async()=>{ const s=await dbGet("tracker"); setItemsState(s??[]); })(); },[]);
+  function save(list) { setItemsState(list); dbSet("tracker",list); }
+  function addItem() {
+    if (!newItem.title.trim()) return;
+    save([...(items||[]), { ...newItem, id:genId(), createdBy:activeUser||"A", createdAt:TODAY, notes:[] }]);
+    setNewItem({...blankItem}); setShowAdd(false);
+  }
+  function saveEdit() { save((items||[]).map(i=>i.id===editItem.id?editItem:i)); setEditItem(null); }
+  function deleteItem(id) { save((items||[]).filter(i=>i.id!==id)); }
+  function addNote(itemId) {
+    const text = newNote[itemId]||"";
+    if (!text.trim()) return;
+    const note = { id:genId(), text, by:activeUser||"A", at:new Date().toLocaleString() };
+    save((items||[]).map(i=>i.id===itemId?{...i,notes:[...(i.notes||[]),note]}:i));
+    setNewNote(p=>({...p,[itemId]:""}));
+  }
+  function deleteNote(itemId, noteId) {
+    save((items||[]).map(i=>i.id===itemId?{...i,notes:(i.notes||[]).filter(n=>n.id!==noteId)}:i));
+  }
+  function updateStatus(itemId, status) {
+    save((items||[]).map(i=>i.id===itemId?{...i,status}:i));
+  }
+
+  const filtered = (items||[]).filter(i=> (!catFilter||i.category===catFilter) && (!stFilter||i.status===stFilter));
+  const catOf = id => TRACKER_CATS.find(c=>c.id===id)||TRACKER_CATS[0];
+  const stOf  = id => TRACKER_STATUS.find(s=>s.id===id)||TRACKER_STATUS[0];
+  const inpSt = { width:"100%", background:T.inputBg, border:`1px solid ${T.border}`, borderRadius:9, padding:"10px 13px", color:T.text, fontFamily:"'DM Sans',sans-serif", fontSize:14, outline:"none", boxSizing:"border-box" };
+  const selSt = { ...inpSt, background:mode==="dark"?"#181B23":"#fff", cursor:"pointer" };
+  const lblSt = { fontSize:11,fontWeight:600,letterSpacing:"0.1em",textTransform:"uppercase",color:T.textMuted,display:"block",marginBottom:5,marginTop:14,fontFamily:"'DM Sans',sans-serif" };
+  const card  = (x={})=>({ background:T.surface, border:`1px solid ${T.border}`, borderRadius:14, boxShadow:"0 2px 8px rgba(0,0,0,0.06)", ...x });
+
+  function ItemForm({ data, setData, onSave, onClose, title }) {
+    const ref = useRef(null);
+    useEffect(()=>{ const t=setTimeout(()=>{ if(ref.current) ref.current.focus(); },80); return()=>clearTimeout(t); },[]);
+    return (
+      <div style={{ position:"fixed",inset:0,zIndex:40,background:"rgba(0,0,0,0.6)",backdropFilter:"blur(6px)",display:"flex",alignItems:"flex-end",justifyContent:"center" }}
+        onClick={e=>e.target===e.currentTarget&&onClose()}>
+        <div style={{ ...card(), borderRadius:"18px 18px 0 0", width:"100%", maxWidth:520, maxHeight:"92vh", overflowY:"auto", padding:"24px 20px 36px" }}>
+          <div style={{ width:40,height:4,borderRadius:2,background:T.textMuted,margin:"0 auto 20px",opacity:0.4 }}/>
+          <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:22,color:T.text,marginBottom:4 }}>{title}</div>
+          <div style={{ height:2,width:40,background:"#3B9EDB",borderRadius:2,marginBottom:20 }}/>
+          <label style={lblSt}>Name / Title</label>
+          <input ref={ref} style={inpSt} value={data.title} onChange={e=>setData(p=>({...p,title:e.target.value}))} placeholder="e.g. MIT PhD Program, OPT Application..." onKeyDown={e=>{ if(e.key==="Enter"&&data.title.trim()){e.preventDefault();onSave();}}}/>
+          <label style={lblSt}>URL / Link (optional)</label>
+          <input style={inpSt} type="url" value={data.url||""} onChange={e=>setData(p=>({...p,url:e.target.value}))} placeholder="https://..."/>
+          <label style={lblSt}>Category</label>
+          <select style={selSt} value={data.category} onChange={e=>setData(p=>({...p,category:e.target.value}))}>
+            {TRACKER_CATS.map(c=><option key={c.id} value={c.id}>{c.emoji} {c.label}</option>)}
+          </select>
+          <label style={lblSt}>Status</label>
+          <select style={selSt} value={data.status} onChange={e=>setData(p=>({...p,status:e.target.value}))}>
+            {TRACKER_STATUS.map(s=><option key={s.id} value={s.id}>{s.label}</option>)}
+          </select>
+          <label style={lblSt}>Deadline (optional)</label>
+          <input type="date" style={selSt} value={data.deadline||""} onChange={e=>setData(p=>({...p,deadline:e.target.value}))}/>
+          <label style={lblSt}>Initial Notes (optional)</label>
+          <textarea style={{...inpSt,minHeight:70,resize:"vertical"}} value={data.notes_text||""} onChange={e=>setData(p=>({...p,notes_text:e.target.value}))} placeholder="Any details to start with..."/>
+          <div style={{ display:"flex",gap:10,marginTop:24,justifyContent:"flex-end" }}>
+            <button style={{ padding:"9px 20px",borderRadius:9,border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:600,background:T.inputBg,color:T.textSub }} onClick={onClose}>Cancel</button>
+            <button style={{ padding:"9px 20px",borderRadius:9,border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:600,background:"#3B9EDB",color:"#fff" }} onClick={onSave}>Save</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (items===null) return <div style={{ padding:"40px",textAlign:"center",color:T.textMuted,fontFamily:"'DM Sans',sans-serif" }}>Loading...</div>;
+
+  return (
+    <div style={{ padding:"24px 16px", maxWidth:860, margin:"0 auto" }}>
+      <div style={{ display:"flex",alignItems:"flex-start",justifyContent:"space-between",flexWrap:"wrap",gap:12,marginBottom:16 }}>
+        <div>
+          <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:28,color:T.text }}>🔗 Tracker</div>
+          <div style={{ fontSize:13,color:T.textSub,marginTop:3 }}>Track applications, links, and their progress</div>
+        </div>
+        <button onClick={()=>setShowAdd(true)} style={{ height:36,padding:"0 16px",borderRadius:9,border:"none",background:"#3B9EDB",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,color:"#fff",whiteSpace:"nowrap" }}>+ Add Item</button>
+      </div>
+
+      {/* Stats */}
+      <div className="stats-row" style={{ marginBottom:16 }}>
+        {[{l:"Total",v:items.length,c:"#3B9EDB"},{l:"Accepted",v:items.filter(i=>i.status==="accepted").length,c:"#3DBF8A"},{l:"Waiting",v:items.filter(i=>["waiting","applied","interview"].includes(i.status)).length,c:"#E8A838"},{l:"Rejected",v:items.filter(i=>i.status==="rejected").length,c:"#E84E8A"}].map(s=>(
+          <div key={s.l} style={{ ...card({padding:"12px 16px",flex:"1 1 90px",borderLeft:`3px solid ${s.c}`}) }}>
+            <div style={{ fontSize:22,fontWeight:700,color:T.text,lineHeight:1 }}>{s.v}</div>
+            <div style={{ fontSize:10,fontWeight:600,color:T.textSub,marginTop:3,textTransform:"uppercase",letterSpacing:"0.08em" }}>{s.l}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Filters */}
+      <div className="pill-scroll" style={{ marginBottom:14 }}>
+        <button onClick={()=>{setCatFilter(null);setStFilter(null);}} style={{ padding:"4px 12px",borderRadius:20,cursor:"pointer",fontSize:12,border:"none",background:!catFilter&&!stFilter?"#3B9EDB":"transparent",color:!catFilter&&!stFilter?"#fff":T.textSub,outline:!catFilter&&!stFilter?"none":`1px solid ${T.border}`,flexShrink:0,fontFamily:"'DM Sans',sans-serif",fontWeight:500 }}>All</button>
+        {TRACKER_CATS.map(cat=>(
+          <button key={cat.id} onClick={()=>setCatFilter(catFilter===cat.id?null:cat.id)} style={{ padding:"4px 12px",borderRadius:20,cursor:"pointer",fontSize:12,border:"none",background:catFilter===cat.id?cat.color:"transparent",color:catFilter===cat.id?"#fff":T.textSub,outline:catFilter===cat.id?"none":`1px solid ${T.border}`,flexShrink:0,fontFamily:"'DM Sans',sans-serif",fontWeight:500,whiteSpace:"nowrap" }}>{cat.emoji} {cat.label}</button>
+        ))}
+        <div style={{ width:1,height:20,background:T.border,flexShrink:0,alignSelf:"center" }}/>
+        {TRACKER_STATUS.map(st=>(
+          <button key={st.id} onClick={()=>setStFilter(stFilter===st.id?null:st.id)} style={{ padding:"4px 12px",borderRadius:20,cursor:"pointer",fontSize:12,border:"none",background:stFilter===st.id?st.color+"33":"transparent",color:stFilter===st.id?st.color:T.textSub,outline:stFilter===st.id?`1px solid ${st.color}66`:`1px solid ${T.border}`,flexShrink:0,fontFamily:"'DM Sans',sans-serif",fontWeight:stFilter===st.id?700:500,whiteSpace:"nowrap" }}>{st.label}</button>
+        ))}
+      </div>
+
+      {/* Items */}
+      {filtered.length===0 ? (
+        <div style={{ ...card({padding:"50px 20px",textAlign:"center"}) }}>
+          <div style={{ fontSize:36,marginBottom:10 }}>🔗</div>
+          <div style={{ fontSize:17,fontWeight:600,color:T.text,fontFamily:"'DM Serif Display',serif" }}>Nothing tracked yet</div>
+          <div style={{ fontSize:13,color:T.textSub,marginTop:6 }}>Add PhD programs, OPT applications, jobs — anything you want to follow.</div>
+        </div>
+      ) : (
+        <div style={{ display:"flex",flexDirection:"column",gap:12 }}>
+          {filtered.map(item=>{
+            const cat = catOf(item.category);
+            const st  = stOf(item.status);
+            const isExp = expandedNotes[item.id];
+            const deadline = item.deadline ? (() => { const d=new Date(item.deadline+"T00:00:00"); const diff=Math.ceil((d-new Date())/86400000); return {label:diff<0?`${Math.abs(diff)}d overdue`:diff===0?"Today":diff===1?"Tomorrow":`${diff}d left`,color:diff<0?"#E84E8A":diff<=3?"#E8A838":"#3DBF8A"}; })() : null;
+            return (
+              <div key={item.id} style={{ ...card({padding:"16px 18px"}), borderLeft:`3px solid ${cat.color}` }}>
+                <div style={{ display:"flex",alignItems:"flex-start",gap:10 }}>
+                  <div style={{ width:34,height:34,borderRadius:10,background:cat.color+"22",display:"flex",alignItems:"center",justifyContent:"center",fontSize:17,flexShrink:0 }}>{cat.emoji}</div>
+                  <div style={{ flex:1,minWidth:0 }}>
+                    <div style={{ display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",marginBottom:4 }}>
+                      <span style={{ fontSize:15,fontWeight:700,color:T.text,fontFamily:"'DM Sans',sans-serif" }}>{item.title}</span>
+                      {item.url && <a href={item.url} target="_blank" rel="noreferrer" style={{ fontSize:11,color:"#3B9EDB",textDecoration:"none",padding:"1px 7px",borderRadius:5,border:"1px solid #3B9EDB44",background:"#3B9EDB11" }}>↗ Open</a>}
+                    </div>
+                    <div style={{ display:"flex",gap:6,flexWrap:"wrap",alignItems:"center" }}>
+                      {/* Status selector */}
+                      <select value={item.status} onChange={e=>updateStatus(item.id,e.target.value)} style={{ fontSize:11,padding:"2px 8px",borderRadius:6,border:`1px solid ${st.color}44`,background:st.color+"18",color:st.color,cursor:"pointer",fontWeight:700,fontFamily:"'DM Sans',sans-serif",outline:"none" }}>
+                        {TRACKER_STATUS.map(s=><option key={s.id} value={s.id}>{s.label}</option>)}
+                      </select>
+                      <span style={{ fontSize:10,padding:"2px 7px",borderRadius:5,background:cat.color+"20",color:cat.color,fontWeight:600,fontFamily:"'DM Sans',sans-serif" }}>{cat.emoji} {cat.label}</span>
+                      {deadline && <span style={{ fontSize:10,padding:"2px 7px",borderRadius:5,background:deadline.color+"20",color:deadline.color,fontWeight:700 }}>📅 {deadline.label}</span>}
+                      <span style={{ fontSize:10,color:T.textMuted }}>{(item.notes||[]).length} update{(item.notes||[]).length!==1?"s":""}</span>
+                    </div>
+                  </div>
+                  <div style={{ display:"flex",gap:2,flexShrink:0 }}>
+                    <button onClick={()=>setEditItem({...item})} style={{ background:"none",border:"none",color:T.textMuted,cursor:"pointer",fontSize:13,padding:"3px 5px",borderRadius:4 }}>✎</button>
+                    <button onClick={()=>deleteItem(item.id)} style={{ background:"none",border:"none",color:T.textMuted,cursor:"pointer",fontSize:13,padding:"3px 5px",borderRadius:4 }}>✕</button>
+                  </div>
+                </div>
+
+                {/* Expand button */}
+                <button onClick={()=>setExpandedNotes(p=>({...p,[item.id]:!p[item.id]}))} style={{ width:"100%",marginTop:10,fontSize:12,color:"#3B9EDB",background:"none",border:`1px solid #3B9EDB44`,borderRadius:8,padding:"5px 12px",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontWeight:600 }}>
+                  {isExp ? "▲ Hide updates" : `▼ Updates & notes`}
+                </button>
+
+                {/* Updates section */}
+                {isExp && (
+                  <div style={{ marginTop:12 }}>
+                    {(item.notes||[]).length===0 && <div style={{ fontSize:12,color:T.textMuted,fontStyle:"italic",marginBottom:10 }}>No updates yet. Add your first one below.</div>}
+                    {(item.notes||[]).map(note=>(
+                      <div key={note.id} style={{ display:"flex",gap:8,alignItems:"flex-start",marginBottom:8,padding:"10px 12px",background:T.inputBg,borderRadius:9 }}>
+                        <div style={{ flex:1 }}>
+                          <div style={{ fontSize:13,color:T.text,lineHeight:1.5,whiteSpace:"pre-wrap",fontFamily:"'DM Sans',sans-serif" }}>{note.text}</div>
+                          <div style={{ fontSize:10,color:T.textMuted,marginTop:3 }}>{note.at} · {names[note.by]||note.by}</div>
+                        </div>
+                        <button onClick={()=>deleteNote(item.id,note.id)} style={{ background:"none",border:"none",color:T.textMuted,cursor:"pointer",fontSize:12,padding:"2px 4px",borderRadius:4,flexShrink:0 }}>✕</button>
+                      </div>
+                    ))}
+                    {/* Add update */}
+                    <div style={{ display:"flex",gap:8,marginTop:6 }}>
+                      <textarea value={newNote[item.id]||""} onChange={e=>setNewNote(p=>({...p,[item.id]:e.target.value}))} placeholder="Add an update..." style={{ flex:1,background:T.inputBg,border:`1px solid ${T.border}`,borderRadius:9,padding:"8px 12px",color:T.text,fontFamily:"'DM Sans',sans-serif",fontSize:13,outline:"none",resize:"none",minHeight:36 }} rows={2}/>
+                      <button onClick={()=>addNote(item.id)} style={{ padding:"0 14px",borderRadius:9,border:"none",background:"#3B9EDB",color:"#fff",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:600,flexShrink:0 }}>+ Add</button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {showAdd && <ItemForm data={newItem} setData={setNewItem} onSave={addItem} onClose={()=>setShowAdd(false)} title="New Tracker Item"/>}
+      {editItem && <ItemForm data={editItem} setData={setEditItem} onSave={saveEdit} onClose={()=>setEditItem(null)} title="Edit Item"/>}
+    </div>
+  );
+}
+
+// ── CookbookView ──────────────────────────────────────────────────────────────
+const MEAL_CATS = [
+  { id:"breakfast",label:"Breakfast", emoji:"🍳", color:"#E8A838" },
+  { id:"lunch",    label:"Lunch",     emoji:"🥗", color:"#3DBF8A" },
+  { id:"dinner",   label:"Dinner",    emoji:"🍽️", color:"#E84E8A" },
+  { id:"snacks",   label:"Snacks",    emoji:"🍎", color:"#E8883A" },
+  { id:"drinks",   label:"Drinks",    emoji:"🥤", color:"#3B9EDB" },
+  { id:"dessert",  label:"Dessert",   emoji:"🍰", color:"#9B6EE8" },
+  { id:"other",    label:"Other",     emoji:"🍴", color:"#C8B030" },
+];
+
+function CookbookView({ activeUser, names, T, mode, TODAY, genId }) {
+  const [recipes,   setRecipesState] = useState(null);
+  const [catFilter, setCatFilter]    = useState(null);
+  const [search,    setSearch]       = useState("");
+  const [showAdd,   setShowAdd]      = useState(false);
+  const [editRecipe,setEditRecipe]   = useState(null);
+  const [expanded,  setExpanded]     = useState({});
+  const blank = { title:"", category:"dinner", ingredients:"", steps:"", notes:"", servings:"", time:"", url:"" };
+  const [newRecipe, setNew] = useState({...blank});
+
+  useEffect(()=>{ (async()=>{ const s=await dbGet("cookbook"); setRecipesState(s??[]); })(); },[]);
+  function save(list) { setRecipesState(list); dbSet("cookbook",list); }
+  function addRecipe() {
+    if (!newRecipe.title.trim()) return;
+    save([...(recipes||[]), { ...newRecipe, id:genId(), createdBy:activeUser||"A", createdAt:TODAY }]);
+    setNew({...blank}); setShowAdd(false);
+  }
+  function saveEdit() { save((recipes||[]).map(r=>r.id===editRecipe.id?editRecipe:r)); setEditRecipe(null); }
+  function deleteRecipe(id) { save((recipes||[]).filter(r=>r.id!==id)); }
+
+  const filtered = (recipes||[]).filter(r=> (!catFilter||r.category===catFilter) && (!search||r.title.toLowerCase().includes(search.toLowerCase())||r.ingredients?.toLowerCase().includes(search.toLowerCase())));
+  const catOf = id => MEAL_CATS.find(c=>c.id===id)||MEAL_CATS[0];
+  const inpSt = { width:"100%", background:T.inputBg, border:`1px solid ${T.border}`, borderRadius:9, padding:"10px 13px", color:T.text, fontFamily:"'DM Sans',sans-serif", fontSize:14, outline:"none", boxSizing:"border-box" };
+  const selSt = { ...inpSt, background:mode==="dark"?"#181B23":"#fff", cursor:"pointer" };
+  const lblSt = { fontSize:11,fontWeight:600,letterSpacing:"0.1em",textTransform:"uppercase",color:T.textMuted,display:"block",marginBottom:5,marginTop:14,fontFamily:"'DM Sans',sans-serif" };
+  const card  = (x={})=>({ background:T.surface, border:`1px solid ${T.border}`, borderRadius:14, boxShadow:"0 2px 8px rgba(0,0,0,0.06)", ...x });
+
+  function RecipeForm({ data, setData, onSave, onClose, title }) {
+    const ref = useRef(null);
+    useEffect(()=>{ const t=setTimeout(()=>{ if(ref.current) ref.current.focus(); },80); return()=>clearTimeout(t); },[]);
+    return (
+      <div style={{ position:"fixed",inset:0,zIndex:40,background:"rgba(0,0,0,0.6)",backdropFilter:"blur(6px)",display:"flex",alignItems:"flex-end",justifyContent:"center" }}
+        onClick={e=>e.target===e.currentTarget&&onClose()}>
+        <div style={{ ...card(), borderRadius:"18px 18px 0 0", width:"100%", maxWidth:560, maxHeight:"94vh", overflowY:"auto", padding:"24px 20px 36px" }}>
+          <div style={{ width:40,height:4,borderRadius:2,background:T.textMuted,margin:"0 auto 20px",opacity:0.4 }}/>
+          <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:22,color:T.text,marginBottom:4 }}>{title}</div>
+          <div style={{ height:2,width:40,background:"#E84E8A",borderRadius:2,marginBottom:20 }}/>
+          <label style={lblSt}>Recipe Name</label>
+          <input ref={ref} style={inpSt} value={data.title} onChange={e=>setData(p=>({...p,title:e.target.value}))} placeholder="e.g. Jollof Rice, Pasta Carbonara..." onKeyDown={e=>{ if(e.key==="Enter"&&data.title.trim()){e.preventDefault();onSave();}}}/>
+          <label style={lblSt}>Category</label>
+          <select style={selSt} value={data.category} onChange={e=>setData(p=>({...p,category:e.target.value}))}>
+            {MEAL_CATS.map(c=><option key={c.id} value={c.id}>{c.emoji} {c.label}</option>)}
+          </select>
+          <div style={{ display:"flex",gap:10 }}>
+            <div style={{ flex:1 }}>
+              <label style={lblSt}>Servings</label>
+              <input style={inpSt} value={data.servings||""} onChange={e=>setData(p=>({...p,servings:e.target.value}))} placeholder="e.g. 2-4"/>
+            </div>
+            <div style={{ flex:1 }}>
+              <label style={lblSt}>Time</label>
+              <input style={inpSt} value={data.time||""} onChange={e=>setData(p=>({...p,time:e.target.value}))} placeholder="e.g. 45 mins"/>
+            </div>
+          </div>
+          <label style={lblSt}>Ingredients (one per line)</label>
+          <textarea style={{...inpSt,minHeight:100,resize:"vertical"}} value={data.ingredients||""} onChange={e=>setData(p=>({...p,ingredients:e.target.value}))} placeholder={"- 2 cups rice- 1 can tomatoes- 1 onion..."}/>
+          <label style={lblSt}>Steps / Method</label>
+          <textarea style={{...inpSt,minHeight:120,resize:"vertical"}} value={data.steps||""} onChange={e=>setData(p=>({...p,steps:e.target.value}))} placeholder={"1. Boil water2. Add rice3. ..."}/>
+          <label style={lblSt}>Notes & Tips (optional)</label>
+          <textarea style={{...inpSt,minHeight:60,resize:"vertical"}} value={data.notes||""} onChange={e=>setData(p=>({...p,notes:e.target.value}))} placeholder="Any tips, substitutions, or variations..."/>
+          <label style={lblSt}>Source / Recipe URL (optional)</label>
+          <input style={inpSt} type="url" value={data.url||""} onChange={e=>setData(p=>({...p,url:e.target.value}))} placeholder="https://..."/>
+          <div style={{ display:"flex",gap:10,marginTop:24,justifyContent:"flex-end" }}>
+            <button style={{ padding:"9px 20px",borderRadius:9,border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:600,background:T.inputBg,color:T.textSub }} onClick={onClose}>Cancel</button>
+            <button style={{ padding:"9px 20px",borderRadius:9,border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:600,background:"#E84E8A",color:"#fff" }} onClick={onSave}>Save Recipe</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (recipes===null) return <div style={{ padding:"40px",textAlign:"center",color:T.textMuted,fontFamily:"'DM Sans',sans-serif" }}>Loading...</div>;
+
+  return (
+    <div style={{ padding:"24px 16px", maxWidth:860, margin:"0 auto" }}>
+      <div style={{ display:"flex",alignItems:"flex-start",justifyContent:"space-between",flexWrap:"wrap",gap:12,marginBottom:16 }}>
+        <div>
+          <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:28,color:T.text }}>🍳 Cookbook</div>
+          <div style={{ fontSize:13,color:T.textSub,marginTop:3 }}>Your shared recipe collection — meals you love and want to remember</div>
+        </div>
+        <button onClick={()=>setShowAdd(true)} style={{ height:36,padding:"0 16px",borderRadius:9,border:"none",background:"#E84E8A",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,color:"#fff",whiteSpace:"nowrap" }}>+ Add Recipe</button>
+      </div>
+
+      {/* Search */}
+      <input style={{ ...inpSt, marginBottom:14 }} value={search} onChange={e=>setSearch(e.target.value)} placeholder="🔍 Search recipes or ingredients..."/>
+
+      {/* Category pills */}
+      <div className="pill-scroll" style={{ marginBottom:16 }}>
+        <button onClick={()=>setCatFilter(null)} style={{ padding:"4px 12px",borderRadius:20,cursor:"pointer",fontSize:12,border:"none",background:!catFilter?"#E84E8A":"transparent",color:!catFilter?"#fff":T.textSub,outline:!catFilter?"none":`1px solid ${T.border}`,flexShrink:0,fontFamily:"'DM Sans',sans-serif",fontWeight:500 }}>All</button>
+        {MEAL_CATS.map(cat=>(
+          <button key={cat.id} onClick={()=>setCatFilter(catFilter===cat.id?null:cat.id)} style={{ padding:"4px 12px",borderRadius:20,cursor:"pointer",fontSize:12,border:"none",background:catFilter===cat.id?cat.color:"transparent",color:catFilter===cat.id?"#fff":T.textSub,outline:catFilter===cat.id?"none":`1px solid ${T.border}`,flexShrink:0,fontFamily:"'DM Sans',sans-serif",fontWeight:500,whiteSpace:"nowrap" }}>{cat.emoji} {cat.label}</button>
+        ))}
+      </div>
+
+      {/* Recipe grid */}
+      {filtered.length===0 ? (
+        <div style={{ ...card({padding:"50px 20px",textAlign:"center"}) }}>
+          <div style={{ fontSize:36,marginBottom:10 }}>🍳</div>
+          <div style={{ fontSize:17,fontWeight:600,color:T.text,fontFamily:"'DM Serif Display',serif" }}>{search?"No recipes match your search":"No recipes yet"}</div>
+          <div style={{ fontSize:13,color:T.textSub,marginTop:6 }}>Start building your cookbook together!</div>
+        </div>
+      ) : (
+        <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(min(100%,340px),1fr))",gap:14 }}>
+          {filtered.map(recipe=>{
+            const cat  = catOf(recipe.category);
+            const isExp= expanded[recipe.id];
+            const ingredients = (recipe.ingredients||"").split("").filter(l=>l.trim());
+            const steps = (recipe.steps||"").split("").filter(l=>l.trim());
+            return (
+              <div key={recipe.id} style={{ ...card({padding:"0",overflow:"hidden"}), borderTop:`3px solid ${cat.color}` }}>
+                {/* Recipe card header */}
+                <div style={{ padding:"16px 18px 12px" }}>
+                  <div style={{ display:"flex",alignItems:"flex-start",gap:10 }}>
+                    <div style={{ width:36,height:36,borderRadius:10,background:cat.color+"22",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0 }}>{cat.emoji}</div>
+                    <div style={{ flex:1,minWidth:0 }}>
+                      <div style={{ fontSize:16,fontWeight:700,color:T.text,fontFamily:"'DM Sans',sans-serif",lineHeight:1.3 }}>{recipe.title}</div>
+                      <div style={{ display:"flex",gap:6,marginTop:5,flexWrap:"wrap" }}>
+                        <span style={{ fontSize:10,padding:"2px 7px",borderRadius:5,background:cat.color+"20",color:cat.color,fontWeight:600 }}>{cat.emoji} {cat.label}</span>
+                        {recipe.time && <span style={{ fontSize:10,padding:"2px 7px",borderRadius:5,background:T.inputBg,color:T.textSub }}>⏱ {recipe.time}</span>}
+                        {recipe.servings && <span style={{ fontSize:10,padding:"2px 7px",borderRadius:5,background:T.inputBg,color:T.textSub }}>👥 {recipe.servings}</span>}
+                        {recipe.url && <a href={recipe.url} target="_blank" rel="noreferrer" style={{ fontSize:10,padding:"2px 7px",borderRadius:5,background:"#3B9EDB11",border:"1px solid #3B9EDB44",color:"#3B9EDB",textDecoration:"none" }}>↗ Source</a>}
+                      </div>
+                      <div style={{ fontSize:11,color:T.textMuted,marginTop:4 }}>By {names[recipe.createdBy]||recipe.createdBy} · {recipe.createdAt}</div>
+                    </div>
+                    <div style={{ display:"flex",gap:2,flexShrink:0 }}>
+                      <button onClick={()=>setEditRecipe({...recipe})} style={{ background:"none",border:"none",color:T.textMuted,cursor:"pointer",fontSize:13,padding:"3px 5px" }}>✎</button>
+                      <button onClick={()=>deleteRecipe(recipe.id)} style={{ background:"none",border:"none",color:T.textMuted,cursor:"pointer",fontSize:13,padding:"3px 5px" }}>✕</button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Quick preview */}
+                {!isExp && ingredients.length>0 && (
+                  <div style={{ padding:"0 18px 12px" }}>
+                    <div style={{ fontSize:11,fontWeight:700,color:T.textMuted,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:4 }}>Ingredients preview</div>
+                    <div style={{ fontSize:12,color:T.textSub }}>{ingredients.slice(0,3).join(" · ")}{ingredients.length>3?` + ${ingredients.length-3} more`:""}...</div>
+                  </div>
+                )}
+
+                <button onClick={()=>setExpanded(p=>({...p,[recipe.id]:!p[recipe.id]}))} style={{ width:"100%",padding:"10px",border:"none",borderTop:`1px solid ${T.border}`,background:isExp?cat.color+"15":"transparent",color:cat.color,fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:600,cursor:"pointer" }}>
+                  {isExp?"▲ Close recipe":"▼ View full recipe"}
+                </button>
+
+                {isExp && (
+                  <div style={{ padding:"16px 18px 18px",borderTop:`1px solid ${T.border}` }}>
+                    {ingredients.length>0 && (
+                      <div style={{ marginBottom:16 }}>
+                        <div style={{ fontSize:12,fontWeight:700,color:cat.color,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:8 }}>🛒 Ingredients</div>
+                        <div style={{ display:"flex",flexDirection:"column",gap:4 }}>
+                          {ingredients.map((ing,i)=>(
+                            <div key={i} style={{ display:"flex",alignItems:"flex-start",gap:8,fontSize:13,color:T.text,fontFamily:"'DM Sans',sans-serif" }}>
+                              <span style={{ color:cat.color,flexShrink:0,marginTop:1 }}>•</span>
+                              <span>{ing.replace(/^[-•*\s]*/,"")}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {steps.length>0 && (
+                      <div style={{ marginBottom:recipe.notes?16:0 }}>
+                        <div style={{ fontSize:12,fontWeight:700,color:cat.color,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:8 }}>👨‍🍳 Method</div>
+                        <div style={{ display:"flex",flexDirection:"column",gap:8 }}>
+                          {steps.map((step,i)=>(
+                            <div key={i} style={{ display:"flex",gap:10,fontSize:13,color:T.text,fontFamily:"'DM Sans',sans-serif" }}>
+                              <span style={{ width:22,height:22,borderRadius:"50%",background:cat.color+"22",color:cat.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,flexShrink:0 }}>{i+1}</span>
+                              <span style={{ lineHeight:1.5,paddingTop:2 }}>{step.replace(/^\d+[.)]\ */,"")}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {recipe.notes && (
+                      <div style={{ marginTop:12,padding:"10px 12px",background:T.inputBg,borderRadius:9,border:`1px solid ${cat.color}33` }}>
+                        <div style={{ fontSize:11,fontWeight:700,color:cat.color,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:4 }}>💡 Notes & Tips</div>
+                        <div style={{ fontSize:13,color:T.text,lineHeight:1.6,whiteSpace:"pre-wrap",fontFamily:"'DM Sans',sans-serif" }}>{recipe.notes}</div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {showAdd && <RecipeForm data={newRecipe} setData={setNew} onSave={addRecipe} onClose={()=>setShowAdd(false)} title="New Recipe"/>}
+      {editRecipe && <RecipeForm data={editRecipe} setData={setEditRecipe} onSave={saveEdit} onClose={()=>setEditRecipe(null)} title="Edit Recipe"/>}
     </div>
   );
 }
@@ -2004,11 +2450,14 @@ export default function TogetherApp() {
     ["board","Board"],["today","Today"],["accountability","Us"],
     ["analytics","📊 Analytics"],
     ["reflections","💭 Reflections"],
+    ["tracker","🔗 Tracker"],
+    ["notes","📓 Notes"],
+    ["cookbook","👨‍🍳 Cookbook"],
     ["prayer","🙏 Prayer"],
     ["urgent","🔴 Urgent"],["week","This Week"],["month","This Month"],
     ["quarter","Next 3 Months"],["year","This Year"],["aitools","AI Tools"],
   ];
-  const isFullScreen=["today","accountability","aitools","urgent","week","month","quarter","year","prayer","analytics","reflections"].includes(view);
+  const isFullScreen=["today","accountability","aitools","urgent","week","month","quarter","year","prayer","analytics","reflections","tracker","notes","cookbook"].includes(view);
   const pad=isFullScreen?"0":"16px 16px";
 
   // ── Reusable timeline section renderer ────────────────────────────────────
@@ -2101,7 +2550,7 @@ export default function TogetherApp() {
           <div style={{ display:"flex",alignItems:"center",gap:6,background:T.inputBg,borderRadius:8,padding:"4px 10px",border:`1px solid ${T.border}`,cursor:"pointer" }}
             onClick={()=>setShowIdentityPicker(true)} title="Switch identity">
             <div style={{ width:22,height:22,borderRadius:"50%",background:(activeUser==="A"?"#E8A838":"#E84E8A")+"33",border:`2px solid ${activeUser==="A"?"#E8A838":"#E84E8A"}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,color:activeUser==="A"?"#E8A838":"#E84E8A",flexShrink:0 }}>
-              {activeUser?names[activeUser][0]:"?"}
+              {activeUser?(names[activeUser]||"?")[0]:"?"}
             </div>
             <span style={{ fontSize:12,fontWeight:600,color:T.text }}>{activeUser?names[activeUser]:"Choose"}</span>
             <span style={{ fontSize:10,color:T.textMuted }}>▾</span>
@@ -2313,10 +2762,29 @@ export default function TogetherApp() {
           <AnalyticsView log={completedLog} tasks={tasks} names={names} T={T} mode={mode} SECTIONS={SECTIONS} PRI_COLOR={PRI_COLOR} TODAY={TODAY}/>
         )}
 
+        {/* ── TRACKER ── */}
+        {view==="tracker"&&(
+          <TrackerView activeUser={activeUser} names={names} T={T} mode={mode} TODAY={TODAY} genId={genId}/>
+        )}
+
+        {/* ── COOKBOOK ── */}
+        {view==="cookbook"&&(
+          <CookbookView activeUser={activeUser} names={names} T={T} mode={mode} TODAY={TODAY} genId={genId}/>
+        )}
+
         {/* ── REFLECTIONS ── */}
         {view==="reflections"&&(
           <ReflectionsView activeUser={activeUser} names={names} T={T} mode={mode} TODAY={TODAY} genId={genId}/>
         )}
+
+        {/* ── TRACKER ── */}
+        {view==="tracker"&&<TrackerView activeUser={activeUser} names={names} T={T} mode={mode} TODAY={TODAY} genId={genId}/>}
+
+        {/* ── NOTES ── */}
+        {view==="notes"&&<NotesView activeUser={activeUser} names={names} T={T} mode={mode} TODAY={TODAY} genId={genId}/>}
+
+        {/* ── COOKBOOK ── */}
+        {view==="cookbook"&&<CookbookView activeUser={activeUser} names={names} T={T} mode={mode} TODAY={TODAY} genId={genId}/>}
 
         {/* ── AI TOOLS ── */}
         {view==="aitools"&&(
