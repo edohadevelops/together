@@ -1126,6 +1126,83 @@ function MiniModal({ title, accent, onClose, onSave, children, T }) {
   );
 }
 
+// ── TrackerItemForm ───────────────────────────────────────────────────────────
+function TrackerItemForm({ data, setData, onSave, onClose, title, T, mode }) {
+  const ref = useRef(null);
+  useEffect(()=>{ const t=setTimeout(()=>{ if(ref.current) ref.current.focus(); },80); return()=>clearTimeout(t); },[]);
+  const inpSt = { width:"100%", background:T.inputBg, border:`1px solid ${T.border}`, borderRadius:9, padding:"10px 13px", color:T.text, fontFamily:"'DM Sans',sans-serif", fontSize:14, outline:"none", boxSizing:"border-box" };
+  const selSt = { ...inpSt, background:mode==="dark"?"#181B23":"#fff", cursor:"pointer" };
+  const lblSt = { fontSize:11,fontWeight:600,letterSpacing:"0.1em",textTransform:"uppercase",color:T.textMuted,display:"block",marginBottom:5,marginTop:14,fontFamily:"'DM Sans',sans-serif" };
+  return (
+    <div style={{ position:"fixed",inset:0,zIndex:40,background:"rgba(0,0,0,0.6)",backdropFilter:"blur(6px)",display:"flex",alignItems:"flex-end",justifyContent:"center" }} onClick={e=>e.target===e.currentTarget&&onClose()}>
+      <div style={{ background:T.surface,border:`1px solid ${T.border}`,borderRadius:"18px 18px 0 0",boxShadow:"0 -4px 32px rgba(0,0,0,0.3)",width:"100%",maxWidth:520,maxHeight:"92vh",overflowY:"auto",padding:"24px 20px 36px" }}>
+        <div style={{ width:40,height:4,borderRadius:2,background:T.textMuted,margin:"0 auto 20px",opacity:0.4 }}/>
+        <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:22,color:T.text,marginBottom:4 }}>{title}</div>
+        <div style={{ height:2,width:40,background:"#3B9EDB",borderRadius:2,marginBottom:20 }}/>
+        <label style={lblSt}>Name / Title</label>
+        <input ref={ref} style={inpSt} value={data.title} onChange={e=>setData(p=>({...p,title:e.target.value}))} placeholder="e.g. MIT PhD Program, OPT Application..." onKeyDown={e=>{ if(e.key==="Enter"&&data.title.trim()){e.preventDefault();onSave();}}}/>
+        <label style={lblSt}>URL / Link (optional)</label>
+        <input style={inpSt} type="url" value={data.url||""} onChange={e=>setData(p=>({...p,url:e.target.value}))} placeholder="https://..."/>
+        <label style={lblSt}>Category</label>
+        <select style={selSt} value={data.category} onChange={e=>setData(p=>({...p,category:e.target.value}))}>
+          {TRACKER_CATS.map(c=><option key={c.id} value={c.id}>{c.emoji} {c.label}</option>)}
+        </select>
+        <label style={lblSt}>Status</label>
+        <select style={selSt} value={data.status} onChange={e=>setData(p=>({...p,status:e.target.value}))}>
+          {TRACKER_STATUS.map(s=><option key={s.id} value={s.id}>{s.label}</option>)}
+        </select>
+        <label style={lblSt}>Deadline (optional)</label>
+        <input type="date" style={selSt} value={data.deadline||""} onChange={e=>setData(p=>({...p,deadline:e.target.value}))}/>
+        <label style={lblSt}>Initial Notes (optional)</label>
+        <textarea style={{...inpSt,minHeight:70,resize:"vertical"}} value={data.notes_text||""} onChange={e=>setData(p=>({...p,notes_text:e.target.value}))} placeholder="Any details to start with..."/>
+        <div style={{ display:"flex",gap:10,marginTop:24,justifyContent:"flex-end" }}>
+          <button style={{ padding:"9px 20px",borderRadius:9,border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:600,background:T.inputBg,color:T.textSub }} onClick={onClose}>Cancel</button>
+          <button style={{ padding:"9px 20px",borderRadius:9,border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:600,background:"#3B9EDB",color:"#fff" }} onClick={onSave}>Save</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+// ── CookbookRecipeForm ────────────────────────────────────────────────────────
+function CookbookRecipeForm({ data, setData, onSave, onClose, title, T, mode }) {
+  const ref = useRef(null);
+  useEffect(()=>{ const t=setTimeout(()=>{ if(ref.current) ref.current.focus(); },80); return()=>clearTimeout(t); },[]);
+  const inpSt = { width:"100%", background:T.inputBg, border:`1px solid ${T.border}`, borderRadius:9, padding:"10px 13px", color:T.text, fontFamily:"'DM Sans',sans-serif", fontSize:14, outline:"none", boxSizing:"border-box" };
+  const selSt = { ...inpSt, background:mode==="dark"?"#181B23":"#fff", cursor:"pointer" };
+  const lblSt = { fontSize:11,fontWeight:600,letterSpacing:"0.1em",textTransform:"uppercase",color:T.textMuted,display:"block",marginBottom:5,marginTop:14,fontFamily:"'DM Sans',sans-serif" };
+  return (
+    <div style={{ position:"fixed",inset:0,zIndex:40,background:"rgba(0,0,0,0.6)",backdropFilter:"blur(6px)",display:"flex",alignItems:"flex-end",justifyContent:"center" }} onClick={e=>e.target===e.currentTarget&&onClose()}>
+      <div style={{ background:T.surface,border:`1px solid ${T.border}`,borderRadius:"18px 18px 0 0",boxShadow:"0 -4px 32px rgba(0,0,0,0.3)",width:"100%",maxWidth:560,maxHeight:"94vh",overflowY:"auto",padding:"24px 20px 36px" }}>
+        <div style={{ width:40,height:4,borderRadius:2,background:T.textMuted,margin:"0 auto 20px",opacity:0.4 }}/>
+        <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:22,color:T.text,marginBottom:4 }}>{title}</div>
+        <div style={{ height:2,width:40,background:"#E84E8A",borderRadius:2,marginBottom:20 }}/>
+        <label style={lblSt}>Recipe Name</label>
+        <input ref={ref} style={inpSt} value={data.title} onChange={e=>setData(p=>({...p,title:e.target.value}))} placeholder="e.g. Jollof Rice, Pasta Carbonara..." onKeyDown={e=>{ if(e.key==="Enter"&&data.title.trim()){e.preventDefault();onSave();}}}/>
+        <label style={lblSt}>Category</label>
+        <select style={selSt} value={data.category} onChange={e=>setData(p=>({...p,category:e.target.value}))}>
+          {MEAL_CATS.map(c=><option key={c.id} value={c.id}>{c.emoji} {c.label}</option>)}
+        </select>
+        <div style={{ display:"flex",gap:10 }}>
+          <div style={{ flex:1 }}><label style={lblSt}>Servings</label><input style={inpSt} value={data.servings||""} onChange={e=>setData(p=>({...p,servings:e.target.value}))} placeholder="e.g. 2-4"/></div>
+          <div style={{ flex:1 }}><label style={lblSt}>Time</label><input style={inpSt} value={data.time||""} onChange={e=>setData(p=>({...p,time:e.target.value}))} placeholder="e.g. 45 mins"/></div>
+        </div>
+        <label style={lblSt}>Ingredients (one per line)</label>
+        <textarea style={{...inpSt,minHeight:100,resize:"vertical"}} value={data.ingredients||""} onChange={e=>setData(p=>({...p,ingredients:e.target.value}))} placeholder="- 2 cups rice&#10;- 1 can tomatoes&#10;- 1 onion"/>
+        <label style={lblSt}>Steps / Method</label>
+        <textarea style={{...inpSt,minHeight:120,resize:"vertical"}} value={data.steps||""} onChange={e=>setData(p=>({...p,steps:e.target.value}))} placeholder="1. Boil water&#10;2. Add rice"/>
+        <label style={lblSt}>Notes & Tips (optional)</label>
+        <textarea style={{...inpSt,minHeight:60,resize:"vertical"}} value={data.notes||""} onChange={e=>setData(p=>({...p,notes:e.target.value}))} placeholder="Any tips, substitutions, or variations..."/>
+        <label style={lblSt}>Source / Recipe URL (optional)</label>
+        <input style={inpSt} type="url" value={data.url||""} onChange={e=>setData(p=>({...p,url:e.target.value}))} placeholder="https://..."/>
+        <div style={{ display:"flex",gap:10,marginTop:24,justifyContent:"flex-end" }}>
+          <button style={{ padding:"9px 20px",borderRadius:9,border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:600,background:T.inputBg,color:T.textSub }} onClick={onClose}>Cancel</button>
+          <button style={{ padding:"9px 20px",borderRadius:9,border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:600,background:"#E84E8A",color:"#fff" }} onClick={onSave}>Save Recipe</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── TrackerView — links + application tracking ────────────────────────────────
 const TRACKER_CATS = [
   { id:"phd",    label:"PhD Programs",  emoji:"🎓", color:"#7B61FF" },
@@ -1187,40 +1264,7 @@ function TrackerView({ activeUser, names, T, mode, TODAY, genId }) {
   const lblSt = { fontSize:11,fontWeight:600,letterSpacing:"0.1em",textTransform:"uppercase",color:T.textMuted,display:"block",marginBottom:5,marginTop:14,fontFamily:"'DM Sans',sans-serif" };
   const card  = (x={})=>({ background:T.surface, border:`1px solid ${T.border}`, borderRadius:14, boxShadow:"0 2px 8px rgba(0,0,0,0.06)", ...x });
 
-  function ItemForm({ data, setData, onSave, onClose, title }) {
-    const ref = useRef(null);
-    useEffect(()=>{ const t=setTimeout(()=>{ if(ref.current) ref.current.focus(); },80); return()=>clearTimeout(t); },[]);
-    return (
-      <div style={{ position:"fixed",inset:0,zIndex:40,background:"rgba(0,0,0,0.6)",backdropFilter:"blur(6px)",display:"flex",alignItems:"flex-end",justifyContent:"center" }}
-        onClick={e=>e.target===e.currentTarget&&onClose()}>
-        <div style={{ ...card(), borderRadius:"18px 18px 0 0", width:"100%", maxWidth:520, maxHeight:"92vh", overflowY:"auto", padding:"24px 20px 36px" }}>
-          <div style={{ width:40,height:4,borderRadius:2,background:T.textMuted,margin:"0 auto 20px",opacity:0.4 }}/>
-          <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:22,color:T.text,marginBottom:4 }}>{title}</div>
-          <div style={{ height:2,width:40,background:"#3B9EDB",borderRadius:2,marginBottom:20 }}/>
-          <label style={lblSt}>Name / Title</label>
-          <input ref={ref} style={inpSt} value={data.title} onChange={e=>setData(p=>({...p,title:e.target.value}))} placeholder="e.g. MIT PhD Program, OPT Application..." onKeyDown={e=>{ if(e.key==="Enter"&&data.title.trim()){e.preventDefault();onSave();}}}/>
-          <label style={lblSt}>URL / Link (optional)</label>
-          <input style={inpSt} type="url" value={data.url||""} onChange={e=>setData(p=>({...p,url:e.target.value}))} placeholder="https://..."/>
-          <label style={lblSt}>Category</label>
-          <select style={selSt} value={data.category} onChange={e=>setData(p=>({...p,category:e.target.value}))}>
-            {TRACKER_CATS.map(c=><option key={c.id} value={c.id}>{c.emoji} {c.label}</option>)}
-          </select>
-          <label style={lblSt}>Status</label>
-          <select style={selSt} value={data.status} onChange={e=>setData(p=>({...p,status:e.target.value}))}>
-            {TRACKER_STATUS.map(s=><option key={s.id} value={s.id}>{s.label}</option>)}
-          </select>
-          <label style={lblSt}>Deadline (optional)</label>
-          <input type="date" style={selSt} value={data.deadline||""} onChange={e=>setData(p=>({...p,deadline:e.target.value}))}/>
-          <label style={lblSt}>Initial Notes (optional)</label>
-          <textarea style={{...inpSt,minHeight:70,resize:"vertical"}} value={data.notes_text||""} onChange={e=>setData(p=>({...p,notes_text:e.target.value}))} placeholder="Any details to start with..."/>
-          <div style={{ display:"flex",gap:10,marginTop:24,justifyContent:"flex-end" }}>
-            <button style={{ padding:"9px 20px",borderRadius:9,border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:600,background:T.inputBg,color:T.textSub }} onClick={onClose}>Cancel</button>
-            <button style={{ padding:"9px 20px",borderRadius:9,border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:600,background:"#3B9EDB",color:"#fff" }} onClick={onSave}>Save</button>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // ItemForm extracted to module level — see TrackerItemForm below
 
   if (items===null) return <div style={{ padding:"40px",textAlign:"center",color:T.textMuted,fontFamily:"'DM Sans',sans-serif" }}>Loading...</div>;
 
@@ -1326,8 +1370,8 @@ function TrackerView({ activeUser, names, T, mode, TODAY, genId }) {
         </div>
       )}
 
-      {showAdd && <ItemForm data={newItem} setData={setNewItem} onSave={addItem} onClose={()=>setShowAdd(false)} title="New Tracker Item"/>}
-      {editItem && <ItemForm data={editItem} setData={setEditItem} onSave={saveEdit} onClose={()=>setEditItem(null)} title="Edit Item"/>}
+      {showAdd && <TrackerItemForm data={newItem} setData={setNewItem} onSave={addItem} onClose={()=>setShowAdd(false)} title="New Tracker Item" T={T} mode={mode}/>}
+      {editItem && <TrackerItemForm data={editItem} setData={setEditItem} onSave={saveEdit} onClose={()=>setEditItem(null)} title="Edit Item" T={T} mode={mode}/>}
     </div>
   );
 }
@@ -1370,48 +1414,7 @@ function CookbookView({ activeUser, names, T, mode, TODAY, genId }) {
   const lblSt = { fontSize:11,fontWeight:600,letterSpacing:"0.1em",textTransform:"uppercase",color:T.textMuted,display:"block",marginBottom:5,marginTop:14,fontFamily:"'DM Sans',sans-serif" };
   const card  = (x={})=>({ background:T.surface, border:`1px solid ${T.border}`, borderRadius:14, boxShadow:"0 2px 8px rgba(0,0,0,0.06)", ...x });
 
-  function RecipeForm({ data, setData, onSave, onClose, title }) {
-    const ref = useRef(null);
-    useEffect(()=>{ const t=setTimeout(()=>{ if(ref.current) ref.current.focus(); },80); return()=>clearTimeout(t); },[]);
-    return (
-      <div style={{ position:"fixed",inset:0,zIndex:40,background:"rgba(0,0,0,0.6)",backdropFilter:"blur(6px)",display:"flex",alignItems:"flex-end",justifyContent:"center" }}
-        onClick={e=>e.target===e.currentTarget&&onClose()}>
-        <div style={{ ...card(), borderRadius:"18px 18px 0 0", width:"100%", maxWidth:560, maxHeight:"94vh", overflowY:"auto", padding:"24px 20px 36px" }}>
-          <div style={{ width:40,height:4,borderRadius:2,background:T.textMuted,margin:"0 auto 20px",opacity:0.4 }}/>
-          <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:22,color:T.text,marginBottom:4 }}>{title}</div>
-          <div style={{ height:2,width:40,background:"#E84E8A",borderRadius:2,marginBottom:20 }}/>
-          <label style={lblSt}>Recipe Name</label>
-          <input ref={ref} style={inpSt} value={data.title} onChange={e=>setData(p=>({...p,title:e.target.value}))} placeholder="e.g. Jollof Rice, Pasta Carbonara..." onKeyDown={e=>{ if(e.key==="Enter"&&data.title.trim()){e.preventDefault();onSave();}}}/>
-          <label style={lblSt}>Category</label>
-          <select style={selSt} value={data.category} onChange={e=>setData(p=>({...p,category:e.target.value}))}>
-            {MEAL_CATS.map(c=><option key={c.id} value={c.id}>{c.emoji} {c.label}</option>)}
-          </select>
-          <div style={{ display:"flex",gap:10 }}>
-            <div style={{ flex:1 }}>
-              <label style={lblSt}>Servings</label>
-              <input style={inpSt} value={data.servings||""} onChange={e=>setData(p=>({...p,servings:e.target.value}))} placeholder="e.g. 2-4"/>
-            </div>
-            <div style={{ flex:1 }}>
-              <label style={lblSt}>Time</label>
-              <input style={inpSt} value={data.time||""} onChange={e=>setData(p=>({...p,time:e.target.value}))} placeholder="e.g. 45 mins"/>
-            </div>
-          </div>
-          <label style={lblSt}>Ingredients (one per line)</label>
-          <textarea style={{...inpSt,minHeight:100,resize:"vertical"}} value={data.ingredients||""} onChange={e=>setData(p=>({...p,ingredients:e.target.value}))} placeholder={"- 2 cups rice- 1 can tomatoes- 1 onion..."}/>
-          <label style={lblSt}>Steps / Method</label>
-          <textarea style={{...inpSt,minHeight:120,resize:"vertical"}} value={data.steps||""} onChange={e=>setData(p=>({...p,steps:e.target.value}))} placeholder={"1. Boil water2. Add rice3. ..."}/>
-          <label style={lblSt}>Notes & Tips (optional)</label>
-          <textarea style={{...inpSt,minHeight:60,resize:"vertical"}} value={data.notes||""} onChange={e=>setData(p=>({...p,notes:e.target.value}))} placeholder="Any tips, substitutions, or variations..."/>
-          <label style={lblSt}>Source / Recipe URL (optional)</label>
-          <input style={inpSt} type="url" value={data.url||""} onChange={e=>setData(p=>({...p,url:e.target.value}))} placeholder="https://..."/>
-          <div style={{ display:"flex",gap:10,marginTop:24,justifyContent:"flex-end" }}>
-            <button style={{ padding:"9px 20px",borderRadius:9,border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:600,background:T.inputBg,color:T.textSub }} onClick={onClose}>Cancel</button>
-            <button style={{ padding:"9px 20px",borderRadius:9,border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:600,background:"#E84E8A",color:"#fff" }} onClick={onSave}>Save Recipe</button>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // RecipeForm extracted to module level — see CookbookRecipeForm below
 
   if (recipes===null) return <div style={{ padding:"40px",textAlign:"center",color:T.textMuted,fontFamily:"'DM Sans',sans-serif" }}>Loading...</div>;
 
@@ -1449,7 +1452,7 @@ function CookbookView({ activeUser, names, T, mode, TODAY, genId }) {
             const cat  = catOf(recipe.category);
             const isExp= expanded[recipe.id];
             const ingredients = (recipe.ingredients||"").split("").filter(l=>l.trim());
-            const steps = (recipe.steps||"").split("").filter(l=>l.trim());
+            const steps = (recipe.steps||"").split("").f.ilter(l=>l.trim());
             return (
               <div key={recipe.id} style={{ ...card({padding:"0",overflow:"hidden"}), borderTop:`3px solid ${cat.color}` }}>
                 {/* Recipe card header */}
@@ -1527,8 +1530,8 @@ function CookbookView({ activeUser, names, T, mode, TODAY, genId }) {
         </div>
       )}
 
-      {showAdd && <RecipeForm data={newRecipe} setData={setNew} onSave={addRecipe} onClose={()=>setShowAdd(false)} title="New Recipe"/>}
-      {editRecipe && <RecipeForm data={editRecipe} setData={setEditRecipe} onSave={saveEdit} onClose={()=>setEditRecipe(null)} title="Edit Recipe"/>}
+      {showAdd && <CookbookRecipeForm data={newRecipe} setData={setNew} onSave={addRecipe} onClose={()=>setShowAdd(false)} title="New Recipe" T={T} mode={mode}/>}
+      {editRecipe && <CookbookRecipeForm data={editRecipe} setData={setEditRecipe} onSave={saveEdit} onClose={()=>setEditRecipe(null)} title="Edit Recipe" T={T} mode={mode}/>}
     </div>
   );
 }
