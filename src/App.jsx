@@ -1135,7 +1135,7 @@ const TRACKER_CATS = [
   { id:"housing",label:"Housing",       emoji:"🏠", color:"#5BAD4E" },
   { id:"other",  label:"Other",         emoji:"🔗", color:"#888D9B" },
 ];
-const TRACKER_STATUSES = [
+const TRACKER_STATUS = [
   { id:"saved",    label:"Saved",     color:"#888D9B" },
   { id:"applied",  label:"Applied",   color:"#3B9EDB" },
   { id:"waiting",  label:"Waiting",   color:"#E8A838" },
