@@ -1786,7 +1786,7 @@ function CookbookView({ activeUser, names, T, mode, TODAY, genId }) {
           {filtered.map(recipe=>{
             const cat  = catOf(recipe.category);
             const isExp= expanded[recipe.id];
-                            const ingredients = (recipe.ingredients||"").split("").filter(l=>l.trim());
+            const ingredients = (recipe.ingredients||"").split("").filter(l=>l.trim());
             const steps = (recipe.steps||"").split("").filter(l=>l.trim());
             return (
               <div key={recipe.id} style={{ ...card({padding:"0",overflow:"hidden"}), borderTop:`3px solid ${cat.color}` }}>
@@ -3068,86 +3068,117 @@ export default function TogetherApp() {
         {/* ── TODAY ── */}
         {view==="today"&&(
           <div style={{ padding:"24px 16px",maxWidth:720,margin:"0 auto" }}>
+            {/* Greeting card */}
             <div style={{ background:greeting.bg,borderRadius:14,padding:"20px",marginBottom:24,border:`1px solid ${T.border}` }}>
               <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:24,color:greeting.accent }}>{greeting.text}</div>
               <div style={{ fontSize:13,color:T.textSub,marginTop:3 }}>{greeting.sub}</div>
               <div style={{ fontSize:12,color:T.textMuted,marginTop:6 }}>{new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"})}</div>
             </div>
-            {dailyTasks.filter(t=>t.assignee===activeUser||t.assignee==="both").length>0&&(
-              <div style={{marginBottom:20}}>
-                <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
-                  <span style={{fontSize:15}}>⟳</span>
-                  <span style={{fontSize:12,fontWeight:700,color:"#3DBF8A",textTransform:"uppercase",letterSpacing:"0.1em"}}>Daily Habits</span>
-                  <span style={{fontSize:12,color:T.textMuted}}>· resets every day</span>
-                </div>
-                <div style={cardBase({padding:"6px 12px",border:"1px solid #3DBF8A33"})}>
-                  {dailyTasks.filter(t=>t.assignee===activeUser||t.assignee==="both").map(t=><TaskPill key={t.id} t={t} showSec draggable={false}/>)}
-                </div>
-              </div>
-            )}
-            {weeklyTasks.filter(t=>t.assignee===activeUser||t.assignee==="both").length>0&&(
-              <div style={{marginBottom:20}}>
-                <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
-                  <span style={{fontSize:15}}>⟲</span>
-                  <span style={{fontSize:12,fontWeight:700,color:"#3B9EDB",textTransform:"uppercase",letterSpacing:"0.1em"}}>Weekly Routines</span>
-                  <span style={{fontSize:12,color:T.textMuted}}>· resets every Monday</span>
-                </div>
-                <div style={cardBase({padding:"6px 12px",border:"1px solid #3B9EDB33"})}>
-                  {weeklyTasks.filter(t=>t.assignee===activeUser||t.assignee==="both").map(t=><TaskPill key={t.id} t={t} showSec draggable={false}/>)}
-                </div>
-              </div>
-            )}
-            {(() => {
-              // Only show tasks that are relevant TODAY:
-              // 1. Due today or overdue (has a dueDate <= today)
-              // 2. No due date but created today
-              // 3. Marked Urgent priority (always show regardless of date)
-              // Exclude daily/weekly — they have their own section above
-              const todayTasks = activeTasks.filter(t => {
-                if (t.type === "daily" || t.type === "weekly") return false;
-                if (t.assignee !== activeUser && t.assignee !== "both") return false;
-                if (t.priority === "Urgent") return true;
-                if (t.dueDate) {
-                  const n = daysUntil(t.dueDate);
-                  return n !== null && n <= 0; // due today or overdue
-                }
-                // No due date — only show if created today
-                return t.createdAt === TODAY;
+
+            {(()=>{
+              const myUser = activeUser || "A";
+
+              // ── 1. Daily habits for today ──────────────────────────────
+              const myDailies = dailyTasks.filter(t=>
+                (t.assignee===myUser||t.assignee==="both") && !t.done
+              );
+
+              // ── 2. Weekly routines for this week ──────────────────────
+              const myWeeklies = weeklyTasks.filter(t=>
+                (t.assignee===myUser||t.assignee==="both") && !t.done
+              );
+
+              // ── 3. Tasks due strictly TODAY (dueDate === TODAY) ───────
+              const dueToday = activeTasks.filter(t=>
+                t.type !== "daily" && t.type !== "weekly" &&
+                (t.assignee===myUser||t.assignee==="both") &&
+                t.dueDate === TODAY
+              ).sort((a,b)=>{
+                const order = ["Urgent","High","Medium","Low"];
+                return order.indexOf(a.priority) - order.indexOf(b.priority);
               });
 
-              if (todayTasks.length === 0) return null;
+              // ── 4. Overdue tasks (dueDate < TODAY, not done) ──────────
+              const overdue = activeTasks.filter(t=>
+                t.type !== "daily" && t.type !== "weekly" &&
+                (t.assignee===myUser||t.assignee==="both") &&
+                t.dueDate && t.dueDate < TODAY
+              ).sort((a,b)=> a.dueDate < b.dueDate ? -1 : 1);
 
-              return ["Urgent","High","Medium","Low"].map(p=>{
-                const pt = todayTasks.filter(t => t.priority === p);
-                if (!pt.length) return null;
-                const pc = PRI_COLOR[p];
-                return (
-                  <div key={p} style={{marginBottom:20}}>
-                    <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
-                      <div style={{width:7,height:7,borderRadius:"50%",background:pc}}/>
-                      <span style={{fontSize:12,fontWeight:700,color:pc,textTransform:"uppercase",letterSpacing:"0.1em"}}>{p}</span>
-                      <span style={{fontSize:12,color:T.textMuted}}>· {pt.length} task{pt.length!==1?"s":""}</span>
+              const hasAnything = myDailies.length||myWeeklies.length||dueToday.length||overdue.length;
+
+              return (
+                <>
+                  {/* Overdue */}
+                  {overdue.length>0&&(
+                    <div style={{marginBottom:20}}>
+                      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
+                        <div style={{width:8,height:8,borderRadius:"50%",background:"#E84E8A"}}/>
+                        <span style={{fontSize:12,fontWeight:700,color:"#E84E8A",textTransform:"uppercase",letterSpacing:"0.1em"}}>Overdue</span>
+                        <span style={{fontSize:12,color:T.textMuted}}>· {overdue.length} task{overdue.length!==1?"s":""}</span>
+                      </div>
+                      <div style={cardBase({padding:"6px 12px",border:"1px solid #E84E8A33"})}>
+                        {overdue.map(t=><TaskPill key={t.id} t={t} showSec draggable={false}/>)}
+                      </div>
                     </div>
-                    <div style={cardBase({padding:"6px 12px"})}>{pt.map(t=><TaskPill key={t.id} t={t} showSec draggable={false}/>)}</div>
-                  </div>
-                );
-              });
-            })()}
+                  )}
 
-            {/* Empty state — nothing due today and no dailies */}
-            {activeTasks.filter(t=>{
-              if (t.type==="daily"||t.type==="weekly") return t.assignee===activeUser||t.assignee==="both";
-              if (t.assignee!==activeUser&&t.assignee!=="both") return false;
-              if (t.priority==="Urgent") return true;
-              if (t.dueDate) return daysUntil(t.dueDate)<=0;
-              return t.createdAt===TODAY;
-            }).length===0&&(
-              <div style={cardBase({padding:"50px 20px",textAlign:"center"})}>
-                <div style={{fontSize:36,marginBottom:10}}>🎉</div>
-                <div style={{fontSize:17,fontWeight:600,color:T.text}}>All caught up for today!</div>
-                <div style={{fontSize:13,color:T.textSub,marginTop:4}}>No tasks due today. Check the Board or Urgent tab for everything else.</div>
-              </div>
-            )}
+                  {/* Due today */}
+                  {dueToday.length>0&&(
+                    <div style={{marginBottom:20}}>
+                      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
+                        <div style={{width:8,height:8,borderRadius:"50%",background:"#E8A838"}}/>
+                        <span style={{fontSize:12,fontWeight:700,color:"#E8A838",textTransform:"uppercase",letterSpacing:"0.1em"}}>Due Today</span>
+                        <span style={{fontSize:12,color:T.textMuted}}>· {dueToday.length} task{dueToday.length!==1?"s":""}</span>
+                      </div>
+                      <div style={cardBase({padding:"6px 12px",border:"1px solid #E8A83833"})}>
+                        {dueToday.map(t=><TaskPill key={t.id} t={t} showSec draggable={false}/>)}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Daily habits */}
+                  {myDailies.length>0&&(
+                    <div style={{marginBottom:20}}>
+                      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
+                        <span style={{fontSize:14}}>⟳</span>
+                        <span style={{fontSize:12,fontWeight:700,color:"#3DBF8A",textTransform:"uppercase",letterSpacing:"0.1em"}}>Daily Habits</span>
+                        <span style={{fontSize:12,color:T.textMuted}}>· resets every day</span>
+                      </div>
+                      <div style={cardBase({padding:"6px 12px",border:"1px solid #3DBF8A33"})}>
+                        {myDailies.map(t=><TaskPill key={t.id} t={t} showSec draggable={false}/>)}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Weekly routines */}
+                  {myWeeklies.length>0&&(
+                    <div style={{marginBottom:20}}>
+                      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
+                        <span style={{fontSize:14}}>⟲</span>
+                        <span style={{fontSize:12,fontWeight:700,color:"#3B9EDB",textTransform:"uppercase",letterSpacing:"0.1em"}}>Weekly Routines</span>
+                        <span style={{fontSize:12,color:T.textMuted}}>· resets every Monday</span>
+                      </div>
+                      <div style={cardBase({padding:"6px 12px",border:"1px solid #3B9EDB33"})}>
+                        {myWeeklies.map(t=><TaskPill key={t.id} t={t} showSec draggable={false}/>)}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Empty state */}
+                  {!hasAnything&&(
+                    <div style={cardBase({padding:"50px 20px",textAlign:"center"})}>
+                      <div style={{fontSize:36,marginBottom:10}}>🎉</div>
+                      <div style={{fontSize:17,fontWeight:600,color:T.text}}>All clear for today!</div>
+                      <div style={{fontSize:13,color:T.textSub,marginTop:4,lineHeight:1.6}}>
+                        Nothing due today and no habits pending.<br/>
+                        Check <strong>Urgent</strong> or <strong>This Week</strong> for upcoming tasks.
+                      </div>
+                    </div>
+                  )}
+                </>
+              );
+            })()}
           </div>
         )}
 
