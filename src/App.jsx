@@ -2642,6 +2642,11 @@ export default function TogetherApp() {
 
   // ── Grid Card ─────────────────────────────────────────────────────────────
   function GridCard({ colId, label, emoji, color, colTasks, isDone=false }) {
+    const [expanded,     setExpanded]     = useState(false);
+    const [showClearMenu,setShowClearMenu]= useState(false);
+    const [confirmClear, setConfirmClear] = useState(false);
+    const PREVIEW_COUNT = 5;
+
     const isTaskOver  = highlightCol === colId;
     const isBoardOver = highlightBoard === colId && !isDone;
     const isOver      = isTaskOver;
@@ -2649,6 +2654,23 @@ export default function TogetherApp() {
     const dnCount = isDone ? doneTasks.length : allSec.filter(t=>t.done).length;
     const total   = isDone ? tasks.length : allSec.length;
     const pct     = total ? Math.round((dnCount/total)*100) : 0;
+
+    // Active tasks in this column (not done)
+    const activeSec = allSec.filter(t=>!t.done);
+    const visibleTasks = expanded ? colTasks : colTasks.slice(0, PREVIEW_COUNT);
+    const hasMore = colTasks.length > PREVIEW_COUNT;
+
+    function handleClearAll() {
+      // Delete all active tasks in this section
+      setTasks(prev => prev.filter(t => !(t.section===colId && !t.done)));
+      setConfirmClear(false);
+      setShowClearMenu(false);
+    }
+    function handleClearDone() {
+      // Delete completed tasks in this section
+      setTasks(prev => prev.filter(t => !(t.section===colId && t.done)));
+      setShowClearMenu(false);
+    }
 
     return (
       <div
@@ -2661,68 +2683,136 @@ export default function TogetherApp() {
           boxShadow:isBoardOver?`0 0 0 3px ${color}66`:isTaskOver?`0 0 0 2px ${color}55`:"none",
           transition:"border 0.1s,box-shadow 0.1s,transform 0.1s",
           transform: isBoardOver ? "scale(1.02)" : "scale(1)",
-          overflow:"hidden", minHeight:180,
+          overflow:"hidden", minHeight:180, position:"relative",
         }}
       >
         {/* Header */}
-        <div style={{ padding:"13px 14px 10px",borderBottom:`1px solid ${T.border}`,flexShrink:0 }}>
-          <div style={{ display:"flex",alignItems:"center",gap:9 }}>
-            {/* Dedicated board drag grip — ONLY this element is draggable for board reorder */}
+        <div style={{ padding:"12px 12px 9px",borderBottom:`1px solid ${T.border}`,flexShrink:0 }}>
+          <div style={{ display:"flex",alignItems:"center",gap:8 }}>
+            {/* Board drag grip */}
             {!isDone && (
               <div
                 draggable
                 onDragStart={e=>{e.stopPropagation();handleBoardDragStart(e,colId);}}
                 onDragEnd={e=>{e.stopPropagation();handleDragEnd();}}
                 title="Drag to reorder board"
-                style={{ display:"flex",flexDirection:"column",gap:2.5,flexShrink:0,opacity:0.35,cursor:"grab",padding:"4px 2px",borderRadius:4,transition:"opacity 0.15s" }}
+                style={{ display:"flex",flexDirection:"column",gap:2.5,flexShrink:0,opacity:0.3,cursor:"grab",padding:"4px 2px",borderRadius:4,transition:"opacity 0.15s" }}
                 onMouseEnter={e=>e.currentTarget.style.opacity="0.8"}
-                onMouseLeave={e=>e.currentTarget.style.opacity="0.35"}
+                onMouseLeave={e=>e.currentTarget.style.opacity="0.3"}
               >
-                <div style={{ width:14,height:2,borderRadius:1,background:T.text }}/>
-                <div style={{ width:14,height:2,borderRadius:1,background:T.text }}/>
-                <div style={{ width:14,height:2,borderRadius:1,background:T.text }}/>
+                <div style={{ width:13,height:2,borderRadius:1,background:T.text }}/>
+                <div style={{ width:13,height:2,borderRadius:1,background:T.text }}/>
+                <div style={{ width:13,height:2,borderRadius:1,background:T.text }}/>
               </div>
             )}
-            <div style={{ width:32,height:32,borderRadius:9,background:color+"22",display:"flex",alignItems:"center",justifyContent:"center",fontSize:15,flexShrink:0 }}>{emoji}</div>
+            <div style={{ width:30,height:30,borderRadius:8,background:color+"22",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,flexShrink:0 }}>{emoji}</div>
             <div style={{ flex:1,minWidth:0 }}>
-              <div style={{ fontFamily:"'DM Sans',sans-serif",fontWeight:700,fontSize:14,color:T.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap" }}>{label}</div>
-              <div style={{ fontSize:11,color:T.textSub,marginTop:1 }}>{isDone?`${dnCount} completed`:`${dnCount}/${total} done`}</div>
+              <div style={{ display:"flex",alignItems:"center",gap:5 }}>
+                <span style={{ fontFamily:"'DM Sans',sans-serif",fontWeight:700,fontSize:13,color:T.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap" }}>{label}</span>
+                {/* Task count badge */}
+                {colTasks.length>0 && (
+                  <span style={{ fontSize:10,fontWeight:700,padding:"1px 6px",borderRadius:10,background:color+"22",color:color,flexShrink:0,lineHeight:1.4 }}>
+                    {colTasks.length}
+                  </span>
+                )}
+              </div>
+              <div style={{ fontSize:10,color:T.textSub,marginTop:1 }}>{isDone?`${dnCount} completed`:`${dnCount}/${total} done`}</div>
             </div>
-            {!isDone&&<button
-              onClick={e=>{e.stopPropagation();setAddSec(colId);setNew(p=>({...p,section:colId}));setShowAdd(true);}}
-              onMouseDown={e=>e.stopPropagation()}
-              style={{ width:26,height:26,borderRadius:7,background:T.inputBg,border:`1px solid ${T.border}`,cursor:"pointer",color:T.textSub,fontSize:16,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontWeight:700 }}>+</button>}
+            {/* Action buttons */}
+            <div style={{ display:"flex",gap:4,flexShrink:0 }}>
+              {!isDone&&<button
+                onClick={e=>{e.stopPropagation();setAddSec(colId);setNew(p=>({...p,section:colId}));setShowAdd(true);}}
+                onMouseDown={e=>e.stopPropagation()}
+                style={{ width:24,height:24,borderRadius:6,background:T.inputBg,border:`1px solid ${T.border}`,cursor:"pointer",color:T.textSub,fontSize:15,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700 }}>+</button>}
+              {/* ⋯ menu */}
+              <div style={{ position:"relative" }}>
+                <button
+                  onClick={e=>{e.stopPropagation();setShowClearMenu(v=>!v);setConfirmClear(false);}}
+                  onMouseDown={e=>e.stopPropagation()}
+                  style={{ width:24,height:24,borderRadius:6,background:T.inputBg,border:`1px solid ${T.border}`,cursor:"pointer",color:T.textSub,fontSize:14,display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1 }}
+                  title="Board options"
+                >⋯</button>
+                {showClearMenu && (
+                  <div
+                    style={{ position:"absolute",top:28,right:0,zIndex:30,background:T.surface,border:`1px solid ${T.border}`,borderRadius:10,boxShadow:"0 4px 20px rgba(0,0,0,0.2)",minWidth:170,overflow:"hidden" }}
+                    onClick={e=>e.stopPropagation()}
+                  >
+                    {!confirmClear ? (
+                      <>
+                        <button onClick={()=>setConfirmClear("active")} style={{ display:"block",width:"100%",padding:"10px 14px",border:"none",background:"none",textAlign:"left",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:13,color:"#E84E8A",fontWeight:600 }}>
+                          🗑 Clear active tasks
+                        </button>
+                        <button onClick={()=>setConfirmClear("done")} style={{ display:"block",width:"100%",padding:"10px 14px",border:"none",background:"none",textAlign:"left",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:13,color:T.textSub,borderTop:`1px solid ${T.border}` }}>
+                          ✓ Clear completed tasks
+                        </button>
+                        <button onClick={()=>setShowClearMenu(false)} style={{ display:"block",width:"100%",padding:"8px 14px",border:"none",background:"none",textAlign:"left",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:12,color:T.textMuted,borderTop:`1px solid ${T.border}` }}>
+                          Cancel
+                        </button>
+                      </>
+                    ) : (
+                      <div style={{ padding:"12px 14px" }}>
+                        <div style={{ fontSize:12,color:T.text,marginBottom:10,fontFamily:"'DM Sans',sans-serif",lineHeight:1.5 }}>
+                          {confirmClear==="active"
+                            ? `Delete all ${activeSec.length} active task${activeSec.length!==1?"s":""} in ${label}?`
+                            : `Delete all completed tasks in ${label}?`}
+                          <br/><span style={{ color:"#E84E8A",fontWeight:600 }}>This cannot be undone.</span>
+                        </div>
+                        <div style={{ display:"flex",gap:6 }}>
+                          <button onClick={()=>setConfirmClear(false)} style={{ flex:1,padding:"6px",borderRadius:7,border:`1px solid ${T.border}`,background:T.inputBg,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:12,color:T.textSub }}>Keep</button>
+                          <button onClick={confirmClear==="active"?handleClearAll:handleClearDone} style={{ flex:1,padding:"6px",borderRadius:7,border:"none",background:"#E84E8A",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:700,color:"#fff" }}>Delete</button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
-          {!isDone&&<div style={{ height:3,background:T.inputBg,borderRadius:3,marginTop:9,overflow:"hidden" }}><div style={{ height:"100%",width:`${pct}%`,background:color,borderRadius:3,transition:"width 0.4s" }}/></div>}
+          {!isDone&&<div style={{ height:3,background:T.inputBg,borderRadius:3,marginTop:8,overflow:"hidden" }}><div style={{ height:"100%",width:`${pct}%`,background:color,borderRadius:3,transition:"width 0.4s" }}/></div>}
         </div>
 
-        {/* Task list — each task wrapper is a drop zone for reordering */}
+        {/* Task list */}
         <div
           style={{ flex:1,overflowY:"auto",padding:"10px 12px",minHeight:50 }}
           onDragOver={e=>{ e.preventDefault(); e.stopPropagation(); if(dragType.current==="task") handleDragOverCol(e,colId); }}
           onDrop={e=>{ e.stopPropagation(); handleDropOnCol(e,colId); }}
+          onClick={()=>{ if(showClearMenu) setShowClearMenu(false); }}
         >
           {colTasks.length===0 ? (
             <div style={{ border:`2px dashed ${isOver?color+"88":T.border}`,borderRadius:9,padding:"18px 10px",textAlign:"center",color:T.textMuted,fontSize:12,fontStyle:"italic",background:isOver?color+"0A":"transparent",transition:"all 0.1s" }}>
               {isDone?"✓ Drop tasks here to complete":"Drop tasks here"}
             </div>
-          ) : colTasks.map((t) => (
-            <div
-              key={t.id}
-              onDragOver={e=>{
-                e.preventDefault(); e.stopPropagation();
-                if(dragType.current==="task") handleDragOverCol(e,colId);
-              }}
-              onDrop={e=>{ e.stopPropagation(); handleDropOnTask(e, t.id, colId); }}
-              style={{ position:"relative" }}
-            >
-              {/* Drop indicator line above this task */}
-              {dragTaskId.current && dragTaskId.current!==t.id && highlightCol===colId && (
-                <div style={{ height:2,background:color,borderRadius:2,marginBottom:3,opacity:0,transition:"opacity 0.1s" }}/>
+          ) : (
+            <>
+              {visibleTasks.map((t) => (
+                <div
+                  key={t.id}
+                  onDragOver={e=>{ e.preventDefault(); e.stopPropagation(); if(dragType.current==="task") handleDragOverCol(e,colId); }}
+                  onDrop={e=>{ e.stopPropagation(); handleDropOnTask(e, t.id, colId); }}
+                  style={{ position:"relative" }}
+                >
+                  {dragTaskId.current && dragTaskId.current!==t.id && highlightCol===colId && (
+                    <div style={{ height:2,background:color,borderRadius:2,marginBottom:3,opacity:0,transition:"opacity 0.1s" }}/>
+                  )}
+                  <TaskPill t={t} showSec={isDone}/>
+                </div>
+              ))}
+
+              {/* View all / collapse toggle */}
+              {hasMore && (
+                <button
+                  onClick={()=>setExpanded(v=>!v)}
+                  style={{ width:"100%",marginTop:4,padding:"7px 10px",borderRadius:8,border:`1px solid ${color}44`,background:color+"0D",color:color,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:600,display:"flex",alignItems:"center",justifyContent:"center",gap:5,transition:"background 0.15s" }}
+                  onMouseEnter={e=>e.currentTarget.style.background=color+"1A"}
+                  onMouseLeave={e=>e.currentTarget.style.background=color+"0D"}
+                >
+                  {expanded
+                    ? `▲ Show less`
+                    : `▼ View all ${colTasks.length} tasks (${colTasks.length - PREVIEW_COUNT} more)`}
+                </button>
               )}
-              <TaskPill t={t} showSec={isDone}/>
-            </div>
-          ))}
+            </>
+          )}
         </div>
       </div>
     );
