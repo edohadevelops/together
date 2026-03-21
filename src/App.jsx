@@ -1786,7 +1786,7 @@ function CookbookView({ activeUser, names, T, mode, TODAY, genId }) {
           {filtered.map(recipe=>{
             const cat  = catOf(recipe.category);
             const isExp= expanded[recipe.id];
-            const ingredients = (recipe.ingredients||"").split("").filter(l=>l.trim());
+                            const ingredients = (recipe.ingredients||"").split("").filter(l=>l.trim());
             const steps = (recipe.steps||"").split("").filter(l=>l.trim());
             return (
               <div key={recipe.id} style={{ ...card({padding:"0",overflow:"hidden"}), borderTop:`3px solid ${cat.color}` }}>
@@ -2771,9 +2771,9 @@ export default function TogetherApp() {
           {!isDone&&<div style={{ height:3,background:T.inputBg,borderRadius:3,marginTop:8,overflow:"hidden" }}><div style={{ height:"100%",width:`${pct}%`,background:color,borderRadius:3,transition:"width 0.4s" }}/></div>}
         </div>
 
-        {/* Task list */}
+        {/* Task list — capped at 5 visible tasks, no internal scroll */}
         <div
-          style={{ flex:1,overflowY:"auto",padding:"10px 12px",minHeight:50 }}
+          style={{ padding:"10px 12px",minHeight:50 }}
           onDragOver={e=>{ e.preventDefault(); e.stopPropagation(); if(dragType.current==="task") handleDragOverCol(e,colId); }}
           onDrop={e=>{ e.stopPropagation(); handleDropOnCol(e,colId); }}
           onClick={()=>{ if(showClearMenu) setShowClearMenu(false); }}
