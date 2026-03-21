@@ -1126,6 +1126,341 @@ function MiniModal({ title, accent, onClose, onSave, children, T }) {
   );
 }
 
+// ── BulkImportModal ───────────────────────────────────────────────────────────
+// Parses pasted task lists with smart date & section detection.
+// Supported formats (one task per line):
+//   Buy groceries
+//   Finish thesis draft | 2025-04-15
+//   Review budget @finance high
+//   Morning devotion @faith daily both
+//   Call parents | tomorrow | medium | social | B
+function BulkImportModal({ onClose, onImport, T, mode, names, activeUser, SECTIONS, TASK_TYPES, PRIORITIES, TODAY }) {
+  const [text,      setText]      = useState("");
+  const [parsed,    setParsed]    = useState([]);
+  const [step,      setStep]      = useState("input"); // "input" | "review"
+  const [defaults,  setDefaults]  = useState({ section:"faith", type:"todo", assignee:activeUser||"A", priority:"Medium" });
+  const titleRef = useRef(null);
+
+  useEffect(()=>{ const t=setTimeout(()=>{ if(titleRef.current) titleRef.current.focus(); },80); return()=>clearTimeout(t); },[]);
+
+  // ── Smart date parser ────────────────────────────────────────────────────
+  function parseDate(str) {
+    if (!str) return "";
+    const s = str.trim().toLowerCase();
+    const now = new Date();
+    if (s === "today")     return TODAY;
+    if (s === "tomorrow")  { const d=new Date(now); d.setDate(d.getDate()+1); return d.toISOString().slice(0,10); }
+    if (s === "next week") { const d=new Date(now); d.setDate(d.getDate()+7); return d.toISOString().slice(0,10); }
+    // "in N days/weeks"
+    const inMatch = s.match(/^in (\d+) (day|week)s?$/);
+    if (inMatch) {
+      const n = parseInt(inMatch[1]);
+      const d = new Date(now);
+      d.setDate(d.getDate() + (inMatch[2]==="week" ? n*7 : n));
+      return d.toISOString().slice(0,10);
+    }
+    // "this friday/monday/..."
+    const days = ["sunday","monday","tuesday","wednesday","thursday","friday","saturday"];
+    const dayMatch = s.match(/^(this |next )?(sunday|monday|tuesday|wednesday|thursday|friday|saturday)$/);
+    if (dayMatch) {
+      const target = days.indexOf(dayMatch[2]);
+      const d = new Date(now);
+      let diff = target - d.getDay();
+      if (diff <= 0 || dayMatch[1]==="next ") diff += 7;
+      d.setDate(d.getDate() + diff);
+      return d.toISOString().slice(0,10);
+    }
+    // ISO or MM/DD/YYYY or DD/MM/YYYY
+    const isoMatch = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+    if (isoMatch) return s;
+    const slashMatch = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
+    if (slashMatch) {
+      const y = slashMatch[3].length===2?"20"+slashMatch[3]:slashMatch[3];
+      return `${y}-${slashMatch[1].padStart(2,"0")}-${slashMatch[2].padStart(2,"0")}`;
+    }
+    // "April 15" or "15 April"
+    const months = ["jan","feb","mar","apr","may","jun","jul","aug","sep","oct","nov","dec"];
+    const mMatch1 = s.match(/^([a-z]+)\s+(\d{1,2})(?:st|nd|rd|th)?(?:\s+(\d{4}))?$/);
+    const mMatch2 = s.match(/^(\d{1,2})(?:st|nd|rd|th)?\s+([a-z]+)(?:\s+(\d{4}))?$/);
+    const mMatch  = mMatch1 || mMatch2;
+    if (mMatch) {
+      const monthStr = mMatch1 ? mMatch[1] : mMatch[2];
+      const dayNum   = mMatch1 ? mMatch[2] : mMatch[1];
+      const year     = mMatch[3] || now.getFullYear();
+      const mi = months.findIndex(m => monthStr.startsWith(m));
+      if (mi !== -1) return `${year}-${String(mi+1).padStart(2,"0")}-${String(dayNum).padStart(2,"0")}`;
+    }
+    return "";
+  }
+
+  // ── Smart section detector ───────────────────────────────────────────────
+  function detectSection(text) {
+    const t = text.toLowerCase();
+    const map = [
+      ["faith",     ["pray","devotion","bible","church","worship","faith","god","sermon","tithe"]],
+      ["health",    ["workout","gym","exercise","run","walk","yoga","health","diet","sleep","doctor","medical"]],
+      ["finance",   ["budget","money","bank","invest","savings","pay","bill","tax","finance","rent","loan"]],
+      ["school",    ["study","class","lecture","assignment","exam","thesis","phd","homework","grade","school","university"]],
+      ["work",      ["work","job","meeting","email","client","project","deadline","report","career","office"]],
+      ["relation",  ["date","partner","anniversary","love","relationship","dinner","couple","wife","husband","boyfriend","girlfriend"]],
+      ["home",      ["clean","cook","groceries","laundry","chores","dishes","vacuum","trash","home","house"]],
+      ["health",    ["meditat","mental","therapy","mindful"]],
+      ["hobbies",   ["read","book","game","music","hobby","art","draw","paint","movie","watch","listen"]],
+      ["social",    ["call","text","friend","family","parents","visit","party","social","birthday"]],
+      ["growth",    ["learn","course","skill","habit","goal","growth","personal","develop","journal"]],
+      ["church",    ["church","fellowship","impact","ministry","volunteer","service","worship","praise"]],
+      ["finance",   ["stock","crypto","insurance","401k","emergency fund"]],
+    ];
+    for (const [sec, keywords] of map) {
+      if (keywords.some(k => t.includes(k))) return sec;
+    }
+    return null;
+  }
+
+  // ── Smart priority detector ──────────────────────────────────────────────
+  function detectPriority(text) {
+    const t = text.toLowerCase();
+    if (t.includes("urgent") || t.includes("asap") || t.includes("critical")) return "Urgent";
+    if (t.includes(" high") || t.includes("important")) return "High";
+    if (t.includes(" low") || t.includes("someday") || t.includes("eventually")) return "Low";
+    return null;
+  }
+
+  // ── Parse a single line ──────────────────────────────────────────────────
+  function parseLine(line) {
+    const raw = line.trim();
+    if (!raw || raw.startsWith("#") || raw.startsWith("//")) return null;
+
+    // Split on | delimiter for structured format
+    const parts = raw.split("|").map(p => p.trim());
+    let title = parts[0];
+    let dueDate = "";
+    let section = defaults.section;
+    let type = defaults.type;
+    let assignee = defaults.assignee;
+    let priority = defaults.priority;
+
+    // Parse remaining pipe-separated fields
+    for (let i = 1; i < parts.length; i++) {
+      const p = parts[i].trim().toLowerCase();
+      // Date?
+      const dateAttempt = parseDate(p);
+      if (dateAttempt) { dueDate = dateAttempt; continue; }
+      // Section?
+      const secMatch = SECTIONS.find(s => s.id===p || s.label.toLowerCase()===p);
+      if (secMatch) { section = secMatch.id; continue; }
+      // Type?
+      const typeMatch = TASK_TYPES.find(t => t.id===p || t.label.toLowerCase()===p);
+      if (typeMatch) { type = typeMatch.id; continue; }
+      // Priority?
+      const priMatch = PRIORITIES.find(pr => pr.toLowerCase()===p);
+      if (priMatch) { priority = priMatch; continue; }
+      // Assignee?
+      if (p==="a" || p===names.A.toLowerCase()) { assignee="A"; continue; }
+      if (p==="b" || p===names.B.toLowerCase()) { assignee="B"; continue; }
+      if (p==="both") { assignee="both"; continue; }
+    }
+
+    // Extract @mentions from title: @faith, @high, @both, @daily, @2024-05-01
+    const atRegex = /@([\w-]+)/g;
+    let match;
+    while ((match = atRegex.exec(title)) !== null) {
+      const tag = match[1].toLowerCase();
+      const dateAttempt = parseDate(tag);
+      if (dateAttempt) { dueDate = dateAttempt; }
+      else {
+        const secM = SECTIONS.find(s => s.id===tag || s.label.toLowerCase()===tag);
+        if (secM) { section = secM.id; }
+        const priM = PRIORITIES.find(p => p.toLowerCase()===tag);
+        if (priM) { priority = priM; }
+        const typeM = TASK_TYPES.find(t => t.id===tag);
+        if (typeM) { type = typeM.id; }
+        if (tag==="a" || tag===names.A.toLowerCase()) assignee="A";
+        if (tag==="b" || tag===names.B.toLowerCase()) assignee="B";
+        if (tag==="both") assignee="both";
+      }
+    }
+    // Clean @mentions from title
+    title = title.replace(/@[\w-]+/g, "").replace(/\s+/g," ").trim();
+
+    // Auto-detect section from title keywords if still at default
+    if (section === defaults.section) {
+      const detected = detectSection(title);
+      if (detected) section = detected;
+    }
+    // Auto-detect priority from title
+    if (priority === defaults.priority) {
+      const detected = detectPriority(title);
+      if (detected) priority = detected;
+    }
+
+    if (!title) return null;
+    return { title, section, type, assignee, priority, dueDate, notes:"" };
+  }
+
+  function handleParse() {
+    const lines = text.split("\n").map(l=>l.trim()).filter(Boolean);
+    const results = lines.map(parseLine).filter(Boolean);
+    setParsed(results);
+    setStep("review");
+  }
+
+  function handleImport() {
+    onImport(parsed);
+    onClose();
+  }
+
+  function updateParsed(idx, field, val) {
+    setParsed(prev => prev.map((t,i) => i===idx ? {...t,[field]:val} : t));
+  }
+  function removeRow(idx) { setParsed(prev=>prev.filter((_,i)=>i!==idx)); }
+
+  const inpSt = { width:"100%", background:T.inputBg, border:`1px solid ${T.border}`, borderRadius:9, padding:"9px 12px", color:T.text, fontFamily:"'DM Sans',sans-serif", fontSize:13, outline:"none", boxSizing:"border-box" };
+  const selSt = { ...inpSt, background:mode==="dark"?"#181B23":"#fff", cursor:"pointer", padding:"7px 10px" };
+  const aColor = u => u==="A"?"#E8A838":u==="B"?"#E84E8A":"#3DBF8A";
+
+  return (
+    <div style={{ position:"fixed",inset:0,zIndex:40,background:"rgba(0,0,0,0.65)",backdropFilter:"blur(6px)",display:"flex",alignItems:"flex-end",justifyContent:"center" }}
+      onClick={e=>e.target===e.currentTarget&&onClose()}>
+      <div style={{ background:T.surface,border:`1px solid ${T.border}`,borderRadius:"18px 18px 0 0",boxShadow:"0 -4px 40px rgba(0,0,0,0.4)",width:"100%",maxWidth:680,maxHeight:"94vh",overflowY:"auto",padding:"24px 20px 36px" }}>
+        <div style={{ width:40,height:4,borderRadius:2,background:T.textMuted,margin:"0 auto 20px",opacity:0.4 }}/>
+        <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:22,color:T.text,marginBottom:4 }}>⇪ Bulk Import Tasks</div>
+        <div style={{ height:2,width:40,background:"#9B6EE8",borderRadius:2,marginBottom:16 }}/>
+
+        {step==="input" && (
+          <>
+            {/* Format guide */}
+            <div style={{ background:T.inputBg,border:`1px solid ${T.border}`,borderRadius:10,padding:"12px 14px",marginBottom:16,fontSize:12,color:T.textSub,lineHeight:1.8 }}>
+              <div style={{ fontWeight:700,color:T.text,marginBottom:6,fontSize:13 }}>📋 Supported formats (one task per line):</div>
+              {[
+                ["Simple",          "Buy groceries"],
+                ["With due date",   "Finish assignment | April 15"],
+                ["With section",    "Morning devotion | @faith | daily"],
+                ["Full detail",     "Review budget | 2025-04-30 | high | @finance | both"],
+                ["Natural dates",   "Call parents | tomorrow  or  next friday  or  in 3 days"],
+                ["@Tags in title",  "Study for exam @school @high | next monday"],
+              ].map(([label,example])=>(
+                <div key={label} style={{ display:"flex",gap:8,flexWrap:"wrap" }}>
+                  <span style={{ color:T.textMuted,flexShrink:0,minWidth:110 }}>{label}:</span>
+                  <code style={{ color:"#9B6EE8",fontSize:11,background:"#9B6EE811",padding:"1px 6px",borderRadius:4 }}>{example}</code>
+                </div>
+              ))}
+            </div>
+
+            {/* Default settings */}
+            <div style={{ display:"flex",gap:8,flexWrap:"wrap",marginBottom:12 }}>
+              <div style={{ flex:"1 1 120px" }}>
+                <div style={{ fontSize:10,fontWeight:600,color:T.textMuted,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:4 }}>Default Section</div>
+                <select style={selSt} value={defaults.section} onChange={e=>setDefaults(p=>({...p,section:e.target.value}))}>
+                  {SECTIONS.map(s=><option key={s.id} value={s.id}>{s.emoji} {s.label}</option>)}
+                </select>
+              </div>
+              <div style={{ flex:"1 1 100px" }}>
+                <div style={{ fontSize:10,fontWeight:600,color:T.textMuted,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:4 }}>Default Type</div>
+                <select style={selSt} value={defaults.type} onChange={e=>setDefaults(p=>({...p,type:e.target.value}))}>
+                  {TASK_TYPES.map(t=><option key={t.id} value={t.id}>{t.label}</option>)}
+                </select>
+              </div>
+              <div style={{ flex:"1 1 100px" }}>
+                <div style={{ fontSize:10,fontWeight:600,color:T.textMuted,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:4 }}>Default Assign</div>
+                <select style={selSt} value={defaults.assignee} onChange={e=>setDefaults(p=>({...p,assignee:e.target.value}))}>
+                  <option value="A">{names.A}</option>
+                  <option value="B">{names.B}</option>
+                  <option value="both">Both</option>
+                </select>
+              </div>
+              <div style={{ flex:"1 1 100px" }}>
+                <div style={{ fontSize:10,fontWeight:600,color:T.textMuted,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:4 }}>Default Priority</div>
+                <select style={selSt} value={defaults.priority} onChange={e=>setDefaults(p=>({...p,priority:e.target.value}))}>
+                  {PRIORITIES.map(p=><option key={p} value={p}>{p}</option>)}
+                </select>
+              </div>
+            </div>
+
+            {/* Paste area */}
+            <textarea
+              ref={titleRef}
+              value={text}
+              onChange={e=>setText(e.target.value)}
+              placeholder={"Paste your task list here, one per line:\n\nMorning devotion\nFinish thesis chapter 3 | April 30 | high\nCall parents | tomorrow | @social\nReview budget @finance | next monday | both\nWorkout | daily | @health"}
+              style={{ ...inpSt, minHeight:200, resize:"vertical", fontSize:13, lineHeight:1.7 }}
+            />
+            <div style={{ fontSize:11,color:T.textMuted,marginTop:6 }}>
+              {text.split("\n").filter(l=>l.trim()&&!l.trim().startsWith("#")).length} tasks detected
+            </div>
+            <div style={{ display:"flex",gap:10,marginTop:16,justifyContent:"flex-end" }}>
+              <button style={{ padding:"9px 20px",borderRadius:9,border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:600,background:T.inputBg,color:T.textSub }} onClick={onClose}>Cancel</button>
+              <button style={{ padding:"9px 20px",borderRadius:9,border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:600,background:"#9B6EE8",color:"#fff" }}
+                onClick={handleParse} disabled={!text.trim()}>
+                Parse Tasks →
+              </button>
+            </div>
+          </>
+        )}
+
+        {step==="review" && (
+          <>
+            <div style={{ fontSize:13,color:T.textSub,marginBottom:14 }}>
+              Review and tweak {parsed.length} task{parsed.length!==1?"s":""} before importing. Click ✕ to remove any you don't want.
+            </div>
+
+            {/* Table header */}
+            <div style={{ display:"grid",gridTemplateColumns:"1fr 90px 80px 80px 80px 28px",gap:6,padding:"6px 8px",borderRadius:8,background:T.inputBg,marginBottom:6 }}>
+              {["Title","Section","Type","Assign","Due",""].map(h=>(
+                <div key={h} style={{ fontSize:10,fontWeight:700,color:T.textMuted,textTransform:"uppercase",letterSpacing:"0.08em" }}>{h}</div>
+              ))}
+            </div>
+
+            <div style={{ display:"flex",flexDirection:"column",gap:6,maxHeight:380,overflowY:"auto",paddingRight:2 }}>
+              {parsed.map((t,idx)=>(
+                <div key={idx} style={{ display:"grid",gridTemplateColumns:"1fr 90px 80px 80px 80px 28px",gap:6,padding:"6px 8px",borderRadius:9,background:T.inputBg,border:`1px solid ${T.border}`,alignItems:"center" }}>
+                  {/* Title */}
+                  <input style={{ ...inpSt,padding:"5px 8px",fontSize:12 }} value={t.title} onChange={e=>updateParsed(idx,"title",e.target.value)}/>
+                  {/* Section */}
+                  <select style={{ ...selSt,padding:"4px 6px",fontSize:11 }} value={t.section} onChange={e=>updateParsed(idx,"section",e.target.value)}>
+                    {SECTIONS.map(s=><option key={s.id} value={s.id}>{s.emoji} {s.label}</option>)}
+                  </select>
+                  {/* Type */}
+                  <select style={{ ...selSt,padding:"4px 6px",fontSize:11 }} value={t.type} onChange={e=>updateParsed(idx,"type",e.target.value)}>
+                    {TASK_TYPES.map(tp=><option key={tp.id} value={tp.id}>{tp.label}</option>)}
+                  </select>
+                  {/* Assignee */}
+                  <select style={{ ...selSt,padding:"4px 6px",fontSize:11,color:aColor(t.assignee) }} value={t.assignee} onChange={e=>updateParsed(idx,"assignee",e.target.value)}>
+                    <option value="A">{names.A}</option>
+                    <option value="B">{names.B}</option>
+                    <option value="both">Both</option>
+                  </select>
+                  {/* Due date */}
+                  <input type="date" style={{ ...selSt,padding:"4px 6px",fontSize:11 }} value={t.dueDate||""} onChange={e=>updateParsed(idx,"dueDate",e.target.value)}/>
+                  {/* Remove */}
+                  <button onClick={()=>removeRow(idx)} style={{ background:"none",border:"none",color:T.textMuted,cursor:"pointer",fontSize:14,padding:"2px",display:"flex",alignItems:"center",justifyContent:"center" }}>✕</button>
+                </div>
+              ))}
+            </div>
+
+            {parsed.length===0 && (
+              <div style={{ textAlign:"center",padding:"30px",color:T.textMuted,fontSize:13,fontStyle:"italic" }}>All tasks removed. Go back to paste more.</div>
+            )}
+
+            <div style={{ display:"flex",gap:10,marginTop:16,justifyContent:"space-between",flexWrap:"wrap" }}>
+              <button style={{ padding:"9px 16px",borderRadius:9,border:`1px solid ${T.border}`,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:600,background:T.inputBg,color:T.textSub }} onClick={()=>setStep("input")}>
+                ← Back
+              </button>
+              <div style={{ display:"flex",gap:10 }}>
+                <button style={{ padding:"9px 20px",borderRadius:9,border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:600,background:T.inputBg,color:T.textSub }} onClick={onClose}>Cancel</button>
+                <button style={{ padding:"9px 24px",borderRadius:9,border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:700,background:"#9B6EE8",color:"#fff" }}
+                  onClick={handleImport} disabled={parsed.length===0}>
+                  ⇪ Import {parsed.length} Task{parsed.length!==1?"s":""}
+                </button>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ── TrackerItemForm ───────────────────────────────────────────────────────────
 function TrackerItemForm({ data, setData, onSave, onClose, title, T, mode }) {
   const ref = useRef(null);
@@ -1452,7 +1787,7 @@ function CookbookView({ activeUser, names, T, mode, TODAY, genId }) {
             const cat  = catOf(recipe.category);
             const isExp= expanded[recipe.id];
             const ingredients = (recipe.ingredients||"").split("").filter(l=>l.trim());
-            const steps = (recipe.steps||"").split("").f.ilter(l=>l.trim());
+            const steps = (recipe.steps||"").split("").filter(l=>l.trim());
             return (
               <div key={recipe.id} style={{ ...card({padding:"0",overflow:"hidden"}), borderTop:`3px solid ${cat.color}` }}>
                 {/* Recipe card header */}
@@ -1847,6 +2182,7 @@ export default function TogetherApp() {
     try { localStorage.setItem("together_onboarded","1"); } catch {}
     setShowOnboarding(false);
   }
+  const [showBulk,   setShowBulk]   = useState(false);
   const [showTour,   setShowTour]   = useState(false);
   const [tourStep,   setTourStep]   = useState(0);
   const [notifPerm,  setNotifPerm]  = useState(() => { try { return Notification?.permission||"default"; } catch { return "default"; } });
@@ -2564,12 +2900,18 @@ export default function TogetherApp() {
           <button onClick={()=>setShowAdd(true)} style={{ height:32,padding:"0 12px",borderRadius:8,border:"none",background:T.accent,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,color:T.accentFg,display:"flex",alignItems:"center",gap:4,flexShrink:0,whiteSpace:"nowrap" }}>
             + Task
           </button>
+          <button onClick={()=>setShowBulk(true)} style={{ height:32,padding:"0 12px",borderRadius:8,border:`1px solid ${T.border}`,background:T.inputBg,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:600,color:T.textSub,display:"flex",alignItems:"center",gap:4,flexShrink:0,whiteSpace:"nowrap" }} title="Bulk import tasks">
+            ⇪ Import
+          </button>
         </div>
 
         {/* Mobile menu button — shown only on mobile */}
         <div style={{ display:"flex",alignItems:"center",gap:6,flexShrink:0 }} className="topbar-menu-btn">
           <button onClick={()=>setShowAdd(true)} style={{ height:32,padding:"0 12px",borderRadius:8,border:"none",background:T.accent,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,color:T.accentFg,display:"flex",alignItems:"center",gap:4,whiteSpace:"nowrap" }}>
             + Task
+          </button>
+          <button onClick={()=>setShowBulk(true)} style={{ height:32,width:32,borderRadius:8,border:`1px solid ${T.border}`,background:T.inputBg,cursor:"pointer",fontSize:16,display:"flex",alignItems:"center",justifyContent:"center",color:T.textSub,flexShrink:0 }} title="Bulk import">
+            ⇪
           </button>
           <button onClick={()=>setShowNav(true)} style={{ width:36,height:36,borderRadius:9,border:`1px solid ${T.border}`,background:T.inputBg,cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:4,flexShrink:0,padding:"9px 8px" }}>
             <span style={{ width:16,height:2,borderRadius:1,background:T.textSub,display:"block" }}/>
@@ -2992,6 +3334,7 @@ export default function TogetherApp() {
       )}
 
       {/* Modals */}
+      {showBulk&&<BulkImportModal onClose={()=>setShowBulk(false)} onImport={(tasks)=>{tasks.forEach(t=>doAdd(t));}} T={T} mode={mode} names={names} activeUser={activeUser} SECTIONS={SECTIONS} TASK_TYPES={TASK_TYPES} PRIORITIES={PRIORITIES} TODAY={TODAY}/>}
       {showAdd&&<FormModal data={newTask} setData={setNew} onSave={()=>doAdd(newTask)} onClose={()=>{setShowAdd(false);setAddSec(null);}} title="New Task" names={names} sections={SECTIONS} taskTypes={TASK_TYPES} priorities={PRIORITIES} T={T} mode={mode}/>}
       {editTask&&<FormModal data={editTask} setData={setEdit} onSave={saveEdit} onClose={()=>setEdit(null)} title="Edit Task" names={names} sections={SECTIONS} taskTypes={TASK_TYPES} priorities={PRIORITIES} T={T} mode={mode}/>}
 
