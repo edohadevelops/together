@@ -1126,6 +1126,493 @@ function MiniModal({ title, accent, onClose, onSave, children, T }) {
   );
 }
 
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ── BudgetApp ─────────────────────────────────────────────────────────────────
+// Full-featured budget tracker with income, expenses, savings goals,
+// per-user views, shared view, pie chart, and history.
+// ══════════════════════════════════════════════════════════════════════════════
+
+const BUDGET_CATS = [
+  { id:"housing",   label:"Housing",        emoji:"🏠", color:"#3B9EDB" },
+  { id:"food",      label:"Food & Dining",  emoji:"🍽️", color:"#E8A838" },
+  { id:"transport", label:"Transport",      emoji:"🚗", color:"#9B6EE8" },
+  { id:"health",    label:"Health",         emoji:"💊", color:"#3DBF8A" },
+  { id:"education", label:"Education",      emoji:"🎓", color:"#7B61FF" },
+  { id:"faith",     label:"Faith & Giving", emoji:"✦",  color:"#E8C050" },
+  { id:"savings",   label:"Savings",        emoji:"💰", color:"#20B2AA" },
+  { id:"shopping",  label:"Shopping",       emoji:"🛍️", color:"#E84E8A" },
+  { id:"utilities", label:"Utilities",      emoji:"⚡", color:"#E8883A" },
+  { id:"invest",    label:"Investing",      emoji:"📈", color:"#5BAD4E" },
+  { id:"personal",  label:"Personal",       emoji:"🌱", color:"#C8B030" },
+  { id:"other",     label:"Other",          emoji:"📦", color:"#888D9B" },
+];
+
+const BUDGET_MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+function PieChart({ slices, size=180, T }) {
+  const total = slices.reduce((s,x)=>s+x.value,0);
+  if (total===0) return <div style={{ width:size,height:size,borderRadius:"50%",background:T.inputBg,display:"flex",alignItems:"center",justifyContent:"center",color:T.textMuted,fontSize:12 }}>No data</div>;
+  let cum = 0;
+  const paths = slices.filter(s=>s.value>0).map(s=>{
+    const pct = s.value/total;
+    const start = cum*2*Math.PI - Math.PI/2;
+    cum += pct;
+    const end = cum*2*Math.PI - Math.PI/2;
+    const r = size/2-4;
+    const cx = size/2, cy = size/2;
+    const x1=cx+r*Math.cos(start), y1=cy+r*Math.sin(start);
+    const x2=cx+r*Math.cos(end),   y2=cy+r*Math.sin(end);
+    const large = pct>0.5?1:0;
+    return { ...s, d:`M${cx},${cy} L${x1},${y1} A${r},${r} 0 ${large},1 ${x2},${y2} Z`, pct };
+  });
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+      <circle cx={size/2} cy={size/2} r={size/2-4} fill={T.inputBg}/>
+      {paths.map((p,i)=><path key={i} d={p.d} fill={p.color} stroke={T.surface} strokeWidth={1.5} opacity={0.9}/>)}
+      <circle cx={size/2} cy={size/2} r={size/4} fill={T.surface}/>
+    </svg>
+  );
+}
+
+function BudgetEntryForm({ data, setData, onSave, onClose, T, mode, owner }) {
+  const ref = useRef(null);
+  useEffect(()=>{ const t=setTimeout(()=>{ if(ref.current) ref.current.focus(); },80); return()=>clearTimeout(t); },[]);
+  const inpSt = { width:"100%",background:T.inputBg,border:`1px solid ${T.border}`,borderRadius:9,padding:"9px 12px",color:T.text,fontFamily:"'DM Sans',sans-serif",fontSize:14,outline:"none",boxSizing:"border-box" };
+  const selSt = { ...inpSt,background:mode==="dark"?"#181B23":"#fff",cursor:"pointer" };
+  const lblSt = { fontSize:11,fontWeight:600,letterSpacing:"0.1em",textTransform:"uppercase",color:T.textMuted,display:"block",marginBottom:4,marginTop:12,fontFamily:"'DM Sans',sans-serif" };
+  const now = new Date();
+  return (
+    <div style={{ position:"fixed",inset:0,zIndex:40,background:"rgba(0,0,0,0.65)",backdropFilter:"blur(6px)",display:"flex",alignItems:"flex-end",justifyContent:"center" }} onClick={e=>e.target===e.currentTarget&&onClose()}>
+      <div style={{ background:T.surface,border:`1px solid ${T.border}`,borderRadius:"18px 18px 0 0",width:"100%",maxWidth:520,maxHeight:"92vh",overflowY:"auto",padding:"24px 20px 36px",boxShadow:"0 -4px 32px rgba(0,0,0,0.3)" }}>
+        <div style={{ width:40,height:4,borderRadius:2,background:T.textMuted,margin:"0 auto 20px",opacity:0.4 }}/>
+        <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:22,color:T.text,marginBottom:4 }}>{data.id?"Edit":"New"} {data.type==="income"?"Income":"Expense"}</div>
+        <div style={{ height:2,width:40,background:data.type==="income"?"#3DBF8A":"#E84E8A",borderRadius:2,marginBottom:18 }}/>
+
+        <label style={lblSt}>Type</label>
+        <div style={{ display:"flex",gap:8 }}>
+          {[["income","💚 Income"],["expense","💸 Expense"]].map(([v,l])=>(
+            <button key={v} onClick={()=>setData(p=>({...p,type:v}))}
+              style={{ flex:1,padding:"9px",borderRadius:10,border:`1px solid ${data.type===v?(v==="income"?"#3DBF8A":"#E84E8A"):T.border}`,background:data.type===v?(v==="income"?"#3DBF8A":"#E84E8A")+"18":"transparent",color:data.type===v?(v==="income"?"#3DBF8A":"#E84E8A"):T.text,fontFamily:"'DM Sans',sans-serif",fontSize:13,cursor:"pointer",fontWeight:data.type===v?700:400 }}>
+              {l}
+            </button>
+          ))}
+        </div>
+
+        <label style={lblSt}>Description</label>
+        <input ref={ref} style={inpSt} value={data.description||""} onChange={e=>setData(p=>({...p,description:e.target.value}))} placeholder="e.g. TA Stipend, Rent, Groceries..." onKeyDown={e=>{ if(e.key==="Enter"&&data.description?.trim()&&data.amount){e.preventDefault();onSave();}}}/>
+
+        <label style={lblSt}>Amount ($)</label>
+        <input style={inpSt} type="number" min="0" step="0.01" value={data.amount||""} onChange={e=>setData(p=>({...p,amount:e.target.value}))} placeholder="0.00"/>
+
+        <label style={lblSt}>Category</label>
+        <select style={selSt} value={data.category||"other"} onChange={e=>setData(p=>({...p,category:e.target.value}))}>
+          {BUDGET_CATS.map(c=><option key={c.id} value={c.id}>{c.emoji} {c.label}</option>)}
+        </select>
+
+        <label style={lblSt}>Date</label>
+        <input type="date" style={selSt} value={data.date||new Date().toISOString().slice(0,10)} onChange={e=>setData(p=>({...p,date:e.target.value}))}/>
+
+        <label style={lblSt}>Notes (optional)</label>
+        <input style={inpSt} value={data.notes||""} onChange={e=>setData(p=>({...p,notes:e.target.value}))} placeholder="Any extra details..."/>
+
+        <label style={lblSt}>Recurring?</label>
+        <div style={{ display:"flex",gap:8 }}>
+          {[["none","One-time"],["monthly","Monthly"],["weekly","Weekly"]].map(([v,l])=>(
+            <button key={v} onClick={()=>setData(p=>({...p,recurring:v}))}
+              style={{ flex:1,padding:"8px",borderRadius:9,border:`1px solid ${(data.recurring||"none")===v?"#9B6EE8":T.border}`,background:(data.recurring||"none")===v?"#9B6EE822":"transparent",color:(data.recurring||"none")===v?"#9B6EE8":T.text,fontFamily:"'DM Sans',sans-serif",fontSize:12,cursor:"pointer",fontWeight:(data.recurring||"none")===v?700:400 }}>
+              {l}
+            </button>
+          ))}
+        </div>
+
+        <div style={{ display:"flex",gap:10,marginTop:22,justifyContent:"flex-end" }}>
+          <button style={{ padding:"9px 20px",borderRadius:9,border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:600,background:T.inputBg,color:T.textSub }} onClick={onClose}>Cancel</button>
+          <button style={{ padding:"9px 22px",borderRadius:9,border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:600,background:data.type==="income"?"#3DBF8A":"#E84E8A",color:"#fff" }} onClick={onSave}>Save</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function GoalForm({ data, setData, onSave, onClose, T, mode }) {
+  const ref = useRef(null);
+  useEffect(()=>{ const t=setTimeout(()=>{ if(ref.current) ref.current.focus(); },80); return()=>clearTimeout(t); },[]);
+  const inpSt = { width:"100%",background:T.inputBg,border:`1px solid ${T.border}`,borderRadius:9,padding:"9px 12px",color:T.text,fontFamily:"'DM Sans',sans-serif",fontSize:14,outline:"none",boxSizing:"border-box" };
+  const selSt = { ...inpSt,background:mode==="dark"?"#181B23":"#fff",cursor:"pointer" };
+  const lblSt = { fontSize:11,fontWeight:600,letterSpacing:"0.1em",textTransform:"uppercase",color:T.textMuted,display:"block",marginBottom:4,marginTop:12,fontFamily:"'DM Sans',sans-serif" };
+  return (
+    <div style={{ position:"fixed",inset:0,zIndex:40,background:"rgba(0,0,0,0.65)",backdropFilter:"blur(6px)",display:"flex",alignItems:"flex-end",justifyContent:"center" }} onClick={e=>e.target===e.currentTarget&&onClose()}>
+      <div style={{ background:T.surface,border:`1px solid ${T.border}`,borderRadius:"18px 18px 0 0",width:"100%",maxWidth:520,maxHeight:"92vh",overflowY:"auto",padding:"24px 20px 36px",boxShadow:"0 -4px 32px rgba(0,0,0,0.3)" }}>
+        <div style={{ width:40,height:4,borderRadius:2,background:T.textMuted,margin:"0 auto 20px",opacity:0.4 }}/>
+        <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:22,color:T.text,marginBottom:4 }}>{data.id?"Edit":"New"} Savings Goal</div>
+        <div style={{ height:2,width:40,background:"#20B2AA",borderRadius:2,marginBottom:18 }}/>
+        <label style={lblSt}>Goal Name</label>
+        <input ref={ref} style={inpSt} value={data.name||""} onChange={e=>setData(p=>({...p,name:e.target.value}))} placeholder="e.g. Emergency Fund, PhD Move, Engagement Ring..."/>
+        <label style={lblSt}>Target Amount ($)</label>
+        <input style={inpSt} type="number" min="0" step="1" value={data.target||""} onChange={e=>setData(p=>({...p,target:e.target.value}))} placeholder="5000"/>
+        <label style={lblSt}>Current Saved ($)</label>
+        <input style={inpSt} type="number" min="0" step="0.01" value={data.saved||""} onChange={e=>setData(p=>({...p,saved:e.target.value}))} placeholder="0"/>
+        <label style={lblSt}>Target Date (optional)</label>
+        <input type="date" style={selSt} value={data.deadline||""} onChange={e=>setData(p=>({...p,deadline:e.target.value}))}/>
+        <label style={lblSt}>Emoji / Icon</label>
+        <input style={inpSt} value={data.emoji||"💰"} onChange={e=>setData(p=>({...p,emoji:e.target.value}))} placeholder="💰"/>
+        <div style={{ display:"flex",gap:10,marginTop:22,justifyContent:"flex-end" }}>
+          <button style={{ padding:"9px 20px",borderRadius:9,border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:600,background:T.inputBg,color:T.textSub }} onClick={onClose}>Cancel</button>
+          <button style={{ padding:"9px 22px",borderRadius:9,border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:600,background:"#20B2AA",color:"#fff" }} onClick={onSave}>Save Goal</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function BudgetApp({ names, mode, T, activeUser, onBack }) {
+  const [entries,    setEntriesState] = useState(null);
+  const [goals,      setGoalsState]   = useState(null);
+  const [view,       setBView]        = useState("overview"); // overview | transactions | goals | shared
+  const [focus,      setFocus]        = useState(activeUser||"A"); // A | B | shared
+  const [month,      setMonth]        = useState(new Date().getMonth());
+  const [year,       setYear]         = useState(new Date().getFullYear());
+  const [showAdd,    setShowAdd]      = useState(false);
+  const [showGoal,   setShowGoal]     = useState(false);
+  const [editEntry,  setEditEntry]    = useState(null);
+  const [editGoal,   setEditGoal]     = useState(null);
+  const blankEntry = { type:"expense", description:"", amount:"", category:"other", date:new Date().toISOString().slice(0,10), notes:"", recurring:"none", owner:focus };
+  const blankGoal  = { name:"", target:"", saved:"", deadline:"", emoji:"💰", owner:focus };
+  const [newEntry,   setNewEntry]     = useState({...blankEntry});
+  const [newGoal,    setNewGoal]      = useState({...blankGoal});
+
+  function genBId() { return "b"+Date.now().toString(36)+Math.random().toString(36).slice(2,5); }
+
+  useEffect(()=>{
+    (async()=>{
+      const [e,g] = await Promise.all([dbGet("budget_entries"),dbGet("budget_goals")]);
+      setEntriesState(e??[]); setGoalsState(g??[]);
+    })();
+  },[]);
+
+  function saveEntries(list) { setEntriesState(list); dbSet("budget_entries",list); }
+  function saveGoals(list)   { setGoalsState(list);   dbSet("budget_goals",list);   }
+
+  function addEntry() {
+    if (!newEntry.description?.trim()||!newEntry.amount) return;
+    const e = { ...newEntry, id:genBId(), amount:parseFloat(newEntry.amount), owner:focus==="shared"?focus:focus, createdAt:new Date().toISOString() };
+    saveEntries([...(entries||[]),e]);
+    setNewEntry({...blankEntry,owner:focus}); setShowAdd(false);
+  }
+  function saveEditEntry() {
+    saveEntries((entries||[]).map(e=>e.id===editEntry.id?{...editEntry,amount:parseFloat(editEntry.amount)}:e));
+    setEditEntry(null);
+  }
+  function deleteEntry(id) { saveEntries((entries||[]).filter(e=>e.id!==id)); }
+
+  function addGoal() {
+    if (!newGoal.name?.trim()||!newGoal.target) return;
+    saveGoals([...(goals||[]),{ ...newGoal,id:genBId(),target:parseFloat(newGoal.target),saved:parseFloat(newGoal.saved||0),owner:focus==="shared"?"shared":focus }]);
+    setNewGoal({...blankGoal,owner:focus}); setShowGoal(false);
+  }
+  function saveEditGoal() {
+    saveGoals((goals||[]).map(g=>g.id===editGoal.id?{...editGoal,target:parseFloat(editGoal.target),saved:parseFloat(editGoal.saved||0)}:g));
+    setEditGoal(null);
+  }
+  function deleteGoal(id) { saveGoals((goals||[]).filter(g=>g.id!==id)); }
+  function updateGoalSaved(id, amount) { saveGoals((goals||[]).map(g=>g.id===id?{...g,saved:Math.max(0,parseFloat(amount)||0)}:g)); }
+
+  const fmt = (n) => "$"+n.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
+  const catOf = id => BUDGET_CATS.find(c=>c.id===id)||BUDGET_CATS[BUDGET_CATS.length-1];
+
+  // Filter entries by focus and month
+  function filterEntries(list) {
+    if (!list) return [];
+    return list.filter(e=>{
+      const d = new Date(e.date);
+      const inMonth = d.getMonth()===month && d.getFullYear()===year;
+      const inFocus = focus==="shared" ? e.owner==="shared" : e.owner===focus || e.owner==="shared";
+      return inMonth && inFocus;
+    });
+  }
+
+  const periodEntries = filterEntries(entries||[]);
+  const income  = periodEntries.filter(e=>e.type==="income").reduce((s,e)=>s+e.amount,0);
+  const expenses= periodEntries.filter(e=>e.type==="expense").reduce((s,e)=>s+e.amount,0);
+  const balance = income - expenses;
+  const savingsRate = income>0 ? Math.round(((income-expenses)/income)*100) : 0;
+
+  // Category breakdown for pie
+  const byCategory = BUDGET_CATS.map(cat=>({
+    ...cat,
+    value: periodEntries.filter(e=>e.type==="expense"&&e.category===cat.id).reduce((s,e)=>s+e.amount,0)
+  })).filter(c=>c.value>0).sort((a,b)=>b.value-a.value);
+
+  // Goals filter
+  const myGoals = (goals||[]).filter(g=> focus==="shared" ? g.owner==="shared" : g.owner===focus || g.owner==="shared");
+
+  // All-time net
+  const allEntries = filterEntries(entries||[]).concat(); // same focus, all months
+  function allTimeForFocus() {
+    if (!entries) return {income:0,expenses:0};
+    const all = (entries||[]).filter(e=> focus==="shared" ? e.owner==="shared" : e.owner===focus || e.owner==="shared");
+    return { income:all.filter(e=>e.type==="income").reduce((s,e)=>s+e.amount,0), expenses:all.filter(e=>e.type==="expense").reduce((s,e)=>s+e.amount,0) };
+  }
+
+  const focusColor = focus==="A"?"#E8A838":focus==="B"?"#E84E8A":"#9B6EE8";
+  const focusName  = focus==="shared"?"Shared":names[focus]||focus;
+  const inpSt = { width:"100%",background:T.inputBg,border:`1px solid ${T.border}`,borderRadius:9,padding:"9px 12px",color:T.text,fontFamily:"'DM Sans',sans-serif",fontSize:13,outline:"none",boxSizing:"border-box" };
+
+  if (entries===null||goals===null) return (
+    <div style={{ minHeight:"100vh",background:T.bg,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'DM Sans',sans-serif" }}>
+      <div style={{ textAlign:"center",color:T.textSub }}>
+        <div style={{ fontSize:32,marginBottom:12 }}>💰</div>
+        <div>Loading budget...</div>
+      </div>
+    </div>
+  );
+
+  const navTabs = [["overview","Overview"],["transactions","Transactions"],["goals","Goals"]];
+
+  return (
+    <div style={{ minHeight:"100vh",background:T.bg,color:T.text,fontFamily:"'DM Sans',sans-serif" }}>
+      {/* Top bar */}
+      <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 16px",borderBottom:`1px solid ${T.border}`,position:"sticky",top:0,zIndex:20,background:T.topbar,backdropFilter:"blur(12px)" }}>
+        <div style={{ display:"flex",alignItems:"center",gap:10 }}>
+          <button onClick={onBack} style={{ width:32,height:32,borderRadius:8,border:`1px solid ${T.border}`,background:T.inputBg,cursor:"pointer",fontSize:16,display:"flex",alignItems:"center",justifyContent:"center",color:T.textSub }}>←</button>
+          <span style={{ fontFamily:"'DM Serif Display',serif",fontSize:19,color:"#20B2AA" }}>Budget 💰</span>
+        </div>
+        {/* Focus selector */}
+        <div style={{ display:"flex",background:T.inputBg,borderRadius:9,padding:2,border:`1px solid ${T.border}`,gap:2 }}>
+          {[["A",names.A],["B",names.B],["shared","Shared"]].map(([f,l])=>(
+            <button key={f} onClick={()=>setFocus(f)} style={{ padding:"4px 10px",borderRadius:7,border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:600,background:focus===f?(f==="A"?"#E8A838":f==="B"?"#E84E8A":"#9B6EE8"):"transparent",color:focus===f?"#fff":T.textSub,transition:"all 0.15s",whiteSpace:"nowrap" }}>{l}</button>
+          ))}
+        </div>
+        {/* Add button */}
+        <button onClick={()=>setShowAdd(true)} style={{ height:32,padding:"0 12px",borderRadius:8,border:"none",background:"#20B2AA",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,color:"#fff" }}>+ Add</button>
+      </div>
+
+      {/* Nav tabs */}
+      <div style={{ display:"flex",gap:0,padding:"0 14px",borderBottom:`1px solid ${T.border}`,background:T.topbar,overflowX:"auto" }}>
+        {navTabs.map(([v,l])=>(
+          <button key={v} onClick={()=>setBView(v)} style={{ padding:"10px 16px",border:"none",cursor:"pointer",background:"none",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:view===v?700:400,color:view===v?"#20B2AA":T.textSub,borderBottom:view===v?"2px solid #20B2AA":"2px solid transparent",transition:"all 0.15s",whiteSpace:"nowrap" }}>{l}</button>
+        ))}
+      </div>
+
+      {/* Month navigator */}
+      <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 16px",borderBottom:`1px solid ${T.border}` }}>
+        <button onClick={()=>{ let m=month-1,y=year; if(m<0){m=11;y--;} setMonth(m);setYear(y); }} style={{ width:32,height:32,borderRadius:8,border:`1px solid ${T.border}`,background:T.inputBg,cursor:"pointer",color:T.textSub,fontSize:16,display:"flex",alignItems:"center",justifyContent:"center" }}>‹</button>
+        <div style={{ textAlign:"center" }}>
+          <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:18,color:T.text }}>{BUDGET_MONTHS[month]} {year}</div>
+          <div style={{ fontSize:11,color:focusColor,fontWeight:600 }}>{focusName}'s View</div>
+        </div>
+        <button onClick={()=>{ let m=month+1,y=year; if(m>11){m=0;y++;} setMonth(m);setYear(y); }} style={{ width:32,height:32,borderRadius:8,border:`1px solid ${T.border}`,background:T.inputBg,cursor:"pointer",color:T.textSub,fontSize:16,display:"flex",alignItems:"center",justifyContent:"center" }}>›</button>
+      </div>
+
+      <div style={{ padding:"20px 16px",maxWidth:900,margin:"0 auto" }}>
+
+        {/* ── OVERVIEW ── */}
+        {view==="overview"&&(
+          <>
+            {/* Summary cards */}
+            <div className="stats-row" style={{ marginBottom:20 }}>
+              {[
+                { l:"Income",   v:fmt(income),   c:"#3DBF8A", sub:"This month" },
+                { l:"Expenses", v:fmt(expenses), c:"#E84E8A", sub:"This month" },
+                { l:"Balance",  v:fmt(balance),  c:balance>=0?"#3DBF8A":"#E84E8A", sub:balance>=0?"Surplus":"Deficit" },
+                { l:"Savings Rate", v:`${savingsRate}%`, c:"#20B2AA", sub:"of income saved" },
+              ].map(s=>(
+                <div key={s.l} style={{ background:T.surface,border:`1px solid ${T.border}`,borderRadius:14,padding:"14px 16px",flex:"1 1 110px",borderLeft:`3px solid ${s.c}`,boxShadow:"0 2px 8px rgba(0,0,0,0.06)" }}>
+                  <div style={{ fontSize:20,fontWeight:700,color:T.text,lineHeight:1 }}>{s.v}</div>
+                  <div style={{ fontSize:10,fontWeight:600,color:T.textSub,marginTop:3,textTransform:"uppercase",letterSpacing:"0.08em" }}>{s.l}</div>
+                  <div style={{ fontSize:10,color:T.textMuted,marginTop:2 }}>{s.sub}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Pie chart + category breakdown */}
+            <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(min(100%,340px),1fr))",gap:16,marginBottom:20 }}>
+              {/* Pie */}
+              <div style={{ background:T.surface,border:`1px solid ${T.border}`,borderRadius:14,padding:"20px",boxShadow:"0 2px 8px rgba(0,0,0,0.06)" }}>
+                <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:17,color:T.text,marginBottom:16 }}>Spending Breakdown</div>
+                {byCategory.length===0
+                  ? <div style={{ textAlign:"center",padding:"30px",color:T.textMuted,fontSize:13,fontStyle:"italic" }}>No expenses this month</div>
+                  : <div style={{ display:"flex",alignItems:"center",gap:16,flexWrap:"wrap" }}>
+                      <PieChart slices={byCategory} T={T} size={160}/>
+                      <div style={{ flex:1,minWidth:120 }}>
+                        {byCategory.slice(0,6).map(cat=>(
+                          <div key={cat.id} style={{ display:"flex",alignItems:"center",gap:8,marginBottom:8 }}>
+                            <div style={{ width:10,height:10,borderRadius:2,background:cat.color,flexShrink:0 }}/>
+                            <span style={{ fontSize:12,color:T.text,flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap" }}>{cat.label}</span>
+                            <span style={{ fontSize:12,fontWeight:700,color:cat.color }}>{fmt(cat.value)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                }
+              </div>
+
+              {/* Category bars */}
+              <div style={{ background:T.surface,border:`1px solid ${T.border}`,borderRadius:14,padding:"20px",boxShadow:"0 2px 8px rgba(0,0,0,0.06)" }}>
+                <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:17,color:T.text,marginBottom:16 }}>By Category</div>
+                {byCategory.length===0
+                  ? <div style={{ textAlign:"center",padding:"20px",color:T.textMuted,fontSize:13,fontStyle:"italic" }}>No data yet</div>
+                  : byCategory.map(cat=>(
+                    <div key={cat.id} style={{ marginBottom:11 }}>
+                      <div style={{ display:"flex",justifyContent:"space-between",marginBottom:3 }}>
+                        <span style={{ fontSize:12,color:T.text }}>{cat.emoji} {cat.label}</span>
+                        <span style={{ fontSize:12,fontWeight:700,color:cat.color }}>{fmt(cat.value)}</span>
+                      </div>
+                      <div style={{ height:5,background:T.inputBg,borderRadius:5,overflow:"hidden" }}>
+                        <div style={{ height:"100%",width:`${expenses>0?(cat.value/expenses)*100:0}%`,background:cat.color,borderRadius:5 }}/>
+                      </div>
+                    </div>
+                  ))
+                }
+              </div>
+            </div>
+
+            {/* Recent transactions */}
+            <div style={{ background:T.surface,border:`1px solid ${T.border}`,borderRadius:14,padding:"18px 20px",boxShadow:"0 2px 8px rgba(0,0,0,0.06)" }}>
+              <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14 }}>
+                <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:17,color:T.text }}>Recent</div>
+                <button onClick={()=>setBView("transactions")} style={{ fontSize:12,color:"#20B2AA",background:"none",border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontWeight:600 }}>View all →</button>
+              </div>
+              {periodEntries.length===0
+                ? <div style={{ fontSize:13,color:T.textMuted,fontStyle:"italic",textAlign:"center",padding:"20px 0" }}>No transactions this month</div>
+                : [...periodEntries].sort((a,b)=>b.date<a.date?-1:1).slice(0,6).map(e=>{
+                    const cat=catOf(e.category);
+                    return (
+                      <div key={e.id} style={{ display:"flex",alignItems:"center",gap:10,padding:"9px 0",borderBottom:`1px solid ${T.border}` }}>
+                        <div style={{ width:34,height:34,borderRadius:9,background:cat.color+"22",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,flexShrink:0 }}>{cat.emoji}</div>
+                        <div style={{ flex:1,minWidth:0 }}>
+                          <div style={{ fontSize:13,fontWeight:600,color:T.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap" }}>{e.description}</div>
+                          <div style={{ fontSize:11,color:T.textMuted }}>{e.date} · {cat.label}</div>
+                        </div>
+                        <div style={{ fontSize:14,fontWeight:700,color:e.type==="income"?"#3DBF8A":"#E84E8A",flexShrink:0 }}>{e.type==="income"?"+":"-"}{fmt(e.amount)}</div>
+                      </div>
+                    );
+                  })
+              }
+            </div>
+          </>
+        )}
+
+        {/* ── TRANSACTIONS ── */}
+        {view==="transactions"&&(
+          <div>
+            <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16,flexWrap:"wrap",gap:8 }}>
+              <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:22,color:T.text }}>Transactions</div>
+              <div style={{ fontSize:13,color:T.textSub }}>{periodEntries.length} this month</div>
+            </div>
+            {periodEntries.length===0
+              ? <div style={{ background:T.surface,border:`1px solid ${T.border}`,borderRadius:14,padding:"50px 20px",textAlign:"center",boxShadow:"0 2px 8px rgba(0,0,0,0.06)" }}>
+                  <div style={{ fontSize:36,marginBottom:10 }}>💸</div>
+                  <div style={{ fontSize:16,fontWeight:600,color:T.text }}>No transactions yet</div>
+                  <div style={{ fontSize:13,color:T.textSub,marginTop:4 }}>Tap + Add to record income or expenses.</div>
+                </div>
+              : [...periodEntries].sort((a,b)=>b.date<a.date?-1:1).map(e=>{
+                  const cat=catOf(e.category);
+                  return (
+                    <div key={e.id} style={{ background:T.surface,border:`1px solid ${T.border}`,borderRadius:12,padding:"14px 16px",marginBottom:8,boxShadow:"0 2px 6px rgba(0,0,0,0.05)",borderLeft:`3px solid ${e.type==="income"?"#3DBF8A":"#E84E8A"}` }}>
+                      <div style={{ display:"flex",alignItems:"center",gap:10 }}>
+                        <div style={{ width:36,height:36,borderRadius:9,background:cat.color+"22",display:"flex",alignItems:"center",justifyContent:"center",fontSize:17,flexShrink:0 }}>{cat.emoji}</div>
+                        <div style={{ flex:1,minWidth:0 }}>
+                          <div style={{ fontSize:14,fontWeight:600,color:T.text }}>{e.description}</div>
+                          <div style={{ display:"flex",gap:6,marginTop:3,flexWrap:"wrap" }}>
+                            <span style={{ fontSize:10,padding:"1px 6px",borderRadius:5,background:cat.color+"20",color:cat.color,fontWeight:600 }}>{cat.emoji} {cat.label}</span>
+                            <span style={{ fontSize:10,color:T.textMuted }}>{e.date}</span>
+                            {e.recurring&&e.recurring!=="none"&&<span style={{ fontSize:10,padding:"1px 6px",borderRadius:5,background:"#9B6EE822",color:"#9B6EE8",fontWeight:600 }}>🔄 {e.recurring}</span>}
+                            {e.notes&&<span style={{ fontSize:10,color:T.textMuted,fontStyle:"italic" }}>{e.notes}</span>}
+                          </div>
+                        </div>
+                        <div style={{ textAlign:"right",flexShrink:0 }}>
+                          <div style={{ fontSize:16,fontWeight:700,color:e.type==="income"?"#3DBF8A":"#E84E8A" }}>{e.type==="income"?"+":"-"}{fmt(e.amount)}</div>
+                          <div style={{ display:"flex",gap:4,marginTop:4,justifyContent:"flex-end" }}>
+                            <button onClick={()=>setEditEntry({...e})} style={{ background:"none",border:"none",color:T.textMuted,cursor:"pointer",fontSize:12,padding:"2px 4px",borderRadius:4 }}>✎</button>
+                            <button onClick={()=>deleteEntry(e.id)} style={{ background:"none",border:"none",color:T.textMuted,cursor:"pointer",fontSize:12,padding:"2px 4px",borderRadius:4 }}>✕</button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+            }
+          </div>
+        )}
+
+        {/* ── GOALS ── */}
+        {view==="goals"&&(
+          <div>
+            <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16,flexWrap:"wrap",gap:8 }}>
+              <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:22,color:T.text }}>Savings Goals</div>
+              <button onClick={()=>setShowGoal(true)} style={{ height:34,padding:"0 14px",borderRadius:9,border:"none",background:"#20B2AA",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,color:"#fff" }}>+ New Goal</button>
+            </div>
+            {myGoals.length===0
+              ? <div style={{ background:T.surface,border:`1px solid ${T.border}`,borderRadius:14,padding:"50px 20px",textAlign:"center",boxShadow:"0 2px 8px rgba(0,0,0,0.06)" }}>
+                  <div style={{ fontSize:36,marginBottom:10 }}>🎯</div>
+                  <div style={{ fontSize:16,fontWeight:600,color:T.text }}>No goals yet</div>
+                  <div style={{ fontSize:13,color:T.textSub,marginTop:4 }}>Set a savings goal — emergency fund, travel, or a future together.</div>
+                </div>
+              : <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(min(100%,300px),1fr))",gap:14 }}>
+                  {myGoals.map(g=>{
+                    const pct = g.target>0?Math.min(100,Math.round((g.saved/g.target)*100)):0;
+                    const left = Math.max(0,g.target-g.saved);
+                    const daysLeft = g.deadline ? Math.ceil((new Date(g.deadline)-new Date())/86400000) : null;
+                    const [editing,setEditing] = useState(false);
+                    const [newSaved,setNewSaved] = useState(String(g.saved));
+                    return (
+                      <div key={g.id} style={{ background:T.surface,border:`1px solid ${T.border}`,borderRadius:14,padding:"18px",boxShadow:"0 2px 8px rgba(0,0,0,0.06)",borderTop:`3px solid #20B2AA` }}>
+                        <div style={{ display:"flex",alignItems:"flex-start",gap:10,marginBottom:14 }}>
+                          <div style={{ fontSize:28,lineHeight:1 }}>{g.emoji||"💰"}</div>
+                          <div style={{ flex:1,minWidth:0 }}>
+                            <div style={{ fontSize:15,fontWeight:700,color:T.text }}>{g.name}</div>
+                            {daysLeft!==null&&<div style={{ fontSize:11,color:daysLeft<30?"#E84E8A":"#E8A838",marginTop:2 }}>📅 {daysLeft>0?`${daysLeft}d left`:"Past deadline"}</div>}
+                          </div>
+                          <div style={{ display:"flex",gap:4 }}>
+                            <button onClick={()=>setEditGoal({...g})} style={{ background:"none",border:"none",color:T.textMuted,cursor:"pointer",fontSize:13,padding:"2px 4px" }}>✎</button>
+                            <button onClick={()=>deleteGoal(g.id)} style={{ background:"none",border:"none",color:T.textMuted,cursor:"pointer",fontSize:13,padding:"2px 4px" }}>✕</button>
+                          </div>
+                        </div>
+                        {/* Progress */}
+                        <div style={{ marginBottom:10 }}>
+                          <div style={{ display:"flex",justifyContent:"space-between",marginBottom:5,fontSize:12 }}>
+                            <span style={{ color:T.textSub }}>Saved: <strong style={{ color:T.text }}>{fmt(g.saved)}</strong></span>
+                            <span style={{ color:"#20B2AA",fontWeight:700 }}>{pct}%</span>
+                          </div>
+                          <div style={{ height:8,background:T.inputBg,borderRadius:8,overflow:"hidden" }}>
+                            <div style={{ height:"100%",width:`${pct}%`,background:pct>=100?"#3DBF8A":"#20B2AA",borderRadius:8,transition:"width 0.4s" }}/>
+                          </div>
+                          <div style={{ fontSize:11,color:T.textMuted,marginTop:4 }}>Target: {fmt(g.target)} · {fmt(left)} to go</div>
+                        </div>
+                        {/* Update saved amount */}
+                        {editing ? (
+                          <div style={{ display:"flex",gap:6 }}>
+                            <input type="number" style={{ ...inpSt,padding:"6px 10px",fontSize:12,flex:1 }} value={newSaved} onChange={e=>setNewSaved(e.target.value)}/>
+                            <button onClick={()=>{ updateGoalSaved(g.id,newSaved); setEditing(false); }} style={{ padding:"6px 12px",borderRadius:8,border:"none",background:"#20B2AA",color:"#fff",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:600 }}>Save</button>
+                            <button onClick={()=>setEditing(false)} style={{ padding:"6px 10px",borderRadius:8,border:`1px solid ${T.border}`,background:T.inputBg,color:T.textSub,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:12 }}>✕</button>
+                          </div>
+                        ) : (
+                          <button onClick={()=>{ setNewSaved(String(g.saved)); setEditing(true); }} style={{ width:"100%",padding:"7px",borderRadius:9,border:"1px solid #20B2AA44",background:"#20B2AA0D",color:"#20B2AA",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:600 }}>
+                            ✏️ Update saved amount
+                          </button>
+                        )}
+                        {pct>=100&&<div style={{ marginTop:8,textAlign:"center",fontSize:13,color:"#3DBF8A",fontWeight:700 }}>🎉 Goal reached!</div>}
+                      </div>
+                    );
+                  })}
+                </div>
+            }
+          </div>
+        )}
+      </div>
+
+      {/* Forms */}
+      {showAdd&&<BudgetEntryForm data={newEntry} setData={setNewEntry} onSave={addEntry} onClose={()=>setShowAdd(false)} T={T} mode={mode} owner={focus}/>}
+      {editEntry&&<BudgetEntryForm data={editEntry} setData={setEditEntry} onSave={saveEditEntry} onClose={()=>setEditEntry(null)} T={T} mode={mode} owner={focus}/>}
+      {showGoal&&<GoalForm data={newGoal} setData={setNewGoal} onSave={addGoal} onClose={()=>setShowGoal(false)} T={T} mode={mode}/>}
+      {editGoal&&<GoalForm data={editGoal} setData={setEditGoal} onSave={saveEditGoal} onClose={()=>setEditGoal(null)} T={T} mode={mode}/>}
+    </div>
+  );
+}
+
+
 // ── BulkImportModal ───────────────────────────────────────────────────────────
 // Parses pasted task lists with smart date & section detection.
 // Supported formats (one task per line):
@@ -2066,6 +2553,174 @@ function PrayerView({ tasks, setTasks, names, activeUser, T, mode, aColor, aLabe
   );
 }
 
+// ── GridCard — module-level to prevent remount/expand-collapse bug ─────────────
+function GridCard({ colId, label, emoji, color, colTasks, isDone=false, T, mode,
+  onAddTask, onViewAll, onDeleteTasks, dragHandlers }) {
+  const [expanded,      setExpanded]      = useState(false);
+  const [showClearMenu, setShowClearMenu] = useState(false);
+  const [confirmClear,  setConfirmClear]  = useState(false);
+  const PREVIEW_COUNT = 5;
+
+  const { handleDragOverCol, handleDropOnCol, handleBoardDragStart, handleDragEnd,
+          handleDropOnTask, dragType, dragTaskId, highlightCol, highlightBoard } = dragHandlers;
+
+  const isTaskOver  = highlightCol === colId;
+  const isBoardOver = highlightBoard === colId && !isDone;
+  const visibleTasks = expanded ? colTasks : colTasks.slice(0, PREVIEW_COUNT);
+  const hasMore = colTasks.length > PREVIEW_COUNT;
+
+  // Sort colTasks by dueDate ascending (soonest first, no date last)
+  const sortedVisible = [...visibleTasks].sort((a,b)=>{
+    if (!a.dueDate && !b.dueDate) return 0;
+    if (!a.dueDate) return 1;
+    if (!b.dueDate) return -1;
+    return a.dueDate < b.dueDate ? -1 : 1;
+  });
+  const sortedAll = [...colTasks].sort((a,b)=>{
+    if (!a.dueDate && !b.dueDate) return 0;
+    if (!a.dueDate) return 1;
+    if (!b.dueDate) return -1;
+    return a.dueDate < b.dueDate ? -1 : 1;
+  });
+  const displayTasks = expanded ? sortedAll : sortedAll.slice(0, PREVIEW_COUNT);
+
+  return (
+    <div
+      onDragOver={e=>handleDragOverCol(e, colId)}
+      onDrop={e=>handleDropOnCol(e, colId)}
+      style={{
+        background: mode==="dark"?"#13161E":"#E4E6ED",
+        border:`1px solid ${isBoardOver?color+"cc":isTaskOver?color+"99":"rgba(255,255,255,0.07)"}`,
+        borderRadius:14, display:"flex", flexDirection:"column",
+        boxShadow:isBoardOver?`0 0 0 3px ${color}66`:isTaskOver?`0 0 0 2px ${color}55`:"none",
+        transition:"border 0.1s,box-shadow 0.1s,transform 0.1s",
+        transform: isBoardOver ? "scale(1.02)" : "scale(1)",
+        overflow:"hidden", minHeight:180, position:"relative",
+      }}
+    >
+      {/* Header */}
+      <div style={{ padding:"12px 12px 9px", borderBottom:`1px solid ${mode==="dark"?"rgba(255,255,255,0.07)":"rgba(0,0,0,0.08)"}`, flexShrink:0 }}>
+        <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+          {/* Drag grip */}
+          {!isDone && (
+            <div
+              draggable
+              onDragStart={e=>{e.stopPropagation();handleBoardDragStart(e,colId);}}
+              onDragEnd={e=>{e.stopPropagation();handleDragEnd();}}
+              title="Drag to reorder"
+              style={{ display:"flex",flexDirection:"column",gap:2.5,flexShrink:0,opacity:0.3,cursor:"grab",padding:"4px 2px",borderRadius:4,transition:"opacity 0.15s" }}
+              onMouseEnter={e=>e.currentTarget.style.opacity="0.8"}
+              onMouseLeave={e=>e.currentTarget.style.opacity="0.3"}
+            >
+              <div style={{ width:13,height:2,borderRadius:1,background:T.text }}/>
+              <div style={{ width:13,height:2,borderRadius:1,background:T.text }}/>
+              <div style={{ width:13,height:2,borderRadius:1,background:T.text }}/>
+            </div>
+          )}
+          <div style={{ width:30,height:30,borderRadius:8,background:color+"22",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,flexShrink:0 }}>{emoji}</div>
+          <div style={{ flex:1,minWidth:0 }}>
+            <div style={{ display:"flex",alignItems:"center",gap:5 }}>
+              <span style={{ fontFamily:"'DM Sans',sans-serif",fontWeight:700,fontSize:13,color:T.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap" }}>{label}</span>
+              {colTasks.length>0&&<span style={{ fontSize:10,fontWeight:700,padding:"1px 6px",borderRadius:10,background:color+"22",color:color,flexShrink:0,lineHeight:1.4 }}>{colTasks.length}</span>}
+            </div>
+            <div style={{ fontSize:10,color:T.textSub,marginTop:1 }}>{isDone?`${colTasks.length} completed`:`${colTasks.filter(t=>t.done).length}/${colTasks.length} done`}</div>
+          </div>
+          {/* Buttons */}
+          <div style={{ display:"flex",gap:4,flexShrink:0 }}>
+            {!isDone&&<button
+              onClick={e=>{e.stopPropagation();onAddTask(colId);}}
+              onMouseDown={e=>e.stopPropagation()}
+              style={{ width:24,height:24,borderRadius:6,background:T.inputBg,border:`1px solid ${T.border}`,cursor:"pointer",color:T.textSub,fontSize:15,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700 }}>+</button>}
+            {/* 👁 Eye — view all modal */}
+            <button
+              onClick={e=>{e.stopPropagation();onViewAll({colId,label,emoji,color,tasks:sortedAll});}}
+              onMouseDown={e=>e.stopPropagation()}
+              title="View all tasks"
+              style={{ width:24,height:24,borderRadius:6,background:T.inputBg,border:`1px solid ${T.border}`,cursor:"pointer",color:T.textSub,fontSize:13,display:"flex",alignItems:"center",justifyContent:"center" }}
+            >👁</button>
+            {/* ⋯ menu */}
+            <div style={{ position:"relative" }}>
+              <button
+                onClick={e=>{e.stopPropagation();setShowClearMenu(v=>!v);setConfirmClear(false);}}
+                onMouseDown={e=>e.stopPropagation()}
+                style={{ width:24,height:24,borderRadius:6,background:T.inputBg,border:`1px solid ${T.border}`,cursor:"pointer",color:T.textSub,fontSize:14,display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1 }}
+                title="Options"
+              >⋯</button>
+              {showClearMenu&&(
+                <div style={{ position:"absolute",top:28,right:0,zIndex:30,background:T.surface,border:`1px solid ${T.border}`,borderRadius:10,boxShadow:"0 4px 20px rgba(0,0,0,0.25)",minWidth:170,overflow:"hidden" }} onClick={e=>e.stopPropagation()}>
+                  {!confirmClear ? (
+                    <>
+                      <button onClick={()=>setConfirmClear("active")} style={{ display:"block",width:"100%",padding:"10px 14px",border:"none",background:"none",textAlign:"left",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:13,color:"#E84E8A",fontWeight:600 }}>🗑 Clear active tasks</button>
+                      <button onClick={()=>setConfirmClear("done")} style={{ display:"block",width:"100%",padding:"10px 14px",border:"none",background:"none",textAlign:"left",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:13,color:T.textSub,borderTop:`1px solid ${T.border}` }}>✓ Clear completed</button>
+                      <button onClick={()=>setShowClearMenu(false)} style={{ display:"block",width:"100%",padding:"8px 14px",border:"none",background:"none",textAlign:"left",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:12,color:T.textMuted,borderTop:`1px solid ${T.border}` }}>Cancel</button>
+                    </>
+                  ) : (
+                    <div style={{ padding:"12px 14px" }}>
+                      <div style={{ fontSize:12,color:T.text,marginBottom:10,fontFamily:"'DM Sans',sans-serif",lineHeight:1.5 }}>
+                        {confirmClear==="active"?`Delete all active tasks in ${label}?`:`Delete completed tasks in ${label}?`}
+                        <br/><span style={{ color:"#E84E8A",fontWeight:600 }}>Cannot be undone.</span>
+                      </div>
+                      <div style={{ display:"flex",gap:6 }}>
+                        <button onClick={()=>setConfirmClear(false)} style={{ flex:1,padding:"6px",borderRadius:7,border:`1px solid ${T.border}`,background:T.inputBg,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:12,color:T.textSub }}>Keep</button>
+                        <button onClick={()=>{onDeleteTasks(colId,confirmClear);setConfirmClear(false);setShowClearMenu(false);}} style={{ flex:1,padding:"6px",borderRadius:7,border:"none",background:"#E84E8A",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:700,color:"#fff" }}>Delete</button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+        {/* Progress bar */}
+        {!isDone&&(
+          <div style={{ height:3,background:T.inputBg,borderRadius:3,marginTop:8,overflow:"hidden" }}>
+            <div style={{ height:"100%",width:`${colTasks.length?Math.round((colTasks.filter(t=>t.done).length/colTasks.length)*100):0}%`,background:color,borderRadius:3,transition:"width 0.4s" }}/>
+          </div>
+        )}
+      </div>
+
+      {/* Task list */}
+      <div
+        style={{ padding:"10px 12px",minHeight:50 }}
+        onDragOver={e=>{ e.preventDefault(); e.stopPropagation(); if(dragType.current==="task") handleDragOverCol(e,colId); }}
+        onDrop={e=>{ e.stopPropagation(); handleDropOnCol(e,colId); }}
+        onClick={()=>{ if(showClearMenu) setShowClearMenu(false); }}
+      >
+        {colTasks.length===0 ? (
+          <div style={{ border:`2px dashed ${isTaskOver?color+"88":T.border}`,borderRadius:9,padding:"18px 10px",textAlign:"center",color:T.textMuted,fontSize:12,fontStyle:"italic",background:isTaskOver?color+"0A":"transparent",transition:"all 0.1s" }}>
+            {isDone?"✓ Drop tasks here to complete":"Drop tasks here"}
+          </div>
+        ) : (
+          <>
+            {displayTasks.map(t=>(
+              <div key={t.id}
+                onDragOver={e=>{ e.preventDefault(); e.stopPropagation(); if(dragType.current==="task") handleDragOverCol(e,colId); }}
+                onDrop={e=>{ e.stopPropagation(); handleDropOnTask(e, t.id, colId); }}
+                style={{ position:"relative" }}
+              >
+                {dragTaskId.current && dragTaskId.current!==t.id && highlightCol===colId && (
+                  <div style={{ height:2,background:color,borderRadius:2,marginBottom:3,opacity:0 }}/>
+                )}
+                <TaskPill t={t} showSec={isDone}/>
+              </div>
+            ))}
+            {hasMore&&(
+              <button
+                onClick={e=>{ e.stopPropagation(); setExpanded(v=>!v); }}
+                style={{ width:"100%",marginTop:4,padding:"7px 10px",borderRadius:8,border:`1px solid ${color}44`,background:color+"0D",color:color,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:600,display:"flex",alignItems:"center",justifyContent:"center",gap:5 }}
+                onMouseEnter={e=>e.currentTarget.style.background=color+"1A"}
+                onMouseLeave={e=>e.currentTarget.style.background=color+"0D"}
+              >
+                {expanded?`▲ Show less`:`▼ View all ${colTasks.length} tasks (${colTasks.length-PREVIEW_COUNT} more)`}
+              </button>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ── FormModal — defined OUTSIDE TogetherApp so it never remounts on parent re-render ──
 // This is the fix for the autofocus stealing bug. When FormModal was defined
 // inside TogetherApp, every keystroke caused a full remount, re-triggering autoFocus.
@@ -2182,7 +2837,10 @@ export default function TogetherApp() {
     try { localStorage.setItem("together_onboarded","1"); } catch {}
     setShowOnboarding(false);
   }
-  const [showBulk,   setShowBulk]   = useState(false);
+  const [showBulk,      setShowBulk]      = useState(false);
+  const [taskModal,     setTaskModal]     = useState(null); // {colId,label,emoji,color,tasks}
+  const [appMode,       setAppMode]       = useState(() => { try { return localStorage.getItem("together_appMode")||"tasks"; } catch { return "tasks"; } });
+  function switchApp(mode) { setAppMode(mode); try { localStorage.setItem("together_appMode",mode); } catch {} }
   const [showTour,   setShowTour]   = useState(false);
   const [tourStep,   setTourStep]   = useState(0);
   const [notifPerm,  setNotifPerm]  = useState(() => { try { return Notification?.permission||"default"; } catch { return "default"; } });
@@ -2641,184 +3299,9 @@ export default function TogetherApp() {
   }
 
   // ── Grid Card ─────────────────────────────────────────────────────────────
-  function GridCard({ colId, label, emoji, color, colTasks, isDone=false }) {
-    const [expanded,     setExpanded]     = useState(false);
-    const [showClearMenu,setShowClearMenu]= useState(false);
-    const [confirmClear, setConfirmClear] = useState(false);
-    const PREVIEW_COUNT = 5;
+  // GridCard is defined outside TogetherApp — fixes the expand/collapse remount bug
 
-    const isTaskOver  = highlightCol === colId;
-    const isBoardOver = highlightBoard === colId && !isDone;
-    const isOver      = isTaskOver;
-    const allSec  = isDone ? [] : tasks.filter(t=>t.section===colId);
-    const dnCount = isDone ? doneTasks.length : allSec.filter(t=>t.done).length;
-    const total   = isDone ? tasks.length : allSec.length;
-    const pct     = total ? Math.round((dnCount/total)*100) : 0;
-
-    // Active tasks in this column (not done)
-    const activeSec = allSec.filter(t=>!t.done);
-    const visibleTasks = expanded ? colTasks : colTasks.slice(0, PREVIEW_COUNT);
-    const hasMore = colTasks.length > PREVIEW_COUNT;
-
-    function handleClearAll() {
-      // Delete all active tasks in this section
-      setTasks(prev => prev.filter(t => !(t.section===colId && !t.done)));
-      setConfirmClear(false);
-      setShowClearMenu(false);
-    }
-    function handleClearDone() {
-      // Delete completed tasks in this section
-      setTasks(prev => prev.filter(t => !(t.section===colId && t.done)));
-      setShowClearMenu(false);
-    }
-
-    return (
-      <div
-        onDragOver={e=>handleDragOverCol(e, colId)}
-        onDrop={e=>handleDropOnCol(e, colId)}
-        style={{
-          background:T.colBg,
-          border:`1px solid ${isBoardOver?color+"cc":isTaskOver?color+"99":T.border}`,
-          borderRadius:14, display:"flex", flexDirection:"column",
-          boxShadow:isBoardOver?`0 0 0 3px ${color}66`:isTaskOver?`0 0 0 2px ${color}55`:"none",
-          transition:"border 0.1s,box-shadow 0.1s,transform 0.1s",
-          transform: isBoardOver ? "scale(1.02)" : "scale(1)",
-          overflow:"hidden", minHeight:180, position:"relative",
-        }}
-      >
-        {/* Header */}
-        <div style={{ padding:"12px 12px 9px",borderBottom:`1px solid ${T.border}`,flexShrink:0 }}>
-          <div style={{ display:"flex",alignItems:"center",gap:8 }}>
-            {/* Board drag grip */}
-            {!isDone && (
-              <div
-                draggable
-                onDragStart={e=>{e.stopPropagation();handleBoardDragStart(e,colId);}}
-                onDragEnd={e=>{e.stopPropagation();handleDragEnd();}}
-                title="Drag to reorder board"
-                style={{ display:"flex",flexDirection:"column",gap:2.5,flexShrink:0,opacity:0.3,cursor:"grab",padding:"4px 2px",borderRadius:4,transition:"opacity 0.15s" }}
-                onMouseEnter={e=>e.currentTarget.style.opacity="0.8"}
-                onMouseLeave={e=>e.currentTarget.style.opacity="0.3"}
-              >
-                <div style={{ width:13,height:2,borderRadius:1,background:T.text }}/>
-                <div style={{ width:13,height:2,borderRadius:1,background:T.text }}/>
-                <div style={{ width:13,height:2,borderRadius:1,background:T.text }}/>
-              </div>
-            )}
-            <div style={{ width:30,height:30,borderRadius:8,background:color+"22",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,flexShrink:0 }}>{emoji}</div>
-            <div style={{ flex:1,minWidth:0 }}>
-              <div style={{ display:"flex",alignItems:"center",gap:5 }}>
-                <span style={{ fontFamily:"'DM Sans',sans-serif",fontWeight:700,fontSize:13,color:T.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap" }}>{label}</span>
-                {/* Task count badge */}
-                {colTasks.length>0 && (
-                  <span style={{ fontSize:10,fontWeight:700,padding:"1px 6px",borderRadius:10,background:color+"22",color:color,flexShrink:0,lineHeight:1.4 }}>
-                    {colTasks.length}
-                  </span>
-                )}
-              </div>
-              <div style={{ fontSize:10,color:T.textSub,marginTop:1 }}>{isDone?`${dnCount} completed`:`${dnCount}/${total} done`}</div>
-            </div>
-            {/* Action buttons */}
-            <div style={{ display:"flex",gap:4,flexShrink:0 }}>
-              {!isDone&&<button
-                onClick={e=>{e.stopPropagation();setAddSec(colId);setNew(p=>({...p,section:colId}));setShowAdd(true);}}
-                onMouseDown={e=>e.stopPropagation()}
-                style={{ width:24,height:24,borderRadius:6,background:T.inputBg,border:`1px solid ${T.border}`,cursor:"pointer",color:T.textSub,fontSize:15,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700 }}>+</button>}
-              {/* ⋯ menu */}
-              <div style={{ position:"relative" }}>
-                <button
-                  onClick={e=>{e.stopPropagation();setShowClearMenu(v=>!v);setConfirmClear(false);}}
-                  onMouseDown={e=>e.stopPropagation()}
-                  style={{ width:24,height:24,borderRadius:6,background:T.inputBg,border:`1px solid ${T.border}`,cursor:"pointer",color:T.textSub,fontSize:14,display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1 }}
-                  title="Board options"
-                >⋯</button>
-                {showClearMenu && (
-                  <div
-                    style={{ position:"absolute",top:28,right:0,zIndex:30,background:T.surface,border:`1px solid ${T.border}`,borderRadius:10,boxShadow:"0 4px 20px rgba(0,0,0,0.2)",minWidth:170,overflow:"hidden" }}
-                    onClick={e=>e.stopPropagation()}
-                  >
-                    {!confirmClear ? (
-                      <>
-                        <button onClick={()=>setConfirmClear("active")} style={{ display:"block",width:"100%",padding:"10px 14px",border:"none",background:"none",textAlign:"left",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:13,color:"#E84E8A",fontWeight:600 }}>
-                          🗑 Clear active tasks
-                        </button>
-                        <button onClick={()=>setConfirmClear("done")} style={{ display:"block",width:"100%",padding:"10px 14px",border:"none",background:"none",textAlign:"left",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:13,color:T.textSub,borderTop:`1px solid ${T.border}` }}>
-                          ✓ Clear completed tasks
-                        </button>
-                        <button onClick={()=>setShowClearMenu(false)} style={{ display:"block",width:"100%",padding:"8px 14px",border:"none",background:"none",textAlign:"left",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:12,color:T.textMuted,borderTop:`1px solid ${T.border}` }}>
-                          Cancel
-                        </button>
-                      </>
-                    ) : (
-                      <div style={{ padding:"12px 14px" }}>
-                        <div style={{ fontSize:12,color:T.text,marginBottom:10,fontFamily:"'DM Sans',sans-serif",lineHeight:1.5 }}>
-                          {confirmClear==="active"
-                            ? `Delete all ${activeSec.length} active task${activeSec.length!==1?"s":""} in ${label}?`
-                            : `Delete all completed tasks in ${label}?`}
-                          <br/><span style={{ color:"#E84E8A",fontWeight:600 }}>This cannot be undone.</span>
-                        </div>
-                        <div style={{ display:"flex",gap:6 }}>
-                          <button onClick={()=>setConfirmClear(false)} style={{ flex:1,padding:"6px",borderRadius:7,border:`1px solid ${T.border}`,background:T.inputBg,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:12,color:T.textSub }}>Keep</button>
-                          <button onClick={confirmClear==="active"?handleClearAll:handleClearDone} style={{ flex:1,padding:"6px",borderRadius:7,border:"none",background:"#E84E8A",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:700,color:"#fff" }}>Delete</button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-          {!isDone&&<div style={{ height:3,background:T.inputBg,borderRadius:3,marginTop:8,overflow:"hidden" }}><div style={{ height:"100%",width:`${pct}%`,background:color,borderRadius:3,transition:"width 0.4s" }}/></div>}
-        </div>
-
-        {/* Task list — capped at 5 visible tasks, no internal scroll */}
-        <div
-          style={{ padding:"10px 12px",minHeight:50 }}
-          onDragOver={e=>{ e.preventDefault(); e.stopPropagation(); if(dragType.current==="task") handleDragOverCol(e,colId); }}
-          onDrop={e=>{ e.stopPropagation(); handleDropOnCol(e,colId); }}
-          onClick={()=>{ if(showClearMenu) setShowClearMenu(false); }}
-        >
-          {colTasks.length===0 ? (
-            <div style={{ border:`2px dashed ${isOver?color+"88":T.border}`,borderRadius:9,padding:"18px 10px",textAlign:"center",color:T.textMuted,fontSize:12,fontStyle:"italic",background:isOver?color+"0A":"transparent",transition:"all 0.1s" }}>
-              {isDone?"✓ Drop tasks here to complete":"Drop tasks here"}
-            </div>
-          ) : (
-            <>
-              {visibleTasks.map((t) => (
-                <div
-                  key={t.id}
-                  onDragOver={e=>{ e.preventDefault(); e.stopPropagation(); if(dragType.current==="task") handleDragOverCol(e,colId); }}
-                  onDrop={e=>{ e.stopPropagation(); handleDropOnTask(e, t.id, colId); }}
-                  style={{ position:"relative" }}
-                >
-                  {dragTaskId.current && dragTaskId.current!==t.id && highlightCol===colId && (
-                    <div style={{ height:2,background:color,borderRadius:2,marginBottom:3,opacity:0,transition:"opacity 0.1s" }}/>
-                  )}
-                  <TaskPill t={t} showSec={isDone}/>
-                </div>
-              ))}
-
-              {/* View all / collapse toggle */}
-              {hasMore && (
-                <button
-                  onClick={()=>setExpanded(v=>!v)}
-                  style={{ width:"100%",marginTop:4,padding:"7px 10px",borderRadius:8,border:`1px solid ${color}44`,background:color+"0D",color:color,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:600,display:"flex",alignItems:"center",justifyContent:"center",gap:5,transition:"background 0.15s" }}
-                  onMouseEnter={e=>e.currentTarget.style.background=color+"1A"}
-                  onMouseLeave={e=>e.currentTarget.style.background=color+"0D"}
-                >
-                  {expanded
-                    ? `▲ Show less`
-                    : `▼ View all ${colTasks.length} tasks (${colTasks.length - PREVIEW_COUNT} more)`}
-                </button>
-              )}
-            </>
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  // FormModal is defined outside TogetherApp (see below export) to prevent remounting
+    // FormModal is defined outside TogetherApp (see below export) to prevent remounting
 
   // ── Timeline helpers ──────────────────────────────────────────────────────
   const now=new Date();
@@ -2925,6 +3408,42 @@ export default function TogetherApp() {
             ))}
           </>
         )}
+      </div>
+    );
+  }
+
+  // ── Budget app mode ─────────────────────────────────────────────────────────
+  if (appMode === "budget") {
+    return <BudgetApp names={names} mode={mode} T={T} activeUser={activeUser} onBack={()=>switchApp("tasks")}/>;
+  }
+
+  // ── App home selector (shown once per session if not yet chosen after load) ─
+  if (appMode === "home") {
+    return (
+      <div style={{ position:"fixed",inset:0,background:T.bg,display:"flex",alignItems:"center",justifyContent:"center",padding:24,fontFamily:"'DM Sans',sans-serif" }}>
+        <div style={{ width:"100%",maxWidth:420,textAlign:"center" }}>
+          <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:32,color:T.accent,marginBottom:6 }}>Together ♡</div>
+          <div style={{ fontSize:14,color:T.textSub,marginBottom:36 }}>What would you like to open?</div>
+          <div style={{ display:"flex",flexDirection:"column",gap:14 }}>
+            <button onClick={()=>switchApp("tasks")} style={{ padding:"22px 20px",borderRadius:16,border:`1px solid ${T.border}`,background:T.surface,cursor:"pointer",textAlign:"left",boxShadow:"0 2px 12px rgba(0,0,0,0.1)",transition:"transform 0.15s" }}
+              onMouseEnter={e=>e.currentTarget.style.transform="translateY(-2px)"}
+              onMouseLeave={e=>e.currentTarget.style.transform="none"}>
+              <div style={{ fontSize:28,marginBottom:8 }}>⊞</div>
+              <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:19,color:T.text,marginBottom:4 }}>Task Manager</div>
+              <div style={{ fontSize:13,color:T.textSub,lineHeight:1.5 }}>Your life board, habits, reflections, prayers, tracker and more.</div>
+            </button>
+            <button onClick={()=>switchApp("budget")} style={{ padding:"22px 20px",borderRadius:16,border:"1px solid #20B2AA44",background:T.surface,cursor:"pointer",textAlign:"left",boxShadow:"0 2px 12px rgba(0,0,0,0.1)",transition:"transform 0.15s" }}
+              onMouseEnter={e=>e.currentTarget.style.transform="translateY(-2px)"}
+              onMouseLeave={e=>e.currentTarget.style.transform="none"}>
+              <div style={{ fontSize:28,marginBottom:8 }}>💰</div>
+              <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:19,color:T.text,marginBottom:4 }}>Budget Tracker</div>
+              <div style={{ fontSize:13,color:T.textSub,lineHeight:1.5 }}>Track income, expenses, savings goals — per person and shared.</div>
+            </button>
+          </div>
+          <div style={{ marginTop:20,display:"flex",gap:10,justifyContent:"center" }}>
+            <button onClick={toggleMode} style={{ fontSize:12,color:T.textMuted,background:"none",border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif" }}>{mode==="dark"?"☀ Light mode":"☾ Dark mode"}</button>
+          </div>
+        </div>
       </div>
     );
   }
@@ -3060,7 +3579,7 @@ export default function TogetherApp() {
               <span style={{ fontFamily:"'DM Serif Display',serif",fontSize:17,color:T.text }}>{(names[activeUser]||"…")}'s Board</span>
             </div>
             <div className="grid-board">
-              {gridCols.map(c=><GridCard key={c.colId} {...c}/>)}
+              {gridCols.map(col=><GridCard key={col.colId} {...col} T={T} mode={mode} onAddTask={(secId)=>{setAddSec(secId);setNew(p=>({...p,section:secId}));setShowAdd(true);}} onViewAll={(data)=>setTaskModal(data)} onDeleteTasks={(secId,type)=>{ if(type==='active') setTasks(prev=>prev.filter(t=>!(t.section===secId&&!t.done))); else setTasks(prev=>prev.filter(t=>!(t.section===secId&&t.done))); }} dragHandlers={{handleDragOverCol,handleDropOnCol,handleBoardDragStart,handleDragEnd,handleDropOnTask,dragType,dragTaskId,highlightCol,highlightBoard}}/>)}
             </div>
           </>
         )}
@@ -3413,6 +3932,33 @@ export default function TogetherApp() {
         })}
       </div>
 
+      {/* ── TASK VIEW MODAL ── */}
+      {taskModal&&(
+        <div style={{ position:"fixed",inset:0,zIndex:50,background:"rgba(0,0,0,0.65)",backdropFilter:"blur(6px)",display:"flex",alignItems:"center",justifyContent:"center",padding:16 }} onClick={()=>setTaskModal(null)}>
+          <div style={{ background:T.surface,border:`1px solid ${T.border}`,borderRadius:18,width:"100%",maxWidth:640,maxHeight:"85vh",overflow:"hidden",display:"flex",flexDirection:"column",boxShadow:"0 24px 64px rgba(0,0,0,0.4)" }} onClick={e=>e.stopPropagation()}>
+            {/* Modal header */}
+            <div style={{ padding:"16px 20px",borderBottom:`1px solid ${T.border}`,display:"flex",alignItems:"center",gap:10,flexShrink:0 }}>
+              <div style={{ width:36,height:36,borderRadius:10,background:taskModal.color+"22",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18 }}>{taskModal.emoji}</div>
+              <div style={{ flex:1 }}>
+                <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:18,color:T.text }}>{taskModal.label}</div>
+                <div style={{ fontSize:12,color:T.textSub }}>{taskModal.tasks.length} task{taskModal.tasks.length!==1?"s":""}</div>
+              </div>
+              <button onClick={()=>{setTaskModal(null);setAddSec(taskModal.colId);setNew(p=>({...p,section:taskModal.colId}));setShowAdd(true);}} style={{ height:32,padding:"0 12px",borderRadius:8,border:"none",background:taskModal.color,color:"#fff",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:700 }}>+ Add</button>
+              <button onClick={()=>setTaskModal(null)} style={{ width:32,height:32,borderRadius:8,border:`1px solid ${T.border}`,background:T.inputBg,cursor:"pointer",fontSize:16,color:T.textSub,display:"flex",alignItems:"center",justifyContent:"center" }}>✕</button>
+            </div>
+            {/* Modal task list */}
+            <div style={{ overflowY:"auto",padding:"12px 16px",flex:1 }}>
+              {taskModal.tasks.length===0
+                ? <div style={{ textAlign:"center",padding:"40px",color:T.textMuted,fontSize:13,fontStyle:"italic" }}>No tasks in this section yet.</div>
+                : taskModal.tasks.map(t=>(
+                  <TaskPill key={t.id} t={t} showSec={false} draggable={false}/>
+                ))
+              }
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── APP TOUR ── */}
       {showTour && <AppTour step={tourStep} setStep={setTourStep} onClose={()=>setShowTour(false)} setView={setView} setShowAdd={setShowAdd} toggleMode={toggleMode} T={T} mode={mode} names={names} activeUser={activeUser}/>}
 
@@ -3473,6 +4019,15 @@ export default function TogetherApp() {
             <input style={inpStyle} value={names.A} onChange={e=>setNames({...names,A:e.target.value})} placeholder="Name"/>
             <label style={lblStyle}>Partner B Name</label>
             <input style={inpStyle} value={names.B} onChange={e=>setNames({...names,B:e.target.value})} placeholder="Name"/>
+            {/* App switcher */}
+            <div style={{marginTop:20,paddingTop:16,borderTop:`1px solid ${T.border}`}}>
+              <div style={{fontSize:12,fontWeight:600,color:T.textMuted,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:10}}>Switch App</div>
+              <div style={{display:"flex",gap:8}}>
+                <button onClick={()=>{setShowSett(false);switchApp("tasks");}} style={{flex:1,padding:"10px",borderRadius:10,border:`1px solid ${appMode==="tasks"?T.accent:T.border}`,background:appMode==="tasks"?T.accent+"15":T.inputBg,color:appMode==="tasks"?T.accent:T.text,fontFamily:"'DM Sans',sans-serif",fontSize:13,cursor:"pointer",fontWeight:appMode==="tasks"?700:400}}>⊞ Tasks</button>
+                <button onClick={()=>{setShowSett(false);switchApp("budget");}} style={{flex:1,padding:"10px",borderRadius:10,border:`1px solid ${appMode==="budget"?"#20B2AA":T.border}`,background:appMode==="budget"?"#20B2AA15":T.inputBg,color:appMode==="budget"?"#20B2AA":T.text,fontFamily:"'DM Sans',sans-serif",fontSize:13,cursor:"pointer",fontWeight:appMode==="budget"?700:400}}>💰 Budget</button>
+              </div>
+            </div>
+
             {/* Tour */}
             <div style={{marginTop:20,paddingTop:16,borderTop:`1px solid ${T.border}`}}>
               <div style={{fontSize:12,fontWeight:600,color:T.textMuted,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:10}}>App Tour</div>
