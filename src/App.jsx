@@ -1604,7 +1604,7 @@ function DebtView({ debts, T, mode, focus, fmt, names, onAdd, onEdit, onDelete, 
       </div>
 
       {/* Summary cards */}
-      <div className="bgrid4" style={{ marginBottom:20 }}>
+      <div className="ba-g4">
         {[
           { l:"Total Debt",         v:fmt(totalBalance),           c:"#E84E8A", icon:"💳", sub:`${debts.length} accounts` },
           { l:"Monthly Minimums",   v:fmt(totalMin),               c:"#E8704A", icon:"📅", sub:"minimum payments" },
@@ -1643,7 +1643,7 @@ function DebtView({ debts, T, mode, focus, fmt, names, onAdd, onEdit, onDelete, 
           <button onClick={onAdd} style={{ padding:"10px 20px",borderRadius:10,border:"none",background:"#E84E8A",color:"#fff",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:700 }}>+ Add First Debt</button>
         </div>
       ) : (
-        <div className="bdebt">
+        <div className="ba-debt">
           {[...debts].sort((a,b)=>b.apr-a.apr).map(d=>(
             <div key={d.id} style={{ "--surface":T.surface,"--border":T.border,"--text":T.text,"--textSub":T.textSub,"--textMuted":T.textMuted,"--inputBg":T.inputBg }}>
               <DebtCard debt={d} T={T} fmt={fmt} onEdit={onEdit} onDelete={onDelete} onPayment={onPayment}/>
@@ -1733,7 +1733,7 @@ function ReportView({ lines, goals, debts, assets, liabs, month, year, focus, fo
       </div>
 
       {/* Key numbers */}
-      <div className="bgrid4" style={{ marginBottom:20 }}>
+      <div className="ba-g4">
         {[
           { l:"Total Budgeted",   v:fmt(totalAllocated), c:"#3B9EDB" },
           { l:"Total Spent",      v:fmt(totalSpent),     c:"#E84E8A" },
@@ -2224,69 +2224,39 @@ function BudgetApp({ names, mode, T, activeUser, onBack }) {
   const navViews=[["budget","📋 Budget"],["goals","🎯 Goals"],["debt","💳 Debts"],["networth","💎 Net Worth"],["analytics","📈 Analytics"],["report","📄 Report"]];
 
   return (
-    <div className="b-root" style={{ background:T.bg,color:T.text,fontFamily:"'DM Sans',sans-serif" }}>
+    <div style={{ position:"fixed",inset:0,background:T.bg,color:T.text,fontFamily:"'DM Sans',sans-serif",display:"flex",flexDirection:"column",overflow:"hidden" }}>
       <style>{`
-        @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
-        /* scrollbar hide */
-        .bnav::-webkit-scrollbar,.bpills::-webkit-scrollbar{display:none}
-        .bnav,.bpills{scrollbar-width:none}
-        /* full-bleed layout */
-        .b-root{width:100%;min-height:100vh;box-sizing:border-box;overflow-x:hidden}
-        /* responsive grids */
-        .bgrid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-        .bgrid4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
-        .bgrid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
-        .bgoals{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
-        .bdebt{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
-        .bstats4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
-        /* content padding — more room on desktop */
-        .b-content{padding:24px 32px;width:100%;box-sizing:border-box}
-        /* tablet ≤ 1024px */
-        @media(max-width:1024px){
-          .bgrid2{grid-template-columns:1fr 1fr}
-          .bgrid4{grid-template-columns:repeat(2,1fr)}
-          .bgrid3{grid-template-columns:repeat(2,1fr)}
-          .bgoals{grid-template-columns:repeat(2,1fr)}
-          .bdebt{grid-template-columns:repeat(2,1fr)}
-          .bstats4{grid-template-columns:repeat(2,1fr)}
-          .b-content{padding:20px 20px}
+        .ba *{box-sizing:border-box}
+        .ba-scroll{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
+        .ba-pad{padding:20px 24px}
+        .ba-g4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:16px}
+        .ba-g2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-bottom:16px}
+        .ba-g3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+        .ba-goals{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+        .ba-debt{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+        .ba-nav{display:flex;overflow-x:auto;scrollbar-width:none;border-bottom:1px solid ${T.border};background:${T.topbar}}
+        .ba-nav::-webkit-scrollbar{display:none}
+        .ba-ham{display:none}
+        @media(max-width:1100px){
+          .ba-g4{grid-template-columns:repeat(2,minmax(0,1fr))}
+          .ba-goals{grid-template-columns:repeat(2,minmax(0,1fr))}
+          .ba-debt{grid-template-columns:repeat(2,minmax(0,1fr))}
         }
-        /* mobile ≤ 640px */
-        @media(max-width:640px){
-          .bgrid2{grid-template-columns:1fr}
-          .bgrid4{grid-template-columns:repeat(2,1fr);gap:8px}
-          .bgrid3{grid-template-columns:1fr}
-          .bgoals{grid-template-columns:1fr}
-          .bdebt{grid-template-columns:1fr}
-          .bstats4{grid-template-columns:repeat(2,1fr);gap:8px}
-          .b-content{padding:16px 12px}
-          .b-nav-tab span.b-tab-label{display:none}
-        }
-        /* hide import label on small screens */
-        @media(max-width:480px){
-          .b-import-label{display:none}
-        }
-        /* hamburger shows on mobile, desktop nav hides */
-        @media(max-width:768px){
-          .b-hamburger{display:flex!important}
-          .b-desktop-nav{display:none!important}
-          .b-content{padding:16px 12px}
-          .bgrid2{grid-template-columns:1fr}
-          .bgrid4{grid-template-columns:repeat(2,1fr);gap:8px}
-          .bgrid3{grid-template-columns:1fr}
-          .bgoals{grid-template-columns:1fr}
-          .bdebt{grid-template-columns:1fr}
-          .bstats4{grid-template-columns:repeat(2,1fr);gap:8px}
-        }
-        /* on desktop ensure full width */
-        @media(min-width:769px){
-          .b-hamburger{display:none!important}
-          .b-desktop-nav{display:flex!important}
+        @media(max-width:700px){
+          .ba-pad{padding:12px}
+          .ba-g4{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+          .ba-g2{grid-template-columns:1fr}
+          .ba-g3{grid-template-columns:1fr}
+          .ba-goals{grid-template-columns:1fr}
+          .ba-debt{grid-template-columns:1fr}
+          .ba-nav{display:none}
+          .ba-ham{display:flex!important}
+          .ba-import-txt{display:none}
         }
       `}</style>
 
       {/* TOP BAR */}
-      <div style={{ display:"flex",alignItems:"center",gap:8,padding:"10px 16px",borderBottom:`1px solid ${T.border}`,position:"sticky",top:0,zIndex:20,background:T.topbar,backdropFilter:"blur(12px)",flexWrap:"nowrap",minWidth:0 }}>
+      <div className="ba" style={{ display:"flex",alignItems:"center",gap:8,padding:"10px 16px",borderBottom:`1px solid ${T.border}`,background:T.topbar,backdropFilter:"blur(12px)",flexShrink:0,minWidth:0,flexWrap:"nowrap" }}>
         <button onClick={onBack} style={{ width:34,height:34,borderRadius:9,border:`1px solid ${T.border}`,background:T.inputBg,cursor:"pointer",fontSize:16,display:"flex",alignItems:"center",justifyContent:"center",color:T.textSub,flexShrink:0 }}>←</button>
         <span style={{ fontFamily:"'DM Serif Display',serif",fontSize:19,color:"#20B2AA",whiteSpace:"nowrap",flexShrink:0 }}>Budget 💰</span>
         <div style={{ flex:1,minWidth:0 }}/>
@@ -2300,11 +2270,11 @@ function BudgetApp({ names, mode, T, activeUser, onBack }) {
         </div>
         <button onClick={()=>{setTourStep(0);setShowTour(true);}} style={{ width:34,height:34,borderRadius:9,border:`1px solid ${T.border}`,background:T.inputBg,cursor:"pointer",fontSize:16,display:"flex",alignItems:"center",justifyContent:"center",color:T.textSub,flexShrink:0 }} title="Tour">ⓘ</button>
         <button onClick={()=>setShowBulk(true)} style={{ height:34,padding:"0 12px",borderRadius:9,border:`1px solid ${T.border}`,background:T.inputBg,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:600,color:T.textSub,flexShrink:0 }} title="Bulk Import">
-          <span>⇪</span><span className="b-import-label"> Import</span>
+          <span>⇪</span><span className="ba-import-txt"> Import</span>
         </button>
         <button onClick={()=>{setNewLine({...blank,owner:focus});setShowLine(true);}} style={{ height:34,padding:"0 14px",borderRadius:9,border:"none",background:"#20B2AA",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,color:"#fff",whiteSpace:"nowrap",flexShrink:0 }}>+ Add</button>
         {/* Mobile hamburger for nav */}
-        <button onClick={()=>setBShowNav(v=>!v)} style={{ width:34,height:34,borderRadius:9,border:`1px solid ${T.border}`,background:T.inputBg,cursor:"pointer",display:"none",alignItems:"center",justifyContent:"center",flexShrink:0,flexDirection:"column",gap:4,padding:"9px 8px" }} className="b-hamburger">
+        <button onClick={()=>setBShowNav(v=>!v)} className="ba-ham ba" style={{ width:34,height:34,borderRadius:9,border:`1px solid ${T.border}`,background:T.inputBg,cursor:"pointer",alignItems:"center",justifyContent:"center",flexShrink:0,flexDirection:"column",gap:4,padding:"9px 8px" }}>
           <span style={{ width:16,height:2,borderRadius:1,background:T.textSub,display:"block" }}/>
           <span style={{ width:16,height:2,borderRadius:1,background:T.textSub,display:"block" }}/>
           <span style={{ width:16,height:2,borderRadius:1,background:T.textSub,display:"block" }}/>
@@ -2339,7 +2309,7 @@ function BudgetApp({ names, mode, T, activeUser, onBack }) {
       )}
 
       {/* MONTH NAV */}
-      <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 20px",background:T.surface,borderBottom:`1px solid ${T.border}` }}>
+      <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 20px",background:T.surface,borderBottom:`1px solid ${T.border}`,flexShrink:0 }}>
         <button onClick={()=>{ let m=month-1,y=year; if(m<0){m=11;y--;} setMonth(m);setYear(y); }} style={{ width:34,height:34,borderRadius:9,border:`1px solid ${T.border}`,background:T.inputBg,cursor:"pointer",fontSize:17,color:T.textSub,display:"flex",alignItems:"center",justifyContent:"center" }}>‹</button>
         <div style={{ textAlign:"center" }}>
           <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:20,color:T.text }}>{BUDGET_MONTHS[month]} {year}</div>
@@ -2349,13 +2319,14 @@ function BudgetApp({ names, mode, T, activeUser, onBack }) {
       </div>
 
       {/* CONTENT */}
-      <div className="b-content">
+      <div className="ba-scroll">
+        <div className="ba-pad">
 
         {/* ════ BUDGET VIEW ════ */}
         {view==="budget"&&(
           <>
             {/* Summary hero cards */}
-            <div className="bgrid4" style={{ marginBottom:20 }}>
+            <div className="ba-g4">
               {[
                 { l:"Total Budget",   v:fmt(totalAllocated), c:"#3B9EDB",  icon:"📋", sub:`${myLines.length} items` },
                 { l:"Total Spent",    v:fmt(totalSpent),     c:"#E84E8A",  icon:"💸", sub:`${Math.round(totalAllocated>0?(totalSpent/totalAllocated)*100:0)}% of budget` },
@@ -2511,7 +2482,7 @@ function BudgetApp({ names, mode, T, activeUser, onBack }) {
                   <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:20,color:T.text,marginBottom:6 }}>No goals yet</div>
                   <div style={{ fontSize:13,color:T.textSub,lineHeight:1.6 }}>Set a goal — Emergency Fund, Move to KC,<br/>or something you're saving for together.</div>
                 </div>
-              : <div className="bgoals">{myGoals.map(g=><GoalCard key={g.id} g={g} T={T} fmt={fmt} setEditGoal={setEditGoal} delGoal={delGoal} addToGoal={addToGoal}/>)}</div>
+              : <div className="ba-goals">{myGoals.map(g=><GoalCard key={g.id} g={g} T={T} fmt={fmt} setEditGoal={setEditGoal} delGoal={delGoal} addToGoal={addToGoal}/>)}</div>
             }
           </div>
         )}
@@ -2544,7 +2515,7 @@ function BudgetApp({ names, mode, T, activeUser, onBack }) {
               </div>
             </div>
 
-            <div className="bgrid2">
+            <div className="ba-g2">
               {/* Assets */}
               <div style={{ ...card(),padding:"20px" }}>
                 <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16 }}>
@@ -2611,7 +2582,7 @@ function BudgetApp({ names, mode, T, activeUser, onBack }) {
             <div style={{ fontSize:13,color:T.textSub,marginBottom:20 }}>Budget vs Actual · {focusName} · {BUDGET_MONTHS[month]} {year}</div>
 
             {/* Budget vs actual pie */}
-            <div className="bgrid2" style={{ marginBottom:16 }}>
+            <div className="ba-g2">
               <div style={{ ...card(),padding:"20px" }}>
                 <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:17,color:T.text,marginBottom:16 }}>Spending by Category</div>
                 {byCat.length===0
@@ -2656,7 +2627,7 @@ function BudgetApp({ names, mode, T, activeUser, onBack }) {
             </div>
 
             {/* Summary stats */}
-            <div className="bgrid4" style={{ marginBottom:16 }}>
+            <div className="ba-g4">
               {[
                 { l:"Budget Utilization", v:`${totalAllocated>0?Math.round((totalSpent/totalAllocated)*100):0}%`, c:overBudget?"#E84E8A":"#20B2AA" },
                 { l:"Most Over Budget",   v:byCat.filter(c=>c.spent>c.allocated).sort((a,b)=>(b.spent-b.allocated)-(a.spent-a.allocated))[0]?.label||"None 🎉", c:"#E84E8A" },
@@ -2715,7 +2686,8 @@ function BudgetApp({ names, mode, T, activeUser, onBack }) {
             T={T} mode={mode} fmt={fmt} BUDGET_MONTHS={BUDGET_MONTHS} reportPeriod={reportPeriod} setReportPeriod={setReportPeriod}
             totalAssets={totalAssets} totalLiabs={totalLiabs} totalDebtBalance={totalDebtBalance} netWorth={netWorth}/>
         )}
-      </div>
+        </div>{/* end ba-pad */}
+      </div>{/* end ba-scroll */}
 
       {/* Forms */}
       {showLine&&<BudgetLineForm data={newLine} setData={setNewLine} onSave={addLine} onClose={()=>setShowLine(false)} T={T} mode={mode}/>}
