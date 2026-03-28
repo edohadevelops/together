@@ -2000,7 +2000,8 @@ function BudgetCatForm({ data, onSave, onClose, T, mode }) {
 function UnifiedTxForm({ data, prefill, onSave, onClose, T, mode }) {
   const defaultType = prefill?.type || data?.type || "expense";
   const defaultCat  = prefill?.category || data?.category || "other";
-  const [d, setD] = useState(data || { type:defaultType, name:"", amount:"", category:defaultCat, date:new Date().toISOString().slice(0,10), notes:"" });
+  const defaultCatId= prefill?.catId || data?.catId || null;
+  const [d, setD] = useState(data || { type:defaultType, name:"", amount:"", category:defaultCat, catId:defaultCatId, date:new Date().toISOString().slice(0,10), notes:"" });
   const ref = useRef(null);
   useEffect(()=>{ const t=setTimeout(()=>{ if(ref.current) ref.current.focus(); },80); return()=>clearTimeout(t); },[]);
   const isIncome = d.type==="income";
@@ -2021,16 +2022,28 @@ function UnifiedTxForm({ data, prefill, onSave, onClose, T, mode }) {
             </button>
           ))}
         </div>
-        <label style={lbl}>{isIncome?"Source":"What did you spend on?"}</label>
-        <input ref={ref} style={inp} value={d.name||""} onChange={e=>setD(p=>({...p,name:e.target.value}))} placeholder={isIncome?"e.g. TA Stipend, Salary, Freelance...":"e.g. Walmart, BP Gas, Church Giving..."} onKeyDown={e=>{ if(e.key==="Enter"&&d.name?.trim()&&d.amount){e.preventDefault();onSave(d);}}}/>
+        {d.catId&&d.catName&&(
+          <div style={{ background:T.inputBg,borderRadius:9,padding:"8px 12px",marginBottom:4,display:"flex",alignItems:"center",gap:8,border:`1px solid ${T.border}` }}>
+            <span style={{ fontSize:13,color:T.textSub }}>Logging against:</span>
+            <span style={{ fontSize:13,fontWeight:700,color:"#20B2AA" }}>{d.catName}</span>
+          </div>
+        )}
+        <label style={lbl}>{isIncome?"Source":"Description (what exactly did you buy?)"}</label>
+        <input ref={ref} style={inp} value={d.name||""} onChange={e=>setD(p=>({...p,name:e.target.value}))} placeholder={isIncome?"e.g. TA Stipend, Salary, Freelance...":"e.g. Walmart groceries, Shell gas, Sunday offering..."} onKeyDown={e=>{ if(e.key==="Enter"&&d.name?.trim()&&d.amount){e.preventDefault();onSave(d);}}}/>
         <label style={lbl}>Amount ($)</label>
         <input style={inp} type="number" min="0" step="0.01" value={d.amount||""} onChange={e=>setD(p=>({...p,amount:e.target.value}))} placeholder="0.00"/>
         {!isIncome&&(
           <>
             <label style={lbl}>Category</label>
-            <select style={sel} value={d.category||"other"} onChange={e=>setD(p=>({...p,category:e.target.value}))}>
-              {CATS.map(c=><option key={c.id} value={c.id}>{c.l}</option>)}
-            </select>
+            {d.catId ? (
+              <div style={{ ...inp,color:T.textSub,cursor:"default",opacity:0.7 }}>
+                {CATS.find(c=>c.id===d.category)?.l||d.category} (locked to budget line)
+              </div>
+            ) : (
+              <select style={sel} value={d.category||"other"} onChange={e=>setD(p=>({...p,category:e.target.value}))}>
+                {CATS.map(c=><option key={c.id} value={c.id}>{c.l}</option>)}
+              </select>
+            )}
           </>
         )}
         <label style={lbl}>Date</label>
@@ -2353,10 +2366,14 @@ function BudgetApp({ names, mode, T, activeUser, onBack }) {
   const totalBudgeted= myCats.reduce((s,c)=>s+c.limit,0);
   const overBudget   = totalSpent > totalBudgeted && totalBudgeted > 0;
 
-  // Per-category: limit vs actual spend from transactions
+  // Per-category: match by cat.id (unique budget line) not cat.category (generic type)
+  // Transactions store catId = the specific budget line they belong to.
+  // If no catId, fall back to category-type match for backward compat.
   const catRollup = myCats.map(cat=>{
     const info  = BUDGET_CATS.find(c=>c.id===cat.category)||BUDGET_CATS[BUDGET_CATS.length-1];
-    const spent = myExpenseTxs.filter(t=>t.category===cat.category).reduce((s,t)=>s+t.amount,0);
+    const spent = myExpenseTxs
+      .filter(t=> t.catId ? t.catId===cat.id : t.category===cat.category && !myExpenseTxs.some(tx=>tx.catId))
+      .reduce((s,t)=>s+t.amount,0);
     return { ...cat, info, spent, over: spent>cat.limit && cat.limit>0 };
   });
   const subCats  = myCats.filter(c=>c.category==="sub");
@@ -2585,7 +2602,7 @@ function BudgetApp({ names, mode, T, activeUser, onBack }) {
                               </div>
                             </div>
                             <div style={{ display:"flex",flexDirection:"column",gap:4,alignItems:"flex-end",flexShrink:0 }}>
-                              <button style={{ padding:"4px 10px",borderRadius:7,border:"none",background:"#E84E8A",color:"#fff",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:700 }} onClick={()=>{ setLogItem({...cat,prefill:true,category:cat.category}); setShowTx(true); }}>+ Expense</button>
+                              <button onClick={()=>{ setLogItem({catId:cat.id,category:cat.category,catName:cat.name}); setShowTx(true); }} style={{ padding:"4px 10px",borderRadius:7,border:"none",background:"#E84E8A",color:"#fff",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:700 }}>+ Expense</button>
                               <div style={{ display:"flex",gap:2 }}>
                                 <button onClick={()=>setEditCat(cat)} style={{ background:"none",border:"none",color:T.textMuted,cursor:"pointer",fontSize:13 }}>✎</button>
                                 <button onClick={()=>delCat(cat.id)} style={{ background:"none",border:"none",color:T.textMuted,cursor:"pointer",fontSize:13 }}>✕</button>
