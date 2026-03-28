@@ -2603,7 +2603,7 @@ function TaskPill({ t, showSec=false, draggable=true, pill }) {
 
 // ── GridCard — module-level to prevent remount/expand-collapse bug ─────────────
 function GridCard({ colId, label, emoji, color, colTasks, isDone=false, T, mode,
-  onAddTask, onViewAll, onDeleteTasks, dragHandlers }) {
+  onAddTask, onViewAll, onDeleteTasks, dragHandlers, pillCtx }) {
   const [expanded,      setExpanded]      = useState(false);
   const [showClearMenu, setShowClearMenu] = useState(false);
   const [confirmClear,  setConfirmClear]  = useState(false);
@@ -3595,7 +3595,7 @@ export default function TogetherApp() {
               <span style={{ fontFamily:"'DM Serif Display',serif",fontSize:17,color:T.text }}>{(names[activeUser]||"…")}'s Board</span>
             </div>
             <div className="grid-board">
-              {gridCols.map(col=><GridCard key={col.colId} {...col} T={T} mode={mode} onAddTask={(secId)=>{setAddSec(secId);setNew(p=>({...p,section:secId}));setShowAdd(true);}} onViewAll={(data)=>setTaskModal(data)} onDeleteTasks={(secId,type)=>{ if(type==='active') setTasks(prev=>prev.filter(t=>!(t.section===secId&&!t.done))); else setTasks(prev=>prev.filter(t=>!(t.section===secId&&t.done))); }} dragHandlers={{handleDragOverCol,handleDropOnCol,handleBoardDragStart,handleDragEnd,handleDropOnTask,dragType,dragTaskId,highlightCol,highlightBoard}}/>)}
+              {gridCols.map(col=><GridCard key={col.colId} {...col} T={T} mode={mode} pillCtx={pillCtx} onAddTask={(secId)=>{setAddSec(secId);setNew(p=>({...p,section:secId}));setShowAdd(true);}} onViewAll={(data)=>setTaskModal(data)} onDeleteTasks={(secId,type)=>{ if(type==='active') setTasks(prev=>prev.filter(t=>!(t.section===secId&&!t.done))); else setTasks(prev=>prev.filter(t=>!(t.section===secId&&t.done))); }} dragHandlers={{handleDragOverCol,handleDropOnCol,handleBoardDragStart,handleDragEnd,handleDropOnTask,dragType,dragTaskId,highlightCol,highlightBoard}}/>)}
             </div>
           </>
         )}
