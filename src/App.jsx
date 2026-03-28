@@ -2585,7 +2585,7 @@ function BudgetApp({ names, mode, T, activeUser, onBack }) {
                               </div>
                             </div>
                             <div style={{ display:"flex",flexDirection:"column",gap:4,alignItems:"flex-end",flexShrink:0 }}>
-                              <button onClick={()=>setShowTx(true)&&setLogItem({category:cat.category})} style={{ padding:"4px 10px",borderRadius:7,border:"none",background:"#E84E8A",color:"#fff",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:700 }} onClick={()=>{ setLogItem({...cat,prefill:true}); setShowTx(true); }}>+ Expense</button>
+                              <button onClick={()=>setShowTx(true)&&setLogItem({category:cat.category,prefill:true})} style={{ padding:"4px 10px",borderRadius:7,border:"none",background:"#E84E8A",color:"#fff",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:700 }}>+ Expense</button>
                               <div style={{ display:"flex",gap:2 }}>
                                 <button onClick={()=>setEditCat(cat)} style={{ background:"none",border:"none",color:T.textMuted,cursor:"pointer",fontSize:13 }}>✎</button>
                                 <button onClick={()=>delCat(cat.id)} style={{ background:"none",border:"none",color:T.textMuted,cursor:"pointer",fontSize:13 }}>✕</button>
@@ -2626,8 +2626,8 @@ function BudgetApp({ names, mode, T, activeUser, onBack }) {
                     <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:20,color:T.text }}>Income — {BUDGET_MONTHS[month]} {year}</div>
                     <div style={{ fontSize:13,color:"#3DBF8A",fontWeight:700,marginTop:2 }}>Total: {fmt(totalIncome)}</div>
                   </div>
-                  <button onClick={()=>setShowTx(true)&&setLogItem({type:"income"})} style={{ height:34,padding:"0 14px",borderRadius:9,border:"none",background:"#3DBF8A",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,color:"#fff" }}
-                    onClick={()=>{ setLogItem({type:"income"}); setShowTx(true); }}>+ Add Income</button>
+                  <button onClick={()=>{setShowTx(true)&&setLogItem({type:"income"})}} style={{ height:34,padding:"0 14px",borderRadius:9,border:"none",background:"#3DBF8A",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,color:"#fff" }}
+>+ Add Income</button>
                 </div>
                 {myIncomeTxs.length===0 ? (
                   <div style={{ ...card(),padding:"48px 20px",textAlign:"center" }}>
