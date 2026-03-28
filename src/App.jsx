@@ -1604,7 +1604,7 @@ function DebtView({ debts, T, mode, focus, fmt, names, onAdd, onEdit, onDelete, 
       </div>
 
       {/* Summary cards */}
-      <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(min(100%,190px),1fr))",gap:12,marginBottom:20 }}>
+      <div className="bgrid4" style={{ marginBottom:20 }}>
         {[
           { l:"Total Debt",         v:fmt(totalBalance),           c:"#E84E8A", icon:"💳", sub:`${debts.length} accounts` },
           { l:"Monthly Minimums",   v:fmt(totalMin),               c:"#E8704A", icon:"📅", sub:"minimum payments" },
@@ -1643,7 +1643,7 @@ function DebtView({ debts, T, mode, focus, fmt, names, onAdd, onEdit, onDelete, 
           <button onClick={onAdd} style={{ padding:"10px 20px",borderRadius:10,border:"none",background:"#E84E8A",color:"#fff",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:700 }}>+ Add First Debt</button>
         </div>
       ) : (
-        <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(min(100%,340px),1fr))",gap:16 }}>
+        <div className="bdebt">
           {[...debts].sort((a,b)=>b.apr-a.apr).map(d=>(
             <div key={d.id} style={{ "--surface":T.surface,"--border":T.border,"--text":T.text,"--textSub":T.textSub,"--textMuted":T.textMuted,"--inputBg":T.inputBg }}>
               <DebtCard debt={d} T={T} fmt={fmt} onEdit={onEdit} onDelete={onDelete} onPayment={onPayment}/>
@@ -1733,7 +1733,7 @@ function ReportView({ lines, goals, debts, assets, liabs, month, year, focus, fo
       </div>
 
       {/* Key numbers */}
-      <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(min(100%,180px),1fr))",gap:12,marginBottom:20 }}>
+      <div className="bgrid4" style={{ marginBottom:20 }}>
         {[
           { l:"Total Budgeted",   v:fmt(totalAllocated), c:"#3B9EDB" },
           { l:"Total Spent",      v:fmt(totalSpent),     c:"#E84E8A" },
@@ -2111,6 +2111,7 @@ function BudgetApp({ names, mode, T, activeUser, onBack }) {
   const [showDebt,     setShowDebt]     = useState(false);
   const [editDebt,     setEditDebt]     = useState(null);
   const [reportPeriod, setReportPeriod] = useState("month");
+  const [bShowNav,     setBShowNav]      = useState(false);
   // newX states use empty owner — owner is set at add-time from current focus
   const [newLine,  setNewLine]  = useState({ name:"",category:"other",allocated:"",spent:"",notes:"",recurring:"monthly",owner:"A" });
   const [newGoal,  setNewGoal]  = useState({ name:"",target:"",saved:"",deadline:"",emoji:"💰",owner:"A" });
@@ -2223,38 +2224,119 @@ function BudgetApp({ names, mode, T, activeUser, onBack }) {
   const navViews=[["budget","📋 Budget"],["goals","🎯 Goals"],["debt","💳 Debts"],["networth","💎 Net Worth"],["analytics","📈 Analytics"],["report","📄 Report"]];
 
   return (
-    <div style={{ minHeight:"100vh",width:"100%",background:T.bg,color:T.text,fontFamily:"'DM Sans',sans-serif",boxSizing:"border-box",overflowX:"hidden" }}>
+    <div className="b-root" style={{ background:T.bg,color:T.text,fontFamily:"'DM Sans',sans-serif" }}>
       <style>{`
         @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
-        .bnav::-webkit-scrollbar{display:none}
-        .bgrid2{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,360px),1fr));gap:16px}
-        .bgrid4{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,200px),1fr));gap:12px}
-        .bgrid3{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr));gap:12px}
-        .bgoals{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,290px),1fr));gap:16px}
+        /* scrollbar hide */
+        .bnav::-webkit-scrollbar,.bpills::-webkit-scrollbar{display:none}
+        .bnav,.bpills{scrollbar-width:none}
+        /* full-bleed layout */
+        .b-root{width:100%;min-height:100vh;box-sizing:border-box;overflow-x:hidden}
+        /* responsive grids */
+        .bgrid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+        .bgrid4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+        .bgrid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+        .bgoals{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+        .bdebt{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+        .bstats4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+        /* content padding — more room on desktop */
+        .b-content{padding:24px 32px;width:100%;box-sizing:border-box}
+        /* tablet ≤ 1024px */
+        @media(max-width:1024px){
+          .bgrid2{grid-template-columns:1fr 1fr}
+          .bgrid4{grid-template-columns:repeat(2,1fr)}
+          .bgrid3{grid-template-columns:repeat(2,1fr)}
+          .bgoals{grid-template-columns:repeat(2,1fr)}
+          .bdebt{grid-template-columns:repeat(2,1fr)}
+          .bstats4{grid-template-columns:repeat(2,1fr)}
+          .b-content{padding:20px 20px}
+        }
+        /* mobile ≤ 640px */
+        @media(max-width:640px){
+          .bgrid2{grid-template-columns:1fr}
+          .bgrid4{grid-template-columns:repeat(2,1fr);gap:8px}
+          .bgrid3{grid-template-columns:1fr}
+          .bgoals{grid-template-columns:1fr}
+          .bdebt{grid-template-columns:1fr}
+          .bstats4{grid-template-columns:repeat(2,1fr);gap:8px}
+          .b-content{padding:16px 12px}
+          .b-nav-tab span.b-tab-label{display:none}
+        }
+        /* hide import label on small screens */
+        @media(max-width:480px){
+          .b-import-label{display:none}
+        }
+        /* hamburger shows on mobile, desktop nav hides */
+        @media(max-width:768px){
+          .b-hamburger{display:flex!important}
+          .b-desktop-nav{display:none!important}
+          .b-content{padding:16px 12px}
+          .bgrid2{grid-template-columns:1fr}
+          .bgrid4{grid-template-columns:repeat(2,1fr);gap:8px}
+          .bgrid3{grid-template-columns:1fr}
+          .bgoals{grid-template-columns:1fr}
+          .bdebt{grid-template-columns:1fr}
+          .bstats4{grid-template-columns:repeat(2,1fr);gap:8px}
+        }
+        /* on desktop ensure full width */
+        @media(min-width:769px){
+          .b-hamburger{display:none!important}
+          .b-desktop-nav{display:flex!important}
+        }
       `}</style>
 
       {/* TOP BAR */}
-      <div style={{ display:"flex",alignItems:"center",gap:8,padding:"10px 16px",borderBottom:`1px solid ${T.border}`,position:"sticky",top:0,zIndex:20,background:T.topbar,backdropFilter:"blur(12px)" }}>
+      <div style={{ display:"flex",alignItems:"center",gap:8,padding:"10px 16px",borderBottom:`1px solid ${T.border}`,position:"sticky",top:0,zIndex:20,background:T.topbar,backdropFilter:"blur(12px)",flexWrap:"nowrap",minWidth:0 }}>
         <button onClick={onBack} style={{ width:34,height:34,borderRadius:9,border:`1px solid ${T.border}`,background:T.inputBg,cursor:"pointer",fontSize:16,display:"flex",alignItems:"center",justifyContent:"center",color:T.textSub,flexShrink:0 }}>←</button>
-        <span style={{ fontFamily:"'DM Serif Display',serif",fontSize:19,color:"#20B2AA",whiteSpace:"nowrap" }}>Budget 💰</span>
-        <div style={{ flex:1 }}/>
+        <span style={{ fontFamily:"'DM Serif Display',serif",fontSize:19,color:"#20B2AA",whiteSpace:"nowrap",flexShrink:0 }}>Budget 💰</span>
+        <div style={{ flex:1,minWidth:0 }}/>
         {/* Focus switcher */}
-        <div style={{ display:"flex",background:T.inputBg,borderRadius:9,padding:2,border:`1px solid ${T.border}`,gap:2 }}>
-          {[["A",names.A],["B",names.B],["shared","Shared"]].map(([f,l])=>(
-            <button key={f} onClick={()=>setFocus(f)} style={{ padding:"4px 10px",borderRadius:7,border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:600,background:focus===f?(f==="A"?"#E8A838":f==="B"?"#E84E8A":"#9B6EE8"):"transparent",color:focus===f?"#fff":T.textSub,transition:"all 0.15s",whiteSpace:"nowrap" }}>{l}</button>
+        <div style={{ display:"flex",background:T.inputBg,borderRadius:9,padding:2,border:`1px solid ${T.border}`,gap:2,flexShrink:0 }}>
+          {[["A",(names.A||"A")[0]],["B",(names.B||"B")[0]],["shared","S"]].map(([f,l])=>(
+            <button key={f} onClick={()=>setFocus(f)} title={f==="shared"?"Shared":names[f]} style={{ padding:"4px 8px",borderRadius:7,border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:600,background:focus===f?(f==="A"?"#E8A838":f==="B"?"#E84E8A":"#9B6EE8"):"transparent",color:focus===f?"#fff":T.textSub,transition:"all 0.15s",whiteSpace:"nowrap" }}>
+              <span className="b-full-name" style={{ display:"inline" }}>{f==="shared"?"Shared":names[f]}</span>
+            </button>
           ))}
         </div>
-        <button onClick={()=>{setTourStep(0);setShowTour(true);}} style={{ width:34,height:34,borderRadius:9,border:`1px solid ${T.border}`,background:T.inputBg,cursor:"pointer",fontSize:16,display:"flex",alignItems:"center",justifyContent:"center",color:T.textSub }} title="Tour">ⓘ</button>
-        <button onClick={()=>setShowBulk(true)} style={{ height:34,padding:"0 12px",borderRadius:9,border:`1px solid ${T.border}`,background:T.inputBg,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:600,color:T.textSub,whiteSpace:"nowrap" }}>⇪ Import</button>
-        <button onClick={()=>{setNewLine({...blank,owner:focus});setShowLine(true);}} style={{ height:34,padding:"0 14px",borderRadius:9,border:"none",background:"#20B2AA",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,color:"#fff",whiteSpace:"nowrap" }}>+ Add</button>
+        <button onClick={()=>{setTourStep(0);setShowTour(true);}} style={{ width:34,height:34,borderRadius:9,border:`1px solid ${T.border}`,background:T.inputBg,cursor:"pointer",fontSize:16,display:"flex",alignItems:"center",justifyContent:"center",color:T.textSub,flexShrink:0 }} title="Tour">ⓘ</button>
+        <button onClick={()=>setShowBulk(true)} style={{ height:34,padding:"0 12px",borderRadius:9,border:`1px solid ${T.border}`,background:T.inputBg,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:600,color:T.textSub,flexShrink:0 }} title="Bulk Import">
+          <span>⇪</span><span className="b-import-label"> Import</span>
+        </button>
+        <button onClick={()=>{setNewLine({...blank,owner:focus});setShowLine(true);}} style={{ height:34,padding:"0 14px",borderRadius:9,border:"none",background:"#20B2AA",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,color:"#fff",whiteSpace:"nowrap",flexShrink:0 }}>+ Add</button>
+        {/* Mobile hamburger for nav */}
+        <button onClick={()=>setBShowNav(v=>!v)} style={{ width:34,height:34,borderRadius:9,border:`1px solid ${T.border}`,background:T.inputBg,cursor:"pointer",display:"none",alignItems:"center",justifyContent:"center",flexShrink:0,flexDirection:"column",gap:4,padding:"9px 8px" }} className="b-hamburger">
+          <span style={{ width:16,height:2,borderRadius:1,background:T.textSub,display:"block" }}/>
+          <span style={{ width:16,height:2,borderRadius:1,background:T.textSub,display:"block" }}/>
+          <span style={{ width:16,height:2,borderRadius:1,background:T.textSub,display:"block" }}/>
+        </button>
       </div>
 
-      {/* NAV TABS */}
-      <div className="bnav" style={{ display:"flex",padding:"0 16px",borderBottom:`1px solid ${T.border}`,background:T.topbar,overflowX:"auto",scrollbarWidth:"none" }}>
+      {/* NAV TABS — desktop: tab strip | mobile: slide-down drawer */}
+      <div className="bnav b-desktop-nav" style={{ display:"flex",padding:"0 16px",borderBottom:`1px solid ${T.border}`,background:T.topbar,overflowX:"auto",scrollbarWidth:"none" }}>
         {navViews.map(([v,l])=>(
-          <button key={v} onClick={()=>setBView(v)} style={{ padding:"10px 16px",border:"none",cursor:"pointer",background:"none",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:view===v?700:400,color:view===v?"#20B2AA":T.textSub,borderBottom:view===v?"2px solid #20B2AA":"2px solid transparent",whiteSpace:"nowrap",transition:"all 0.15s" }}>{l}</button>
+          <button key={v} onClick={()=>setBView(v)} style={{ padding:"10px 14px",border:"none",cursor:"pointer",background:"none",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:view===v?700:400,color:view===v?"#20B2AA":T.textSub,borderBottom:view===v?"2px solid #20B2AA":"2px solid transparent",whiteSpace:"nowrap",transition:"all 0.15s" }}>{l}</button>
         ))}
       </div>
+      {/* Mobile nav drawer */}
+      {bShowNav&&(
+        <div style={{ position:"fixed",inset:0,zIndex:50 }} onClick={()=>setBShowNav(false)}>
+          <div style={{ position:"absolute",inset:0,background:"rgba(0,0,0,0.5)",backdropFilter:"blur(3px)" }}/>
+          <div style={{ position:"absolute",top:0,right:0,bottom:0,width:240,background:T.surface,borderLeft:`1px solid ${T.border}`,padding:"16px 0",display:"flex",flexDirection:"column",gap:2,overflowY:"auto" }} onClick={e=>e.stopPropagation()}>
+            <div style={{ padding:"8px 20px 16px",borderBottom:`1px solid ${T.border}`,marginBottom:8 }}>
+              <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:17,color:"#20B2AA" }}>Budget 💰</div>
+              <div style={{ fontSize:11,color:T.textSub,marginTop:2 }}>{focus==="shared"?"Shared":names[focus]||focus}'s view</div>
+            </div>
+            {navViews.map(([v,l])=>(
+              <button key={v} onClick={()=>{setBView(v);setBShowNav(false);}} style={{ padding:"13px 20px",border:"none",cursor:"pointer",background:view===v?"#20B2AA18":"transparent",color:view===v?"#20B2AA":T.text,fontFamily:"'DM Sans',sans-serif",fontSize:15,fontWeight:view===v?700:400,textAlign:"left",borderLeft:view===v?"3px solid #20B2AA":"3px solid transparent" }}>{l}</button>
+            ))}
+            <div style={{ flex:1 }}/>
+            <div style={{ padding:"16px 20px",borderTop:`1px solid ${T.border}`,display:"flex",gap:8 }}>
+              <button onClick={()=>{setShowBulk(true);setBShowNav(false);}} style={{ flex:1,padding:"9px",borderRadius:9,border:`1px solid ${T.border}`,background:T.inputBg,color:T.textSub,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:13 }}>⇪ Import</button>
+              <button onClick={()=>{setTourStep(0);setShowTour(true);setBShowNav(false);}} style={{ flex:1,padding:"9px",borderRadius:9,border:`1px solid ${T.border}`,background:T.inputBg,color:T.textSub,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:13 }}>ⓘ Tour</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* MONTH NAV */}
       <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 20px",background:T.surface,borderBottom:`1px solid ${T.border}` }}>
@@ -2267,7 +2349,7 @@ function BudgetApp({ names, mode, T, activeUser, onBack }) {
       </div>
 
       {/* CONTENT */}
-      <div style={{ padding:"20px 16px",width:"100%",boxSizing:"border-box" }}>
+      <div className="b-content">
 
         {/* ════ BUDGET VIEW ════ */}
         {view==="budget"&&(
