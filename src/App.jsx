@@ -2553,6 +2553,54 @@ function PrayerView({ tasks, setTasks, names, activeUser, T, mode, aColor, aLabe
   );
 }
 
+// ── TaskPill — module-level so GridCard and all views can use it ──────────────
+function TaskPill({ t, showSec=false, draggable=true, pill }) {
+  const { T, mode, names, SECTIONS, PRI_COLOR, toggleDone, setEdit, deleteTask,
+          handleDragStart, handleDragEnd, aColor, aLabel, sec } = pill;
+  const s    = sec(t.section);
+  const dCol = (() => { const n = !t.dueDate?null:Math.ceil((new Date(t.dueDate+"T00:00:00")-new Date())/86400000); if(n===null)return null; if(n<0)return "#E84E8A"; if(n===0)return "#E8704A"; if(n<=3)return "#E8A838"; return "#3DBF8A"; })();
+  const dLbl = (() => { const n = !t.dueDate?null:Math.ceil((new Date(t.dueDate+"T00:00:00")-new Date())/86400000); if(n===null)return null; if(n<0)return `${Math.abs(n)}d overdue`; if(n===0)return "Due today"; if(n===1)return "Due tomorrow"; return `Due in ${n}d`; })();
+  const isDaily = t.type==="daily";
+  return (
+    <div
+      draggable={draggable}
+      onDragStart={draggable?e=>{e.stopPropagation();handleDragStart(e,t.id);}:undefined}
+      onDragOver={draggable?e=>{e.stopPropagation();e.preventDefault();}:undefined}
+      onDragEnd={draggable?e=>{e.stopPropagation();handleDragEnd();}:undefined}
+      style={{ background:isDaily?(mode==="dark"?"rgba(61,191,138,0.06)":"rgba(61,191,138,0.05)"):(mode==="dark"?"rgba(255,255,255,0.03)":"rgba(0,0,0,0.025)"), border:`1px solid ${isDaily?"#3DBF8A33":T.border}`, borderLeft:`3px solid ${t.done?T.textMuted:s.color}`, borderRadius:9, padding:"10px 12px", marginBottom:6, cursor:draggable?"grab":"default", opacity:t.done?0.55:1, userSelect:"none" }}
+    >
+      <div style={{ display:"flex", alignItems:"flex-start", gap:9 }}>
+        <div onClick={e=>{e.stopPropagation();toggleDone(t.id);}} style={{ width:18,height:18,borderRadius:5,flexShrink:0,marginTop:2,border:`2px solid ${t.done?s.color:T.border}`,background:t.done?s.color:"transparent",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",transition:"all 0.15s" }}>
+          {t.done&&<span style={{ color:"#fff",fontSize:10,fontWeight:700,lineHeight:1 }}>✓</span>}
+        </div>
+        <div style={{ flex:1, minWidth:0 }}>
+          <div style={{ display:"flex",alignItems:"center",gap:6,flexWrap:"wrap" }}>
+            <span style={{ fontSize:14,fontWeight:500,lineHeight:1.4,fontFamily:"'DM Sans',sans-serif",color:t.done?T.textMuted:T.text,textDecoration:t.done?"line-through":"none",wordBreak:"break-word" }}>{t.title}</span>
+            {isDaily&&<span style={{ fontSize:10,padding:"1px 6px",borderRadius:5,background:"#3DBF8A22",color:"#3DBF8A",fontWeight:700,flexShrink:0 }}>⟳ Daily</span>}
+            {t.type==="weekly"&&<span style={{ fontSize:10,padding:"1px 6px",borderRadius:5,background:"#3B9EDB22",color:"#3B9EDB",fontWeight:700,flexShrink:0 }}>⟲ Weekly</span>}
+          </div>
+          <div style={{ display:"flex",gap:4,marginTop:5,flexWrap:"wrap",alignItems:"center" }}>
+            {showSec&&<span style={{ fontSize:10,padding:"2px 7px",borderRadius:5,background:s.color+"22",color:s.color,fontWeight:600,fontFamily:"'DM Sans',sans-serif" }}>{s.emoji} {s.label}</span>}
+            <span style={{ fontSize:10,padding:"2px 7px",borderRadius:5,background:aColor(t.assignee)+"20",color:aColor(t.assignee),fontWeight:600,fontFamily:"'DM Sans',sans-serif" }}>{aLabel(t.assignee)}</span>
+            <span style={{ fontSize:10,padding:"2px 7px",borderRadius:5,background:PRI_COLOR[t.priority]+"20",color:PRI_COLOR[t.priority],fontWeight:600,fontFamily:"'DM Sans',sans-serif" }}>{t.priority}</span>
+            {(t.type==="habit"||t.type==="daily")&&t.streak>0&&<span style={{ fontSize:10,padding:"2px 7px",borderRadius:5,background:"#E8A83820",color:"#E8A838",fontWeight:600 }}>🔥 {t.streak}d</span>}
+            {dLbl&&<span style={{ fontSize:10,padding:"2px 7px",borderRadius:5,background:dCol+"22",color:dCol,fontWeight:700 }}>📅 {dLbl}</span>}
+          </div>
+          <div style={{ display:"flex",gap:8,marginTop:3,flexWrap:"wrap",alignItems:"center" }}>
+            {t.notes&&<span style={{ fontSize:11,color:T.textMuted,fontStyle:"italic",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:200 }}>{t.notes}</span>}
+            {t.createdAt&&<span style={{ fontSize:10,color:T.textMuted }}>Created {new Date(t.createdAt+"T00:00:00").toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"})}</span>}
+            {t.createdBy&&<span style={{ fontSize:10,padding:"1px 6px",borderRadius:5,background:aColor(t.createdBy)+"18",color:aColor(t.createdBy),fontWeight:600,fontFamily:"'DM Sans',sans-serif",flexShrink:0 }}>by {names[t.createdBy]||t.createdBy}</span>}
+          </div>
+        </div>
+        <div style={{ display:"flex",flexShrink:0,gap:1 }}>
+          <button onClick={e=>{e.stopPropagation();setEdit({...t});}} style={{ background:"none",border:"none",color:T.textMuted,cursor:"pointer",fontSize:13,padding:"3px 5px",borderRadius:4,lineHeight:1 }}>✎</button>
+          <button onClick={e=>{e.stopPropagation();deleteTask(t.id);}} style={{ background:"none",border:"none",color:T.textMuted,cursor:"pointer",fontSize:13,padding:"3px 5px",borderRadius:4,lineHeight:1 }}>✕</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── GridCard — module-level to prevent remount/expand-collapse bug ─────────────
 function GridCard({ colId, label, emoji, color, colTasks, isDone=false, T, mode,
   onAddTask, onViewAll, onDeleteTasks, dragHandlers }) {
@@ -2701,7 +2749,7 @@ function GridCard({ colId, label, emoji, color, colTasks, isDone=false, T, mode,
                 {dragTaskId.current && dragTaskId.current!==t.id && highlightCol===colId && (
                   <div style={{ height:2,background:color,borderRadius:2,marginBottom:3,opacity:0 }}/>
                 )}
-                <TaskPill t={t} showSec={isDone}/>
+                <TaskPill t={t} showSec={isDone} pill={pillCtx}/>
               </div>
             ))}
             {hasMore&&(
@@ -3256,47 +3304,7 @@ export default function TogetherApp() {
   const btnStyle = p => ({ padding:"10px 20px", borderRadius:9, border:"none", cursor:"pointer", fontFamily:"'DM Sans',sans-serif", fontSize:14, fontWeight:600, background:p?T.accent:T.inputBg, color:p?T.accentFg:T.textSub, transition:"all 0.15s" });
 
   // ── Task Pill ─────────────────────────────────────────────────────────────
-  function TaskPill({ t, showSec=false, draggable=true }) {
-    const s=sec(t.section), dCol=dueBadgeColor(t.dueDate), dLbl=dueBadgeLabel(t.dueDate), isDaily=t.type==="daily";
-    return (
-      <div
-        draggable={draggable}
-        onDragStart={draggable?e=>{e.stopPropagation();handleDragStart(e,t.id);}:undefined}
-        onDragOver={draggable?e=>{e.stopPropagation();e.preventDefault();}:undefined}
-        onDragEnd={draggable?e=>{e.stopPropagation();handleDragEnd();}:undefined}
-        style={{ background:isDaily?(mode==="dark"?"rgba(61,191,138,0.06)":"rgba(61,191,138,0.05)"):(mode==="dark"?"rgba(255,255,255,0.03)":"rgba(0,0,0,0.025)"), border:`1px solid ${isDaily?"#3DBF8A33":T.border}`, borderLeft:`3px solid ${t.done?T.textMuted:s.color}`, borderRadius:9, padding:"10px 12px", marginBottom:6, cursor:draggable?"grab":"default", opacity:t.done?0.55:1, userSelect:"none" }}
-      >
-        <div style={{ display:"flex", alignItems:"flex-start", gap:9 }}>
-          <div onClick={e=>{e.stopPropagation();toggleDone(t.id);}} style={{ width:18,height:18,borderRadius:5,flexShrink:0,marginTop:2,border:`2px solid ${t.done?s.color:T.border}`,background:t.done?s.color:"transparent",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",transition:"all 0.15s" }}>
-            {t.done&&<span style={{ color:"#fff",fontSize:10,fontWeight:700,lineHeight:1 }}>✓</span>}
-          </div>
-          <div style={{ flex:1, minWidth:0 }}>
-            <div style={{ display:"flex",alignItems:"center",gap:6,flexWrap:"wrap" }}>
-              <span style={{ fontSize:14,fontWeight:500,lineHeight:1.4,fontFamily:"'DM Sans',sans-serif",color:t.done?T.textMuted:T.text,textDecoration:t.done?"line-through":"none",wordBreak:"break-word" }}>{t.title}</span>
-              {isDaily&&<span style={{ fontSize:10,padding:"1px 6px",borderRadius:5,background:"#3DBF8A22",color:"#3DBF8A",fontWeight:700,flexShrink:0 }}>⟳ Daily</span>}
-              {t.type==="weekly"&&<span style={{ fontSize:10,padding:"1px 6px",borderRadius:5,background:"#3B9EDB22",color:"#3B9EDB",fontWeight:700,flexShrink:0 }}>⟲ Weekly</span>}
-            </div>
-            <div style={{ display:"flex",gap:4,marginTop:5,flexWrap:"wrap",alignItems:"center" }}>
-              {showSec&&<span style={{ fontSize:10,padding:"2px 7px",borderRadius:5,background:s.color+"22",color:s.color,fontWeight:600,fontFamily:"'DM Sans',sans-serif" }}>{s.emoji} {s.label}</span>}
-              <span style={{ fontSize:10,padding:"2px 7px",borderRadius:5,background:aColor(t.assignee)+"20",color:aColor(t.assignee),fontWeight:600,fontFamily:"'DM Sans',sans-serif" }}>{aLabel(t.assignee)}</span>
-              <span style={{ fontSize:10,padding:"2px 7px",borderRadius:5,background:PRI_COLOR[t.priority]+"20",color:PRI_COLOR[t.priority],fontWeight:600,fontFamily:"'DM Sans',sans-serif" }}>{t.priority}</span>
-              {(t.type==="habit"||t.type==="daily")&&t.streak>0&&<span style={{ fontSize:10,padding:"2px 7px",borderRadius:5,background:"#E8A83820",color:"#E8A838",fontWeight:600 }}>🔥 {t.streak}d</span>}
-              {dLbl&&<span style={{ fontSize:10,padding:"2px 7px",borderRadius:5,background:dCol+"22",color:dCol,fontWeight:700 }}>📅 {dLbl}</span>}
-            </div>
-            <div style={{ display:"flex",gap:8,marginTop:3,flexWrap:"wrap",alignItems:"center" }}>
-              {t.notes&&<span style={{ fontSize:11,color:T.textMuted,fontStyle:"italic",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:200 }}>{t.notes}</span>}
-              {t.createdAt&&<span style={{ fontSize:10,color:T.textMuted }}>Created {formatDate(t.createdAt)}</span>}
-              {t.createdBy&&<span style={{ fontSize:10,padding:"1px 6px",borderRadius:5,background:aColor(t.createdBy)+"18",color:aColor(t.createdBy),fontWeight:600,fontFamily:"'DM Sans',sans-serif",flexShrink:0 }}>by {names[t.createdBy]||t.createdBy}</span>}
-            </div>
-          </div>
-          <div style={{ display:"flex",flexShrink:0,gap:1 }}>
-            <button onClick={e=>{e.stopPropagation();setEdit({...t});}} style={{ background:"none",border:"none",color:T.textMuted,cursor:"pointer",fontSize:13,padding:"3px 5px",borderRadius:4,lineHeight:1 }}>✎</button>
-            <button onClick={e=>{e.stopPropagation();deleteTask(t.id);}} style={{ background:"none",border:"none",color:T.textMuted,cursor:"pointer",fontSize:13,padding:"3px 5px",borderRadius:4,lineHeight:1 }}>✕</button>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // TaskPill is defined outside TogetherApp — see below
 
   // ── Grid Card ─────────────────────────────────────────────────────────────
   // GridCard is defined outside TogetherApp — fixes the expand/collapse remount bug
@@ -3399,18 +3407,26 @@ export default function TogetherApp() {
           </div>
         ):(
           <>
-            {overdue.length>0&&<div style={{marginBottom:20}}><div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}><div style={{width:8,height:8,borderRadius:"50%",background:"#E84E8A"}}/><span style={{fontSize:12,fontWeight:700,color:"#E84E8A",textTransform:"uppercase",letterSpacing:"0.1em"}}>Overdue</span><span style={{fontSize:12,color:T.textMuted}}>· {overdue.length}</span></div><div style={cardBase({padding:"6px 12px",border:"1px solid #E84E8A33"})}>{overdue.map(t=><TaskPill key={t.id} t={t} showSec draggable={false}/>)}</div></div>}
-            {dueToday.length>0&&<div style={{marginBottom:20}}><div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}><div style={{width:8,height:8,borderRadius:"50%",background:"#E8704A"}}/><span style={{fontSize:12,fontWeight:700,color:"#E8704A",textTransform:"uppercase",letterSpacing:"0.1em"}}>Due Today</span><span style={{fontSize:12,color:T.textMuted}}>· {dueToday.length}</span></div><div style={cardBase({padding:"6px 12px",border:"1px solid #E8704A33"})}>{dueToday.map(t=><TaskPill key={t.id} t={t} showSec draggable={false}/>)}</div></div>}
+            {overdue.length>0&&<div style={{marginBottom:20}}><div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}><div style={{width:8,height:8,borderRadius:"50%",background:"#E84E8A"}}/><span style={{fontSize:12,fontWeight:700,color:"#E84E8A",textTransform:"uppercase",letterSpacing:"0.1em"}}>Overdue</span><span style={{fontSize:12,color:T.textMuted}}>· {overdue.length}</span></div><div style={cardBase({padding:"6px 12px",border:"1px solid #E84E8A33"})}>{overdue.map(t=><TaskPill key={t.id} t={t} showSec draggable={false} pill={pillCtx}/>)}</div></div>}
+            {dueToday.length>0&&<div style={{marginBottom:20}}><div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}><div style={{width:8,height:8,borderRadius:"50%",background:"#E8704A"}}/><span style={{fontSize:12,fontWeight:700,color:"#E8704A",textTransform:"uppercase",letterSpacing:"0.1em"}}>Due Today</span><span style={{fontSize:12,color:T.textMuted}}>· {dueToday.length}</span></div><div style={cardBase({padding:"6px 12px",border:"1px solid #E8704A33"})}>{dueToday.map(t=><TaskPill key={t.id} t={t} showSec draggable={false} pill={pillCtx}/>)}</div></div>}
             {upcoming.length>0&&(groupByMonth?Object.entries(monthGroups).map(([ml,mt])=>(
-              <div key={ml} style={{marginBottom:20}}><div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}><div style={{width:8,height:8,borderRadius:"50%",background:"#3B9EDB"}}/><span style={{fontSize:12,fontWeight:700,color:"#3B9EDB",textTransform:"uppercase",letterSpacing:"0.1em"}}>{ml}</span><span style={{fontSize:12,color:T.textMuted}}>· {mt.length}</span></div><div style={cardBase({padding:"6px 12px"})}>{mt.map(t=><TaskPill key={t.id} t={t} showSec draggable={false}/>)}</div></div>
+              <div key={ml} style={{marginBottom:20}}><div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}><div style={{width:8,height:8,borderRadius:"50%",background:"#3B9EDB"}}/><span style={{fontSize:12,fontWeight:700,color:"#3B9EDB",textTransform:"uppercase",letterSpacing:"0.1em"}}>{ml}</span><span style={{fontSize:12,color:T.textMuted}}>· {mt.length}</span></div><div style={cardBase({padding:"6px 12px"})}>{mt.map(t=><TaskPill key={t.id} t={t} showSec draggable={false} pill={pillCtx}/>)}</div></div>
             )):(
-              <div style={{marginBottom:20}}><div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}><div style={{width:8,height:8,borderRadius:"50%",background:"#3DBF8A"}}/><span style={{fontSize:12,fontWeight:700,color:"#3DBF8A",textTransform:"uppercase",letterSpacing:"0.1em"}}>Upcoming</span><span style={{fontSize:12,color:T.textMuted}}>· {upcoming.length}</span></div><div style={cardBase({padding:"6px 12px"})}>{upcoming.map(t=><TaskPill key={t.id} t={t} showSec draggable={false}/>)}</div></div>
+              <div style={{marginBottom:20}}><div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}><div style={{width:8,height:8,borderRadius:"50%",background:"#3DBF8A"}}/><span style={{fontSize:12,fontWeight:700,color:"#3DBF8A",textTransform:"uppercase",letterSpacing:"0.1em"}}>Upcoming</span><span style={{fontSize:12,color:T.textMuted}}>· {upcoming.length}</span></div><div style={cardBase({padding:"6px 12px"})}>{upcoming.map(t=><TaskPill key={t.id} t={t} showSec draggable={false} pill={pillCtx}/>)}</div></div>
             ))}
           </>
         )}
       </div>
     );
   }
+
+  // ── Pill context — passed to all TaskPill instances ─────────────────────────
+  const pillCtx = { T, mode, names, SECTIONS, PRI_COLOR,
+    toggleDone, setEdit, deleteTask, handleDragStart, handleDragEnd,
+    aColor: a => a==="A"?"#E8A838":a==="B"?"#E84E8A":"#3DBF8A",
+    aLabel: a => a==="both"?`${names.A} & ${names.B}`:names[a]||a,
+    sec:    id => SECTIONS.find(s=>s.id===id)||SECTIONS[0],
+  };
 
   // ── Budget app mode ─────────────────────────────────────────────────────────
   if (appMode === "budget") {
@@ -3637,7 +3653,7 @@ export default function TogetherApp() {
                         <span style={{fontSize:12,color:T.textMuted}}>· {overdue.length} task{overdue.length!==1?"s":""}</span>
                       </div>
                       <div style={cardBase({padding:"6px 12px",border:"1px solid #E84E8A33"})}>
-                        {overdue.map(t=><TaskPill key={t.id} t={t} showSec draggable={false}/>)}
+                        {overdue.map(t=><TaskPill key={t.id} t={t} showSec draggable={false} pill={pillCtx}/>)}
                       </div>
                     </div>
                   )}
@@ -3651,7 +3667,7 @@ export default function TogetherApp() {
                         <span style={{fontSize:12,color:T.textMuted}}>· {dueToday.length} task{dueToday.length!==1?"s":""}</span>
                       </div>
                       <div style={cardBase({padding:"6px 12px",border:"1px solid #E8A83833"})}>
-                        {dueToday.map(t=><TaskPill key={t.id} t={t} showSec draggable={false}/>)}
+                        {dueToday.map(t=><TaskPill key={t.id} t={t} showSec draggable={false} pill={pillCtx}/>)}
                       </div>
                     </div>
                   )}
@@ -3665,7 +3681,7 @@ export default function TogetherApp() {
                         <span style={{fontSize:12,color:T.textMuted}}>· resets every day</span>
                       </div>
                       <div style={cardBase({padding:"6px 12px",border:"1px solid #3DBF8A33"})}>
-                        {myDailies.map(t=><TaskPill key={t.id} t={t} showSec draggable={false}/>)}
+                        {myDailies.map(t=><TaskPill key={t.id} t={t} showSec draggable={false} pill={pillCtx}/>)}
                       </div>
                     </div>
                   )}
@@ -3679,7 +3695,7 @@ export default function TogetherApp() {
                         <span style={{fontSize:12,color:T.textMuted}}>· resets every Monday</span>
                       </div>
                       <div style={cardBase({padding:"6px 12px",border:"1px solid #3B9EDB33"})}>
-                        {myWeeklies.map(t=><TaskPill key={t.id} t={t} showSec draggable={false}/>)}
+                        {myWeeklies.map(t=><TaskPill key={t.id} t={t} showSec draggable={false} pill={pillCtx}/>)}
                       </div>
                     </div>
                   )}
@@ -3712,7 +3728,7 @@ export default function TogetherApp() {
                 <div style={{fontSize:17,fontWeight:600,color:T.text}}>Nothing urgent!</div>
                 <div style={{fontSize:13,color:T.textSub,marginTop:4}}>You're on top of everything.</div>
               </div>
-            ):urgentTasks.map(t=><div key={t.id} style={{marginBottom:8}}><TaskPill t={t} showSec draggable={false}/></div>)}
+            ):urgentTasks.map(t=><div key={t.id} style={{marginBottom:8}}><TaskPill t={t} showSec draggable={false} pill={pillCtx}/></div>)}
           </div>
         )}
 
@@ -3745,7 +3761,7 @@ export default function TogetherApp() {
                       {SECTIONS.map(s=>{const n=tasks.filter(t=>t.section===s.id&&(t.assignee===u||t.assignee==="both")).length;return n?<span key={s.id} style={{fontSize:10,padding:"2px 8px",borderRadius:5,background:s.color+"20",color:s.color,fontWeight:600}}>{s.emoji} {n}</span>:null;})}
                     </div>
                     <div style={{maxHeight:220,overflowY:"auto"}}>
-                      {ut.filter(t=>!t.done).map(t=><TaskPill key={t.id} t={t} showSec draggable={false}/>)}
+                      {ut.filter(t=>!t.done).map(t=><TaskPill key={t.id} t={t} showSec draggable={false} pill={pillCtx}/>)}
                     </div>
                   </div>
                 );
@@ -3759,7 +3775,7 @@ export default function TogetherApp() {
               </div>
               {tasks.filter(t=>t.assignee==="both"&&!t.done).length===0
                 ?<div style={{fontSize:13,color:T.textMuted,fontStyle:"italic"}}>No shared tasks yet — add one!</div>
-                :tasks.filter(t=>t.assignee==="both"&&!t.done).map(t=><TaskPill key={t.id} t={t} showSec draggable={false}/>)
+                :tasks.filter(t=>t.assignee==="both"&&!t.done).map(t=><TaskPill key={t.id} t={t} showSec draggable={false} pill={pillCtx}/>)
               }
             </div>
           </div>
@@ -3951,7 +3967,7 @@ export default function TogetherApp() {
               {taskModal.tasks.length===0
                 ? <div style={{ textAlign:"center",padding:"40px",color:T.textMuted,fontSize:13,fontStyle:"italic" }}>No tasks in this section yet.</div>
                 : taskModal.tasks.map(t=>(
-                  <TaskPill key={t.id} t={t} showSec={false} draggable={false}/>
+                  <TaskPill key={t.id} t={t} showSec={false} draggable={false} pill={pillCtx}/>
                 ))
               }
             </div>
