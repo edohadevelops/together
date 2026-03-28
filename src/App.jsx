@@ -1876,6 +1876,89 @@ function ReportView({ lines, goals, debts, assets, liabs, month, year, focus, fo
 }
 
 
+// ── IncomeForm ────────────────────────────────────────────────────────────────
+function IncomeForm({ data, onSave, onClose, T, mode }) {
+  const [d, setD] = useState({...data});
+  const ref = useRef(null);
+  useEffect(()=>{ const t=setTimeout(()=>{ if(ref.current) ref.current.focus(); },80); return()=>clearTimeout(t); },[]);
+  const inp = { width:"100%",background:T.inputBg,border:`1px solid ${T.border}`,borderRadius:9,padding:"10px 12px",color:T.text,fontFamily:"'DM Sans',sans-serif",fontSize:14,outline:"none",boxSizing:"border-box" };
+  const sel = { ...inp,background:mode==="dark"?"#181B23":"#fff",cursor:"pointer" };
+  const lbl = { fontSize:11,fontWeight:600,letterSpacing:"0.08em",textTransform:"uppercase",color:T.textMuted,display:"block",marginBottom:4,marginTop:12,fontFamily:"'DM Sans',sans-serif" };
+  return (
+    <div style={{ position:"fixed",inset:0,zIndex:50,background:"rgba(0,0,0,0.65)",backdropFilter:"blur(6px)",display:"flex",alignItems:"flex-end",justifyContent:"center" }} onClick={e=>e.target===e.currentTarget&&onClose()}>
+      <div style={{ background:T.surface,border:`1px solid ${T.border}`,borderRadius:"20px 20px 0 0",width:"100%",maxWidth:480,maxHeight:"90vh",overflowY:"auto",padding:"24px 20px 40px",boxShadow:"0 -8px 40px rgba(0,0,0,0.3)" }}>
+        <div style={{ width:40,height:4,borderRadius:2,background:T.textMuted,margin:"0 auto 20px",opacity:0.4 }}/>
+        <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:22,color:T.text,marginBottom:4 }}>{d.id?"Edit":"Add"} Income 💵</div>
+        <div style={{ height:2,width:40,background:"#3DBF8A",borderRadius:2,marginBottom:18 }}/>
+        <label style={lbl}>Source Name</label>
+        <input ref={ref} style={inp} value={d.name||""} onChange={e=>setD(p=>({...p,name:e.target.value}))} placeholder="e.g. TA Stipend, Salary, Freelance..." onKeyDown={e=>{ if(e.key==="Enter"&&d.name?.trim()&&d.amount){e.preventDefault();onSave(d);}}}/>
+        <label style={lbl}>Amount ($)</label>
+        <input style={inp} type="number" min="0" step="0.01" value={d.amount||""} onChange={e=>setD(p=>({...p,amount:e.target.value}))} placeholder="0.00"/>
+        <label style={lbl}>Date Received</label>
+        <input type="date" style={sel} value={d.date||new Date().toISOString().slice(0,10)} onChange={e=>setD(p=>({...p,date:e.target.value}))}/>
+        <label style={lbl}>Recurring</label>
+        <div style={{ display:"flex",gap:6 }}>
+          {[["none","One-time"],["monthly","Monthly"],["biweekly","Bi-weekly"],["weekly","Weekly"]].map(([v,l])=>(
+            <button key={v} onClick={()=>setD(p=>({...p,recurring:v}))}
+              style={{ flex:1,padding:"7px 4px",borderRadius:8,border:`1px solid ${(d.recurring||"none")===v?"#3DBF8A":T.border}`,background:(d.recurring||"none")===v?"#3DBF8A18":"transparent",color:(d.recurring||"none")===v?"#3DBF8A":T.text,fontFamily:"'DM Sans',sans-serif",fontSize:11,cursor:"pointer",fontWeight:(d.recurring||"none")===v?700:400 }}>
+              {l}
+            </button>
+          ))}
+        </div>
+        <label style={lbl}>Notes (optional)</label>
+        <input style={inp} value={d.notes||""} onChange={e=>setD(p=>({...p,notes:e.target.value}))} placeholder="Any details..."/>
+        <div style={{ display:"flex",gap:10,marginTop:22,justifyContent:"flex-end" }}>
+          <button style={{ padding:"10px 20px",borderRadius:10,border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:600,background:T.inputBg,color:T.textSub }} onClick={onClose}>Cancel</button>
+          <button style={{ padding:"10px 24px",borderRadius:10,border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:700,background:"#3DBF8A",color:"#fff" }} onClick={()=>onSave(d)}>Save</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── TxForm — log an actual expense transaction ────────────────────────────────
+function TxForm({ data, onSave, onClose, T, mode }) {
+  const [d, setD] = useState({...data});
+  const ref = useRef(null);
+  useEffect(()=>{ const t=setTimeout(()=>{ if(ref.current) ref.current.focus(); },80); return()=>clearTimeout(t); },[]);
+  const inp = { width:"100%",background:T.inputBg,border:`1px solid ${T.border}`,borderRadius:9,padding:"10px 12px",color:T.text,fontFamily:"'DM Sans',sans-serif",fontSize:14,outline:"none",boxSizing:"border-box" };
+  const sel = { ...inp,background:mode==="dark"?"#181B23":"#fff",cursor:"pointer" };
+  const lbl = { fontSize:11,fontWeight:600,letterSpacing:"0.08em",textTransform:"uppercase",color:T.textMuted,display:"block",marginBottom:4,marginTop:12,fontFamily:"'DM Sans',sans-serif" };
+  return (
+    <div style={{ position:"fixed",inset:0,zIndex:50,background:"rgba(0,0,0,0.65)",backdropFilter:"blur(6px)",display:"flex",alignItems:"flex-end",justifyContent:"center" }} onClick={e=>e.target===e.currentTarget&&onClose()}>
+      <div style={{ background:T.surface,border:`1px solid ${T.border}`,borderRadius:"20px 20px 0 0",width:"100%",maxWidth:480,maxHeight:"90vh",overflowY:"auto",padding:"24px 20px 40px",boxShadow:"0 -8px 40px rgba(0,0,0,0.3)" }}>
+        <div style={{ width:40,height:4,borderRadius:2,background:T.textMuted,margin:"0 auto 20px",opacity:0.4 }}/>
+        <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:22,color:T.text,marginBottom:4 }}>{d.id?"Edit":"Log"} Expense 💸</div>
+        <div style={{ height:2,width:40,background:"#E84E8A",borderRadius:2,marginBottom:18 }}/>
+        <label style={lbl}>What did you spend on?</label>
+        <input ref={ref} style={inp} value={d.name||""} onChange={e=>setD(p=>({...p,name:e.target.value}))} placeholder="e.g. Groceries, Rent, Gas, Giving..." onKeyDown={e=>{ if(e.key==="Enter"&&d.name?.trim()&&d.amount){e.preventDefault();onSave(d);}}}/>
+        <label style={lbl}>Amount ($)</label>
+        <input style={inp} type="number" min="0" step="0.01" value={d.amount||""} onChange={e=>setD(p=>({...p,amount:e.target.value}))} placeholder="0.00"/>
+        <label style={lbl}>Category</label>
+        <select style={sel} value={d.category||"other"} onChange={e=>setD(p=>({...p,category:e.target.value}))}>
+          {[
+            {id:"housing",label:"🏠 Housing"},{id:"food",label:"🍽️ Food & Dining"},
+            {id:"transport",label:"🚗 Transport"},{id:"health",label:"💊 Health"},
+            {id:"education",label:"🎓 Education"},{id:"faith",label:"✦ Faith & Giving"},
+            {id:"savings",label:"💰 Savings"},{id:"shopping",label:"🛍️ Shopping"},
+            {id:"utilities",label:"⚡ Utilities"},{id:"invest",label:"📈 Investing"},
+            {id:"sub",label:"📱 Subscriptions"},{id:"personal",label:"🌱 Personal"},
+            {id:"other",label:"📦 Other"},
+          ].map(c=><option key={c.id} value={c.id}>{c.label}</option>)}
+        </select>
+        <label style={lbl}>Date</label>
+        <input type="date" style={sel} value={d.date||new Date().toISOString().slice(0,10)} onChange={e=>setD(p=>({...p,date:e.target.value}))}/>
+        <label style={lbl}>Notes (optional)</label>
+        <input style={inp} value={d.notes||""} onChange={e=>setD(p=>({...p,notes:e.target.value}))} placeholder="Any details..."/>
+        <div style={{ display:"flex",gap:10,marginTop:22,justifyContent:"flex-end" }}>
+          <button style={{ padding:"10px 20px",borderRadius:10,border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:600,background:T.inputBg,color:T.textSub }} onClick={onClose}>Cancel</button>
+          <button style={{ padding:"10px 24px",borderRadius:10,border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:700,background:"#E84E8A",color:"#fff" }} onClick={()=>onSave(d)}>Save</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Budget Bulk Import ────────────────────────────────────────────────────────
 function BudgetBulkImport({ onClose, onImport, T, mode, focus }) {
   const [text,   setText]   = useState("");
@@ -2100,6 +2183,13 @@ function BudgetApp({ names, mode, T, activeUser, onBack }) {
   const [showLiab,  setShowLiab]     = useState(false);
   const [editLiab,  setEditLiab]     = useState(null);
   const [showBulk,  setShowBulk]     = useState(false);
+  const [income,    setIncomeState]  = useState(null);   // income entries
+  const [showIncome,setShowIncome]   = useState(false);
+  const [editIncome,setEditIncome]   = useState(null);
+  const [showTx,    setShowTx]       = useState(false);  // actual expense tx
+  const [editTx,    setEditTx]       = useState(null);
+  const [txList,    setTxListState]  = useState(null);   // actual expense transactions
+  const [activeSec, setActiveSec]    = useState("budget"); // budget | income | transactions
   const [logItem,   setLogItem]      = useState(null);
   const [catFilter, setCatFilter]    = useState(null);
   const [tourStep,  setTourStep]     = useState(0);
@@ -2130,8 +2220,8 @@ function BudgetApp({ names, mode, T, activeUser, onBack }) {
 
   useEffect(()=>{
     (async()=>{
-      const [l,g,a,li,d] = await Promise.all([dbGet("budget_lines"),dbGet("budget_goals"),dbGet("budget_assets"),dbGet("budget_liabs"),dbGet("budget_debts")]);
-      setLinesState(l??[]); setGoalsState(g??[]); setAssetsState(a??[]); setLiabsState(li??[]); setDebtsState(d??[]);
+      const [l,g,a,li,d,inc,tx] = await Promise.all([dbGet("budget_lines"),dbGet("budget_goals"),dbGet("budget_assets"),dbGet("budget_liabs"),dbGet("budget_debts"),dbGet("budget_income"),dbGet("budget_tx")]);
+      setLinesState(l??[]); setGoalsState(g??[]); setAssetsState(a??[]); setLiabsState(li??[]); setDebtsState(d??[]); setIncomeState(inc??[]); setTxListState(tx??[]);
     })();
   },[]);
 
@@ -2139,7 +2229,17 @@ function BudgetApp({ names, mode, T, activeUser, onBack }) {
   const saveG  = list => { setGoalsState(list);  dbSet("budget_goals",list);  };
   const saveA  = list => { setAssetsState(list); dbSet("budget_assets",list); };
   const saveLi = list => { setLiabsState(list);  dbSet("budget_liabs",list);  };
-  const saveD  = list => { setDebtsState(list);  dbSet("budget_debts",list);  };
+  const saveD   = list => { setDebtsState(list);  dbSet("budget_debts",list);  };
+  const saveInc = list => { setIncomeState(list);  dbSet("budget_income",list); };
+  const saveTx  = list => { setTxListState(list);  dbSet("budget_tx",list);    };
+
+  function addIncomeEntry(data){ if(!data.name?.trim()||!data.amount) return; saveInc([...(income||[]),{...data,id:gid(),amount:parseFloat(data.amount),owner:focus,month:monthKey,date:data.date||new Date().toISOString().slice(0,10)}]); setShowIncome(false); }
+  function saveEditIncome(data){ saveInc((income||[]).map(e=>e.id===data.id?{...data,amount:parseFloat(data.amount)}:e)); setEditIncome(null); }
+  function delIncome(id){ saveInc((income||[]).filter(e=>e.id!==id)); }
+
+  function addTxEntry(data){ if(!data.name?.trim()||!data.amount) return; saveTx([...(txList||[]),{...data,id:gid(),amount:parseFloat(data.amount),owner:focus,month:monthKey,date:data.date||new Date().toISOString().slice(0,10)}]); setShowTx(false); }
+  function saveEditTx(data){ saveTx((txList||[]).map(e=>e.id===data.id?{...data,amount:parseFloat(data.amount)}:e)); setEditTx(null); }
+  function delTx(id){ saveTx((txList||[]).filter(e=>e.id!==id)); }
 
   function addDebt(){ if(!newDebt.name?.trim()) return; saveD([...(debts||[]),{...newDebt,id:gid(),balance:parseFloat(newDebt.balance||0),limit:parseFloat(newDebt.limit||0),apr:parseFloat(newDebt.apr||0),minPayment:parseFloat(newDebt.minPayment||0),owner:focus,payments:[]}]); setNewDebt({...blankD,owner:focus}); setShowDebt(false); }
   function saveEditDebt(){ saveD((debts||[]).map(d=>d.id===editDebt.id?{...editDebt,balance:parseFloat(editDebt.balance||0),limit:parseFloat(editDebt.limit||0),apr:parseFloat(editDebt.apr||0),minPayment:parseFloat(editDebt.minPayment||0)}:d)); setEditDebt(null); }
@@ -2169,6 +2269,20 @@ function BudgetApp({ names, mode, T, activeUser, onBack }) {
   function bulkImport(items){ saveL([...(lines||[]),...items.map(i=>({...i,id:gid(),allocated:parseFloat(i.allocated||0),spent:parseFloat(i.spent||0),owner:focus}))]); }
 
   const fmt = n => "$"+Math.abs(n).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
+  const monthKey = `${year}-${String(month+1).padStart(2,"0")}`;
+
+  // Month + focus filtered income entries
+  const myIncome = (income||[]).filter(e=>
+    e.month===monthKey && (focus==="shared"?e.owner==="shared":e.owner===focus||e.owner==="shared")
+  );
+  const totalIncome = myIncome.reduce((s,e)=>s+e.amount,0);
+
+  // Month + focus filtered actual expense transactions
+  const myTx = (txList||[]).filter(e=>
+    e.month===monthKey && (focus==="shared"?e.owner==="shared":e.owner===focus||e.owner==="shared")
+  );
+  const totalActualSpend = myTx.reduce((s,e)=>s+e.amount,0);
+  const cashLeft = totalIncome - totalActualSpend;
 
   // Focus-filtered lines for this month/focus
   const myLines = (lines||[]).filter(l=> focus==="shared"?l.owner==="shared":l.owner===focus||l.owner==="shared")
@@ -2199,7 +2313,7 @@ function BudgetApp({ names, mode, T, activeUser, onBack }) {
   const myGoals = (goals||[]).filter(g=> focus==="shared"?g.owner==="shared":g.owner===focus||g.owner==="shared");
 
   // ── Early return while data loads ───────────────────────────────────────────
-  if (!lines||!goals||!assets||!liabs||!debts) return (
+  if (!lines||!goals||!assets||!liabs||!debts||!income||!txList) return (
     <div style={{ minHeight:"100vh",background:T.bg,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'DM Sans',sans-serif" }}>
       <div style={{ textAlign:"center",color:T.textSub }}><div style={{ fontSize:40,marginBottom:12,animation:"pulse 1.5s infinite" }}>💰</div><div style={{ fontSize:14 }}>Loading your budget...</div></div>
     </div>
@@ -2325,142 +2439,263 @@ function BudgetApp({ names, mode, T, activeUser, onBack }) {
         {/* ════ BUDGET VIEW ════ */}
         {view==="budget"&&(
           <>
-            {/* Summary hero cards */}
-            <div className="ba-g4">
+            {/* Sub-section tabs: Budget Plan | Income | Transactions */}
+            <div style={{ display:"flex",gap:0,marginBottom:20,borderBottom:`1px solid ${T.border}` }}>
+              {[["budget","📋 Budget Plan"],["income","💵 Income"],["transactions","💸 Transactions"]].map(([s,l])=>(
+                <button key={s} onClick={()=>setActiveSec(s)}
+                  style={{ padding:"9px 16px",border:"none",cursor:"pointer",background:"none",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:activeSec===s?700:400,color:activeSec===s?"#20B2AA":T.textSub,borderBottom:activeSec===s?"2px solid #20B2AA":"2px solid transparent",whiteSpace:"nowrap",transition:"all 0.15s" }}>{l}</button>
+              ))}
+            </div>
+
+            {/* Hero summary row — always visible */}
+            <div className="ba-g4" style={{ marginBottom:20 }}>
               {[
-                { l:"Total Budget",   v:fmt(totalAllocated), c:"#3B9EDB",  icon:"📋", sub:`${myLines.length} items` },
-                { l:"Total Spent",    v:fmt(totalSpent),     c:"#E84E8A",  icon:"💸", sub:`${Math.round(totalAllocated>0?(totalSpent/totalAllocated)*100:0)}% of budget` },
-                { l:"Remaining",      v:(overBudget?"-":"")+fmt(Math.abs(remaining)), c:overBudget?"#E84E8A":"#3DBF8A", icon:overBudget?"⚠️":"✅", sub:overBudget?"Over budget!":"Left to spend" },
-                { l:"Subscriptions",  v:fmt(subTotal),       c:"#8B5CF6",  icon:"📱", sub:`${subs.length} active subs` },
+                { l:"Total Income",    v:fmt(totalIncome),       c:"#3DBF8A", icon:"💵", sub:`${myIncome.length} source${myIncome.length!==1?"s":""}` },
+                { l:"Total Spent",     v:fmt(totalActualSpend),  c:"#E84E8A", icon:"💸", sub:`${myTx.length} transaction${myTx.length!==1?"s":""}` },
+                { l:"Cash Left",       v:(cashLeft<0?"-":"")+fmt(Math.abs(cashLeft)), c:cashLeft<0?"#E84E8A":"#3DBF8A", icon:cashLeft<0?"⚠️":"✅", sub:cashLeft<0?"Overspent!":"Available" },
+                { l:"Budgeted",        v:fmt(totalAllocated),    c:"#3B9EDB", icon:"📋", sub:`${myLines.length} budget lines` },
               ].map(s=>(
-                <div key={s.l} style={{ ...card(),padding:"16px 18px",borderLeft:`4px solid ${s.c}`,position:"relative",overflow:"hidden" }}>
-                  <div style={{ position:"absolute",top:10,right:12,fontSize:22,opacity:0.12 }}>{s.icon}</div>
-                  <div style={{ fontSize:21,fontWeight:800,color:T.text,lineHeight:1 }}>{s.v}</div>
-                  <div style={{ fontSize:10,fontWeight:700,color:T.textSub,marginTop:4,textTransform:"uppercase",letterSpacing:"0.08em" }}>{s.l}</div>
-                  <div style={{ fontSize:11,color:s.c,marginTop:3,fontWeight:600 }}>{s.sub}</div>
+                <div key={s.l} style={{ ...card(),padding:"14px 16px",borderLeft:`4px solid ${s.c}`,position:"relative",overflow:"hidden" }}>
+                  <div style={{ position:"absolute",top:8,right:10,fontSize:20,opacity:0.1 }}>{s.icon}</div>
+                  <div style={{ fontSize:20,fontWeight:800,color:T.text,lineHeight:1 }}>{s.v}</div>
+                  <div style={{ fontSize:10,fontWeight:700,color:T.textSub,marginTop:3,textTransform:"uppercase",letterSpacing:"0.08em" }}>{s.l}</div>
+                  <div style={{ fontSize:11,color:s.c,marginTop:2,fontWeight:600 }}>{s.sub}</div>
                 </div>
               ))}
             </div>
 
-            {/* Overall progress bar */}
-            {totalAllocated>0&&(
-              <div style={{ ...card(),padding:"16px 20px",marginBottom:20 }}>
-                <div style={{ display:"flex",justifyContent:"space-between",marginBottom:8,fontSize:13 }}>
-                  <span style={{ fontWeight:700,color:T.text }}>Overall Budget Progress</span>
-                  <span style={{ fontWeight:700,color:overBudget?"#E84E8A":"#3DBF8A" }}>{Math.round(totalAllocated>0?(totalSpent/totalAllocated)*100:0)}% spent</span>
+            {/* ── BUDGET PLAN SUB-SECTION ── */}
+            {activeSec==="budget"&&(
+              <>
+                {/* Overall progress */}
+                {totalAllocated>0&&(
+                  <div style={{ ...card(),padding:"14px 18px",marginBottom:16 }}>
+                    <div style={{ display:"flex",justifyContent:"space-between",marginBottom:6,fontSize:13 }}>
+                      <span style={{ fontWeight:700,color:T.text }}>Budget vs Actual Spend</span>
+                      <span style={{ fontWeight:700,color:overBudget?"#E84E8A":"#3DBF8A" }}>{Math.min(Math.round(totalAllocated>0?(totalSpent/totalAllocated)*100:0),999)}% used</span>
+                    </div>
+                    <div style={{ height:12,background:T.inputBg,borderRadius:10,overflow:"hidden" }}>
+                      <div style={{ height:"100%",width:`${Math.min(100,totalAllocated>0?(totalSpent/totalAllocated)*100:0)}%`,background:overBudget?"linear-gradient(90deg,#E8704A,#E84E8A)":"linear-gradient(90deg,#20B2AA,#3DBF8A)",borderRadius:10,transition:"width 0.5s" }}/>
+                    </div>
+                    <div style={{ display:"flex",justifyContent:"space-between",marginTop:5,fontSize:11,color:T.textMuted }}>
+                      <span>Budgeted: {fmt(totalAllocated)}</span><span>Spent: {fmt(totalSpent)}</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Add budget line button + bulk */}
+                <div style={{ display:"flex",gap:8,marginBottom:16,flexWrap:"wrap" }}>
+                  <button onClick={()=>{setNewLine({...blank,owner:focus});setShowLine(true);}} style={{ height:34,padding:"0 14px",borderRadius:9,border:"none",background:"#20B2AA",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,color:"#fff" }}>+ Budget Item</button>
+                  <button onClick={()=>setShowBulk(true)} style={{ height:34,padding:"0 14px",borderRadius:9,border:`1px solid ${T.border}`,background:T.inputBg,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:600,color:T.textSub }}>⇪ Bulk Import</button>
+                  <div style={{ flex:1 }}/>
+                  {/* Category filter pills */}
+                  <div style={{ display:"flex",gap:6,overflowX:"auto",scrollbarWidth:"none" }}>
+                    <button onClick={()=>setCatFilter(null)} style={{ padding:"5px 12px",borderRadius:20,border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:500,background:!catFilter?"#20B2AA":"transparent",color:!catFilter?"#fff":T.textSub,outline:!catFilter?"none":`1px solid ${T.border}`,flexShrink:0 }}>All</button>
+                    {byCat.map(cat=>(
+                      <button key={cat.id} onClick={()=>setCatFilter(catFilter===cat.id?null:cat.id)} style={{ padding:"5px 11px",borderRadius:20,border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:catFilter===cat.id?700:500,background:catFilter===cat.id?cat.color:"transparent",color:catFilter===cat.id?"#fff":T.textSub,outline:catFilter===cat.id?"none":`1px solid ${T.border}`,flexShrink:0,whiteSpace:"nowrap" }}>
+                        {cat.emoji} {cat.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-                <div style={{ height:14,background:T.inputBg,borderRadius:10,overflow:"hidden",position:"relative" }}>
-                  <div style={{ height:"100%",width:`${Math.min(100,totalAllocated>0?(totalSpent/totalAllocated)*100:0)}%`,background:overBudget?"linear-gradient(90deg,#E8704A,#E84E8A)":"linear-gradient(90deg,#20B2AA,#3DBF8A)",borderRadius:10,transition:"width 0.6s" }}/>
+
+                {/* Budget line items grouped by category */}
+                {displayLines.length===0 ? (
+                  <div style={{ ...card(),padding:"48px 20px",textAlign:"center" }}>
+                    <div style={{ fontSize:40,marginBottom:10 }}>📋</div>
+                    <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:18,color:T.text,marginBottom:6 }}>No budget items yet</div>
+                    <div style={{ fontSize:13,color:T.textSub,marginBottom:16,lineHeight:1.6 }}>Add items like Rent, Groceries, Giving — then log what you actually spend against each one.</div>
+                    <div style={{ display:"flex",gap:8,justifyContent:"center",flexWrap:"wrap" }}>
+                      <button onClick={()=>{setNewLine({...blank,owner:focus});setShowLine(true);}} style={{ padding:"9px 18px",borderRadius:9,border:"none",background:"#20B2AA",color:"#fff",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700 }}>+ Add Budget Item</button>
+                      <button onClick={()=>setShowBulk(true)} style={{ padding:"9px 18px",borderRadius:9,border:`1px solid ${T.border}`,background:T.inputBg,color:T.textSub,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:600 }}>⇪ Bulk Import</button>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ display:"flex",flexDirection:"column",gap:10 }}>
+                    {(catFilter ? [byCat.find(cat=>cat.id===catFilter)].filter(Boolean) : byCat.filter(cat=>cat.items.length>0)).map(cat=>(
+                      <div key={cat.id}>
+                        <div style={{ display:"flex",alignItems:"center",gap:8,marginBottom:8,marginTop:4 }}>
+                          <span style={{ fontSize:15 }}>{cat.emoji}</span>
+                          <span style={{ fontSize:12,fontWeight:700,color:cat.color,textTransform:"uppercase",letterSpacing:"0.06em" }}>{cat.label}</span>
+                          <div style={{ flex:1,height:1,background:cat.color+"33" }}/>
+                          <span style={{ fontSize:11,color:T.textSub }}>{fmt(cat.spent)} / {fmt(cat.allocated)}</span>
+                        </div>
+                        {cat.items.map(line=>{
+                          const pct   = line.allocated>0?Math.min(100,Math.round((line.spent/line.allocated)*100)):line.spent>0?100:0;
+                          const over  = line.spent > line.allocated && line.allocated > 0;
+                          const diff  = line.allocated - line.spent;
+                          return (
+                            <div key={line.id} style={{ ...card({marginBottom:8}),padding:"12px 14px",borderLeft:`4px solid ${over?"#E84E8A":cat.color}` }}>
+                              <div style={{ display:"flex",alignItems:"flex-start",gap:10 }}>
+                                <div style={{ width:34,height:34,borderRadius:9,background:cat.color+"22",display:"flex",alignItems:"center",justifyContent:"center",fontSize:17,flexShrink:0 }}>{cat.emoji}</div>
+                                <div style={{ flex:1,minWidth:0 }}>
+                                  <div style={{ display:"flex",alignItems:"center",gap:6,flexWrap:"wrap",marginBottom:5 }}>
+                                    <span style={{ fontSize:14,fontWeight:700,color:T.text }}>{line.name}</span>
+                                    {line.recurring&&line.recurring!=="none"&&<span style={{ fontSize:10,padding:"1px 6px",borderRadius:5,background:"#9B6EE822",color:"#9B6EE8",fontWeight:600 }}>🔄 {line.recurring}</span>}
+                                    {over&&<span style={{ fontSize:10,padding:"1px 6px",borderRadius:5,background:"#E84E8A22",color:"#E84E8A",fontWeight:700 }}>⚠️ Over</span>}
+                                  </div>
+                                  {/* Three-box amounts */}
+                                  <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6,marginBottom:7 }}>
+                                    <div style={{ background:T.inputBg,borderRadius:7,padding:"5px 8px",textAlign:"center" }}>
+                                      <div style={{ fontSize:13,fontWeight:700,color:T.text }}>{fmt(line.allocated)}</div>
+                                      <div style={{ fontSize:9,color:T.textMuted,textTransform:"uppercase" }}>Budget</div>
+                                    </div>
+                                    <div style={{ background:T.inputBg,borderRadius:7,padding:"5px 8px",textAlign:"center" }}>
+                                      <div style={{ fontSize:13,fontWeight:700,color:over?"#E84E8A":"#E8704A" }}>{fmt(line.spent)}</div>
+                                      <div style={{ fontSize:9,color:T.textMuted,textTransform:"uppercase" }}>Spent</div>
+                                    </div>
+                                    <div style={{ background:over?"#E84E8A12":"#3DBF8A12",borderRadius:7,padding:"5px 8px",textAlign:"center" }}>
+                                      <div style={{ fontSize:13,fontWeight:700,color:over?"#E84E8A":"#3DBF8A" }}>{over?"-":""}{fmt(Math.abs(diff))}</div>
+                                      <div style={{ fontSize:9,color:T.textMuted,textTransform:"uppercase" }}>{over?"Over":"Left"}</div>
+                                    </div>
+                                  </div>
+                                  <div style={{ height:5,background:T.inputBg,borderRadius:5,overflow:"hidden" }}>
+                                    <div style={{ height:"100%",width:`${pct}%`,background:over?"#E84E8A":pct>80?"#E8A838":"#20B2AA",borderRadius:5,transition:"width 0.4s" }}/>
+                                  </div>
+                                  {line.notes&&<div style={{ fontSize:11,color:T.textMuted,fontStyle:"italic",marginTop:4 }}>{line.notes}</div>}
+                                </div>
+                                <div style={{ display:"flex",flexDirection:"column",gap:4,flexShrink:0,alignItems:"flex-end" }}>
+                                  <button onClick={()=>setLogItem(line)} style={{ padding:"4px 10px",borderRadius:7,border:"none",background:"#20B2AA",color:"#fff",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:700,whiteSpace:"nowrap" }}>Log Spend</button>
+                                  <div style={{ display:"flex",gap:2 }}>
+                                    <button onClick={()=>setEditLine({...line,allocated:String(line.allocated),spent:String(line.spent)})} style={{ background:"none",border:"none",color:T.textMuted,cursor:"pointer",fontSize:13,padding:"2px" }}>✎</button>
+                                    <button onClick={()=>delLine(line.id)} style={{ background:"none",border:"none",color:T.textMuted,cursor:"pointer",fontSize:13,padding:"2px" }}>✕</button>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Subscriptions summary */}
+                {subs.length>0&&!catFilter&&(
+                  <div style={{ ...card(),padding:"18px",marginTop:16 }}>
+                    <div style={{ display:"flex",alignItems:"center",gap:8,marginBottom:14 }}>
+                      <span style={{ fontSize:17 }}>📱</span>
+                      <span style={{ fontFamily:"'DM Serif Display',serif",fontSize:16,color:T.text }}>Subscriptions</span>
+                      <span style={{ fontSize:12,color:"#8B5CF6",fontWeight:600,marginLeft:"auto" }}>{fmt(subTotal)}/mo</span>
+                    </div>
+                    {subs.map(s=>(
+                      <div key={s.id} style={{ display:"flex",alignItems:"center",gap:10,padding:"7px 8px",background:T.inputBg,borderRadius:8,marginBottom:6 }}>
+                        <span style={{ fontSize:14 }}>📱</span>
+                        <span style={{ flex:1,fontSize:13,color:T.text,fontWeight:500 }}>{s.name}</span>
+                        <span style={{ fontSize:13,fontWeight:700,color:"#8B5CF6" }}>{fmt(s.allocated)}/mo</span>
+                      </div>
+                    ))}
+                    <div style={{ marginTop:10,padding:"8px",background:"#8B5CF611",borderRadius:8,textAlign:"center",fontSize:12,color:"#8B5CF6",fontWeight:600 }}>
+                      {fmt(subTotal)}/month · {fmt(subTotal*12)}/year
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* ── INCOME SUB-SECTION ── */}
+            {activeSec==="income"&&(
+              <div>
+                <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16,flexWrap:"wrap",gap:8 }}>
+                  <div>
+                    <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:20,color:T.text }}>Income This Month</div>
+                    <div style={{ fontSize:13,color:"#3DBF8A",fontWeight:600,marginTop:2 }}>Total: {fmt(totalIncome)}</div>
+                  </div>
+                  <button onClick={()=>setShowIncome(true)} style={{ height:34,padding:"0 14px",borderRadius:9,border:"none",background:"#3DBF8A",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,color:"#fff" }}>+ Add Income</button>
                 </div>
-                <div style={{ display:"flex",justifyContent:"space-between",marginTop:6,fontSize:11,color:T.textMuted }}>
-                  <span>Spent: {fmt(totalSpent)}</span>
-                  <span>Budget: {fmt(totalAllocated)}</span>
-                </div>
+                {myIncome.length===0 ? (
+                  <div style={{ ...card(),padding:"48px 20px",textAlign:"center" }}>
+                    <div style={{ fontSize:40,marginBottom:10 }}>💵</div>
+                    <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:18,color:T.text,marginBottom:6 }}>No income logged yet</div>
+                    <div style={{ fontSize:13,color:T.textSub,marginBottom:16 }}>Add your salary, stipend, freelance income, gifts — anything that comes in this month.</div>
+                    <button onClick={()=>setShowIncome(true)} style={{ padding:"9px 18px",borderRadius:9,border:"none",background:"#3DBF8A",color:"#fff",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700 }}>+ Add Income Source</button>
+                  </div>
+                ) : (
+                  <div style={{ display:"flex",flexDirection:"column",gap:8 }}>
+                    {[...myIncome].sort((a,b)=>b.amount-a.amount).map(e=>(
+                      <div key={e.id} style={{ ...card(),padding:"13px 16px",borderLeft:"4px solid #3DBF8A",display:"flex",alignItems:"center",gap:12 }}>
+                        <div style={{ width:36,height:36,borderRadius:9,background:"#3DBF8A22",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0 }}>💵</div>
+                        <div style={{ flex:1,minWidth:0 }}>
+                          <div style={{ fontSize:14,fontWeight:700,color:T.text }}>{e.name}</div>
+                          <div style={{ fontSize:11,color:T.textMuted,marginTop:2 }}>{e.date}{e.notes?` · ${e.notes}`:""}{e.recurring&&e.recurring!=="none"?` · 🔄 ${e.recurring}`:""}</div>
+                        </div>
+                        <div style={{ fontSize:17,fontWeight:800,color:"#3DBF8A",flexShrink:0 }}>+{fmt(e.amount)}</div>
+                        <div style={{ display:"flex",gap:3,flexShrink:0 }}>
+                          <button onClick={()=>setEditIncome(e)} style={{ background:"none",border:"none",color:T.textMuted,cursor:"pointer",fontSize:13 }}>✎</button>
+                          <button onClick={()=>delIncome(e.id)} style={{ background:"none",border:"none",color:T.textMuted,cursor:"pointer",fontSize:13 }}>✕</button>
+                        </div>
+                      </div>
+                    ))}
+                    <div style={{ ...card(),padding:"12px 16px",background:"#3DBF8A08",border:"1px solid #3DBF8A33",display:"flex",justifyContent:"space-between",alignItems:"center" }}>
+                      <span style={{ fontSize:13,fontWeight:600,color:T.text }}>Total Income</span>
+                      <span style={{ fontSize:18,fontWeight:800,color:"#3DBF8A" }}>{fmt(totalIncome)}</span>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
-            {/* Category filter pills */}
-            <div style={{ display:"flex",gap:6,overflowX:"auto",paddingBottom:8,marginBottom:16,scrollbarWidth:"none" }}>
-              <button onClick={()=>setCatFilter(null)} style={{ padding:"5px 13px",borderRadius:20,border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:500,background:!catFilter?"#20B2AA":"transparent",color:!catFilter?"#fff":T.textSub,outline:!catFilter?"none":`1px solid ${T.border}`,flexShrink:0 }}>All</button>
-              {byCat.map(cat=>(
-                <button key={cat.id} onClick={()=>setCatFilter(catFilter===cat.id?null:cat.id)} style={{ padding:"5px 12px",borderRadius:20,border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:catFilter===cat.id?700:500,background:catFilter===cat.id?cat.color:"transparent",color:catFilter===cat.id?"#fff":T.textSub,outline:catFilter===cat.id?"none":`1px solid ${T.border}`,flexShrink:0,whiteSpace:"nowrap" }}>
-                  {cat.emoji} {cat.label}
-                </button>
-              ))}
-            </div>
+            {/* ── TRANSACTIONS SUB-SECTION ── */}
+            {activeSec==="transactions"&&(
+              <div>
+                <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16,flexWrap:"wrap",gap:8 }}>
+                  <div>
+                    <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:20,color:T.text }}>Actual Expenses</div>
+                    <div style={{ fontSize:13,color:"#E84E8A",fontWeight:600,marginTop:2 }}>Total spent: {fmt(totalActualSpend)}</div>
+                  </div>
+                  <button onClick={()=>setShowTx(true)} style={{ height:34,padding:"0 14px",borderRadius:9,border:"none",background:"#E84E8A",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,color:"#fff" }}>+ Log Expense</button>
+                </div>
 
-            {/* Budget line items */}
-            {displayLines.length===0 ? (
-              <div style={{ ...card(),padding:"60px 20px",textAlign:"center" }}>
-                <div style={{ fontSize:44,marginBottom:12 }}>📋</div>
-                <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:20,color:T.text,marginBottom:6 }}>No budget items yet</div>
-                <div style={{ fontSize:13,color:T.textSub,lineHeight:1.6,marginBottom:16 }}>Add items one by one or use<br/><strong>⇪ Import</strong> to paste an entire month's budget in seconds.</div>
-                <button onClick={()=>setShowBulk(true)} style={{ padding:"10px 20px",borderRadius:10,border:"none",background:"#20B2AA",color:"#fff",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:700 }}>⇪ Bulk Import</button>
-              </div>
-            ) : (
-              <div style={{ display:"flex",flexDirection:"column",gap:10 }}>
-                {/* Group by category */}
-                {(catFilter ? [byCat.find(c=>c.id===catFilter)].filter(Boolean) : byCat.filter(c=>c.items.length>0)).map(cat=>(
-                  <div key={cat.id}>
-                    {/* Category header */}
-                    <div style={{ display:"flex",alignItems:"center",gap:8,marginBottom:8,marginTop:4 }}>
-                      <span style={{ fontSize:16 }}>{cat.emoji}</span>
-                      <span style={{ fontSize:13,fontWeight:700,color:cat.color,textTransform:"uppercase",letterSpacing:"0.06em" }}>{cat.label}</span>
-                      <div style={{ flex:1,height:1,background:cat.color+"33" }}/>
-                      <span style={{ fontSize:12,color:T.textSub }}>{fmt(cat.spent)} / {fmt(cat.allocated)}</span>
+                {/* Income vs spend summary */}
+                {(totalIncome>0||totalActualSpend>0)&&(
+                  <div style={{ ...card(),padding:"14px 18px",marginBottom:16,borderLeft:`4px solid ${cashLeft>=0?"#3DBF8A":"#E84E8A"}` }}>
+                    <div style={{ display:"flex",justifyContent:"space-between",marginBottom:8,fontSize:13 }}>
+                      <span style={{ color:"#3DBF8A",fontWeight:700 }}>In: {fmt(totalIncome)}</span>
+                      <span style={{ color:"#E84E8A",fontWeight:700 }}>Out: {fmt(totalActualSpend)}</span>
+                      <span style={{ color:cashLeft>=0?"#3DBF8A":"#E84E8A",fontWeight:800 }}>{cashLeft>=0?"Left: ":"Over: "}{fmt(Math.abs(cashLeft))}</span>
                     </div>
-                    {cat.items.map(line=>{
-                      const pct   = line.allocated>0?Math.min(100,Math.round((line.spent/line.allocated)*100)):line.spent>0?100:0;
-                      const over  = line.spent > line.allocated && line.allocated > 0;
-                      const diff  = line.allocated - line.spent;
+                    <div style={{ height:10,background:T.inputBg,borderRadius:8,overflow:"hidden" }}>
+                      <div style={{ height:"100%",width:`${totalIncome>0?Math.min(100,(totalActualSpend/totalIncome)*100):0}%`,background:cashLeft>=0?"linear-gradient(90deg,#20B2AA,#3DBF8A)":"linear-gradient(90deg,#E8704A,#E84E8A)",borderRadius:8,transition:"width 0.5s" }}/>
+                    </div>
+                  </div>
+                )}
+
+                {myTx.length===0 ? (
+                  <div style={{ ...card(),padding:"48px 20px",textAlign:"center" }}>
+                    <div style={{ fontSize:40,marginBottom:10 }}>💸</div>
+                    <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:18,color:T.text,marginBottom:6 }}>No expenses logged yet</div>
+                    <div style={{ fontSize:13,color:T.textSub,marginBottom:16 }}>Log every purchase — groceries, rent, gas, giving. See exactly where your money goes.</div>
+                    <button onClick={()=>setShowTx(true)} style={{ padding:"9px 18px",borderRadius:9,border:"none",background:"#E84E8A",color:"#fff",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700 }}>+ Log First Expense</button>
+                  </div>
+                ) : (
+                  <div style={{ display:"flex",flexDirection:"column",gap:8 }}>
+                    {[...myTx].sort((a,b)=>b.date<a.date?-1:1).map(e=>{
+                      const cat = BUDGET_CATS.find(c=>c.id===e.category)||BUDGET_CATS[BUDGET_CATS.length-1];
                       return (
-                        <div key={line.id} style={{ ...card({marginBottom:8}),padding:"14px 16px",borderLeft:`4px solid ${over?"#E84E8A":cat.color}` }}>
-                          <div style={{ display:"flex",alignItems:"flex-start",gap:10 }}>
-                            <div style={{ width:36,height:36,borderRadius:9,background:cat.color+"22",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0 }}>{cat.emoji}</div>
-                            <div style={{ flex:1,minWidth:0 }}>
-                              <div style={{ display:"flex",alignItems:"center",gap:6,flexWrap:"wrap",marginBottom:6 }}>
-                                <span style={{ fontSize:14,fontWeight:700,color:T.text }}>{line.name}</span>
-                                {line.recurring&&line.recurring!=="none"&&<span style={{ fontSize:10,padding:"1px 6px",borderRadius:5,background:"#9B6EE822",color:"#9B6EE8",fontWeight:600 }}>🔄 {line.recurring}</span>}
-                                {over&&<span style={{ fontSize:10,padding:"1px 6px",borderRadius:5,background:"#E84E8A22",color:"#E84E8A",fontWeight:700 }}>⚠️ Over budget</span>}
-                              </div>
-                              {/* Amounts row */}
-                              <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6,marginBottom:8 }}>
-                                <div style={{ background:T.inputBg,borderRadius:8,padding:"6px 8px",textAlign:"center" }}>
-                                  <div style={{ fontSize:13,fontWeight:700,color:T.text }}>{fmt(line.allocated)}</div>
-                                  <div style={{ fontSize:9,color:T.textMuted,textTransform:"uppercase" }}>Budget</div>
-                                </div>
-                                <div style={{ background:T.inputBg,borderRadius:8,padding:"6px 8px",textAlign:"center" }}>
-                                  <div style={{ fontSize:13,fontWeight:700,color:over?"#E84E8A":"#E8704A" }}>{fmt(line.spent)}</div>
-                                  <div style={{ fontSize:9,color:T.textMuted,textTransform:"uppercase" }}>Spent</div>
-                                </div>
-                                <div style={{ background:over?"#E84E8A12":"#3DBF8A12",borderRadius:8,padding:"6px 8px",textAlign:"center" }}>
-                                  <div style={{ fontSize:13,fontWeight:700,color:over?"#E84E8A":"#3DBF8A" }}>{over?"-":""}{fmt(Math.abs(diff))}</div>
-                                  <div style={{ fontSize:9,color:T.textMuted,textTransform:"uppercase" }}>{over?"Over":"Left"}</div>
-                                </div>
-                              </div>
-                              {/* Progress bar */}
-                              <div style={{ height:6,background:T.inputBg,borderRadius:6,overflow:"hidden",marginBottom:4 }}>
-                                <div style={{ height:"100%",width:`${pct}%`,background:over?"#E84E8A":pct>80?"#E8A838":"#20B2AA",borderRadius:6,transition:"width 0.4s" }}/>
-                              </div>
-                              {line.notes&&<div style={{ fontSize:11,color:T.textMuted,fontStyle:"italic",marginTop:4 }}>{line.notes}</div>}
+                        <div key={e.id} style={{ ...card(),padding:"12px 14px",borderLeft:`4px solid ${cat.color}`,display:"flex",alignItems:"center",gap:10 }}>
+                          <div style={{ width:34,height:34,borderRadius:8,background:cat.color+"22",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,flexShrink:0 }}>{cat.emoji}</div>
+                          <div style={{ flex:1,minWidth:0 }}>
+                            <div style={{ fontSize:13,fontWeight:700,color:T.text }}>{e.name}</div>
+                            <div style={{ display:"flex",gap:5,marginTop:2,flexWrap:"wrap" }}>
+                              <span style={{ fontSize:10,padding:"1px 6px",borderRadius:5,background:cat.color+"20",color:cat.color,fontWeight:600 }}>{cat.emoji} {cat.label}</span>
+                              <span style={{ fontSize:10,color:T.textMuted }}>{e.date}</span>
+                              {e.notes&&<span style={{ fontSize:10,color:T.textMuted,fontStyle:"italic" }}>{e.notes}</span>}
                             </div>
-                            <div style={{ display:"flex",flexDirection:"column",gap:4,flexShrink:0 }}>
-                              <button onClick={()=>setLogItem(line)} style={{ padding:"5px 10px",borderRadius:7,border:"none",background:"#20B2AA",color:"#fff",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:700,whiteSpace:"nowrap" }}>Log Spend</button>
-                              <div style={{ display:"flex",gap:3,justifyContent:"flex-end" }}>
-                                <button onClick={()=>setEditLine({...line,allocated:String(line.allocated),spent:String(line.spent)})} style={{ background:"none",border:"none",color:T.textMuted,cursor:"pointer",fontSize:13,padding:"2px" }}>✎</button>
-                                <button onClick={()=>delLine(line.id)} style={{ background:"none",border:"none",color:T.textMuted,cursor:"pointer",fontSize:13,padding:"2px" }}>✕</button>
-                              </div>
-                            </div>
+                          </div>
+                          <div style={{ fontSize:15,fontWeight:800,color:"#E84E8A",flexShrink:0 }}>-{fmt(e.amount)}</div>
+                          <div style={{ display:"flex",gap:2,flexShrink:0 }}>
+                            <button onClick={()=>setEditTx(e)} style={{ background:"none",border:"none",color:T.textMuted,cursor:"pointer",fontSize:13 }}>✎</button>
+                            <button onClick={()=>delTx(e.id)} style={{ background:"none",border:"none",color:T.textMuted,cursor:"pointer",fontSize:13 }}>✕</button>
                           </div>
                         </div>
                       );
                     })}
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Subscriptions summary */}
-            {subs.length>0&&!catFilter&&(
-              <div style={{ ...card(),padding:"20px",marginTop:20 }}>
-                <div style={{ display:"flex",alignItems:"center",gap:8,marginBottom:16 }}>
-                  <span style={{ fontSize:18 }}>📱</span>
-                  <span style={{ fontFamily:"'DM Serif Display',serif",fontSize:17,color:T.text }}>Subscriptions</span>
-                  <span style={{ fontSize:12,color:"#8B5CF6",fontWeight:600,marginLeft:"auto" }}>{fmt(subTotal)}/mo</span>
-                </div>
-                <div style={{ display:"flex",flexDirection:"column",gap:8 }}>
-                  {subs.map(s=>(
-                    <div key={s.id} style={{ display:"flex",alignItems:"center",gap:10,padding:"8px 10px",background:T.inputBg,borderRadius:9 }}>
-                      <div style={{ width:28,height:28,borderRadius:7,background:"#8B5CF622",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,flexShrink:0 }}>📱</div>
-                      <span style={{ flex:1,fontSize:13,color:T.text,fontWeight:500 }}>{s.name}</span>
-                      <span style={{ fontSize:13,fontWeight:700,color:"#8B5CF6" }}>{fmt(s.allocated)}/mo</span>
-                      {s.spent>0&&<span style={{ fontSize:11,color:T.textMuted }}>spent: {fmt(s.spent)}</span>}
+                    <div style={{ ...card(),padding:"12px 16px",background:"#E84E8A08",border:"1px solid #E84E8A33",display:"flex",justifyContent:"space-between",alignItems:"center" }}>
+                      <span style={{ fontSize:13,fontWeight:600,color:T.text }}>Total Spent</span>
+                      <span style={{ fontSize:18,fontWeight:800,color:"#E84E8A" }}>-{fmt(totalActualSpend)}</span>
                     </div>
-                  ))}
-                </div>
-                <div style={{ marginTop:12,padding:"10px",background:"#8B5CF611",borderRadius:9,textAlign:"center",fontSize:13,color:"#8B5CF6",fontWeight:600 }}>
-                  Total: {fmt(subTotal)}/month · {fmt(subTotal*12)}/year
-                </div>
+                  </div>
+                )}
               </div>
             )}
           </>
@@ -2690,6 +2925,10 @@ function BudgetApp({ names, mode, T, activeUser, onBack }) {
       </div>{/* end ba-scroll */}
 
       {/* Forms */}
+      {showIncome&&<IncomeForm data={{name:"",amount:"",date:new Date().toISOString().slice(0,10),notes:"",recurring:"none"}} onSave={(d)=>addIncomeEntry(d)} onClose={()=>setShowIncome(false)} T={T} mode={mode}/>}
+      {editIncome&&<IncomeForm data={editIncome} onSave={(d)=>saveEditIncome(d)} onClose={()=>setEditIncome(null)} T={T} mode={mode}/>}
+      {showTx&&<TxForm data={{name:"",amount:"",category:"other",date:new Date().toISOString().slice(0,10),notes:""}} onSave={(d)=>addTxEntry(d)} onClose={()=>setShowTx(false)} T={T} mode={mode}/>}
+      {editTx&&<TxForm data={editTx} onSave={(d)=>saveEditTx(d)} onClose={()=>setEditTx(null)} T={T} mode={mode}/>}
       {showLine&&<BudgetLineForm data={newLine} setData={setNewLine} onSave={addLine} onClose={()=>setShowLine(false)} T={T} mode={mode}/>}
       {editLine&&<BudgetLineForm data={editLine} setData={setEditLine} onSave={saveEditLine} onClose={()=>setEditLine(null)} T={T} mode={mode}/>}
       {showGoal&&<GoalForm data={newGoal} setData={setNewGoal} onSave={addGoal} onClose={()=>setShowGoal(false)} T={T} mode={mode}/>}
