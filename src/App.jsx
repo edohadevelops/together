@@ -2284,6 +2284,7 @@ function BudgetApp({ names, mode, T, activeUser, onBack }) {
   const [reportPeriod, setReportPeriod] = useState("month");
   const [bShowNav,  setBShowNav]     = useState(false);
   const [showCat,   setShowCat]      = useState(false);
+  const [showReset, setShowReset]    = useState(false);
   const [editCat,   setEditCat]      = useState(null);
   const [showTx,    setShowTx]       = useState(false);
   const [editTx,    setEditTx]       = useState(null);
@@ -2308,7 +2309,11 @@ function BudgetApp({ names, mode, T, activeUser, onBack }) {
   useEffect(()=>{
     (async()=>{
       const [ca,tx,g,a,li,d] = await Promise.all([dbGet("budget_cats"),dbGet("budget_txs"),dbGet("budget_goals"),dbGet("budget_assets"),dbGet("budget_liabs"),dbGet("budget_debts")]);
-      setCatsState(ca??[]); setTxsState(tx??[]); setGoalsState(g??[]); setAssetsState(a??[]); setLiabsState(li??[]); setDebtsState(d??[]);
+      const loadedCats = ca??[]; const loadedTxs = tx??[];
+      setCatsState(loadedCats); setTxsState(loadedTxs); setGoalsState(g??[]); setAssetsState(a??[]); setLiabsState(li??[]); setDebtsState(d??[]);
+      // Show reset banner if there are old-style transactions (no catId) mixed with budget cats
+      const hasOldTxs = loadedTxs.some(t=>t.type==="expense"&&!t.catId);
+      if (hasOldTxs && loadedCats.length>0) setShowReset(true);
     })();
   },[]);
 
@@ -2366,13 +2371,12 @@ function BudgetApp({ names, mode, T, activeUser, onBack }) {
   const totalBudgeted= myCats.reduce((s,c)=>s+c.limit,0);
   const overBudget   = totalSpent > totalBudgeted && totalBudgeted > 0;
 
-  // Per-category: match by cat.id (unique budget line) not cat.category (generic type)
-  // Transactions store catId = the specific budget line they belong to.
-  // If no catId, fall back to category-type match for backward compat.
+  // Per-category: always match by catId (unique budget line ID on each transaction)
+  // Transactions without a catId are unlinked and don't count toward any budget line.
   const catRollup = myCats.map(cat=>{
     const info  = BUDGET_CATS.find(c=>c.id===cat.category)||BUDGET_CATS[BUDGET_CATS.length-1];
     const spent = myExpenseTxs
-      .filter(t=> t.catId ? t.catId===cat.id : t.category===cat.category && !myExpenseTxs.some(tx=>tx.catId))
+      .filter(t=>t.catId===cat.id)
       .reduce((s,t)=>s+t.amount,0);
     return { ...cat, info, spent, over: spent>cat.limit && cat.limit>0 };
   });
@@ -2453,6 +2457,11 @@ function BudgetApp({ names, mode, T, activeUser, onBack }) {
           ))}
         </div>
         <button onClick={()=>{setTourStep(0);setShowTour(true);}} style={{ width:34,height:34,borderRadius:9,border:`1px solid ${T.border}`,background:T.inputBg,cursor:"pointer",fontSize:16,display:"flex",alignItems:"center",justifyContent:"center",color:T.textSub,flexShrink:0 }} title="Tour">ⓘ</button>
+        <button onClick={()=>{
+          if(window.confirm("Clear all budget transactions and categories for a fresh start?\n\nThis will delete all your budget lines, expenses, and income for this account. Goals, assets, and debts are kept.\n\nThis cannot be undone.")) {
+            saveCats([]); saveTxs([]);
+          }
+        }} style={{ width:34,height:34,borderRadius:9,border:`1px solid ${T.border}`,background:T.inputBg,cursor:"pointer",fontSize:14,display:"flex",alignItems:"center",justifyContent:"center",color:T.textMuted,flexShrink:0 }} title="Reset budget data">🗑</button>
         <button onClick={()=>setShowBulk(true)} style={{ height:34,padding:"0 12px",borderRadius:9,border:`1px solid ${T.border}`,background:T.inputBg,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:600,color:T.textSub,flexShrink:0 }} title="Bulk Import">
           <span>⇪</span><span className="ba-import-txt"> Import</span>
         </button>
@@ -2509,6 +2518,22 @@ function BudgetApp({ names, mode, T, activeUser, onBack }) {
         {/* ════ BUDGET VIEW ════ */}
         {view==="budget"&&(
           <>
+            {/* ── STALE DATA RESET BANNER ── */}
+            {showReset&&(
+              <div style={{ background:"#E8A83812",border:"1px solid #E8A83855",borderRadius:12,padding:"14px 18px",marginBottom:20,display:"flex",alignItems:"flex-start",gap:12 }}>
+                <span style={{ fontSize:20,flexShrink:0 }}>⚠️</span>
+                <div style={{ flex:1 }}>
+                  <div style={{ fontSize:14,fontWeight:700,color:"#E8A838",marginBottom:4 }}>Old budget data detected</div>
+                  <div style={{ fontSize:13,color:T.text,lineHeight:1.6,marginBottom:10 }}>
+                    Your existing expenses were created before the budget linking fix, so they can't be correctly matched to budget categories. Clear them to start fresh — your goals, assets, and debts are kept.
+                  </div>
+                  <div style={{ display:"flex",gap:8 }}>
+                    <button onClick={()=>{ saveCats([]); saveTxs([]); setShowReset(false); }} style={{ padding:"8px 16px",borderRadius:8,border:"none",background:"#E84E8A",color:"#fff",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700 }}>🗑 Clear & Start Fresh</button>
+                    <button onClick={()=>setShowReset(false)} style={{ padding:"8px 14px",borderRadius:8,border:`1px solid ${T.border}`,background:T.inputBg,color:T.textSub,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:13 }}>Dismiss</button>
+                  </div>
+                </div>
+              </div>
+            )}
             {/* ── HERO SUMMARY CARDS ── */}
             <div className="ba-g4" style={{ marginBottom:20 }}>
               {[
