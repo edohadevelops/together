@@ -4765,28 +4765,34 @@ export default function TogetherApp() {
 
   // ── Reusable timeline section renderer ────────────────────────────────────
   function TimelineSection({ periodTasks, allActive, label, sub }) {
-    // periodTasks = tasks with due dates in this period
-    // allActive   = ALL active tasks for this user, so we can show every section
-
-    // Build section rows: for each section, show tasks due in this period
-    // PLUS tasks with no due date at all (so nothing is hidden)
-    const sectionRows = SECTIONS.map(sec => {
+    // For each section, collect tasks due in this period + tasks with no due date
+    const sectionData = SECTIONS.map(sec => {
       const inPeriod  = periodTasks.filter(t => t.section === sec.id);
       const noDueDate = allActive.filter(t => t.section === sec.id && !t.dueDate);
-      return { ...sec, inPeriod, noDueDate, total: inPeriod.length + noDueDate.length };
+      // Merge: tasks in period first (sorted by date), then no-due-date tasks
+      const merged = [
+        ...[...inPeriod].sort((a,b)=> a.dueDate < b.dueDate ? -1 : 1),
+        ...noDueDate,
+      ];
+      return { ...sec, colTasks: merged };
     });
 
-    // Stats across period tasks only
+    // Stats
     const overdue  = periodTasks.filter(t=>{ const n=daysUntil(t.dueDate); return n!==null&&n<0; });
     const dueToday = periodTasks.filter(t=>{ const n=daysUntil(t.dueDate); return n===0; });
 
-    const [collapsed, setCollapsed] = useState({});
-    const toggle = id => setCollapsed(p=>({...p,[id]:!p[id]}));
+    // No-op drag handlers — timeline cards aren't draggable
+    const noDrag = {
+      handleDragOverCol:()=>{}, handleDropOnCol:()=>{},
+      handleBoardDragStart:()=>{}, handleDragEnd:()=>{},
+      handleDropOnTask:()=>{}, dragType:{current:null},
+      dragTaskId:{current:null}, highlightCol:null, highlightBoard:null,
+    };
 
     return (
-      <div style={{ padding:"20px 16px", maxWidth:900, margin:"0 auto" }}>
+      <div style={{ padding:"20px 16px", maxWidth:1200, margin:"0 auto" }}>
         {/* Header */}
-        <div style={{ marginBottom:20 }}>
+        <div style={{ marginBottom:16 }}>
           <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:26,color:T.text,marginBottom:2 }}>{label}</div>
           <div style={{ fontSize:13,color:T.textSub }}>{sub}</div>
         </div>
@@ -4794,10 +4800,10 @@ export default function TogetherApp() {
         {/* Stats bar */}
         <div className="stats-row" style={{marginBottom:24}}>
           {[
-            {l:"In Period",  v:periodTasks.length, c:"#E8A838"},
-            {l:"Overdue",    v:overdue.length,      c:"#E84E8A"},
-            {l:"Due Today",  v:dueToday.length,     c:"#E8704A"},
-            {l:"No Due Date",v:allActive.filter(t=>!t.dueDate).length, c:"#888D9B"},
+            {l:"In Period",   v:periodTasks.length,                             c:"#E8A838"},
+            {l:"Overdue",     v:overdue.length,                                 c:"#E84E8A"},
+            {l:"Due Today",   v:dueToday.length,                                c:"#E8704A"},
+            {l:"No Due Date", v:allActive.filter(t=>!t.dueDate).length,         c:"#888D9B"},
           ].map(s=>(
             <div key={s.l} style={cardBase({padding:"10px 14px",flex:"1 1 80px",borderLeft:`3px solid ${s.c}`})}>
               <div style={{fontSize:20,fontWeight:700,color:T.text,lineHeight:1}}>{s.v}</div>
@@ -4806,74 +4812,29 @@ export default function TogetherApp() {
           ))}
         </div>
 
-        {/* Every section — always shown */}
-        <div style={{ display:"flex",flexDirection:"column",gap:12 }}>
-          {sectionRows.map(sec => {
-            const isCollapsed = collapsed[sec.id];
-            const hasItems    = sec.total > 0;
-            return (
-              <div key={sec.id} style={cardBase({ overflow:"hidden", opacity: hasItems ? 1 : 0.5 })}>
-                {/* Section header — always visible */}
-                <div
-                  onClick={()=>toggle(sec.id)}
-                  style={{ display:"flex",alignItems:"center",gap:10,padding:"12px 16px",cursor:"pointer",borderBottom: !isCollapsed&&hasItems ? `1px solid ${T.border}` : "none",background:sec.color+"0A" }}
-                >
-                  <span style={{ fontSize:18,flexShrink:0 }}>{sec.emoji}</span>
-                  <span style={{ fontFamily:"'DM Serif Display',serif",fontSize:16,color:T.text,flex:1 }}>{sec.label}</span>
-                  {/* Counts */}
-                  <div style={{ display:"flex",gap:6,alignItems:"center" }}>
-                    {sec.inPeriod.filter(t=>daysUntil(t.dueDate)!==null&&daysUntil(t.dueDate)<0).length>0&&(
-                      <span style={{ fontSize:10,padding:"2px 7px",borderRadius:10,background:"#E84E8A22",color:"#E84E8A",fontWeight:700 }}>
-                        {sec.inPeriod.filter(t=>daysUntil(t.dueDate)<0).length} overdue
-                      </span>
-                    )}
-                    {sec.inPeriod.length>0&&(
-                      <span style={{ fontSize:10,padding:"2px 7px",borderRadius:10,background:sec.color+"22",color:sec.color,fontWeight:700 }}>
-                        {sec.inPeriod.length} due
-                      </span>
-                    )}
-                    {sec.noDueDate.length>0&&(
-                      <span style={{ fontSize:10,padding:"2px 7px",borderRadius:10,background:"#88888822",color:T.textSub,fontWeight:600 }}>
-                        {sec.noDueDate.length} open
-                      </span>
-                    )}
-                    {!hasItems&&(
-                      <span style={{ fontSize:11,color:T.textMuted,fontStyle:"italic" }}>nothing here</span>
-                    )}
-                  </div>
-                  <span style={{ fontSize:12,color:T.textMuted,marginLeft:4 }}>{isCollapsed?"▸":"▾"}</span>
-                </div>
-
-                {/* Tasks — shown when not collapsed and has items */}
-                {!isCollapsed && hasItems && (
-                  <div style={{ padding:"8px 12px" }}>
-                    {/* Due in period — sorted by date */}
-                    {[...sec.inPeriod]
-                      .sort((a,b)=>new Date(a.dueDate+"T00:00:00")-new Date(b.dueDate+"T00:00:00"))
-                      .map(t=>(
-                        <TaskPill key={t.id} t={t} showSec={false} draggable={false} pill={pillCtx}/>
-                      ))
-                    }
-                    {/* No due date tasks — shown below with a subtle divider */}
-                    {sec.noDueDate.length>0&&(
-                      <>
-                        {sec.inPeriod.length>0&&(
-                          <div style={{ display:"flex",alignItems:"center",gap:8,margin:"8px 0 4px",opacity:0.5 }}>
-                            <div style={{ flex:1,height:1,background:T.border }}/>
-                            <span style={{ fontSize:10,color:T.textMuted }}>no due date</span>
-                            <div style={{ flex:1,height:1,background:T.border }}/>
-                          </div>
-                        )}
-                        {sec.noDueDate.map(t=>(
-                          <TaskPill key={t.id} t={t} showSec={false} draggable={false} pill={pillCtx}/>
-                        ))}
-                      </>
-                    )}
-                  </div>
-                )}
-              </div>
-            );
-          })}
+        {/* Section cards — same GridCard as the board */}
+        <div className="grid-board">
+          {sectionData.map(sec => (
+            <GridCard
+              key={sec.id}
+              colId={sec.id}
+              label={sec.label}
+              emoji={sec.emoji}
+              color={sec.color}
+              colTasks={sec.colTasks}
+              isDone={false}
+              T={T}
+              mode={mode}
+              pillCtx={pillCtx}
+              dragHandlers={noDrag}
+              onAddTask={(secId)=>{ setAddSec(secId); setNew(p=>({...p,section:secId})); setShowAdd(true); }}
+              onViewAll={(data)=>setTaskModal(data)}
+              onDeleteTasks={(secId,type)=>{
+                if(type==="active") setTasks(prev=>prev.filter(t=>!(t.section===secId&&!t.done)));
+                else setTasks(prev=>prev.filter(t=>!(t.section===secId&&t.done)));
+              }}
+            />
+          ))}
         </div>
       </div>
     );
