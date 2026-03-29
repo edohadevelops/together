@@ -4780,7 +4780,7 @@ export default function TogetherApp() {
     const overdue  = periodTasks.filter(t=>{ const n=daysUntil(t.dueDate); return n!==null&&n<0; });
     const dueToday = periodTasks.filter(t=>{ const n=daysUntil(t.dueDate); return n===0; });
 
-    const [collapsed, setCollapsed] = React.useState({});
+    const [collapsed, setCollapsed] = useState({});
     const toggle = id => setCollapsed(p=>({...p,[id]:!p[id]}));
 
     return (
