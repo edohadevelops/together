@@ -54,12 +54,17 @@ const SECTIONS = [
 ];
 
 const TASK_TYPES = [
-  { id: "todo",   label: "To-Do",   icon: "☐" },
-  { id: "habit",  label: "Habit",   icon: "↺" },
-  { id: "daily",  label: "Daily",   icon: "⟳" },
-  { id: "weekly", label: "Weekly",  icon: "⟲" },
-  { id: "goal",   label: "Goal",    icon: "◎" },
+  { id: "todo",     label: "To-Do",       icon: "☐" },
+  { id: "habit",    label: "Habit",        icon: "↺" },
+  { id: "daily",    label: "Daily",        icon: "⟳" },
+  { id: "weekly",   label: "Weekly",       icon: "⟲" },
+  { id: "schedule", label: "Class/Schedule",icon: "📅" },
+  { id: "progress", label: "Progress",     icon: "◉" },
+  { id: "monthly",  label: "Monthly",      icon: "🗓" },
+  { id: "goal",     label: "Goal",         icon: "◎" },
 ];
+const WEEK_DAYS = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+const WEEK_DAY_FULL = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
 
 const PRIORITIES = ["Low", "Medium", "High", "Urgent"];
 const PRI_COLOR  = { Urgent:"#E84E8A", High:"#E8704A", Medium:"#E8A838", Low:"#3DBF8A" };
@@ -3944,7 +3949,11 @@ function TaskPill({ t, showSec=false, draggable=true, pill }) {
   const s    = sec(t.section);
   const dCol = (() => { const n = !t.dueDate?null:Math.ceil((new Date(t.dueDate+"T00:00:00")-new Date())/86400000); if(n===null)return null; if(n<0)return "#E84E8A"; if(n===0)return "#E8704A"; if(n<=3)return "#E8A838"; return "#3DBF8A"; })();
   const dLbl = (() => { const n = !t.dueDate?null:Math.ceil((new Date(t.dueDate+"T00:00:00")-new Date())/86400000); if(n===null)return null; if(n<0)return `${Math.abs(n)}d overdue`; if(n===0)return "Due today"; if(n===1)return "Due tomorrow"; return `Due in ${n}d`; })();
-  const isDaily = t.type==="daily";
+  const isDaily    = t.type==="daily";
+  const isProgress = t.type==="progress";
+  const progCount  = t.progressCount||0;
+  const progTarget = t.progressTarget||1;
+  const progPct    = Math.min(100,Math.round((progCount/progTarget)*100));
   return (
     <div
       draggable={draggable}
@@ -3962,12 +3971,37 @@ function TaskPill({ t, showSec=false, draggable=true, pill }) {
             <span style={{ fontSize:14,fontWeight:500,lineHeight:1.4,fontFamily:"'DM Sans',sans-serif",color:t.done?T.textMuted:T.text,textDecoration:t.done?"line-through":"none",wordBreak:"break-word" }}>{t.title}</span>
             {isDaily&&<span style={{ fontSize:10,padding:"1px 6px",borderRadius:5,background:"#3DBF8A22",color:"#3DBF8A",fontWeight:700,flexShrink:0 }}>⟳ Daily</span>}
             {t.type==="weekly"&&<span style={{ fontSize:10,padding:"1px 6px",borderRadius:5,background:"#3B9EDB22",color:"#3B9EDB",fontWeight:700,flexShrink:0 }}>⟲ Weekly</span>}
+            {t.type==="monthly"&&<span style={{ fontSize:10,padding:"1px 6px",borderRadius:5,background:"#9B6EE822",color:"#9B6EE8",fontWeight:700,flexShrink:0 }}>🗓 Monthly</span>}
+            {t.type==="schedule"&&t.recurDays?.length>0&&(
+              <span style={{ fontSize:10,padding:"1px 6px",borderRadius:5,background:"#20B2AA22",color:"#20B2AA",fontWeight:700,flexShrink:0 }}>
+                📅 {t.recurDays.map(i=>["M","T","W","Th","F","Sa","Su"][i]).join("/")}
+              </span>
+            )}
+            {t.type==="progress"&&(
+              <span style={{ fontSize:10,padding:"1px 6px",borderRadius:5,background:"#E8A83822",color:"#E8A838",fontWeight:700,flexShrink:0 }}>
+                ◉ {t.progressCount||0}/{t.progressTarget||1}
+              </span>
+            )}
           </div>
           <div style={{ display:"flex",gap:4,marginTop:5,flexWrap:"wrap",alignItems:"center" }}>
             {showSec&&<span style={{ fontSize:10,padding:"2px 7px",borderRadius:5,background:s.color+"22",color:s.color,fontWeight:600,fontFamily:"'DM Sans',sans-serif" }}>{s.emoji} {s.label}</span>}
             <span style={{ fontSize:10,padding:"2px 7px",borderRadius:5,background:aColor(t.assignee)+"20",color:aColor(t.assignee),fontWeight:600,fontFamily:"'DM Sans',sans-serif" }}>{aLabel(t.assignee)}</span>
             <span style={{ fontSize:10,padding:"2px 7px",borderRadius:5,background:PRI_COLOR[t.priority]+"20",color:PRI_COLOR[t.priority],fontWeight:600,fontFamily:"'DM Sans',sans-serif" }}>{t.priority}</span>
-            {(t.type==="habit"||t.type==="daily")&&t.streak>0&&<span style={{ fontSize:10,padding:"2px 7px",borderRadius:5,background:"#E8A83820",color:"#E8A838",fontWeight:600 }}>🔥 {t.streak}d</span>}
+            {(t.type==="habit"||t.type==="daily"||t.type==="schedule")&&t.streak>0&&<span style={{ fontSize:10,padding:"2px 7px",borderRadius:5,background:"#E8A83820",color:"#E8A838",fontWeight:600 }}>🔥 {t.streak}d</span>}
+          </div>
+          {/* Progress bar for progress-type tasks */}
+          {isProgress&&(
+            <div style={{ marginTop:5 }}>
+              <div style={{ display:"flex",justifyContent:"space-between",marginBottom:2,fontSize:10,color:T.textMuted }}>
+                <span>{progCount} of {progTarget} done</span>
+                <span>{progPct}%</span>
+              </div>
+              <div style={{ height:4,background:T.inputBg,borderRadius:4,overflow:"hidden" }}>
+                <div style={{ height:"100%",width:`${progPct}%`,background:progPct>=100?"#3DBF8A":"#E8A838",borderRadius:4,transition:"width 0.3s" }}/>
+              </div>
+            </div>
+          )}
+          <div style={{ display:"flex",gap:5,flexWrap:"wrap",alignItems:"center" }}>
             {dLbl&&<span style={{ fontSize:10,padding:"2px 7px",borderRadius:5,background:dCol+"22",color:dCol,fontWeight:700 }}>📅 {dLbl}</span>}
           </div>
           <div style={{ display:"flex",gap:8,marginTop:3,flexWrap:"wrap",alignItems:"center" }}>
@@ -4195,8 +4229,45 @@ function FormModal({ data, setData, onSave, onClose, title, names, sections, tas
 
         <label style={lblStyle}>Type</label>
         <select style={selStyle} value={data.type} onChange={e=>setData(p=>({...p,type:e.target.value}))}>
-          {taskTypes.map(t=><option key={t.id} value={t.id}>{t.icon} {t.label}{t.id==="daily"?" — resets daily":t.id==="weekly"?" — resets every Monday":""}</option>)}
+          {taskTypes.map(t=><option key={t.id} value={t.id}>{t.icon} {t.label}{
+            t.id==="daily"?" — resets daily":t.id==="weekly"?" — resets Monday":
+            t.id==="schedule"?" — pick days below":t.id==="progress"?" — track count":
+            t.id==="monthly"?" — monthly checkbox":""
+          }</option>)}
         </select>
+
+        {/* Schedule: pick days of week */}
+        {data.type==="schedule"&&(
+          <>
+            <label style={lblStyle}>Repeat on days</label>
+            <div style={{ display:"flex",gap:6,flexWrap:"wrap" }}>
+              {["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].map((d,i)=>(
+                <button key={i} type="button"
+                  onClick={()=>setData(p=>{ const days=p.recurDays||[]; return {...p,recurDays:days.includes(i)?days.filter(x=>x!==i):[...days,i].sort()}; })}
+                  style={{ padding:"6px 12px",borderRadius:8,border:`1px solid ${(data.recurDays||[]).includes(i)?T.accent:T.border}`,background:(data.recurDays||[]).includes(i)?T.accent+"22":"transparent",color:(data.recurDays||[]).includes(i)?T.accent:T.text,fontFamily:"'DM Sans',sans-serif",fontSize:13,cursor:"pointer",fontWeight:(data.recurDays||[]).includes(i)?700:400 }}>
+                  {d}
+                </button>
+              ))}
+            </div>
+            <div style={{ fontSize:11,color:T.textMuted,marginTop:4 }}>Task resets each selected day — great for class schedules.</div>
+          </>
+        )}
+
+        {/* Progress: set a target count */}
+        {data.type==="progress"&&(
+          <>
+            <label style={lblStyle}>Target count</label>
+            <input type="number" min="1" max="999" style={inpStyle} value={data.progressTarget||""} onChange={e=>setData(p=>({...p,progressTarget:parseInt(e.target.value)||1}))} placeholder="e.g. 3 (read 3 books)"/>
+            <div style={{ fontSize:11,color:T.textMuted,marginTop:4 }}>Tap the task to increment. Auto-completes when you hit the target.</div>
+          </>
+        )}
+
+        {/* Monthly: no extra fields needed, just explain */}
+        {data.type==="monthly"&&(
+          <div style={{ marginTop:6,padding:"8px 12px",background:T.inputBg,borderRadius:8,fontSize:12,color:T.textSub,lineHeight:1.6 }}>
+            📅 This task resets each month. Use it for things you plan to do or complete sometime this month — just tick it off when done.
+          </div>
+        )}
 
         <label style={lblStyle}>Assigned To</label>
         <select style={selStyle} value={data.assignee} onChange={e=>setData(p=>({...p,assignee:e.target.value}))}>
@@ -4329,6 +4400,12 @@ export default function TogetherApp() {
     return list.map(t => {
       if (t.type === "daily"  && t.lastReset !== TODAY)     return { ...t, done:false, lastReset:TODAY };
       if (t.type === "weekly" && t.lastReset !== THIS_WEEK) return { ...t, done:false, lastReset:THIS_WEEK };
+      if (t.type === "monthly" && t.lastReset !== TODAY.slice(0,7)) return { ...t, done:false, progressCount:0, lastReset:TODAY.slice(0,7) };
+      // Schedule task: reset only on the days it's scheduled for
+      if (t.type === "schedule" && Array.isArray(t.recurDays) && t.recurDays.length > 0) {
+        const todayIdx = (new Date().getDay()+6)%7; // 0=Mon…6=Sun
+        if (t.recurDays.includes(todayIdx) && t.lastReset !== TODAY) return { ...t, done:false, lastReset:TODAY };
+      }
       return t;
     });
   }
@@ -4343,11 +4420,16 @@ export default function TogetherApp() {
         const myId  = (() => { try { return localStorage.getItem("together_identity"); } catch { return null; } })();
         const soKey = myId ? `sectionOrder_${myId}` : "sectionOrder";
         const [t, n, m, so, cl] = await Promise.all([dbGet("tasks"), dbGet("names"), dbGet("mode"), dbGet(soKey), dbGet("completedLog")]);
-        let loaded = (t ?? SAMPLES).map((tk, i) => ({ order:i, createdAt:TODAY, dueDate:"", lastReset:"", ...tk }));
-        loaded = resetDailies(loaded);
-        tasksRef.current = loaded;
-        setTasksState(loaded);
-        if (!t) await dbSet("tasks", loaded); else await dbSet("tasks", loaded);
+        let loaded = t
+          ? t.map((tk, i) => ({ order:i, ...tk, createdAt:tk.createdAt||TODAY, dueDate:tk.dueDate||"", lastReset:tk.lastReset||"" }))
+          : SAMPLES.map((tk, i) => ({ order:i, createdAt:TODAY, dueDate:"", lastReset:"", ...tk }));
+        const afterReset = resetDailies(loaded);
+        tasksRef.current = afterReset;
+        setTasksState(afterReset);
+        // Only write to Supabase if: (a) no tasks existed yet, or (b) resetDailies actually changed something
+        const resetChanged = JSON.stringify(afterReset) !== JSON.stringify(loaded);
+        if (!t) await dbSet("tasks", afterReset);
+        else if (resetChanged) await dbSet("tasks", afterReset);
         if (n) setNamesState(n);
         if (m) setMode(m);
         if (so) { setSectionOrder(so); sectionOrderRef.current = so; }
@@ -4356,6 +4438,14 @@ export default function TogetherApp() {
         setStatus("live");
         // init seenIds AFTER first load so poll doesn't toast on startup
         seenIdsRef.current = (tasksRef.current || []).map(t => t.id);
+        // ── Daily backup — save snapshot once per day so data is recoverable ──
+        if (t && t.length > 0) {
+          const backupKey = `tasks_backup_${TODAY}`;
+          try {
+            const existing = await dbGet(backupKey);
+            if (!existing) await dbSet(backupKey, t); // save original (pre-reset) data
+          } catch {}
+        }
       } catch {
         const fb = resetDailies(SAMPLES);
         seenIdsRef.current = fb.map(t => t.id);
@@ -4499,7 +4589,13 @@ export default function TogetherApp() {
       }
       return prev.map(t => {
         if (t.id !== id) return t;
-        return { ...t, done:nowDone, streak:nowDone&&(t.type==="habit"||t.type==="daily"||t.type==="weekly")?t.streak+1:t.streak, lastReset:t.type==="daily"?TODAY:t.type==="weekly"?THIS_WEEK:t.lastReset };
+        // Progress task: increment count, auto-complete when target reached
+        if (t.type === "progress" && !t.done) {
+          const newCount = (t.progressCount||0) + 1;
+          const nowDoneProgress = newCount >= (t.progressTarget||1);
+          return { ...t, progressCount:newCount, done:nowDoneProgress, streak:nowDoneProgress?t.streak+1:t.streak };
+        }
+        return { ...t, done:nowDone, streak:nowDone&&(t.type==="habit"||t.type==="daily"||t.type==="weekly"||t.type==="schedule")?t.streak+1:t.streak, lastReset:t.type==="daily"?TODAY:t.type==="weekly"?THIS_WEEK:t.type==="monthly"?TODAY.slice(0,7):t.lastReset };
       });
     });
   }
@@ -4514,8 +4610,8 @@ export default function TogetherApp() {
   function doAdd(taskData) {
     const data = taskData || newTask;
     if (!data.title.trim()) return;
-    const lastReset = data.type==="daily" ? TODAY : data.type==="weekly" ? THIS_WEEK : "";
-    const added = { ...data, id:genId(), done:false, streak:0, order:(tasksRef.current||[]).length, createdAt:TODAY, lastReset, createdBy:activeUser||"A" };
+    const lastReset = data.type==="daily" ? TODAY : data.type==="weekly" ? THIS_WEEK : data.type==="monthly" ? TODAY.slice(0,7) : data.type==="schedule" ? TODAY : "";
+    const added = { ...data, id:genId(), done:false, streak:0, progressCount:0, recurDays:data.recurDays||[], order:(tasksRef.current||[]).length, createdAt:TODAY, lastReset, createdBy:activeUser||"A" };
     setTasks(prev => [...prev, added]);
     // Success toast
     const sid = genId();
@@ -4751,7 +4847,7 @@ export default function TogetherApp() {
   ];
 
   const navViews=[
-    ["board","Board"],["today","Today"],["accountability","Us"],
+    ["board","Board"],["today","Today"],["someday","Someday"],["accountability","Us"],
     ["analytics","📊 Analytics"],
     ["reflections","💭 Reflections"],
     ["tracker","🔗 Tracker"],
@@ -4760,7 +4856,7 @@ export default function TogetherApp() {
     ["urgent","🔴 Urgent"],["week","This Week"],["month","This Month"],
     ["quarter","Next 3 Months"],["year","This Year"],["aitools","AI Tools"],
   ];
-  const isFullScreen=["today","accountability","aitools","urgent","week","month","quarter","year","prayer","analytics","reflections","tracker","cookbook"].includes(view);
+  const isFullScreen=["today","someday","accountability","aitools","urgent","week","month","quarter","year","prayer","analytics","reflections","tracker","cookbook"].includes(view);
   const pad=isFullScreen?"0":"16px 16px";
 
   // ── Reusable timeline section renderer ────────────────────────────────────
@@ -5138,6 +5234,52 @@ export default function TogetherApp() {
         )}
 
         {/* ── URGENT ── */}
+        {/* ════ SOMEDAY — tasks without a due date ════ */}
+        {view==="someday"&&(
+          <div style={{ padding:"20px 16px",maxWidth:1200,margin:"0 auto" }}>
+            <div style={{ marginBottom:16 }}>
+              <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:26,color:T.text,marginBottom:2 }}>Someday ☁️</div>
+              <div style={{ fontSize:13,color:T.textSub }}>All tasks without a due date — things you'll get to eventually.</div>
+            </div>
+            <div className="stats-row" style={{marginBottom:24}}>
+              {[
+                {l:"Total",    v:activeTasks.filter(t=>!t.dueDate).length,                                    c:"#E8A838"},
+                {l:"Progress", v:activeTasks.filter(t=>!t.dueDate&&t.type==="progress").length,               c:"#E8A838"},
+                {l:"Monthly",  v:activeTasks.filter(t=>!t.dueDate&&t.type==="monthly").length,                c:"#9B6EE8"},
+                {l:"Goals",    v:activeTasks.filter(t=>!t.dueDate&&t.type==="goal").length,                   c:"#3DBF8A"},
+              ].map(s=>(
+                <div key={s.l} style={cardBase({padding:"10px 14px",flex:"1 1 80px",borderLeft:`3px solid ${s.c}`})}>
+                  <div style={{fontSize:20,fontWeight:700,color:T.text,lineHeight:1}}>{s.v}</div>
+                  <div style={{fontSize:10,fontWeight:600,color:T.textSub,marginTop:3,textTransform:"uppercase",letterSpacing:"0.08em"}}>{s.l}</div>
+                </div>
+              ))}
+            </div>
+            <div className="grid-board">
+              {SECTIONS.map(sec=>{
+                const secTasks = activeTasks.filter(t=>t.section===sec.id&&!t.dueDate);
+                return (
+                  <GridCard
+                    key={sec.id}
+                    colId={sec.id}
+                    label={sec.label}
+                    emoji={sec.emoji}
+                    color={sec.color}
+                    colTasks={secTasks}
+                    isDone={false}
+                    T={T}
+                    mode={mode}
+                    pillCtx={pillCtx}
+                    dragHandlers={{ handleDragOverCol:()=>{},handleDropOnCol:()=>{},handleBoardDragStart:()=>{},handleDragEnd:()=>{},handleDropOnTask:()=>{},dragType:{current:null},dragTaskId:{current:null},highlightCol:null,highlightBoard:null }}
+                    onAddTask={(secId)=>{ setAddSec(secId); setNew(p=>({...p,section:secId})); setShowAdd(true); }}
+                    onViewAll={(data)=>setTaskModal(data)}
+                    onDeleteTasks={(secId,type)=>{ if(type==="active") setTasks(prev=>prev.filter(t=>!(t.section===secId&&!t.done))); else setTasks(prev=>prev.filter(t=>!(t.section===secId&&t.done))); }}
+                  />
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {view==="urgent"&&(
           <div style={{padding:"24px 16px",maxWidth:720,margin:"0 auto"}}>
             <div style={{fontFamily:"'DM Serif Display',serif",fontSize:28,color:T.text,marginBottom:4}}>🔴 Urgent & Due Soon</div>
