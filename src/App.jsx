@@ -1133,6 +1133,327 @@ function MiniModal({ title, accent, onClose, onSave, children, T }) {
 
 
 // ══════════════════════════════════════════════════════════════════════════════
+// ── ComprehensiveApp ──────────────────────────────────────────────────────────
+// Exam prep & active recall for Amen (Abstract Algebra, Real Analysis, ODE,
+// AIP) and Gloria (her own courses — she adds her own decks).
+// ══════════════════════════════════════════════════════════════════════════════
+
+const ABSTRACT_CARDS = [
+  { id:1, title:"Definition of a group", tag:"define", body:"A <b>group</b> (G, ★) is an ordered pair where G is a set and ★ is a binary operation satisfying:<br><br><b>(i) Associativity:</b> (a★b)★c = a★(b★c) for all a,b,c ∈ G<br><b>(ii) Identity:</b> ∃ e ∈ G with a★e = e★a = a for all a ∈ G<br><b>(iii) Inverses:</b> For each a ∈ G, ∃ a⁻¹ with a★a⁻¹ = a⁻¹★a = e<br><br>Closure is built into ★ being a binary operation G×G→G. Only 3 axioms.", hint:"Dummit & Foote p.16 — 3 axioms NOT 4. Closure is automatic." },
+  { id:2, title:"Cyclic group", tag:"define", body:"G is <b>cyclic</b> if ∃ g ∈ G such that G = ⟨g⟩ — every element is a power of g. g is called a <b>generator</b>.<br><br>Examples: ℤ = ⟨1⟩ under addition. ℤ/nℤ = ⟨1̄⟩ under addition.<br><br>Every cyclic group is abelian. Number of generators = φ(n).", hint:"φ(n) generators total. A cyclic group of order n has exactly one subgroup per divisor of n." },
+  { id:3, title:"Order of an element", tag:"define", body:"The <b>order</b> |x| of x ∈ G is the <b>smallest positive integer n</b> with xⁿ = e. If none exists, x has infinite order.<br><br><b>Key facts:</b><br>• xᵏ = e ⟺ |x| divides k<br>• ord(xᵏ) = n / gcd(n, k)", hint:"The word POSITIVE is crucial — n=0 always satisfies x⁰=e so it must be smallest POSITIVE." },
+  { id:4, title:"Powers equal {e, x, …, xⁿ⁻¹} — proof", tag:"prove", body:"<b>Proof:</b> By the Division Algorithm write k = qn + r, 0 ≤ r < n.<br><br>xᵏ = x^(qn+r) = (xⁿ)^q · xʳ = eᵍ · xʳ = xʳ<br><br>Since 0 ≤ r < n, xʳ ∈ {e, x, …, xⁿ⁻¹}. ∎<br><br><b>Two tools:</b> Division Algorithm + xⁿ = e.", hint:"WOP gives smallest m. Division Algorithm forces r = 0 by minimality." },
+  { id:5, title:"Orders of powers, generators, subgroup lattice", tag:"compute", body:"If r has order n:<br><br><b>(a)</b> ord(rᵏ) = n / gcd(n, k)<br><b>(b)</b> rᵏ generates ⟨r⟩ ⟺ gcd(n, k) = 1. Number of generators = φ(n).<br><b>(c)</b> One subgroup ⟨r^(n/d)⟩ of order d for each divisor d of n.<br><br>Example n=12: ord(r²)=6, ord(r³)=4, ord(r⁶)=2.", hint:"Subgroup lattice has as many nodes as divisors of n. Lines connect d₁ to d₂ when d₁|d₂ with nothing between." },
+  { id:6, title:"Subgroup criterion", tag:"define", body:"A non-empty H ⊆ G is a subgroup ⟺<br><br><b>For all a, b ∈ H: ab⁻¹ ∈ H</b><br><br>One condition gives three for the price of one:<br>• a=b → e ∈ H (identity)<br>• a=e → b⁻¹ ∈ H (inverses)<br>• combine → ab ∈ H (closure)", hint:"Lead with this in every subgroup proof — it's fastest." },
+  { id:7, title:"Any subgroup of a cyclic group is cyclic", tag:"prove", body:"Let H ≤ ⟨g⟩. If H = {e}, done.<br><br>S = {m ∈ ℤ⁺ : gᵐ ∈ H} is non-empty. By <b>WOP</b>, let m = smallest element.<br><br><b>Claim H = ⟨gᵐ⟩:</b><br>(⊇) Clear. (⊆) For gᵏ ∈ H write k=qm+r. Then gʳ ∈ H so r=0 by minimality. ∎", hint:"WOP → m exists. Division Algorithm → r=0. Minimality bridges them." },
+  { id:8, title:"Center Z(G) — definition", tag:"define", body:"<b>Z(G) = { x ∈ G | xg = gx for all g ∈ G }</b><br><br>Elements that commute with everything in G.<br><br>• Z(G) = G ⟺ G is abelian<br>• Z(D₆) = {e}<br>• Z(D₈) = {e, r²} where r = 90° rotation", hint:"Z(D₂ₙ) = {e, rⁿ} when n even. Z(D₂ₙ) = {e} when n odd." },
+  { id:9, title:"Prove Z(G) is a subgroup", tag:"prove", body:"<b>Non-empty:</b> e ∈ Z(G) since eg=ge. ✓<br><br><b>Closed under ab⁻¹:</b><br>Step 1 — b⁻¹ ∈ Z(G): since bg=gb → gb⁻¹=b⁻¹g. ✓<br>Step 2 — ab⁻¹ ∈ Z(G): (ab⁻¹)g = a(b⁻¹g) = a(gb⁻¹) = (ag)b⁻¹ = (ga)b⁻¹ = g(ab⁻¹). ✓<br><br>So Z(G) ≤ G. ∎", hint:"Show b⁻¹ central first, then combine with a central." },
+  { id:10, title:"Homomorphism definition + consequences", tag:"define", body:"φ: G→H is a <b>homomorphism</b> if <b>φ(ab) = φ(a)φ(b)</b> for all a,b ∈ G.<br><br>Consequences:<br>• φ(eG) = eH<br>• φ(a⁻¹) = φ(a)⁻¹<br>• |φ(a)| divides |a|<br>• Im(φ) ≤ H always", hint:"All four consequences follow from one equation. The image is always a subgroup." },
+  { id:11, title:"Injective iff ker = {e}", tag:"prove", body:"(⟹) Let g ∈ ker. φ(g)=e=φ(eG). By injectivity g=eG. So ker={e}. ✓<br><br>(⟸) Suppose φ(a)=φ(b). Then φ(ab⁻¹)=φ(a)φ(b)⁻¹=e. So ab⁻¹∈ker={e}, meaning a=b. ✓ ∎<br><br><b>Key move:</b> Turn φ(a)=φ(b) into φ(ab⁻¹)=e.", hint:"Both directions use the same algebraic move." },
+  { id:12, title:"Kernel is a normal subgroup", tag:"both", body:"<b>ker(φ) = { g ∈ G | φ(g) = eH }</b><br><br>Subgroup: e∈ker ✓. a,b∈ker → φ(ab⁻¹)=e ✓<br><br><b>Normal</b> — take n∈ker, g∈G:<br>φ(gng⁻¹) = φ(g)·<b>e</b>·φ(g)⁻¹ = e ✓<br>So gng⁻¹ ∈ ker for all g. Therefore ker(φ) ⊴ G. ∎", hint:"Normality is one line: φ(gng⁻¹)=φ(g)eφ(g)⁻¹=e. The e in the middle is because n∈ker." },
+  { id:13, title:"Conjugation f(x)=gxg⁻¹ is an automorphism", tag:"prove", body:"Homo: f(xy)=g(xy)g⁻¹=(gxg⁻¹)(gyg⁻¹)=f(x)f(y) ✓<br>Injective: f(x)=f(y) → x=y (cancel g left, g⁻¹ right) ✓<br>Surjective: preimage of y is g⁻¹yg ✓<br><br>So f is an automorphism. ∎", hint:"Inverse map is conjugation by g⁻¹." },
+  { id:14, title:"Abelian group; squaring map iff abelian", tag:"both", body:"G <b>abelian</b> ⟺ ab=ba for all a,b.<br><br>f(x)=x² is homo ⟺ (ab)²=a²b² ⟺ abab=aabb ⟺ ba=ab ⟺ G abelian. ∎<br><br>Write as a chain of ⟺ — proves both directions simultaneously.", hint:"Chain of equivalences is the cleanest exam presentation." },
+  { id:15, title:"First Isomorphism Theorem", tag:"both", body:"If φ:G→H is a homo then <b>G/ker(φ) ≅ Im(φ)</b>.<br><br>Define Φ(gK)=φ(g). Prove: well-defined → homo → injective → surjective. ∎<br><br>Application: (ℤ×ℤ)/⟨(2,1)⟩ ≅ ℤ via φ(a,b)=a−2b.", hint:"4 steps always in that order: well-defined, homo, injective, surjective." },
+  { id:16, title:"Lagrange's Theorem", tag:"both", body:"If G finite, H≤G: <b>|H| divides |G|</b> and |G|=|H|·[G:H].<br><br>Proof: left cosets partition G. Each has |H| elements. There are [G:H] of them. ∎<br><br>Corollary: |x| divides |G| for all x∈G.", hint:"Lagrange does NOT say every divisor has a subgroup — A₄ has no subgroup of order 6!" },
+  { id:17, title:"Define Aₙ; A₄ has no subgroup of order 6", tag:"both", body:"Aₙ = all even permutations in Sₙ. |Aₙ|=n!/2.<br><br>Suppose H≤A₄, |H|=6. Then [A₄:H]=2 → H⊴A₄ → every x∈A₄ has x²∈H.<br>Computing squares of all 3-cycles gives 7 elements — contradicts |H|=6. ∎", hint:"Normal means closed under conjugation. 1+(conjugacy class sizes) must equal 6 — impossible." },
+  { id:18, title:"G/Z(G) cyclic implies G abelian", tag:"prove", body:"Let G/Z(G)=⟨gZ(G)⟩. Every element of G has form gⁱz (z∈Z(G)).<br><br>For a=gⁱz₁, b=gʲz₂:<br>ab = gⁱz₁gʲz₂ = g^(i+j)z₁z₂ = ba (z₁,z₂ central). ∎", hint:"Contrapositive: non-abelian G → G/Z(G) not cyclic. So G/Z(G) is trivial or non-cyclic." },
+  { id:19, title:"Non-abelian G with abelian G/N", tag:"compute", body:"G=S₃, N=A₃={e,(123),(132)}.<br><br>N normal (index 2 → always normal). ✓<br>G/N ≅ ℤ/2ℤ — abelian. ✓<br>S₃ non-abelian: (12)(13)≠(13)(12). ✓<br><br>By 1st Iso Thm: S₃/A₃ ≅ {±1} ≅ ℤ₂.", hint:"Index-2 subgroups are always normal — key fact to memorise." },
+  { id:20, title:"Class Equation", tag:"both", body:"|G| = |Z(G)| + Σ[G:CG(xᵢ)]<br>(sum over non-central conjugacy class reps)<br><br>Proof: conjugacy classes partition G. Central elements = singletons = Z(G). Non-central class sizes = [G:CG(x)] > 1 by orbit-stabilizer. ∎", hint:"S₃: 6=1+2+3. S₄: 24=1+6+8+6+3. S₅: 120=1+10+15+20+24+20+30." },
+  { id:21, title:"p-group has nontrivial center", tag:"both", body:"<b>Def:</b> |G|=pⁿ for prime p.<br><br>Class Eq: |G|=|Z(G)|+Σ[G:CG(xᵢ)].<br>Each non-central term = p^(n-k) with n-k≥1, so p divides each.<br>p||G| and p|sum → <b>p||Z(G)|</b>.<br>So |Z(G)|≥p>1. ∎", hint:"Most elegant Class Equation application. Learn cold." },
+  { id:22, title:"Cayley's Theorem", tag:"both", body:"Every G ≅ subgroup of a permutation group.<br><br>Step 1: σg(x)=gx is a bijection. ✓<br>Step 2: Γ:G→SG by Γ(g)=σg.<br>Homo: Γ(gh)(x)=ghx=σg(σh(x)). ✓<br>Injective: Γ(g)=Γ(h) → gx=hx for all x → set x=e → g=h. ✓<br><br>So G≅Γ(G)≤SG. ∎", hint:"x=e is chosen because it collapses gx=hx to g=h in one step. Any x works but e is fastest." },
+  { id:23, title:"Solvable groups", tag:"both", body:"G <b>solvable</b> ⟺ chain {e}=G₀⊴…⊴Gₙ=G with each Gᵢ₊₁/Gᵢ abelian.<br><br>Solvable: S₃ ({e}⊴A₃⊴S₃, quotients ℤ₃ and ℤ₂). ✓<br>Not solvable: A₅ (simple, non-abelian). ✗<br><br>Sₙ not solvable for n≥5.", hint:"Galois: polynomial solvable by radicals ⟺ Galois group is solvable." },
+  { id:24, title:"Fundamental Theorem for Finite Abelian Groups", tag:"both", body:"Every finite abelian group ≅ direct product of cyclic p-groups.<br><br><b>Elementary Divisor form:</b> ℤ_{p₁^a₁} × ℤ_{p₂^a₂} × …<br><b>Invariant Factor form:</b> ℤ_{n₁} × … × ℤ_{nₖ} where n₁|…|nₖ<br><br>Order 12: ℤ₄×ℤ₃ or ℤ₂×ℤ₂×ℤ₃ (elem. div.) ≡ ℤ₁₂ or ℤ₂×ℤ₆ (inv. fac.)", hint:"To convert: group elem. divisors by prime, multiply across primes for invariant factors." },
+  { id:25, title:"Sylow's Theorem — all three parts", tag:"define", body:"|G|=pⁿm, p∤m.<br><b>Part 1 (Existence):</b> G has a subgroup of order pⁿ.<br><b>Part 2 (Conjugacy):</b> All Sylow p-subgroups conjugate. nₚ=1 ⟺ unique = normal.<br><b>Part 3 (Count):</b> nₚ≡1(mod p) and nₚ|m.", hint:"Strategy: force nₚ=1 → normal Sylow subgroup → not simple." },
+  { id:26, title:"Simple groups + Sylow to prove non-simplicity", tag:"both", body:"G simple ⟺ no proper normal subgroups.<br><br>To show |G|=441=3²·7² not simple:<br>n₇: divides 9 and ≡1 mod 7 → n₇∈{1,8,15,…}. Only n₇=1 divides 9.<br>So n₇=1 → unique Sylow 7-subgroup is normal → G not simple. ∎", hint:"List nₚ candidates: must satisfy nₚ≡1(mod p) AND nₚ|m. Then show only 1 works." },
+  { id:27, title:"Semidirect product H ⋊_φ K", tag:"define", body:"φ:K→Aut(H). H⋊_φK = H×K with operation:<br><b>(h₁,k₁)(h₂,k₂) = (h₁·φ(k₁)(h₂), k₁k₂)</b><br><br>φ trivial → direct product. D₂ₙ≅Cₙ⋊C₂ where φ(flip)(r)=r⁻¹.<br><br>Key relation: srs⁻¹ = φ(s)(r).", hint:"Once you know φ(s)(r), you can compute the entire multiplication table." },
+];
+
+const ODE_CARDS = [
+  { id:1, title:"1st order linear ODE", tag:"define", body:"Form: <b>y' + P(x)y = Q(x)</b><br><br>Integrating factor: μ(x) = e^(∫P(x)dx)<br><br>Multiply both sides by μ: d/dx[μy] = μQ<br>Integrate both sides: μy = ∫μQ dx<br>Solve for y.", hint:"The integrating factor makes the left side a perfect derivative." },
+  { id:2, title:"Separable ODE", tag:"compute", body:"Form: <b>dy/dx = g(x)h(y)</b><br><br>Separate: dy/h(y) = g(x)dx<br>Integrate both sides.<br><br>Example: dy/dx = xy → dy/y = x dx → ln|y| = x²/2 + C → y = Ae^(x²/2)", hint:"Move all y terms to one side, all x terms to the other, then integrate." },
+  { id:3, title:"2nd order linear ODE — homogeneous", tag:"both", body:"Form: <b>ay'' + by' + cy = 0</b><br><br>Characteristic equation: ar² + br + c = 0<br><br>Cases:<br>• Two real roots r₁≠r₂: y = c₁e^(r₁x) + c₂e^(r₂x)<br>• Repeated root r: y = (c₁+c₂x)e^(rx)<br>• Complex roots α±βi: y = e^(αx)(c₁cos(βx)+c₂sin(βx))", hint:"The characteristic equation replaces y with r, y' with r², etc." },
+  { id:4, title:"Variation of parameters", tag:"prove", body:"For ay''+by'+cy = g(x), given yh = c₁y₁+c₂y₂:<br><br>W = y₁y₂'−y₂y₁' (Wronskian)<br><br>u₁' = −y₂g/aW, u₂' = y₁g/aW<br><br>yp = u₁y₁ + u₂y₂<br>General: y = yh + yp", hint:"Variation of parameters works for any g(x). Undetermined coefficients only works for special forms." },
+  { id:5, title:"Laplace transform — definition and key pairs", tag:"define", body:"<b>L{f(t)} = ∫₀^∞ e^(-st)f(t)dt = F(s)</b><br><br>Key pairs:<br>• L{1} = 1/s<br>• L{t^n} = n!/s^(n+1)<br>• L{e^(at)} = 1/(s-a)<br>• L{sin(bt)} = b/(s²+b²)<br>• L{cos(bt)} = s/(s²+b²)<br>• L{y'} = sY-y(0)", hint:"For IVPs: take Laplace, solve for Y(s) algebraically, take inverse Laplace." },
+  { id:6, title:"Floquet theory — p-group theorem", tag:"both", body:"System x' = A(t)x with A(t) periodic period ω is a <b>Floquet system</b>.<br><br>Floquet multipliers: eigenvalues of C = Φ⁻¹(0)Φ(ω).<br><br>Key result: product of Floquet multipliers = exp(∫₀^ω tr(A(s))ds)<br><br>If tr(A)=0 → product = 1.", hint:"For Mathieu equation y''+( α+βcos t)y=0: tr(A)=0 so μ₁μ₂=1." },
+  { id:7, title:"Lozinski measure μ₁(A)", tag:"compute", body:"μ(A) = lim_{h→0+} (||I+hA||−1)/h<br><br><b>Limit exists because:</b> ||I+θhA||≤θ||I+hA||+(1−θ) → quotient monotone. Bounded below by −||A||. By Monotone Convergence Theorem, limit exists.<br><br><b>Formula for μ₁:</b> μ₁(A) = max_j(a_jj + Σ_{i≠j}|a_ij|) — column sums.", hint:"μ₁ uses COLUMN sums. μ∞ uses ROW sums. Don't mix them up." },
+];
+
+const REAL_CARDS = [
+  { id:1, title:"ε-δ definition of a limit", tag:"define", body:"lim_{x→a} f(x) = L means:<br><br>For every ε > 0, ∃ δ > 0 such that<br>0 < |x−a| < δ ⟹ |f(x)−L| < ε<br><br>Note: x≠a (that's the 0 < |x−a|). The function need not be defined at a.", hint:"ε is the output tolerance. δ is the input tolerance. You pick ε, you find δ." },
+  { id:2, title:"Continuity — definition and types", tag:"define", body:"f is <b>continuous at a</b> if lim_{x→a}f(x) = f(a).<br><br>f is <b>uniformly continuous</b> on S if: for every ε>0, ∃ δ>0 such that |x−y|<δ ⟹ |f(x)−f(y)|<ε for ALL x,y∈S.<br><br>Key: uniform continuity — one δ works for all pairs.", hint:"Uniform continuity: δ depends only on ε, NOT on the point x." },
+  { id:3, title:"Mean Value Theorem", tag:"both", body:"If f continuous on [a,b] and differentiable on (a,b), then ∃ c ∈ (a,b) with:<br><br><b>f'(c) = (f(b)−f(a))/(b−a)</b><br><br>Proof: Apply Rolle's theorem to g(x) = f(x) − [f(a) + (f(b)−f(a))(x−a)/(b−a)].", hint:"MVT = there exists a point where instantaneous rate = average rate." },
+  { id:4, title:"Bolzano-Weierstrass Theorem", tag:"prove", body:"Every bounded sequence in ℝ has a convergent subsequence.<br><br>Proof: Let {xₙ} be bounded, say xₙ ∈ [a,b]. Bisect [a,b] — one half contains infinitely many terms. Bisect that half. Continue. The nested intervals give a convergent subsequence by the nested interval property.", hint:"Bisect and always choose the half with infinitely many terms." },
+  { id:5, title:"Riemann integral — definition", tag:"define", body:"For f:[a,b]→ℝ, partition P = {a=x₀<x₁<…<xₙ=b}.<br><br>Upper sum: U(f,P) = Σ Mᵢ(xᵢ−xᵢ₋₁) where Mᵢ = sup f on [xᵢ₋₁,xᵢ]<br>Lower sum: L(f,P) = Σ mᵢ(xᵢ−xᵢ₋₁)<br><br>f is <b>Riemann integrable</b> if inf U(f,P) = sup L(f,P).", hint:"f integrable ⟺ for every ε>0, ∃ P with U(f,P)−L(f,P)<ε." },
+  { id:6, title:"Fundamental Theorem of Calculus — both parts", tag:"both", body:"<b>Part 1:</b> If f continuous on [a,b], then F(x)=∫ₐˣf(t)dt is differentiable and F'(x)=f(x).<br><br><b>Part 2:</b> If F'=f on [a,b], then ∫ₐᵇf(x)dx = F(b)−F(a).<br><br>Part 1: differentiation undoes integration. Part 2: integration undoes differentiation.", hint:"Part 1 → antiderivative exists. Part 2 → how to compute integrals." },
+  { id:7, title:"Heine-Borel Theorem", tag:"both", body:"A subset S ⊆ ℝⁿ is <b>compact</b> ⟺ S is <b>closed and bounded</b>.<br><br>Proof (⟹): Compact → closed (limit points of sequences are in S) and bounded (take open cover of unit balls).<br>(⟸): Closed and bounded → every sequence has a convergent subsequence (B-W) whose limit is in S (closed).", hint:"Compactness is the key property that makes everything work: max/min exist, continuous functions are uniformly continuous." },
+  { id:8, title:"Weierstrass M-test — uniform convergence", tag:"both", body:"If |fₙ(x)| ≤ Mₙ for all x∈S and Σ Mₙ < ∞, then Σ fₙ converges <b>uniformly and absolutely</b> on S.<br><br>Consequence: if each fₙ is continuous and Σ fₙ converges uniformly, the sum is continuous.", hint:"M-test: bound each term by a number (not depending on x), sum the numbers." },
+];
+
+const AIP_CARDS = [
+  { id:1, title:"Matrix norm induced by vector norm", tag:"define", body:"||A|| = sup_{||x||=1} ||Ax|| = max_{x≠0} ||Ax||/||x||<br><br>Key property: ||Ax|| ≤ ||A||·||x|| for all x.<br><br>Traffic norm: ||A||₁ = max_j Σᵢ|aᵢⱼ| (max column sum)<br>Max norm: ||A||∞ = max_i Σⱼ|aᵢⱼ| (max row sum)", hint:"Traffic norm = column sums. Max norm = row sums. Euclidean norm = sqrt of largest eigenvalue of AᵀA." },
+  { id:2, title:"Lozinski measure — definition and existence", tag:"both", body:"μ(A) = lim_{h→0+} (||I+hA||−1)/h<br><br>Exists because: f(h)=||I+hA|| is convex → difference quotient monotone. Bounded below by −||A|| (reverse triangle inequality). Monotone Convergence Theorem gives limit. ∎<br><br>Properties: |μ(A)|≤||A||, μ(A+B)≤μ(A)+μ(B), Re(λ)≤μ(A) for all eigenvalues λ.", hint:"Proof uses WOP-style argument via Monotone Convergence. Know the textbook proof from Exercise 2.49." },
+  { id:3, title:"Stability via Lozinski measure", tag:"both", body:"If μ(A) < 0, then the trivial solution of x' = Ax is <b>globally asymptotically stable</b>.<br><br>This follows from μ(A) < 0 → all eigenvalues have negative real part → solutions decay to 0.<br><br>Example: if μ₁(A) = −1 < 0 then stable.", hint:"Lozinski measure gives a computable sufficient condition for stability. μ < 0 is sufficient but not necessary." },
+];
+
+function ComprehensiveApp({ names, mode, T, activeUser, onBack }) {
+  const FF = "'DM Sans',sans-serif";
+  const SF = "'DM Serif Display',serif";
+
+  const USER_A_COURSES = [
+    { id:"abstract", label:"Abstract Algebra", color:"#185FA5", emoji:"∑", cards: ABSTRACT_CARDS },
+    { id:"ode",      label:"ODE",              color:"#085041", emoji:"∂", cards: ODE_CARDS },
+    { id:"real",     label:"Real Analysis",    color:"#3C3489", emoji:"ℝ", cards: REAL_CARDS },
+    { id:"aip",      label:"AIP",              color:"#854F0B", emoji:"λ", cards: AIP_CARDS },
+  ];
+
+  const [who,      setWho]      = useState(activeUser || "A");
+  const [course,   setCourse]   = useState("abstract");
+  const [cardIdx,  setCardIdx]  = useState(0);
+  const [phase,    setPhase]    = useState("read");
+  const [readSec,  setReadSec]  = useState(60);
+  const [timerOn,  setTimerOn]  = useState(false);
+  const [known,    setKnown]    = useState({});
+  const [gloriaCards, setGloriaCards] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("gloria_comp_cards") || "[]"); } catch { return []; }
+  });
+  const [showAddCard, setShowAddCard] = useState(false);
+  const [newCard, setNewCard] = useState({ title:"", tag:"define", body:"", hint:"" });
+  const timerRef = useState(null);
+
+  const isA = who === "A";
+  const courses = isA ? USER_A_COURSES : [];
+  const currentCourse = isA ? (courses.find(c => c.id === course) || courses[0]) : null;
+  const cards = isA ? (currentCourse?.cards || []) : gloriaCards;
+  const card = cards[cardIdx];
+  const doneCount = Object.keys(known).filter(k => k.startsWith(who + "_" + (isA ? course : "gloria") + "_") && known[k] === "got").length;
+
+  useEffect(() => {
+    setCardIdx(0);
+    setPhase("read");
+    setReadSec(60);
+    setTimerOn(false);
+  }, [course, who]);
+
+  useEffect(() => {
+    if (!timerOn) return;
+    const iv = setInterval(() => {
+      setReadSec(s => {
+        if (s <= 1) { clearInterval(iv); setTimerOn(false); setPhase("quiz"); return 0; }
+        return s - 1;
+      });
+    }, 1000);
+    return () => clearInterval(iv);
+  }, [timerOn]);
+
+  function startReading() { setPhase("reading"); setReadSec(60); setTimerOn(true); }
+  function skipToQuiz()   { setTimerOn(false); setPhase("quiz"); }
+  function markCard(score) {
+    const key = who + "_" + (isA ? course : "gloria") + "_" + cardIdx;
+    setKnown(k => ({ ...k, [key]: score }));
+    if (cardIdx < cards.length - 1) { setCardIdx(i => i+1); setPhase("read"); setReadSec(60); setTimerOn(false); }
+  }
+  function saveGloriaCard() {
+    if (!newCard.title.trim() || !newCard.body.trim()) return;
+    const updated = [...gloriaCards, { ...newCard, id: Date.now() }];
+    setGloriaCards(updated);
+    try { localStorage.setItem("gloria_comp_cards", JSON.stringify(updated)); } catch {}
+    setNewCard({ title:"", tag:"define", body:"", hint:"" });
+    setShowAddCard(false);
+  }
+  function deleteGloriaCard(idx) {
+    const updated = gloriaCards.filter((_,i) => i !== idx);
+    setGloriaCards(updated);
+    try { localStorage.setItem("gloria_comp_cards", JSON.stringify(updated)); } catch {}
+    if (cardIdx >= updated.length) setCardIdx(Math.max(0, updated.length - 1));
+  }
+
+  const tagColors = { define:["#E6F1FB","#0C447C"], prove:["#FCEBEB","#791F1F"], both:["#EEEDFE","#3C3489"], compute:["#E1F5EE","#085041"] };
+
+  const s = (style) => ({ fontFamily: FF, ...style });
+
+  return (
+    <div style={s({ minHeight:"100vh", background:T.bg, color:T.text, paddingBottom:80 })}>
+      {/* ── Header ── */}
+      <div style={s({ background:T.topbar, borderBottom:`1px solid ${T.border}`, padding:"12px 16px", display:"flex", alignItems:"center", gap:10, position:"sticky", top:0, zIndex:20 })}>
+        <button onClick={onBack} style={s({ background:"none", border:"none", cursor:"pointer", color:T.textSub, fontSize:20, padding:"0 4px" })}>←</button>
+        <div style={{ flex:1 }}>
+          <div style={s({ fontFamily:SF, fontSize:18, color:T.text })}>Exam Prep</div>
+          <div style={s({ fontSize:11, color:T.textSub, marginTop:1 })}>Active recall sessions</div>
+        </div>
+        {/* Who toggle */}
+        <div style={{ display:"flex", gap:6 }}>
+          {["A","B"].map(u => (
+            <button key={u} onClick={()=>{setWho(u);setCourse("abstract");setCardIdx(0);setPhase("read");}} style={s({ padding:"6px 14px", borderRadius:20, border:`1px solid ${who===u?(u==="A"?"#E8A838":"#E84E8A"):T.border}`, background:who===u?(u==="A"?"#E8A83820":"#E84E8A20"):"transparent", color:who===u?(u==="A"?"#E8A838":"#E84E8A"):T.textSub, fontSize:12, fontWeight:who===u?700:400, cursor:"pointer" })}>
+              {names[u]}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ padding:"16px 16px 0" }}>
+        {/* ── Course tabs (Amen only) ── */}
+        {isA && (
+          <div style={{ display:"flex", gap:8, overflowX:"auto", paddingBottom:4, marginBottom:16 }}>
+            {USER_A_COURSES.map(c => (
+              <button key={c.id} onClick={()=>setCourse(c.id)} style={s({ flexShrink:0, padding:"7px 16px", borderRadius:20, border:`1px solid ${course===c.id?c.color:T.border}`, background:course===c.id?c.color+"20":"transparent", color:course===c.id?c.color:T.textSub, fontSize:13, fontWeight:course===c.id?700:400, cursor:"pointer" })}>
+                {c.emoji} {c.label}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* ── Gloria's add card button ── */}
+        {!isA && (
+          <div style={{ marginBottom:16 }}>
+            <div style={s({ fontFamily:SF, fontSize:17, color:T.text, marginBottom:4 })}>Gloria's Exam Prep</div>
+            <div style={s({ fontSize:12, color:T.textSub, marginBottom:12 })}>Add your own active recall cards for your courses.</div>
+            <button onClick={()=>setShowAddCard(true)} style={s({ padding:"9px 20px", borderRadius:10, border:"1px solid #E84E8A44", background:"#E84E8A12", color:"#E84E8A", fontSize:13, fontWeight:600, cursor:"pointer" })}>
+              + Add a card
+            </button>
+          </div>
+        )}
+
+        {/* ── Stats bar ── */}
+        {cards.length > 0 && (
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:8, marginBottom:16 }}>
+            {[["Cards", cards.length],["Done", doneCount],["Left", cards.length - doneCount]].map(([l,n]) => (
+              <div key={l} style={s({ background:T.surface, border:`1px solid ${T.border}`, borderRadius:10, padding:"10px 8px", textAlign:"center" })}>
+                <div style={s({ fontSize:20, fontWeight:600, color:T.text })}>{n}</div>
+                <div style={s({ fontSize:11, color:T.textSub, marginTop:1 })}>{l}</div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* ── Progress bar ── */}
+        {cards.length > 0 && (
+          <div style={{ marginBottom:16 }}>
+            <div style={{ display:"flex", justifyContent:"space-between", fontSize:11, color:T.textSub, marginBottom:5, fontFamily:FF }}>
+              <span>Card {cardIdx+1} of {cards.length}</span>
+              <span>{Math.round(doneCount/cards.length*100)}% mastered</span>
+            </div>
+            <div style={{ height:5, background:T.border, borderRadius:3 }}>
+              <div style={{ height:5, borderRadius:3, background:isA?(currentCourse?.color||"#185FA5"):"#E84E8A", width:`${Math.round((cardIdx+1)/cards.length*100)}%`, transition:"width .4s" }}/>
+            </div>
+          </div>
+        )}
+
+        {/* ── Empty state (Gloria no cards) ── */}
+        {cards.length === 0 && (
+          <div style={s({ textAlign:"center", padding:"48px 24px", color:T.textSub })}>
+            <div style={{ fontSize:36, marginBottom:12 }}>📚</div>
+            <div style={s({ fontFamily:SF, fontSize:18, color:T.text, marginBottom:8 })}>No cards yet, {names[who]}</div>
+            <div style={s({ fontSize:13, lineHeight:1.6 })}>Add your first exam prep card using the button above. You can add definitions, proofs, or any topic you need to memorise.</div>
+          </div>
+        )}
+
+        {/* ── Flash card ── */}
+        {card && (
+          <div style={s({ background:T.surface, border:`1px solid ${T.border}`, borderRadius:16, padding:"16px 16px 14px", marginBottom:12 })}>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
+              <span style={s({ fontSize:12, color:T.textMuted })}>Card {cardIdx+1} / {cards.length}</span>
+              <div style={{ display:"flex", gap:6, alignItems:"center" }}>
+                <span style={s({ fontSize:11, fontWeight:600, padding:"3px 10px", borderRadius:20, background:tagColors[card.tag]?.[0]||"#eee", color:tagColors[card.tag]?.[1]||"#333" })}>{(card.tag||"define").toUpperCase()}</span>
+                {!isA && <button onClick={()=>deleteGloriaCard(cardIdx)} style={s({ background:"none", border:"none", cursor:"pointer", color:T.textMuted, fontSize:14, padding:"0 2px" })}>✕</button>}
+              </div>
+            </div>
+            <div style={s({ fontFamily:SF, fontSize:17, color:T.text, marginBottom:12, lineHeight:1.4 })}>{card.title}</div>
+            <div style={s({ fontSize:13, color:T.textSub, lineHeight:1.8 })} dangerouslySetInnerHTML={{ __html: card.body }}/>
+            {card.hint && phase !== "read" && (
+              <div style={s({ marginTop:10, padding:"8px 12px", background:T.inputBg, borderLeft:`3px solid ${isA?(currentCourse?.color||"#185FA5"):"#E84E8A"}`, borderRadius:0, fontSize:12, color:T.textSub, lineHeight:1.6 })}>{card.hint}</div>
+            )}
+          </div>
+        )}
+
+        {/* ── Timer bar ── */}
+        {card && phase === "reading" && (
+          <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:12 }}>
+            <div style={{ flex:1, height:4, background:T.border, borderRadius:2 }}>
+              <div style={{ height:4, borderRadius:2, background:isA?(currentCourse?.color||"#185FA5"):"#E84E8A", width:`${(readSec/60)*100}%`, transition:"width 1s linear" }}/>
+            </div>
+            <span style={s({ fontSize:12, color:T.textSub, minWidth:28 })}>{readSec}s</span>
+          </div>
+        )}
+
+        {/* ── Quiz box ── */}
+        {card && phase === "quiz" && (
+          <div style={s({ background:isA?"#EEEDFE":"#FBEAF0", border:`1px solid ${isA?"#3C3489":"#E84E8A"}`, borderRadius:12, padding:"12px 14px", marginBottom:12 })}>
+            <div style={s({ fontSize:11, fontWeight:600, color:isA?"#3C3489":"#E84E8A", letterSpacing:"0.06em", marginBottom:6 })}>QUIZ — answer in chat</div>
+            <div style={s({ fontSize:14, fontWeight:500, color:isA?"#26215C":"#4B1528", lineHeight:1.5 })}>
+              {card.tag === "define" ? `Define: ${card.title}` :
+               card.tag === "prove" ? `Prove: ${card.title}` :
+               card.tag === "both" ? `State and prove: ${card.title}` :
+               `Compute/apply: ${card.title}`}
+            </div>
+            <div style={s({ fontSize:12, color:T.textSub, marginTop:6, fontStyle:"italic" })}>Type your answer in chat. Then mark yourself honestly below.</div>
+          </div>
+        )}
+
+        {/* ── Action buttons ── */}
+        {card && (
+          <div style={{ display:"flex", gap:8, flexWrap:"wrap", marginBottom:16 }}>
+            {phase === "read" && (
+              <button onClick={startReading} style={s({ flex:1, padding:"11px", borderRadius:10, border:"none", background:isA?(currentCourse?.color||"#185FA5"):"#E84E8A", color:"#fff", fontSize:13, fontWeight:600, cursor:"pointer" })}>
+                Start reading (60s)
+              </button>
+            )}
+            {phase === "reading" && (<>
+              <button onClick={skipToQuiz} style={s({ flex:1, padding:"11px", borderRadius:10, border:"none", background:isA?(currentCourse?.color||"#185FA5"):"#E84E8A", color:"#fff", fontSize:13, fontWeight:600, cursor:"pointer" })}>I'm ready — quiz me</button>
+              <button onClick={skipToQuiz} style={s({ padding:"11px 16px", borderRadius:10, border:`1px solid ${T.border}`, background:T.inputBg, color:T.textSub, fontSize:13, cursor:"pointer" })}>Skip</button>
+            </>)}
+            {phase === "quiz" && (<>
+              <button onClick={()=>markCard("got")} style={s({ flex:1, padding:"10px", borderRadius:10, border:"none", background:"#085041", color:"#fff", fontSize:12, fontWeight:600, cursor:"pointer" })}>Got it</button>
+              <button onClick={()=>markCard("partial")} style={s({ flex:1, padding:"10px", borderRadius:10, border:"none", background:"#854F0B", color:"#fff", fontSize:12, fontWeight:600, cursor:"pointer" })}>Partial</button>
+              <button onClick={()=>markCard("missed")} style={s({ flex:1, padding:"10px", borderRadius:10, border:"none", background:"#791F1F", color:"#fff", fontSize:12, fontWeight:600, cursor:"pointer" })}>Missed</button>
+            </>)}
+          </div>
+        )}
+
+        {/* ── Card navigator ── */}
+        {cards.length > 0 && (
+          <div style={{ display:"flex", gap:8, justifyContent:"center", flexWrap:"wrap", marginBottom:16 }}>
+            <button onClick={()=>{setCardIdx(i=>Math.max(0,i-1));setPhase("read");setTimerOn(false);}} style={s({ padding:"7px 16px", borderRadius:8, border:`1px solid ${T.border}`, background:T.inputBg, color:T.textSub, fontSize:12, cursor:"pointer" })}>← Prev</button>
+            <button onClick={()=>{setCardIdx(i=>Math.min(cards.length-1,i+1));setPhase("read");setTimerOn(false);}} style={s({ padding:"7px 16px", borderRadius:8, border:`1px solid ${T.border}`, background:T.inputBg, color:T.textSub, fontSize:12, cursor:"pointer" })}>Next →</button>
+            <button onClick={()=>{setCardIdx(Math.floor(Math.random()*cards.length));setPhase("read");setTimerOn(false);}} style={s({ padding:"7px 16px", borderRadius:8, border:`1px solid ${T.border}`, background:T.inputBg, color:T.textSub, fontSize:12, cursor:"pointer" })}>Shuffle</button>
+          </div>
+        )}
+
+        {/* ── Gloria add card modal ── */}
+        {showAddCard && (
+          <div style={{ position:"fixed", inset:0, zIndex:50, background:"rgba(0,0,0,0.6)", display:"flex", alignItems:"flex-end", justifyContent:"center" }} onClick={()=>setShowAddCard(false)}>
+            <div style={s({ background:T.surface, width:"100%", maxWidth:500, borderRadius:"18px 18px 0 0", padding:"20px 20px 32px", maxHeight:"85vh", overflowY:"auto" })} onClick={e=>e.stopPropagation()}>
+              <div style={{ width:40, height:4, borderRadius:2, background:T.textMuted, margin:"0 auto 16px", opacity:.4 }}/>
+              <div style={s({ fontFamily:SF, fontSize:20, color:T.text, marginBottom:16 })}>Add exam prep card</div>
+              {[["Title / Question","title","text"],["Answer / Full content","body","textarea"],["Hint (optional)","hint","text"]].map(([lbl,field,type])=>(
+                <div key={field} style={{ marginBottom:14 }}>
+                  <div style={s({ fontSize:12, fontWeight:600, color:T.textSub, marginBottom:5 })}>{lbl}</div>
+                  {type==="textarea"
+                    ? <textarea value={newCard[field]} onChange={e=>setNewCard(c=>({...c,[field]:e.target.value}))} rows={4} style={s({ width:"100%", padding:"9px 12px", borderRadius:10, border:`1px solid ${T.border}`, background:T.inputBg, color:T.text, fontSize:13, resize:"vertical", fontFamily:FF })}/>
+                    : <input  value={newCard[field]} onChange={e=>setNewCard(c=>({...c,[field]:e.target.value}))} style={s({ width:"100%", padding:"9px 12px", borderRadius:10, border:`1px solid ${T.border}`, background:T.inputBg, color:T.text, fontSize:13 })}/>
+                  }
+                </div>
+              ))}
+              <div style={{ marginBottom:14 }}>
+                <div style={s({ fontSize:12, fontWeight:600, color:T.textSub, marginBottom:5 })}>Type</div>
+                <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
+                  {["define","prove","both","compute"].map(t=>(
+                    <button key={t} onClick={()=>setNewCard(c=>({...c,tag:t}))} style={s({ padding:"6px 14px", borderRadius:20, border:`1px solid ${newCard.tag===t?"#E84E8A":T.border}`, background:newCard.tag===t?"#E84E8A20":"transparent", color:newCard.tag===t?"#E84E8A":T.textSub, fontSize:12, cursor:"pointer", fontWeight:newCard.tag===t?700:400 })}>{t.toUpperCase()}</button>
+                  ))}
+                </div>
+              </div>
+              <div style={{ display:"flex", gap:8, marginTop:4 }}>
+                <button onClick={saveGloriaCard} style={s({ flex:1, padding:"11px", borderRadius:10, border:"none", background:"#E84E8A", color:"#fff", fontSize:13, fontWeight:600, cursor:"pointer" })}>Save card</button>
+                <button onClick={()=>setShowAddCard(false)} style={s({ padding:"11px 16px", borderRadius:10, border:`1px solid ${T.border}`, background:T.inputBg, color:T.textSub, fontSize:13, cursor:"pointer" })}>Cancel</button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
 // ── BudgetApp ─────────────────────────────────────────────────────────────────
 // Full-featured budget tracker with income, expenses, savings goals,
 // per-user views, shared view, pie chart, and history.
@@ -5385,6 +5706,9 @@ export default function TogetherApp() {
   if (appMode === "budget") {
     return <BudgetApp names={names} mode={mode} T={T} activeUser={activeUser} onBack={()=>switchApp("tasks")}/>;
   }
+  if (appMode === "comp") {
+    return <ComprehensiveApp names={names} mode={mode} T={T} activeUser={activeUser} onBack={()=>switchApp("tasks")}/>;
+  }
 
   // ── App home selector (shown once per session if not yet chosen after load) ─
   if (appMode === "home") {
@@ -5407,6 +5731,13 @@ export default function TogetherApp() {
               <div style={{ fontSize:28,marginBottom:8 }}>💰</div>
               <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:19,color:T.text,marginBottom:4 }}>Budget Tracker</div>
               <div style={{ fontSize:13,color:T.textSub,lineHeight:1.5 }}>Track income, expenses, savings goals — per person and shared.</div>
+            </button>
+            <button onClick={()=>switchApp("comp")} style={{ padding:"22px 20px",borderRadius:16,border:"1px solid #7B61FF44",background:T.surface,cursor:"pointer",textAlign:"left",boxShadow:"0 2px 12px rgba(0,0,0,0.1)",transition:"transform 0.15s" }}
+              onMouseEnter={e=>e.currentTarget.style.transform="translateY(-2px)"}
+              onMouseLeave={e=>e.currentTarget.style.transform="none"}>
+              <div style={{ fontSize:28,marginBottom:8 }}>📚</div>
+              <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:19,color:T.text,marginBottom:4 }}>Exam Prep</div>
+              <div style={{ fontSize:13,color:T.textSub,lineHeight:1.5 }}>Active recall sessions for comprehensive exams — Amen's 4 courses + Gloria's cards.</div>
             </button>
           </div>
           <div style={{ marginTop:20,display:"flex",gap:10,justifyContent:"center" }}>
@@ -6047,6 +6378,7 @@ export default function TogetherApp() {
               <div style={{display:"flex",gap:8}}>
                 <button onClick={()=>{setShowSett(false);switchApp("tasks");}} style={{flex:1,padding:"10px",borderRadius:10,border:`1px solid ${appMode==="tasks"?T.accent:T.border}`,background:appMode==="tasks"?T.accent+"15":T.inputBg,color:appMode==="tasks"?T.accent:T.text,fontFamily:"'DM Sans',sans-serif",fontSize:13,cursor:"pointer",fontWeight:appMode==="tasks"?700:400}}>⊞ Tasks</button>
                 <button onClick={()=>{setShowSett(false);switchApp("budget");}} style={{flex:1,padding:"10px",borderRadius:10,border:`1px solid ${appMode==="budget"?"#20B2AA":T.border}`,background:appMode==="budget"?"#20B2AA15":T.inputBg,color:appMode==="budget"?"#20B2AA":T.text,fontFamily:"'DM Sans',sans-serif",fontSize:13,cursor:"pointer",fontWeight:appMode==="budget"?700:400}}>💰 Budget</button>
+                <button onClick={()=>{setShowSett(false);switchApp("comp");}} style={{flex:1,padding:"10px",borderRadius:10,border:`1px solid ${appMode==="comp"?"#7B61FF":T.border}`,background:appMode==="comp"?"#7B61FF15":T.inputBg,color:appMode==="comp"?"#7B61FF":T.text,fontFamily:"'DM Sans',sans-serif",fontSize:13,cursor:"pointer",fontWeight:appMode==="comp"?700:400}}>📚 Exam</button>
               </div>
             </div>
 
