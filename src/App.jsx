@@ -1198,6 +1198,30 @@ const AIP_CARDS = [
 function ComprehensiveApp({ names, mode, T, activeUser, onBack }) {
   const FF = "'DM Sans',sans-serif";
   const SF = "'DM Serif Display',serif";
+  const compStyle = `
+    .comp-wrap { display:flex; flex-direction:column; min-height:100vh; background:inherit; }
+    .comp-inner { width:100%; max-width:1200px; margin:0 auto; padding:20px 24px 100px; }
+    .comp-grid  { display:grid; grid-template-columns:1fr; gap:16px; }
+    .comp-sidebar { display:none; }
+    @media(min-width:768px){
+      .comp-inner { padding:24px 32px 80px; }
+    }
+    @media(min-width:1024px){
+      .comp-grid { grid-template-columns:320px 1fr; gap:24px; align-items:start; }
+      .comp-sidebar { display:flex; flex-direction:column; gap:12px; position:sticky; top:72px; }
+      .comp-main { min-width:0; }
+    }
+    @media(min-width:1280px){
+      .comp-grid { grid-template-columns:360px 1fr; }
+      .comp-inner { padding:28px 48px 80px; }
+    }
+    .course-tab { flex-shrink:0; padding:7px 16px; border-radius:20px; font-size:13px; cursor:pointer; transition:all .15s; font-family:'DM Sans',sans-serif; }
+    .course-tab-desktop { width:100%; padding:12px 16px; border-radius:12px; font-size:14px; cursor:pointer; transition:all .15s; text-align:left; font-family:'DM Sans',sans-serif; display:flex; align-items:center; gap:10px; }
+    .nav-btn { padding:8px 18px; border-radius:8px; font-size:13px; cursor:pointer; font-family:'DM Sans',sans-serif; transition:all .15s; }
+    .nav-btn:hover { opacity:0.85; }
+    .action-btn { flex:1; padding:12px; border-radius:10px; border:none; font-size:13px; font-weight:600; cursor:pointer; font-family:'DM Sans',sans-serif; transition:opacity .15s; }
+    .action-btn:hover { opacity:0.88; }
+  `;
 
   const USER_A_COURSES = [
     { id:"abstract", label:"Abstract Algebra", color:"#185FA5", emoji:"∑", cards: ABSTRACT_CARDS },
@@ -1268,1328 +1292,263 @@ function ComprehensiveApp({ names, mode, T, activeUser, onBack }) {
   }
 
   const tagColors = { define:["#E6F1FB","#0C447C"], prove:["#FCEBEB","#791F1F"], both:["#EEEDFE","#3C3489"], compute:["#E1F5EE","#085041"] };
-
   const s = (style) => ({ fontFamily: FF, ...style });
+  const accentColor = isA ? (currentCourse?.color || "#185FA5") : "#E84E8A";
 
   return (
-    <div style={s({ minHeight:"100vh", background:T.bg, color:T.text, paddingBottom:80 })}>
-      {/* ── Header ── */}
-      <div style={s({ background:T.topbar, borderBottom:`1px solid ${T.border}`, padding:"12px 16px", display:"flex", alignItems:"center", gap:10, position:"sticky", top:0, zIndex:20 })}>
-        <button onClick={onBack} style={s({ background:"none", border:"none", cursor:"pointer", color:T.textSub, fontSize:20, padding:"0 4px" })}>←</button>
-        <div style={{ flex:1 }}>
-          <div style={s({ fontFamily:SF, fontSize:18, color:T.text })}>Exam Prep</div>
-          <div style={s({ fontSize:11, color:T.textSub, marginTop:1 })}>Active recall sessions</div>
-        </div>
-        {/* Who toggle */}
-        <div style={{ display:"flex", gap:6 }}>
-          {["A","B"].map(u => (
-            <button key={u} onClick={()=>{setWho(u);setCourse("abstract");setCardIdx(0);setPhase("read");}} style={s({ padding:"6px 14px", borderRadius:20, border:`1px solid ${who===u?(u==="A"?"#E8A838":"#E84E8A"):T.border}`, background:who===u?(u==="A"?"#E8A83820":"#E84E8A20"):"transparent", color:who===u?(u==="A"?"#E8A838":"#E84E8A"):T.textSub, fontSize:12, fontWeight:who===u?700:400, cursor:"pointer" })}>
-              {names[u]}
-            </button>
-          ))}
-        </div>
-      </div>
+    <div style={{ minHeight:"100vh", background:T.bg, color:T.text }}>
+      <style>{compStyle}</style>
 
-      <div style={{ padding:"16px 16px 0" }}>
-        {/* ── Course tabs (Amen only) ── */}
+      {/* ── Sticky header ── */}
+      <div style={{ background:T.topbar, borderBottom:`1px solid ${T.border}`, position:"sticky", top:0, zIndex:20 }}>
+        <div style={{ maxWidth:1200, margin:"0 auto", padding:"12px 24px", display:"flex", alignItems:"center", gap:12 }}>
+          <button onClick={onBack} style={{ background:"none", border:"none", cursor:"pointer", color:T.textSub, fontSize:20, padding:"0 4px", fontFamily:FF }}>←</button>
+          <div style={{ flex:1 }}>
+            <div style={{ fontFamily:SF, fontSize:18, color:T.text }}>Exam Prep</div>
+            <div style={{ fontSize:11, color:T.textSub, marginTop:1, fontFamily:FF }}>Active recall · {cards.length} cards</div>
+          </div>
+          {/* Who toggle */}
+          <div style={{ display:"flex", gap:6 }}>
+            {["A","B"].map(u => (
+              <button key={u} onClick={()=>{setWho(u);setCourse("abstract");setCardIdx(0);setPhase("read");setTimerOn(false);}}
+                style={{ padding:"6px 16px", borderRadius:20, border:`1px solid ${who===u?(u==="A"?"#E8A838":"#E84E8A"):T.border}`, background:who===u?(u==="A"?"#E8A83820":"#E84E8A20"):"transparent", color:who===u?(u==="A"?"#E8A838":"#E84E8A"):T.textSub, fontSize:13, fontWeight:who===u?700:400, cursor:"pointer", fontFamily:FF }}>
+                {names[u]}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* ── Mobile course tabs (horizontal scroll, hidden on desktop) ── */}
         {isA && (
-          <div style={{ display:"flex", gap:8, overflowX:"auto", paddingBottom:4, marginBottom:16 }}>
+          <div style={{ display:"flex", gap:8, overflowX:"auto", padding:"0 24px 12px", maxWidth:1200, margin:"0 auto" }} className="hide-on-desktop">
+            <style>{`@media(min-width:1024px){.hide-on-desktop{display:none!important}}`}</style>
             {USER_A_COURSES.map(c => (
-              <button key={c.id} onClick={()=>setCourse(c.id)} style={s({ flexShrink:0, padding:"7px 16px", borderRadius:20, border:`1px solid ${course===c.id?c.color:T.border}`, background:course===c.id?c.color+"20":"transparent", color:course===c.id?c.color:T.textSub, fontSize:13, fontWeight:course===c.id?700:400, cursor:"pointer" })}>
+              <button key={c.id} onClick={()=>setCourse(c.id)} className="course-tab"
+                style={{ border:`1px solid ${course===c.id?c.color:T.border}`, background:course===c.id?c.color+"20":"transparent", color:course===c.id?c.color:T.textSub, fontWeight:course===c.id?700:400 }}>
                 {c.emoji} {c.label}
               </button>
             ))}
           </div>
         )}
+      </div>
 
-        {/* ── Gloria's add card button ── */}
-        {!isA && (
-          <div style={{ marginBottom:16 }}>
-            <div style={s({ fontFamily:SF, fontSize:17, color:T.text, marginBottom:4 })}>Gloria's Exam Prep</div>
-            <div style={s({ fontSize:12, color:T.textSub, marginBottom:12 })}>Add your own active recall cards for your courses.</div>
-            <button onClick={()=>setShowAddCard(true)} style={s({ padding:"9px 20px", borderRadius:10, border:"1px solid #E84E8A44", background:"#E84E8A12", color:"#E84E8A", fontSize:13, fontWeight:600, cursor:"pointer" })}>
-              + Add a card
-            </button>
-          </div>
-        )}
+      {/* ── Main content area ── */}
+      <div className="comp-inner">
+        <div className="comp-grid">
 
-        {/* ── Stats bar ── */}
-        {cards.length > 0 && (
-          <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:8, marginBottom:16 }}>
-            {[["Cards", cards.length],["Done", doneCount],["Left", cards.length - doneCount]].map(([l,n]) => (
-              <div key={l} style={s({ background:T.surface, border:`1px solid ${T.border}`, borderRadius:10, padding:"10px 8px", textAlign:"center" })}>
-                <div style={s({ fontSize:20, fontWeight:600, color:T.text })}>{n}</div>
-                <div style={s({ fontSize:11, color:T.textSub, marginTop:1 })}>{l}</div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* ── Progress bar ── */}
-        {cards.length > 0 && (
-          <div style={{ marginBottom:16 }}>
-            <div style={{ display:"flex", justifyContent:"space-between", fontSize:11, color:T.textSub, marginBottom:5, fontFamily:FF }}>
-              <span>Card {cardIdx+1} of {cards.length}</span>
-              <span>{Math.round(doneCount/cards.length*100)}% mastered</span>
-            </div>
-            <div style={{ height:5, background:T.border, borderRadius:3 }}>
-              <div style={{ height:5, borderRadius:3, background:isA?(currentCourse?.color||"#185FA5"):"#E84E8A", width:`${Math.round((cardIdx+1)/cards.length*100)}%`, transition:"width .4s" }}/>
-            </div>
-          </div>
-        )}
-
-        {/* ── Empty state (Gloria no cards) ── */}
-        {cards.length === 0 && (
-          <div style={s({ textAlign:"center", padding:"48px 24px", color:T.textSub })}>
-            <div style={{ fontSize:36, marginBottom:12 }}>📚</div>
-            <div style={s({ fontFamily:SF, fontSize:18, color:T.text, marginBottom:8 })}>No cards yet, {names[who]}</div>
-            <div style={s({ fontSize:13, lineHeight:1.6 })}>Add your first exam prep card using the button above. You can add definitions, proofs, or any topic you need to memorise.</div>
-          </div>
-        )}
-
-        {/* ── Flash card ── */}
-        {card && (
-          <div style={s({ background:T.surface, border:`1px solid ${T.border}`, borderRadius:16, padding:"16px 16px 14px", marginBottom:12 })}>
-            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
-              <span style={s({ fontSize:12, color:T.textMuted })}>Card {cardIdx+1} / {cards.length}</span>
-              <div style={{ display:"flex", gap:6, alignItems:"center" }}>
-                <span style={s({ fontSize:11, fontWeight:600, padding:"3px 10px", borderRadius:20, background:tagColors[card.tag]?.[0]||"#eee", color:tagColors[card.tag]?.[1]||"#333" })}>{(card.tag||"define").toUpperCase()}</span>
-                {!isA && <button onClick={()=>deleteGloriaCard(cardIdx)} style={s({ background:"none", border:"none", cursor:"pointer", color:T.textMuted, fontSize:14, padding:"0 2px" })}>✕</button>}
-              </div>
-            </div>
-            <div style={s({ fontFamily:SF, fontSize:17, color:T.text, marginBottom:12, lineHeight:1.4 })}>{card.title}</div>
-            <div style={s({ fontSize:13, color:T.textSub, lineHeight:1.8 })} dangerouslySetInnerHTML={{ __html: card.body }}/>
-            {card.hint && phase !== "read" && (
-              <div style={s({ marginTop:10, padding:"8px 12px", background:T.inputBg, borderLeft:`3px solid ${isA?(currentCourse?.color||"#185FA5"):"#E84E8A"}`, borderRadius:0, fontSize:12, color:T.textSub, lineHeight:1.6 })}>{card.hint}</div>
-            )}
-          </div>
-        )}
-
-        {/* ── Timer bar ── */}
-        {card && phase === "reading" && (
-          <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:12 }}>
-            <div style={{ flex:1, height:4, background:T.border, borderRadius:2 }}>
-              <div style={{ height:4, borderRadius:2, background:isA?(currentCourse?.color||"#185FA5"):"#E84E8A", width:`${(readSec/60)*100}%`, transition:"width 1s linear" }}/>
-            </div>
-            <span style={s({ fontSize:12, color:T.textSub, minWidth:28 })}>{readSec}s</span>
-          </div>
-        )}
-
-        {/* ── Quiz box ── */}
-        {card && phase === "quiz" && (
-          <div style={s({ background:isA?"#EEEDFE":"#FBEAF0", border:`1px solid ${isA?"#3C3489":"#E84E8A"}`, borderRadius:12, padding:"12px 14px", marginBottom:12 })}>
-            <div style={s({ fontSize:11, fontWeight:600, color:isA?"#3C3489":"#E84E8A", letterSpacing:"0.06em", marginBottom:6 })}>QUIZ — answer in chat</div>
-            <div style={s({ fontSize:14, fontWeight:500, color:isA?"#26215C":"#4B1528", lineHeight:1.5 })}>
-              {card.tag === "define" ? `Define: ${card.title}` :
-               card.tag === "prove" ? `Prove: ${card.title}` :
-               card.tag === "both" ? `State and prove: ${card.title}` :
-               `Compute/apply: ${card.title}`}
-            </div>
-            <div style={s({ fontSize:12, color:T.textSub, marginTop:6, fontStyle:"italic" })}>Type your answer in chat. Then mark yourself honestly below.</div>
-          </div>
-        )}
-
-        {/* ── Action buttons ── */}
-        {card && (
-          <div style={{ display:"flex", gap:8, flexWrap:"wrap", marginBottom:16 }}>
-            {phase === "read" && (
-              <button onClick={startReading} style={s({ flex:1, padding:"11px", borderRadius:10, border:"none", background:isA?(currentCourse?.color||"#185FA5"):"#E84E8A", color:"#fff", fontSize:13, fontWeight:600, cursor:"pointer" })}>
-                Start reading (60s)
-              </button>
-            )}
-            {phase === "reading" && (<>
-              <button onClick={skipToQuiz} style={s({ flex:1, padding:"11px", borderRadius:10, border:"none", background:isA?(currentCourse?.color||"#185FA5"):"#E84E8A", color:"#fff", fontSize:13, fontWeight:600, cursor:"pointer" })}>I'm ready — quiz me</button>
-              <button onClick={skipToQuiz} style={s({ padding:"11px 16px", borderRadius:10, border:`1px solid ${T.border}`, background:T.inputBg, color:T.textSub, fontSize:13, cursor:"pointer" })}>Skip</button>
-            </>)}
-            {phase === "quiz" && (<>
-              <button onClick={()=>markCard("got")} style={s({ flex:1, padding:"10px", borderRadius:10, border:"none", background:"#085041", color:"#fff", fontSize:12, fontWeight:600, cursor:"pointer" })}>Got it</button>
-              <button onClick={()=>markCard("partial")} style={s({ flex:1, padding:"10px", borderRadius:10, border:"none", background:"#854F0B", color:"#fff", fontSize:12, fontWeight:600, cursor:"pointer" })}>Partial</button>
-              <button onClick={()=>markCard("missed")} style={s({ flex:1, padding:"10px", borderRadius:10, border:"none", background:"#791F1F", color:"#fff", fontSize:12, fontWeight:600, cursor:"pointer" })}>Missed</button>
-            </>)}
-          </div>
-        )}
-
-        {/* ── Card navigator ── */}
-        {cards.length > 0 && (
-          <div style={{ display:"flex", gap:8, justifyContent:"center", flexWrap:"wrap", marginBottom:16 }}>
-            <button onClick={()=>{setCardIdx(i=>Math.max(0,i-1));setPhase("read");setTimerOn(false);}} style={s({ padding:"7px 16px", borderRadius:8, border:`1px solid ${T.border}`, background:T.inputBg, color:T.textSub, fontSize:12, cursor:"pointer" })}>← Prev</button>
-            <button onClick={()=>{setCardIdx(i=>Math.min(cards.length-1,i+1));setPhase("read");setTimerOn(false);}} style={s({ padding:"7px 16px", borderRadius:8, border:`1px solid ${T.border}`, background:T.inputBg, color:T.textSub, fontSize:12, cursor:"pointer" })}>Next →</button>
-            <button onClick={()=>{setCardIdx(Math.floor(Math.random()*cards.length));setPhase("read");setTimerOn(false);}} style={s({ padding:"7px 16px", borderRadius:8, border:`1px solid ${T.border}`, background:T.inputBg, color:T.textSub, fontSize:12, cursor:"pointer" })}>Shuffle</button>
-          </div>
-        )}
-
-        {/* ── Gloria add card modal ── */}
-        {showAddCard && (
-          <div style={{ position:"fixed", inset:0, zIndex:50, background:"rgba(0,0,0,0.6)", display:"flex", alignItems:"flex-end", justifyContent:"center" }} onClick={()=>setShowAddCard(false)}>
-            <div style={s({ background:T.surface, width:"100%", maxWidth:500, borderRadius:"18px 18px 0 0", padding:"20px 20px 32px", maxHeight:"85vh", overflowY:"auto" })} onClick={e=>e.stopPropagation()}>
-              <div style={{ width:40, height:4, borderRadius:2, background:T.textMuted, margin:"0 auto 16px", opacity:.4 }}/>
-              <div style={s({ fontFamily:SF, fontSize:20, color:T.text, marginBottom:16 })}>Add exam prep card</div>
-              {[["Title / Question","title","text"],["Answer / Full content","body","textarea"],["Hint (optional)","hint","text"]].map(([lbl,field,type])=>(
-                <div key={field} style={{ marginBottom:14 }}>
-                  <div style={s({ fontSize:12, fontWeight:600, color:T.textSub, marginBottom:5 })}>{lbl}</div>
-                  {type==="textarea"
-                    ? <textarea value={newCard[field]} onChange={e=>setNewCard(c=>({...c,[field]:e.target.value}))} rows={4} style={s({ width:"100%", padding:"9px 12px", borderRadius:10, border:`1px solid ${T.border}`, background:T.inputBg, color:T.text, fontSize:13, resize:"vertical", fontFamily:FF })}/>
-                    : <input  value={newCard[field]} onChange={e=>setNewCard(c=>({...c,[field]:e.target.value}))} style={s({ width:"100%", padding:"9px 12px", borderRadius:10, border:`1px solid ${T.border}`, background:T.inputBg, color:T.text, fontSize:13 })}/>
-                  }
-                </div>
-              ))}
-              <div style={{ marginBottom:14 }}>
-                <div style={s({ fontSize:12, fontWeight:600, color:T.textSub, marginBottom:5 })}>Type</div>
-                <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
-                  {["define","prove","both","compute"].map(t=>(
-                    <button key={t} onClick={()=>setNewCard(c=>({...c,tag:t}))} style={s({ padding:"6px 14px", borderRadius:20, border:`1px solid ${newCard.tag===t?"#E84E8A":T.border}`, background:newCard.tag===t?"#E84E8A20":"transparent", color:newCard.tag===t?"#E84E8A":T.textSub, fontSize:12, cursor:"pointer", fontWeight:newCard.tag===t?700:400 })}>{t.toUpperCase()}</button>
+          {/* ── SIDEBAR (desktop only) ── */}
+          <div className="comp-sidebar">
+            {isA ? (
+              <>
+                <div style={{ fontFamily:SF, fontSize:15, color:T.text, marginBottom:4 }}>Courses</div>
+                {USER_A_COURSES.map(c => (
+                  <button key={c.id} onClick={()=>setCourse(c.id)} className="course-tab-desktop"
+                    style={{ border:`1px solid ${course===c.id?c.color:T.border}`, background:course===c.id?c.color+"18":T.surface, color:course===c.id?c.color:T.text, fontWeight:course===c.id?600:400 }}>
+                    <span style={{ fontSize:18 }}>{c.emoji}</span>
+                    <div style={{ flex:1 }}>
+                      <div style={{ fontSize:14, fontWeight:course===c.id?600:400 }}>{c.label}</div>
+                      <div style={{ fontSize:11, color:T.textSub, marginTop:1 }}>{c.cards.length} cards</div>
+                    </div>
+                    {course===c.id && <span style={{ fontSize:12, color:c.color }}>●</span>}
+                  </button>
+                ))}
+                {/* Desktop stats */}
+                <div style={{ background:T.surface, border:`1px solid ${T.border}`, borderRadius:12, padding:"16px", marginTop:4 }}>
+                  <div style={{ fontFamily:SF, fontSize:14, color:T.text, marginBottom:12 }}>Session progress</div>
+                  {[[cards.length,"Total cards"],[doneCount,"Mastered"],[cards.length-doneCount,"Remaining"]].map(([n,l])=>(
+                    <div key={l} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"6px 0", borderBottom:`1px solid ${T.border}` }}>
+                      <span style={{ fontSize:12, color:T.textSub, fontFamily:FF }}>{l}</span>
+                      <span style={{ fontSize:16, fontWeight:600, color:T.text, fontFamily:FF }}>{n}</span>
+                    </div>
                   ))}
-                </div>
-              </div>
-              <div style={{ display:"flex", gap:8, marginTop:4 }}>
-                <button onClick={saveGloriaCard} style={s({ flex:1, padding:"11px", borderRadius:10, border:"none", background:"#E84E8A", color:"#fff", fontSize:13, fontWeight:600, cursor:"pointer" })}>Save card</button>
-                <button onClick={()=>setShowAddCard(false)} style={s({ padding:"11px 16px", borderRadius:10, border:`1px solid ${T.border}`, background:T.inputBg, color:T.textSub, fontSize:13, cursor:"pointer" })}>Cancel</button>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ══════════════════════════════════════════════════════════════════════════════
-// ── BudgetApp ─────────────────────────────────────────────────────────────────
-// Full-featured budget tracker with income, expenses, savings goals,
-// per-user views, shared view, pie chart, and history.
-// ══════════════════════════════════════════════════════════════════════════════
-
-// ══════════════════════════════════════════════════════════════════════════════
-// ── BUDGET SYSTEM v2 — Plan → Track → Net Worth ───────────────────────────────
-// ══════════════════════════════════════════════════════════════════════════════
-
-const BUDGET_CATS = [
-  { id:"housing",   label:"Housing",        emoji:"🏠", color:"#3B9EDB" },
-  { id:"food",      label:"Food & Dining",  emoji:"🍽️", color:"#E8A838" },
-  { id:"transport", label:"Transport",      emoji:"🚗", color:"#9B6EE8" },
-  { id:"health",    label:"Health",         emoji:"💊", color:"#3DBF8A" },
-  { id:"education", label:"Education",      emoji:"🎓", color:"#7B61FF" },
-  { id:"faith",     label:"Faith & Giving", emoji:"✦",  color:"#E8C050" },
-  { id:"savings",   label:"Savings",        emoji:"💰", color:"#20B2AA" },
-  { id:"shopping",  label:"Shopping",       emoji:"🛍️", color:"#E84E8A" },
-  { id:"utilities", label:"Utilities",      emoji:"⚡", color:"#E8883A" },
-  { id:"invest",    label:"Investing",      emoji:"📈", color:"#5BAD4E" },
-  { id:"personal",  label:"Personal",       emoji:"🌱", color:"#C8B030" },
-  { id:"sub",       label:"Subscriptions",  emoji:"📱", color:"#8B5CF6" },
-  { id:"other",     label:"Other",          emoji:"📦", color:"#888D9B" },
-];
-
-const BUDGET_MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-
-const ASSET_CATS = [
-  { id:"cash",      label:"Cash & Savings",  emoji:"💵", color:"#3DBF8A" },
-  { id:"invest",    label:"Investments",     emoji:"📈", color:"#5BAD4E" },
-  { id:"vehicle",   label:"Vehicle",         emoji:"🚗", color:"#9B6EE8" },
-  { id:"property",  label:"Property",        emoji:"🏠", color:"#3B9EDB" },
-  { id:"device",    label:"Electronics",     emoji:"📱", color:"#8B5CF6" },
-  { id:"other",     label:"Other Asset",     emoji:"💎", color:"#E8A838" },
-];
-const LIAB_CATS = [
-  { id:"loan",      label:"Loan",            emoji:"🏦", color:"#E84E8A" },
-  { id:"credit",    label:"Credit Card",     emoji:"💳", color:"#E8704A" },
-  { id:"mortgage",  label:"Mortgage",        emoji:"🏠", color:"#E8883A" },
-  { id:"other",     label:"Other Debt",      emoji:"📋", color:"#888D9B" },
-];
-
-// ── SVG Pie ───────────────────────────────────────────────────────────────────
-function PieChart({ slices, size=180, T }) {
-  const total = slices.reduce((s,x)=>s+x.value,0);
-  if (!total) return <div style={{ width:size,height:size,borderRadius:"50%",background:T.inputBg,display:"flex",alignItems:"center",justifyContent:"center",color:T.textMuted,fontSize:11 }}>No data</div>;
-  let cum=0;
-  const paths = slices.filter(s=>s.value>0).map(s=>{
-    const pct=s.value/total, a1=cum*2*Math.PI-Math.PI/2, a2=(cum+pct)*2*Math.PI-Math.PI/2;
-    cum+=pct;
-    const r=size/2-6,cx=size/2,cy=size/2;
-    const x1=cx+r*Math.cos(a1),y1=cy+r*Math.sin(a1),x2=cx+r*Math.cos(a2),y2=cy+r*Math.sin(a2);
-    return {...s,d:`M${cx},${cy}L${x1},${y1}A${r},${r} 0 ${pct>.5?1:0},1 ${x2},${y2}Z`,pct};
-  });
-  return (
-    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ filter:"drop-shadow(0 4px 12px rgba(0,0,0,0.15))",flexShrink:0 }}>
-      {paths.map((p,i)=><path key={i} d={p.d} fill={p.color} stroke={T.surface} strokeWidth={2}/>)}
-      <circle cx={size/2} cy={size/2} r={size/4.2} fill={T.surface}/>
-    </svg>
-  );
-}
-
-// ── Budget Line Item Form ─────────────────────────────────────────────────────
-// A budget *line* = a planned item with allocated amount, category, notes
-// You then log actual spending against it
-function BudgetLineForm({ data, setData, onSave, onClose, T, mode }) {
-  const ref = useRef(null);
-  useEffect(()=>{ const t=setTimeout(()=>{ if(ref.current) ref.current.focus(); },80); return()=>clearTimeout(t); },[]);
-  const inp = { width:"100%",background:T.inputBg,border:`1px solid ${T.border}`,borderRadius:9,padding:"10px 12px",color:T.text,fontFamily:"'DM Sans',sans-serif",fontSize:14,outline:"none",boxSizing:"border-box" };
-  const sel = { ...inp,background:mode==="dark"?"#181B23":"#fff",cursor:"pointer" };
-  const lbl = { fontSize:11,fontWeight:600,letterSpacing:"0.08em",textTransform:"uppercase",color:T.textMuted,display:"block",marginBottom:4,marginTop:12,fontFamily:"'DM Sans',sans-serif" };
-  return (
-    <div style={{ position:"fixed",inset:0,zIndex:50,background:"rgba(0,0,0,0.65)",backdropFilter:"blur(6px)",display:"flex",alignItems:"flex-end",justifyContent:"center" }} onClick={e=>e.target===e.currentTarget&&onClose()}>
-      <div style={{ background:T.surface,border:`1px solid ${T.border}`,borderRadius:"20px 20px 0 0",width:"100%",maxWidth:520,maxHeight:"92vh",overflowY:"auto",padding:"24px 20px 40px",boxShadow:"0 -8px 40px rgba(0,0,0,0.3)" }}>
-        <div style={{ width:40,height:4,borderRadius:2,background:T.textMuted,margin:"0 auto 20px",opacity:0.4 }}/>
-        <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:22,color:T.text,marginBottom:4 }}>{data.id?"Edit":"New"} Budget Item</div>
-        <div style={{ height:2,width:40,background:"#20B2AA",borderRadius:2,marginBottom:18 }}/>
-
-        <label style={lbl}>Item Name</label>
-        <input ref={ref} style={inp} value={data.name||""} onChange={e=>setData(p=>({...p,name:e.target.value}))} placeholder="e.g. Rent, Groceries, Spotify..." onKeyDown={e=>{ if(e.key==="Enter"&&data.name?.trim()&&data.allocated){e.preventDefault();onSave();}}}/>
-
-        <label style={lbl}>Category</label>
-        <select style={sel} value={data.category||"other"} onChange={e=>setData(p=>({...p,category:e.target.value}))}>
-          {BUDGET_CATS.map(c=><option key={c.id} value={c.id}>{c.emoji} {c.label}</option>)}
-        </select>
-
-        <label style={lbl}>Allocated Budget ($)</label>
-        <input style={inp} type="number" min="0" step="0.01" value={data.allocated||""} onChange={e=>setData(p=>({...p,allocated:e.target.value}))} placeholder="0.00"/>
-
-        <label style={lbl}>Amount Spent So Far ($)</label>
-        <input style={inp} type="number" min="0" step="0.01" value={data.spent||""} onChange={e=>setData(p=>({...p,spent:e.target.value}))} placeholder="0.00"/>
-
-        <label style={lbl}>Notes (optional)</label>
-        <input style={inp} value={data.notes||""} onChange={e=>setData(p=>({...p,notes:e.target.value}))} placeholder="Any context..."/>
-
-        <label style={lbl}>Recurring</label>
-        <div style={{ display:"flex",gap:6 }}>
-          {[["none","One-time"],["monthly","Monthly"],["weekly","Weekly"]].map(([v,l])=>(
-            <button key={v} onClick={()=>setData(p=>({...p,recurring:v}))}
-              style={{ flex:1,padding:"8px",borderRadius:9,border:`1px solid ${(data.recurring||"none")===v?"#9B6EE8":T.border}`,background:(data.recurring||"none")===v?"#9B6EE822":"transparent",color:(data.recurring||"none")===v?"#9B6EE8":T.text,fontFamily:"'DM Sans',sans-serif",fontSize:12,cursor:"pointer",fontWeight:(data.recurring||"none")===v?700:400 }}>
-              {l}
-            </button>
-          ))}
-        </div>
-
-        <div style={{ display:"flex",gap:10,marginTop:22,justifyContent:"flex-end" }}>
-          <button style={{ padding:"10px 20px",borderRadius:10,border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:600,background:T.inputBg,color:T.textSub }} onClick={onClose}>Cancel</button>
-          <button style={{ padding:"10px 24px",borderRadius:10,border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:700,background:"#20B2AA",color:"#fff" }} onClick={onSave}>Save</button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── Log Spending Form (quick modal to update how much spent on a budget item) ─
-function LogSpendForm({ item, onSave, onClose, T, mode }) {
-  const [amt, setAmt] = useState("");
-  const [mode2, setMode2] = useState("add"); // add | set
-  const ref = useRef(null);
-  useEffect(()=>{ const t=setTimeout(()=>{ if(ref.current) ref.current.focus(); },80); return()=>clearTimeout(t); },[]);
-  const inp = { width:"100%",background:T.inputBg,border:`1px solid ${T.border}`,borderRadius:9,padding:"10px 12px",color:T.text,fontFamily:"'DM Sans',sans-serif",fontSize:14,outline:"none",boxSizing:"border-box" };
-  const cat = BUDGET_CATS.find(c=>c.id===item.category)||BUDGET_CATS[BUDGET_CATS.length-1];
-  const remaining = Math.max(0, (item.allocated||0) - (item.spent||0));
-  return (
-    <div style={{ position:"fixed",inset:0,zIndex:50,background:"rgba(0,0,0,0.65)",backdropFilter:"blur(6px)",display:"flex",alignItems:"flex-end",justifyContent:"center" }} onClick={e=>e.target===e.currentTarget&&onClose()}>
-      <div style={{ background:T.surface,border:`1px solid ${T.border}`,borderRadius:"20px 20px 0 0",width:"100%",maxWidth:480,padding:"24px 20px 40px",boxShadow:"0 -8px 40px rgba(0,0,0,0.3)" }}>
-        <div style={{ width:40,height:4,borderRadius:2,background:T.textMuted,margin:"0 auto 20px",opacity:0.4 }}/>
-        <div style={{ display:"flex",alignItems:"center",gap:10,marginBottom:16 }}>
-          <div style={{ width:40,height:40,borderRadius:10,background:cat.color+"22",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20 }}>{cat.emoji}</div>
-          <div>
-            <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:18,color:T.text }}>Log Spending</div>
-            <div style={{ fontSize:12,color:T.textSub }}>{item.name} · {remaining>0?`$${remaining.toFixed(2)} remaining`:"Budget used up"}</div>
-          </div>
-        </div>
-        <div style={{ display:"flex",gap:8,marginBottom:14 }}>
-          {[["add","Add to spent"],["set","Set total spent"]].map(([v,l])=>(
-            <button key={v} onClick={()=>setMode2(v)} style={{ flex:1,padding:"8px",borderRadius:9,border:`1px solid ${mode2===v?"#20B2AA":T.border}`,background:mode2===v?"#20B2AA18":"transparent",color:mode2===v?"#20B2AA":T.text,fontFamily:"'DM Sans',sans-serif",fontSize:12,cursor:"pointer",fontWeight:mode2===v?700:400 }}>{l}</button>
-          ))}
-        </div>
-        <input ref={ref} type="number" min="0" step="0.01" style={inp}
-          value={amt} onChange={e=>setAmt(e.target.value)}
-          placeholder={mode2==="add"?"Amount spent now...":"Total spent so far..."}
-          onKeyDown={e=>{ if(e.key==="Enter"&&amt){ onSave(parseFloat(amt)||0, mode2); }}}/>
-        <div style={{ display:"flex",gap:10,marginTop:16,justifyContent:"flex-end" }}>
-          <button style={{ padding:"9px 18px",borderRadius:9,border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:600,background:T.inputBg,color:T.textSub }} onClick={onClose}>Cancel</button>
-          <button style={{ padding:"9px 22px",borderRadius:9,border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:700,background:"#20B2AA",color:"#fff" }} onClick={()=>onSave(parseFloat(amt)||0, mode2)}>Log It</button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── Asset / Liability Form ────────────────────────────────────────────────────
-function AssetForm({ data, setData, onSave, onClose, T, mode, type }) {
-  const ref = useRef(null);
-  useEffect(()=>{ const t=setTimeout(()=>{ if(ref.current) ref.current.focus(); },80); return()=>clearTimeout(t); },[]);
-  const cats = type==="asset" ? ASSET_CATS : LIAB_CATS;
-  const inp = { width:"100%",background:T.inputBg,border:`1px solid ${T.border}`,borderRadius:9,padding:"10px 12px",color:T.text,fontFamily:"'DM Sans',sans-serif",fontSize:14,outline:"none",boxSizing:"border-box" };
-  const sel = { ...inp,background:mode==="dark"?"#181B23":"#fff",cursor:"pointer" };
-  const lbl = { fontSize:11,fontWeight:600,letterSpacing:"0.08em",textTransform:"uppercase",color:T.textMuted,display:"block",marginBottom:4,marginTop:12,fontFamily:"'DM Sans',sans-serif" };
-  const ac = type==="asset"?"#3DBF8A":"#E84E8A";
-  return (
-    <div style={{ position:"fixed",inset:0,zIndex:50,background:"rgba(0,0,0,0.65)",backdropFilter:"blur(6px)",display:"flex",alignItems:"flex-end",justifyContent:"center" }} onClick={e=>e.target===e.currentTarget&&onClose()}>
-      <div style={{ background:T.surface,border:`1px solid ${T.border}`,borderRadius:"20px 20px 0 0",width:"100%",maxWidth:480,maxHeight:"90vh",overflowY:"auto",padding:"24px 20px 40px",boxShadow:"0 -8px 40px rgba(0,0,0,0.3)" }}>
-        <div style={{ width:40,height:4,borderRadius:2,background:T.textMuted,margin:"0 auto 20px",opacity:0.4 }}/>
-        <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:22,color:T.text,marginBottom:4 }}>{data.id?"Edit":"Add"} {type==="asset"?"Asset":"Liability"}</div>
-        <div style={{ height:2,width:40,background:ac,borderRadius:2,marginBottom:18 }}/>
-        <label style={lbl}>Name</label>
-        <input ref={ref} style={inp} value={data.name||""} onChange={e=>setData(p=>({...p,name:e.target.value}))} placeholder={type==="asset"?"e.g. MacBook Pro, Toyota Camry...":"e.g. Student Loan, Credit Card..."}/>
-        <label style={lbl}>Category</label>
-        <select style={sel} value={data.category||cats[0].id} onChange={e=>setData(p=>({...p,category:e.target.value}))}>
-          {cats.map(c=><option key={c.id} value={c.id}>{c.emoji} {c.label}</option>)}
-        </select>
-        <label style={lbl}>{type==="asset"?"Current Value ($)":"Amount Owed ($)"}</label>
-        <input style={inp} type="number" min="0" step="0.01" value={data.value||""} onChange={e=>setData(p=>({...p,value:e.target.value}))} placeholder="0.00"/>
-        <label style={lbl}>Notes (optional)</label>
-        <input style={inp} value={data.notes||""} onChange={e=>setData(p=>({...p,notes:e.target.value}))} placeholder="Any details..."/>
-        <div style={{ display:"flex",gap:10,marginTop:22,justifyContent:"flex-end" }}>
-          <button style={{ padding:"10px 20px",borderRadius:10,border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:600,background:T.inputBg,color:T.textSub }} onClick={onClose}>Cancel</button>
-          <button style={{ padding:"10px 24px",borderRadius:10,border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:700,background:ac,color:"#fff" }} onClick={onSave}>Save</button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── Goal Form ─────────────────────────────────────────────────────────────────
-function GoalForm({ data, setData, onSave, onClose, T, mode }) {
-  const ref = useRef(null);
-  useEffect(()=>{ const t=setTimeout(()=>{ if(ref.current) ref.current.focus(); },80); return()=>clearTimeout(t); },[]);
-  const inp = { width:"100%",background:T.inputBg,border:`1px solid ${T.border}`,borderRadius:9,padding:"10px 12px",color:T.text,fontFamily:"'DM Sans',sans-serif",fontSize:14,outline:"none",boxSizing:"border-box" };
-  const sel = { ...inp,background:mode==="dark"?"#181B23":"#fff",cursor:"pointer" };
-  const lbl = { fontSize:11,fontWeight:600,letterSpacing:"0.08em",textTransform:"uppercase",color:T.textMuted,display:"block",marginBottom:4,marginTop:12,fontFamily:"'DM Sans',sans-serif" };
-  return (
-    <div style={{ position:"fixed",inset:0,zIndex:50,background:"rgba(0,0,0,0.65)",backdropFilter:"blur(6px)",display:"flex",alignItems:"flex-end",justifyContent:"center" }} onClick={e=>e.target===e.currentTarget&&onClose()}>
-      <div style={{ background:T.surface,border:`1px solid ${T.border}`,borderRadius:"20px 20px 0 0",width:"100%",maxWidth:520,maxHeight:"92vh",overflowY:"auto",padding:"24px 20px 40px",boxShadow:"0 -8px 40px rgba(0,0,0,0.3)" }}>
-        <div style={{ width:40,height:4,borderRadius:2,background:T.textMuted,margin:"0 auto 20px",opacity:0.4 }}/>
-        <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:22,color:T.text,marginBottom:4 }}>{data.id?"Edit":"New"} Savings Goal</div>
-        <div style={{ height:2,width:40,background:"#20B2AA",borderRadius:2,marginBottom:18 }}/>
-        <label style={lbl}>Goal Name</label>
-        <input ref={ref} style={inp} value={data.name||""} onChange={e=>setData(p=>({...p,name:e.target.value}))} placeholder="e.g. Emergency Fund, Move to KC..."/>
-        <label style={lbl}>Emoji</label>
-        <input style={{...inp,maxWidth:80}} value={data.emoji||"💰"} onChange={e=>setData(p=>({...p,emoji:e.target.value}))}/>
-        <label style={lbl}>Target Amount ($)</label>
-        <input style={inp} type="number" min="0" step="1" value={data.target||""} onChange={e=>setData(p=>({...p,target:e.target.value}))} placeholder="5000"/>
-        <label style={lbl}>Currently Saved ($)</label>
-        <input style={inp} type="number" min="0" step="0.01" value={data.saved||""} onChange={e=>setData(p=>({...p,saved:e.target.value}))} placeholder="0"/>
-        <label style={lbl}>Target Date (optional)</label>
-        <input type="date" style={sel} value={data.deadline||""} onChange={e=>setData(p=>({...p,deadline:e.target.value}))}/>
-        <div style={{ display:"flex",gap:10,marginTop:22,justifyContent:"flex-end" }}>
-          <button style={{ padding:"10px 20px",borderRadius:10,border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:600,background:T.inputBg,color:T.textSub }} onClick={onClose}>Cancel</button>
-          <button style={{ padding:"10px 24px",borderRadius:10,border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:700,background:"#20B2AA",color:"#fff" }} onClick={onSave}>Save Goal</button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── GoalCard ──────────────────────────────────────────────────────────────────
-function GoalCard({ g, T, fmt, setEditGoal, delGoal, addToGoal }) {
-  const [adding, setAdding] = useState(false);
-  const [addAmt, setAddAmt] = useState("");
-  const pct   = g.target>0?Math.min(100,Math.round((g.saved/g.target)*100)):0;
-  const left  = Math.max(0,g.target-g.saved);
-  const dLeft = g.deadline?Math.ceil((new Date(g.deadline+"T00:00:00")-new Date())/86400000):null;
-  return (
-    <div style={{ background:T.surface,border:`1px solid ${T.border}`,borderRadius:16,padding:"20px",boxShadow:"0 2px 12px rgba(0,0,0,0.07)",borderTop:`4px solid ${pct>=100?"#3DBF8A":"#20B2AA"}`,position:"relative",boxSizing:"border-box" }}>
-      {pct>=100&&<div style={{ position:"absolute",top:10,right:14,fontSize:22 }}>🏆</div>}
-      <div style={{ display:"flex",gap:10,alignItems:"flex-start",marginBottom:14 }}>
-        <div style={{ fontSize:30,lineHeight:1 }}>{g.emoji||"💰"}</div>
-        <div style={{ flex:1,minWidth:0 }}>
-          <div style={{ fontSize:15,fontWeight:700,color:T.text,lineHeight:1.3 }}>{g.name}</div>
-          {dLeft!==null&&<div style={{ fontSize:11,marginTop:2,color:dLeft<0?"#E84E8A":dLeft<30?"#E8A838":"#3DBF8A",fontWeight:600 }}>📅 {dLeft>0?`${dLeft}d left`:dLeft===0?"Due today":"Past deadline"}</div>}
-        </div>
-        <div style={{ display:"flex",gap:3,flexShrink:0 }}>
-          <button onClick={()=>setEditGoal({...g})} style={{ background:"none",border:"none",color:T.textMuted,cursor:"pointer",fontSize:14,padding:"3px" }}>✎</button>
-          <button onClick={()=>delGoal(g.id)}       style={{ background:"none",border:"none",color:T.textMuted,cursor:"pointer",fontSize:14,padding:"3px" }}>✕</button>
-        </div>
-      </div>
-      <div style={{ textAlign:"center",marginBottom:10 }}>
-        <div style={{ fontSize:34,fontWeight:800,color:pct>=100?"#3DBF8A":"#20B2AA",lineHeight:1 }}>{pct}%</div>
-        <div style={{ fontSize:12,color:T.textSub,marginTop:2 }}>{fmt(g.saved)} of {fmt(g.target)}</div>
-      </div>
-      <div style={{ height:12,background:T.inputBg,borderRadius:10,overflow:"hidden",marginBottom:8 }}>
-        <div style={{ height:"100%",width:`${pct}%`,background:pct>=100?"linear-gradient(90deg,#3DBF8A,#20B2AA)":"linear-gradient(90deg,#20B2AA,#3B9EDB)",borderRadius:10,transition:"width 0.6s" }}/>
-      </div>
-      <div style={{ fontSize:11,color:T.textMuted,marginBottom:12 }}>{left>0?`${fmt(left)} to go`:"Goal reached! 🎉"}</div>
-      {adding ? (
-        <div style={{ display:"flex",gap:6 }}>
-          <input autoFocus type="number" min="0" step="0.01" placeholder="Amount..."
-            style={{ flex:1,background:T.inputBg,border:"1px solid #20B2AA",borderRadius:8,padding:"7px 10px",color:T.text,fontFamily:"'DM Sans',sans-serif",fontSize:13,outline:"none",boxSizing:"border-box" }}
-            value={addAmt} onChange={e=>setAddAmt(e.target.value)}
-            onKeyDown={e=>{ if(e.key==="Enter"&&addAmt){addToGoal(g.id,addAmt);setAdding(false);setAddAmt("");} }}/>
-          <button onClick={()=>{ addToGoal(g.id,addAmt); setAdding(false); setAddAmt(""); }}
-            style={{ padding:"7px 12px",borderRadius:8,border:"none",background:"#20B2AA",color:"#fff",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:700 }}>Add</button>
-          <button onClick={()=>setAdding(false)}
-            style={{ padding:"7px 9px",borderRadius:8,border:`1px solid ${T.border}`,background:T.inputBg,color:T.textSub,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:12 }}>✕</button>
-        </div>
-      ) : (
-        <button onClick={()=>setAdding(true)}
-          style={{ width:"100%",padding:"8px",borderRadius:10,border:"1px solid #20B2AA44",background:"#20B2AA0D",color:"#20B2AA",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:600 }}>
-          + Add deposit
-        </button>
-      )}
-    </div>
-  );
-}
-
-// ── DebtForm ──────────────────────────────────────────────────────────────────
-function DebtForm({ data, setData, onSave, onClose, T, mode }) {
-  const ref = useRef(null);
-  useEffect(()=>{ const t=setTimeout(()=>{ if(ref.current) ref.current.focus(); },80); return()=>clearTimeout(t); },[]);
-  const inp = { width:"100%",background:T.inputBg,border:`1px solid ${T.border}`,borderRadius:9,padding:"10px 12px",color:T.text,fontFamily:"'DM Sans',sans-serif",fontSize:14,outline:"none",boxSizing:"border-box" };
-  const sel = { ...inp,background:mode==="dark"?"#181B23":"#fff",cursor:"pointer" };
-  const lbl = { fontSize:11,fontWeight:600,letterSpacing:"0.08em",textTransform:"uppercase",color:T.textMuted,display:"block",marginBottom:4,marginTop:12,fontFamily:"'DM Sans',sans-serif" };
-  const DEBT_TYPES = [
-    { id:"credit_card", label:"Credit Card",   emoji:"💳" },
-    { id:"student_loan",label:"Student Loan",  emoji:"🎓" },
-    { id:"personal",    label:"Personal Loan", emoji:"🏦" },
-    { id:"car_loan",    label:"Car Loan",       emoji:"🚗" },
-    { id:"mortgage",    label:"Mortgage",      emoji:"🏠" },
-    { id:"medical",     label:"Medical Debt",  emoji:"💊" },
-    { id:"other",       label:"Other",         emoji:"📋" },
-  ];
-  return (
-    <div style={{ position:"fixed",inset:0,zIndex:50,background:"rgba(0,0,0,0.65)",backdropFilter:"blur(6px)",display:"flex",alignItems:"flex-end",justifyContent:"center" }} onClick={e=>e.target===e.currentTarget&&onClose()}>
-      <div style={{ background:T.surface,border:`1px solid ${T.border}`,borderRadius:"20px 20px 0 0",width:"100%",maxWidth:540,maxHeight:"94vh",overflowY:"auto",padding:"24px 20px 40px",boxShadow:"0 -8px 40px rgba(0,0,0,0.3)" }}>
-        <div style={{ width:40,height:4,borderRadius:2,background:T.textMuted,margin:"0 auto 20px",opacity:0.4 }}/>
-        <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:22,color:T.text,marginBottom:4 }}>{data.id?"Edit":"Add"} Debt</div>
-        <div style={{ height:2,width:40,background:"#E84E8A",borderRadius:2,marginBottom:18 }}/>
-
-        <label style={lbl}>Name</label>
-        <input ref={ref} style={inp} value={data.name||""} onChange={e=>setData(p=>({...p,name:e.target.value}))} placeholder="e.g. Chase Sapphire, Federal Student Loan..." onKeyDown={e=>{ if(e.key==="Enter"&&data.name?.trim()){e.preventDefault();onSave();}}}/>
-
-        <label style={lbl}>Type</label>
-        <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(min(100%,130px),1fr))",gap:6 }}>
-          {DEBT_TYPES.map(dt=>(
-            <button key={dt.id} onClick={()=>setData(p=>({...p,type:dt.id}))}
-              style={{ padding:"8px 10px",borderRadius:9,border:`1px solid ${data.type===dt.id?"#E84E8A":T.border}`,background:data.type===dt.id?"#E84E8A18":"transparent",color:data.type===dt.id?"#E84E8A":T.text,fontFamily:"'DM Sans',sans-serif",fontSize:12,cursor:"pointer",fontWeight:data.type===dt.id?700:400,textAlign:"left" }}>
-              {dt.emoji} {dt.label}
-            </button>
-          ))}
-        </div>
-
-        <label style={lbl}>Current Balance ($)</label>
-        <input style={inp} type="number" min="0" step="0.01" value={data.balance||""} onChange={e=>setData(p=>({...p,balance:e.target.value}))} placeholder="0.00"/>
-
-        <label style={lbl}>Credit Limit ($) — if applicable</label>
-        <input style={inp} type="number" min="0" step="1" value={data.limit||""} onChange={e=>setData(p=>({...p,limit:e.target.value}))} placeholder="Leave blank if not a credit card"/>
-
-        <label style={lbl}>APR / Interest Rate (%)</label>
-        <input style={inp} type="number" min="0" step="0.01" value={data.apr||""} onChange={e=>setData(p=>({...p,apr:e.target.value}))} placeholder="e.g. 19.99"/>
-
-        <label style={lbl}>Minimum Monthly Payment ($)</label>
-        <input style={inp} type="number" min="0" step="0.01" value={data.minPayment||""} onChange={e=>setData(p=>({...p,minPayment:e.target.value}))} placeholder="0.00"/>
-
-        <label style={lbl}>Payment Due Day (1–31)</label>
-        <input style={inp} type="number" min="1" max="31" value={data.dueDay||""} onChange={e=>setData(p=>({...p,dueDay:e.target.value}))} placeholder="e.g. 15"/>
-
-        <label style={lbl}>Notes (optional)</label>
-        <input style={inp} value={data.notes||""} onChange={e=>setData(p=>({...p,notes:e.target.value}))} placeholder="Lender, account number last 4, etc."/>
-
-        <div style={{ display:"flex",gap:10,marginTop:22,justifyContent:"flex-end" }}>
-          <button style={{ padding:"10px 20px",borderRadius:10,border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:600,background:T.inputBg,color:T.textSub }} onClick={onClose}>Cancel</button>
-          <button style={{ padding:"10px 24px",borderRadius:10,border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:700,background:"#E84E8A",color:"#fff" }} onClick={onSave}>Save Debt</button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── DebtCard — module-level to avoid hooks-in-map ─────────────────────────────
-function DebtCard({ debt, T, fmt, onEdit, onDelete, onPayment }) {
-  const [showPay, setShowPay] = useState(false);
-  const [payAmt,  setPayAmt]  = useState("");
-  const DEBT_TYPE_INFO = {
-    credit_card:  { emoji:"💳", label:"Credit Card",   color:"#E8704A" },
-    student_loan: { emoji:"🎓", label:"Student Loan",  color:"#9B6EE8" },
-    personal:     { emoji:"🏦", label:"Personal Loan", color:"#3B9EDB" },
-    car_loan:     { emoji:"🚗", label:"Car Loan",      color:"#5BAD4E" },
-    mortgage:     { emoji:"🏠", label:"Mortgage",      color:"#20B2AA" },
-    medical:      { emoji:"💊", label:"Medical Debt",  color:"#E84E8A" },
-    other:        { emoji:"📋", label:"Other Debt",    color:"#888D9B" },
-  };
-  const info = DEBT_TYPE_INFO[debt.type]||DEBT_TYPE_INFO.other;
-  const utilization = debt.limit>0 ? Math.round((debt.balance/debt.limit)*100) : null;
-  const highUtil = utilization!==null && utilization>30;
-  // Monthly interest cost
-  const monthlyInterest = debt.apr>0 ? Math.round((debt.balance*(debt.apr/100/12))*100)/100 : 0;
-  // Months to payoff at min payment
-  const payoffMonths = (()=>{
-    if (!debt.minPayment||debt.minPayment<=0||!debt.balance) return null;
-    if (debt.apr<=0) return Math.ceil(debt.balance/debt.minPayment);
-    const r = debt.apr/100/12;
-    if (debt.minPayment<=debt.balance*r) return null; // never pays off
-    return Math.ceil(Math.log(debt.minPayment/(debt.minPayment-debt.balance*r))/Math.log(1+r));
-  })();
-  const totalPayments = (debt.payments||[]);
-  const totalPaid = totalPayments.reduce((s,p)=>s+p.amount,0);
-
-  return (
-    <div style={{ background:"var(--surface,#181B23)",border:`1px solid var(--border,rgba(255,255,255,0.07))`,borderRadius:16,overflow:"hidden",boxShadow:"0 2px 12px rgba(0,0,0,0.1)" }}>
-      {/* Header stripe */}
-      <div style={{ background:`${info.color}18`,borderBottom:`1px solid ${info.color}33`,padding:"14px 18px",display:"flex",alignItems:"center",gap:10 }}>
-        <div style={{ width:40,height:40,borderRadius:10,background:info.color+"22",border:`2px solid ${info.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0 }}>{info.emoji}</div>
-        <div style={{ flex:1,minWidth:0 }}>
-          <div style={{ fontSize:15,fontWeight:700,color:"var(--text,#EEEAE3)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap" }}>{debt.name}</div>
-          <div style={{ fontSize:11,color:info.color,fontWeight:600 }}>{info.label}{debt.apr>0?` · ${debt.apr}% APR`:""}</div>
-        </div>
-        <div style={{ display:"flex",gap:4,flexShrink:0 }}>
-          <button onClick={()=>onEdit(debt)} style={{ background:"none",border:"none",color:"var(--textMuted,#3E424E)",cursor:"pointer",fontSize:14,padding:"3px" }}>✎</button>
-          <button onClick={()=>onDelete(debt.id)} style={{ background:"none",border:"none",color:"var(--textMuted,#3E424E)",cursor:"pointer",fontSize:14,padding:"3px" }}>✕</button>
-        </div>
-      </div>
-
-      <div style={{ padding:"16px 18px" }}>
-        {/* Balance + utilization */}
-        <div style={{ display:"flex",alignItems:"flex-end",justifyContent:"space-between",marginBottom:12 }}>
-          <div>
-            <div style={{ fontSize:11,color:"var(--textSub,#888D9B)",fontWeight:600,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:2 }}>Balance</div>
-            <div style={{ fontSize:28,fontWeight:800,color:"#E84E8A",lineHeight:1 }}>{fmt(debt.balance)}</div>
-            {debt.limit>0&&<div style={{ fontSize:11,color:"var(--textMuted,#3E424E)",marginTop:2 }}>of {fmt(debt.limit)} limit</div>}
-          </div>
-          {utilization!==null&&(
-            <div style={{ textAlign:"right" }}>
-              <div style={{ fontSize:22,fontWeight:800,color:highUtil?"#E8704A":"#3DBF8A" }}>{utilization}%</div>
-              <div style={{ fontSize:11,color:"var(--textSub,#888D9B)" }}>utilization</div>
-              {highUtil&&<div style={{ fontSize:10,color:"#E8704A",fontWeight:600,marginTop:2 }}>⚠ Keep below 30%</div>}
-            </div>
-          )}
-        </div>
-
-        {/* Credit utilization bar */}
-        {debt.limit>0&&(
-          <div style={{ height:8,background:"var(--inputBg,rgba(255,255,255,0.05))",borderRadius:8,overflow:"hidden",marginBottom:14 }}>
-            <div style={{ height:"100%",width:`${Math.min(100,utilization)}%`,background:utilization>80?"#E84E8A":utilization>30?"#E8704A":"#3DBF8A",borderRadius:8,transition:"width 0.5s" }}/>
-          </div>
-        )}
-
-        {/* Stats grid */}
-        <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:14 }}>
-          {[
-            { l:"Min Payment",    v:debt.minPayment>0?fmt(debt.minPayment):"—",        c:"#E8A838" },
-            { l:"Monthly Interest",v:monthlyInterest>0?fmt(monthlyInterest):"$0.00",   c:"#E84E8A" },
-            { l:"Total Paid",     v:totalPaid>0?fmt(totalPaid):"$0.00",               c:"#3DBF8A" },
-            { l:"Payoff Est.",    v:payoffMonths?`~${payoffMonths} mo`:"∞",            c:payoffMonths&&payoffMonths<36?"#3DBF8A":"#E8704A" },
-          ].map(s=>(
-            <div key={s.l} style={{ background:"var(--inputBg,rgba(255,255,255,0.05))",borderRadius:9,padding:"8px 10px" }}>
-              <div style={{ fontSize:14,fontWeight:700,color:s.c }}>{s.v}</div>
-              <div style={{ fontSize:10,color:"var(--textMuted,#3E424E)",textTransform:"uppercase",letterSpacing:"0.06em" }}>{s.l}</div>
-            </div>
-          ))}
-        </div>
-
-        {debt.dueDay&&<div style={{ fontSize:12,color:"#E8A838",marginBottom:12,fontWeight:600 }}>📅 Due on the {debt.dueDay}{["st","nd","rd"][((debt.dueDay%100)-11)%10<3?(debt.dueDay%10)-1:-1]||"th"} each month</div>}
-        {debt.notes&&<div style={{ fontSize:12,color:"var(--textSub,#888D9B)",fontStyle:"italic",marginBottom:12 }}>{debt.notes}</div>}
-
-        {/* Payment history (last 3) */}
-        {totalPayments.length>0&&(
-          <div style={{ marginBottom:12 }}>
-            <div style={{ fontSize:11,fontWeight:700,color:"var(--textSub,#888D9B)",textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:6 }}>Recent Payments</div>
-            {[...totalPayments].reverse().slice(0,3).map(p=>(
-              <div key={p.id} style={{ display:"flex",justifyContent:"space-between",fontSize:12,padding:"4px 0",borderBottom:"1px solid var(--border,rgba(255,255,255,0.07))" }}>
-                <span style={{ color:"var(--textSub,#888D9B)" }}>{p.date}</span>
-                <span style={{ color:"#3DBF8A",fontWeight:600 }}>-{fmt(p.amount)}</span>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Log payment */}
-        {showPay ? (
-          <div style={{ display:"flex",gap:6 }}>
-            <input autoFocus type="number" min="0" step="0.01" placeholder={`Min: ${fmt(debt.minPayment||0)}`}
-              style={{ flex:1,background:"var(--inputBg,rgba(255,255,255,0.05))",border:"1px solid #3DBF8A",borderRadius:8,padding:"8px 10px",color:"var(--text,#EEEAE3)",fontFamily:"'DM Sans',sans-serif",fontSize:13,outline:"none",boxSizing:"border-box" }}
-              value={payAmt} onChange={e=>setPayAmt(e.target.value)}
-              onKeyDown={e=>{ if(e.key==="Enter"&&payAmt){onPayment(debt.id,payAmt);setShowPay(false);setPayAmt("");} }}/>
-            <button onClick={()=>{ onPayment(debt.id,payAmt); setShowPay(false); setPayAmt(""); }}
-              style={{ padding:"8px 12px",borderRadius:8,border:"none",background:"#3DBF8A",color:"#fff",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:700 }}>Pay</button>
-            <button onClick={()=>setShowPay(false)}
-              style={{ padding:"8px 10px",borderRadius:8,border:"1px solid var(--border,rgba(255,255,255,0.07))",background:"transparent",color:"var(--textSub,#888D9B)",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:12 }}>✕</button>
-          </div>
-        ) : (
-          <button onClick={()=>setShowPay(true)}
-            style={{ width:"100%",padding:"9px",borderRadius:10,border:"1px solid #3DBF8A44",background:"#3DBF8A0D",color:"#3DBF8A",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700 }}>
-            💳 Log a Payment
-          </button>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ── DebtView ──────────────────────────────────────────────────────────────────
-function DebtView({ debts, T, mode, focus, fmt, names, onAdd, onEdit, onDelete, onPayment }) {
-  const totalBalance  = debts.reduce((s,d)=>s+d.balance,0);
-  const totalMin      = debts.reduce((s,d)=>s+(d.minPayment||0),0);
-  const totalInterest = debts.reduce((s,d)=>s+(d.apr>0?d.balance*(d.apr/100/12):0),0);
-  const creditCards   = debts.filter(d=>d.type==="credit_card");
-  const totalCCBalance= creditCards.reduce((s,d)=>s+d.balance,0);
-  const totalCCLimit  = creditCards.reduce((s,d)=>s+(d.limit||0),0);
-  const overallUtil   = totalCCLimit>0?Math.round((totalCCBalance/totalCCLimit)*100):null;
-
-  const card = (ex={}) => ({ background:T.surface,border:`1px solid ${T.border}`,borderRadius:16,boxShadow:"0 2px 12px rgba(0,0,0,0.07)",...ex });
-
-  return (
-    <div>
-      <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20,flexWrap:"wrap",gap:8 }}>
-        <div>
-          <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:24,color:T.text }}>Debt Tracker 💳</div>
-          <div style={{ fontSize:13,color:T.textSub,marginTop:2 }}>{debts.length} account{debts.length!==1?"s":""} · Track balances, payments & payoff progress</div>
-        </div>
-        <button onClick={onAdd} style={{ height:36,padding:"0 16px",borderRadius:9,border:"none",background:"#E84E8A",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,color:"#fff" }}>+ Add Debt</button>
-      </div>
-
-      {/* Summary cards */}
-      <div className="ba-g4">
-        {[
-          { l:"Total Debt",         v:fmt(totalBalance),           c:"#E84E8A", icon:"💳", sub:`${debts.length} accounts` },
-          { l:"Monthly Minimums",   v:fmt(totalMin),               c:"#E8704A", icon:"📅", sub:"minimum payments" },
-          { l:"Monthly Interest",   v:fmt(Math.round(totalInterest*100)/100), c:"#E8883A", icon:"📈", sub:"interest cost" },
-          { l:"CC Utilization",     v:overallUtil!==null?`${overallUtil}%`:"—", c:overallUtil>30?"#E8704A":"#3DBF8A", icon:"📊", sub:overallUtil>30?"Keep below 30%":"Looking good!" },
-        ].map(s=>(
-          <div key={s.l} style={{ ...card(),padding:"16px 18px",borderLeft:`4px solid ${s.c}`,position:"relative",overflow:"hidden" }}>
-            <div style={{ position:"absolute",top:10,right:12,fontSize:22,opacity:0.1 }}>{s.icon}</div>
-            <div style={{ fontSize:20,fontWeight:800,color:T.text,lineHeight:1 }}>{s.v}</div>
-            <div style={{ fontSize:10,fontWeight:700,color:T.textSub,marginTop:3,textTransform:"uppercase",letterSpacing:"0.08em" }}>{s.l}</div>
-            <div style={{ fontSize:11,color:s.c,marginTop:2,fontWeight:600 }}>{s.sub}</div>
-          </div>
-        ))}
-      </div>
-
-      {/* Debt avalanche tip */}
-      {debts.length>1&&(
-        <div style={{ ...card(),padding:"14px 18px",marginBottom:20,borderLeft:"4px solid #9B6EE8",background:"#9B6EE808" }}>
-          <div style={{ display:"flex",gap:10,alignItems:"flex-start" }}>
-            <span style={{ fontSize:18,flexShrink:0 }}>💡</span>
-            <div>
-              <div style={{ fontSize:13,fontWeight:700,color:"#9B6EE8",marginBottom:3 }}>Debt Avalanche Strategy</div>
-              <div style={{ fontSize:12,color:T.textSub,lineHeight:1.6 }}>
-                Pay minimums on all debts, then put every extra dollar toward the <strong style={{ color:T.text }}>{[...debts].sort((a,b)=>b.apr-a.apr)[0]?.name}</strong> ({[...debts].sort((a,b)=>b.apr-a.apr)[0]?.apr}% APR) first — this saves the most in interest over time.
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {debts.length===0 ? (
-        <div style={{ ...card(),padding:"60px 20px",textAlign:"center" }}>
-          <div style={{ fontSize:44,marginBottom:12 }}>💳</div>
-          <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:20,color:T.text,marginBottom:6 }}>No debts tracked</div>
-          <div style={{ fontSize:13,color:T.textSub,lineHeight:1.6,marginBottom:16 }}>Add your credit cards, student loans, or any other debts<br/>to track balances and payoff progress.</div>
-          <button onClick={onAdd} style={{ padding:"10px 20px",borderRadius:10,border:"none",background:"#E84E8A",color:"#fff",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:700 }}>+ Add First Debt</button>
-        </div>
-      ) : (
-        <div className="ba-debt">
-          {[...debts].sort((a,b)=>b.apr-a.apr).map(d=>(
-            <div key={d.id} style={{ "--surface":T.surface,"--border":T.border,"--text":T.text,"--textSub":T.textSub,"--textMuted":T.textMuted,"--inputBg":T.inputBg }}>
-              <DebtCard debt={d} T={T} fmt={fmt} onEdit={onEdit} onDelete={onDelete} onPayment={onPayment}/>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ── ReportView ────────────────────────────────────────────────────────────────
-function ReportView({ lines, goals, debts, assets, liabs, month, year, focus, focusName, names,
-  T, mode, fmt, BUDGET_MONTHS, reportPeriod, setReportPeriod, totalAssets, totalLiabs, totalDebtBalance, netWorth }) {
-
-  const totalAllocated = lines.reduce((s,l)=>s+l.allocated,0);
-  const totalSpent     = lines.reduce((s,l)=>s+l.spent,0);
-  const remaining      = totalAllocated - totalSpent;
-  const overBudget     = remaining < 0;
-  const savingsRate    = totalAllocated>0 ? Math.round(((totalAllocated-totalSpent)/totalAllocated)*100) : 0;
-
-  const BUDGET_CATS_MAP = Object.fromEntries(
-    [{ id:"housing",emoji:"🏠",label:"Housing",color:"#3B9EDB"},{ id:"food",emoji:"🍽️",label:"Food & Dining",color:"#E8A838"},{ id:"transport",emoji:"🚗",label:"Transport",color:"#9B6EE8"},{ id:"health",emoji:"💊",label:"Health",color:"#3DBF8A"},{ id:"education",emoji:"🎓",label:"Education",color:"#7B61FF"},{ id:"faith",emoji:"✦",label:"Faith & Giving",color:"#E8C050"},{ id:"savings",emoji:"💰",label:"Savings",color:"#20B2AA"},{ id:"shopping",emoji:"🛍️",label:"Shopping",color:"#E84E8A"},{ id:"utilities",emoji:"⚡",label:"Utilities",color:"#E8883A"},{ id:"invest",emoji:"📈",label:"Investing",color:"#5BAD4E"},{ id:"personal",emoji:"🌱",label:"Personal",color:"#C8B030"},{ id:"sub",emoji:"📱",label:"Subscriptions",color:"#8B5CF6"},{ id:"other",emoji:"📦",label:"Other",color:"#888D9B"}]
-    .map(c=>[c.id,c])
-  );
-
-  // Category analysis
-  const catRollup = Object.values(
-    lines.reduce((acc,l)=>{ if(!acc[l.category]) acc[l.category]={...BUDGET_CATS_MAP[l.category]||{id:l.category,label:l.category,emoji:"📦",color:"#888"},allocated:0,spent:0,items:[]}; acc[l.category].allocated+=l.allocated; acc[l.category].spent+=l.spent; acc[l.category].items.push(l); return acc; },{})
-  ).sort((a,b)=>b.spent-a.spent);
-
-  const overCategories = catRollup.filter(c=>c.spent>c.allocated&&c.allocated>0);
-  const underCategories= catRollup.filter(c=>c.spent<c.allocated&&c.allocated>0);
-  const goalsReached   = goals.filter(g=>g.saved>=g.target);
-  const goalsInProgress= goals.filter(g=>g.saved<g.target);
-  const totalMonthlyMin= debts.reduce((s,d)=>s+(d.minPayment||0),0);
-
-  // Scorecard
-  const scores = [
-    { label:"Stayed in budget",    pass:!overBudget,                           icon:!overBudget?"✅":"❌" },
-    { label:"Savings rate ≥ 20%",  pass:savingsRate>=20,                       icon:savingsRate>=20?"✅":"⚠️" },
-    { label:"No overspent categories", pass:overCategories.length===0,         icon:overCategories.length===0?"✅":"❌" },
-    { label:"Goals on track",      pass:goalsInProgress.every(g=>{ if(!g.deadline) return true; const d=Math.ceil((new Date(g.deadline+"T00:00:00")-new Date())/86400000); return d>0; }), icon:"📊" },
-    { label:"Debt decreasing",     pass:debts.every(d=>(d.payments||[]).length>0), icon:debts.length>0&&debts.every(d=>(d.payments||[]).length>0)?"✅":"📋" },
-  ];
-  const passed = scores.filter(s=>s.pass).length;
-
-  const gradeColor = passed>=4?"#3DBF8A":passed>=3?"#E8A838":"#E84E8A";
-  const gradeLabel = passed>=4?"Excellent 🏆":passed>=3?"Good Work ⭐":passed>=2?"Needs Work 📈":"Let's Improve 💪";
-
-  const card = (ex={}) => ({ background:T.surface,border:`1px solid ${T.border}`,borderRadius:16,boxShadow:"0 2px 12px rgba(0,0,0,0.07)",...ex });
-
-  return (
-    <div>
-      {/* Header + period toggle */}
-      <div style={{ display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:20,flexWrap:"wrap",gap:12 }}>
-        <div>
-          <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:24,color:T.text }}>📄 Financial Report</div>
-          <div style={{ fontSize:13,color:T.textSub,marginTop:2 }}>{focusName} · {BUDGET_MONTHS[month]} {year}</div>
-        </div>
-        <div style={{ display:"flex",background:T.inputBg,borderRadius:9,padding:2,border:`1px solid ${T.border}`,gap:2 }}>
-          {[["month","Monthly"],["year","Yearly"]].map(([v,l])=>(
-            <button key={v} onClick={()=>setReportPeriod(v)} style={{ padding:"5px 14px",borderRadius:7,border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:600,background:reportPeriod===v?"#20B2AA":"transparent",color:reportPeriod===v?"#fff":T.textSub,transition:"all 0.15s" }}>{l}</button>
-          ))}
-        </div>
-      </div>
-
-      {/* Overall scorecard */}
-      <div style={{ ...card(),padding:"24px",marginBottom:20,borderTop:`4px solid ${gradeColor}`,background:gradeColor+"08" }}>
-        <div style={{ display:"flex",alignItems:"center",gap:16,flexWrap:"wrap" }}>
-          <div style={{ textAlign:"center",flexShrink:0 }}>
-            <div style={{ fontSize:48,fontWeight:900,color:gradeColor,lineHeight:1 }}>{passed}/{scores.length}</div>
-            <div style={{ fontSize:11,color:T.textSub,marginTop:4,textTransform:"uppercase",letterSpacing:"0.08em" }}>Score</div>
-          </div>
-          <div style={{ flex:1,minWidth:200 }}>
-            <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:20,color:T.text,marginBottom:8 }}>{gradeLabel}</div>
-            <div style={{ display:"flex",flexDirection:"column",gap:6 }}>
-              {scores.map((s,i)=>(
-                <div key={i} style={{ display:"flex",alignItems:"center",gap:8,fontSize:13 }}>
-                  <span style={{ fontSize:14,flexShrink:0 }}>{s.icon}</span>
-                  <span style={{ color:s.pass?T.text:T.textSub,textDecoration:s.pass?"none":"none" }}>{s.label}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Key numbers */}
-      <div className="ba-g4">
-        {[
-          { l:"Total Budgeted",   v:fmt(totalAllocated), c:"#3B9EDB" },
-          { l:"Total Spent",      v:fmt(totalSpent),     c:"#E84E8A" },
-          { l:overBudget?"Over Budget":"Saved",  v:fmt(Math.abs(remaining)), c:overBudget?"#E84E8A":"#3DBF8A" },
-          { l:"Savings Rate",     v:`${savingsRate}%`,   c:savingsRate>=20?"#3DBF8A":"#E8A838" },
-          { l:"Net Worth",        v:fmt(netWorth),       c:netWorth>=0?"#3DBF8A":"#E84E8A" },
-          { l:"Total Debt",       v:fmt(totalDebtBalance), c:"#E8704A" },
-        ].map(s=>(
-          <div key={s.l} style={{ ...card(),padding:"14px 16px",borderLeft:`3px solid ${s.c}` }}>
-            <div style={{ fontSize:18,fontWeight:800,color:T.text,lineHeight:1 }}>{s.v}</div>
-            <div style={{ fontSize:10,fontWeight:700,color:T.textSub,marginTop:3,textTransform:"uppercase",letterSpacing:"0.08em" }}>{s.l}</div>
-          </div>
-        ))}
-      </div>
-
-      {/* Written narrative */}
-      <div style={{ ...card(),padding:"24px",marginBottom:20,background:mode==="dark"?"linear-gradient(135deg,#0d1a14,#0a1220)":"linear-gradient(135deg,#f0fff8,#e8f4ff)" }}>
-        <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:18,color:T.text,marginBottom:16 }}>📝 Your {BUDGET_MONTHS[month]} {year} Summary</div>
-        <div style={{ fontSize:14,color:T.text,lineHeight:1.9,fontFamily:"'DM Sans',sans-serif" }}>
-          <p style={{ margin:"0 0 10px" }}>
-            In <strong>{BUDGET_MONTHS[month]} {year}</strong>, <strong style={{ color:"#20B2AA" }}>{focusName}</strong> {overBudget
-              ? <span>went <strong style={{ color:"#E84E8A" }}>over budget by {fmt(Math.abs(remaining))}</strong>. Total spending was {fmt(totalSpent)} against a planned budget of {fmt(totalAllocated)}.</span>
-              : <span><strong style={{ color:"#3DBF8A" }}>stayed within budget</strong>, spending {fmt(totalSpent)} out of a planned {fmt(totalAllocated)} — leaving <strong style={{ color:"#3DBF8A" }}>{fmt(remaining)}</strong> unspent.</span>
-            }
-          </p>
-
-          {overCategories.length>0&&(
-            <p style={{ margin:"0 0 10px",color:"#E84E8A" }}>
-              ⚠️ Categories that went over: {overCategories.map(c=>`${c.emoji} ${c.label} (over by ${fmt(c.spent-c.allocated)})`).join(", ")}.
-            </p>
-          )}
-
-          {underCategories.length>0&&(
-            <p style={{ margin:"0 0 10px",color:"#3DBF8A" }}>
-              ✅ Categories with budget left: {underCategories.slice(0,3).map(c=>`${c.emoji} ${c.label} (${fmt(c.allocated-c.spent)} remaining)`).join(", ")}{underCategories.length>3?` and ${underCategories.length-3} more`:"" }.
-            </p>
-          )}
-
-          {savingsRate>0&&(
-            <p style={{ margin:"0 0 10px" }}>
-              💰 Savings rate this month: <strong style={{ color:savingsRate>=20?"#3DBF8A":"#E8A838" }}>{savingsRate}%</strong>
-              {savingsRate>=20?" — great job, above the 20% target!":" — aim for 20% or more to build financial security."}
-            </p>
-          )}
-
-          {goalsReached.length>0&&(
-            <p style={{ margin:"0 0 10px",color:"#3DBF8A" }}>
-              🏆 Goals reached: {goalsReached.map(g=>`${g.emoji||"💰"} ${g.name}`).join(", ")}. Amazing work!
-            </p>
-          )}
-
-          {goalsInProgress.length>0&&(
-            <p style={{ margin:"0 0 10px" }}>
-              🎯 Goals still in progress: {goalsInProgress.slice(0,3).map(g=>`${g.emoji||"💰"} ${g.name} (${g.target>0?Math.round((g.saved/g.target)*100):0}%)`).join(", ")}.
-            </p>
-          )}
-
-          {debts.length>0&&(
-            <p style={{ margin:"0 0 10px" }}>
-              💳 You have <strong>{debts.length}</strong> active debt{debts.length!==1?"s":""} with a total balance of <strong style={{ color:"#E84E8A" }}>{fmt(totalDebtBalance)}</strong>. Monthly minimum payments total <strong>{fmt(totalMonthlyMin)}</strong>.
-            </p>
-          )}
-
-          {netWorth>=0
-            ? <p style={{ margin:0,color:"#3DBF8A" }}>📈 Net worth: <strong>{fmt(netWorth)}</strong> — you own more than you owe. Keep building!</p>
-            : <p style={{ margin:0,color:"#E84E8A" }}>📉 Net worth: <strong>{fmt(netWorth)}</strong> — your debts currently exceed your assets. Focus on paying down debt and building savings.</p>
-          }
-        </div>
-      </div>
-
-      {/* Category breakdown table */}
-      {catRollup.length>0&&(
-        <div style={{ ...card(),padding:"20px",marginBottom:20 }}>
-          <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:17,color:T.text,marginBottom:14 }}>Category Breakdown</div>
-          <div style={{ display:"grid",gridTemplateColumns:"1fr 80px 80px 70px",gap:8,padding:"6px 8px",background:T.inputBg,borderRadius:8,marginBottom:8,fontSize:10,fontWeight:700,color:T.textMuted,textTransform:"uppercase" }}>
-            <span>Category</span><span style={{ textAlign:"right" }}>Budget</span><span style={{ textAlign:"right" }}>Spent</span><span style={{ textAlign:"right" }}>Status</span>
-          </div>
-          {catRollup.map(cat=>{
-            const over=cat.spent>cat.allocated&&cat.allocated>0;
-            const diff=cat.allocated-cat.spent;
-            return (
-              <div key={cat.id} style={{ display:"grid",gridTemplateColumns:"1fr 80px 80px 70px",gap:8,padding:"8px",borderBottom:`1px solid ${T.border}`,alignItems:"center" }}>
-                <span style={{ fontSize:13,color:T.text }}>{cat.emoji||"📦"} {cat.label||cat.id}</span>
-                <span style={{ fontSize:12,color:T.textSub,textAlign:"right" }}>{fmt(cat.allocated)}</span>
-                <span style={{ fontSize:12,fontWeight:600,color:over?"#E84E8A":"#3DBF8A",textAlign:"right" }}>{fmt(cat.spent)}</span>
-                <span style={{ fontSize:11,fontWeight:700,color:over?"#E84E8A":"#3DBF8A",textAlign:"right",whiteSpace:"nowrap" }}>{over?"⚠ -":"✓ +"}{fmt(Math.abs(diff))}</span>
-              </div>
-            );
-          })}
-          <div style={{ display:"grid",gridTemplateColumns:"1fr 80px 80px 70px",gap:8,padding:"8px",background:T.inputBg,borderRadius:8,marginTop:6,fontSize:13,fontWeight:700 }}>
-            <span style={{ color:T.text }}>Total</span>
-            <span style={{ textAlign:"right",color:T.text }}>{fmt(totalAllocated)}</span>
-            <span style={{ textAlign:"right",color:overBudget?"#E84E8A":"#3DBF8A" }}>{fmt(totalSpent)}</span>
-            <span style={{ textAlign:"right",color:overBudget?"#E84E8A":"#3DBF8A" }}>{overBudget?"❌":"✅"}</span>
-          </div>
-        </div>
-      )}
-
-      {/* Goals status */}
-      {goals.length>0&&(
-        <div style={{ ...card(),padding:"20px",marginBottom:20 }}>
-          <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:17,color:T.text,marginBottom:14 }}>Goals Status</div>
-          {goals.map(g=>{
-            const pct=g.target>0?Math.min(100,Math.round((g.saved/g.target)*100)):0;
-            const reached=g.saved>=g.target;
-            const dLeft=g.deadline?Math.ceil((new Date(g.deadline+"T00:00:00")-new Date())/86400000):null;
-            return (
-              <div key={g.id} style={{ marginBottom:14 }}>
-                <div style={{ display:"flex",justifyContent:"space-between",marginBottom:5,flexWrap:"wrap",gap:4 }}>
-                  <span style={{ fontSize:13,color:T.text,fontWeight:600 }}>{g.emoji||"💰"} {g.name}</span>
-                  <div style={{ display:"flex",gap:8,alignItems:"center" }}>
-                    {reached&&<span style={{ fontSize:12,color:"#3DBF8A",fontWeight:700 }}>🏆 Reached!</span>}
-                    {!reached&&dLeft!==null&&<span style={{ fontSize:11,color:dLeft<30?"#E84E8A":"#E8A838" }}>📅 {dLeft>0?`${dLeft}d left`:"Past deadline"}</span>}
-                    <span style={{ fontSize:12,fontWeight:700,color:reached?"#3DBF8A":"#20B2AA" }}>{pct}%</span>
+                  <div style={{ marginTop:12 }}>
+                    <div style={{ display:"flex", justifyContent:"space-between", fontSize:11, color:T.textSub, marginBottom:5, fontFamily:FF }}>
+                      <span>Mastered</span><span>{Math.round(doneCount/Math.max(cards.length,1)*100)}%</span>
+                    </div>
+                    <div style={{ height:6, background:T.border, borderRadius:3 }}>
+                      <div style={{ height:6, borderRadius:3, background:accentColor, width:`${Math.round(doneCount/Math.max(cards.length,1)*100)}%`, transition:"width .4s" }}/>
+                    </div>
                   </div>
                 </div>
-                <div style={{ height:8,background:T.inputBg,borderRadius:8,overflow:"hidden" }}>
-                  <div style={{ height:"100%",width:`${pct}%`,background:reached?"linear-gradient(90deg,#3DBF8A,#20B2AA)":"linear-gradient(90deg,#20B2AA,#3B9EDB)",borderRadius:8,transition:"width 0.5s" }}/>
-                </div>
-                <div style={{ fontSize:11,color:T.textMuted,marginTop:3 }}>{fmt(g.saved)} saved of {fmt(g.target)} target</div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Recommendations */}
-      <div style={{ ...card(),padding:"20px",borderTop:"4px solid #9B6EE8" }}>
-        <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:17,color:T.text,marginBottom:14 }}>💡 Recommendations</div>
-        <div style={{ display:"flex",flexDirection:"column",gap:10 }}>
-          {overBudget&&<div style={{ padding:"10px 14px",background:"#E84E8A10",borderRadius:10,borderLeft:"3px solid #E84E8A",fontSize:13,color:T.text,lineHeight:1.6 }}>🔴 <strong>You overspent this month.</strong> Review {overCategories.map(c=>c.emoji+" "+c.label).join(", ")} and set stricter limits next month.</div>}
-          {savingsRate<20&&totalAllocated>0&&<div style={{ padding:"10px 14px",background:"#E8A83810",borderRadius:10,borderLeft:"3px solid #E8A838",fontSize:13,color:T.text,lineHeight:1.6 }}>⚠️ <strong>Savings rate below 20%.</strong> Try to reduce discretionary spending or increase income to hit the 20% target.</div>}
-          {debts.length>0&&<div style={{ padding:"10px 14px",background:"#9B6EE810",borderRadius:10,borderLeft:"3px solid #9B6EE8",fontSize:13,color:T.text,lineHeight:1.6 }}>💳 <strong>Debt strategy:</strong> Pay minimums on all debts, then attack <strong>{[...debts].sort((a,b)=>b.apr-a.apr)[0]?.name}</strong> first (highest APR at {[...debts].sort((a,b)=>b.apr-a.apr)[0]?.apr}%).</div>}
-          {goalsInProgress.length>0&&<div style={{ padding:"10px 14px",background:"#20B2AA10",borderRadius:10,borderLeft:"3px solid #20B2AA",fontSize:13,color:T.text,lineHeight:1.6 }}>🎯 <strong>Keep saving!</strong> {goalsInProgress.length} goal{goalsInProgress.length!==1?"s":""} in progress. Even small consistent deposits add up.</div>}
-          {!overBudget&&savingsRate>=20&&<div style={{ padding:"10px 14px",background:"#3DBF8A10",borderRadius:10,borderLeft:"3px solid #3DBF8A",fontSize:13,color:T.text,lineHeight:1.6 }}>✅ <strong>Great month!</strong> You stayed in budget and hit your savings target. Consider investing any extra surplus.</div>}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-
-// ── IncomeForm ────────────────────────────────────────────────────────────────
-function IncomeForm({ data, onSave, onClose, T, mode }) {
-  const [d, setD] = useState({...data});
-  const ref = useRef(null);
-  useEffect(()=>{ const t=setTimeout(()=>{ if(ref.current) ref.current.focus(); },80); return()=>clearTimeout(t); },[]);
-  const inp = { width:"100%",background:T.inputBg,border:`1px solid ${T.border}`,borderRadius:9,padding:"10px 12px",color:T.text,fontFamily:"'DM Sans',sans-serif",fontSize:14,outline:"none",boxSizing:"border-box" };
-  const sel = { ...inp,background:mode==="dark"?"#181B23":"#fff",cursor:"pointer" };
-  const lbl = { fontSize:11,fontWeight:600,letterSpacing:"0.08em",textTransform:"uppercase",color:T.textMuted,display:"block",marginBottom:4,marginTop:12,fontFamily:"'DM Sans',sans-serif" };
-  return (
-    <div style={{ position:"fixed",inset:0,zIndex:50,background:"rgba(0,0,0,0.65)",backdropFilter:"blur(6px)",display:"flex",alignItems:"flex-end",justifyContent:"center" }} onClick={e=>e.target===e.currentTarget&&onClose()}>
-      <div style={{ background:T.surface,border:`1px solid ${T.border}`,borderRadius:"20px 20px 0 0",width:"100%",maxWidth:480,maxHeight:"90vh",overflowY:"auto",padding:"24px 20px 40px",boxShadow:"0 -8px 40px rgba(0,0,0,0.3)" }}>
-        <div style={{ width:40,height:4,borderRadius:2,background:T.textMuted,margin:"0 auto 20px",opacity:0.4 }}/>
-        <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:22,color:T.text,marginBottom:4 }}>{d.id?"Edit":"Add"} Income 💵</div>
-        <div style={{ height:2,width:40,background:"#3DBF8A",borderRadius:2,marginBottom:18 }}/>
-        <label style={lbl}>Source Name</label>
-        <input ref={ref} style={inp} value={d.name||""} onChange={e=>setD(p=>({...p,name:e.target.value}))} placeholder="e.g. TA Stipend, Salary, Freelance..." onKeyDown={e=>{ if(e.key==="Enter"&&d.name?.trim()&&d.amount){e.preventDefault();onSave(d);}}}/>
-        <label style={lbl}>Amount ($)</label>
-        <input style={inp} type="number" min="0" step="0.01" value={d.amount||""} onChange={e=>setD(p=>({...p,amount:e.target.value}))} placeholder="0.00"/>
-        <label style={lbl}>Date Received</label>
-        <input type="date" style={sel} value={d.date||new Date().toISOString().slice(0,10)} onChange={e=>setD(p=>({...p,date:e.target.value}))}/>
-        <label style={lbl}>Recurring</label>
-        <div style={{ display:"flex",gap:6 }}>
-          {[["none","One-time"],["monthly","Monthly"],["biweekly","Bi-weekly"],["weekly","Weekly"]].map(([v,l])=>(
-            <button key={v} onClick={()=>setD(p=>({...p,recurring:v}))}
-              style={{ flex:1,padding:"7px 4px",borderRadius:8,border:`1px solid ${(d.recurring||"none")===v?"#3DBF8A":T.border}`,background:(d.recurring||"none")===v?"#3DBF8A18":"transparent",color:(d.recurring||"none")===v?"#3DBF8A":T.text,fontFamily:"'DM Sans',sans-serif",fontSize:11,cursor:"pointer",fontWeight:(d.recurring||"none")===v?700:400 }}>
-              {l}
-            </button>
-          ))}
-        </div>
-        <label style={lbl}>Notes (optional)</label>
-        <input style={inp} value={d.notes||""} onChange={e=>setD(p=>({...p,notes:e.target.value}))} placeholder="Any details..."/>
-        <div style={{ display:"flex",gap:10,marginTop:22,justifyContent:"flex-end" }}>
-          <button style={{ padding:"10px 20px",borderRadius:10,border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:600,background:T.inputBg,color:T.textSub }} onClick={onClose}>Cancel</button>
-          <button style={{ padding:"10px 24px",borderRadius:10,border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:700,background:"#3DBF8A",color:"#fff" }} onClick={()=>onSave(d)}>Save</button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── TxForm — log an actual expense transaction ────────────────────────────────
-function TxForm({ data, onSave, onClose, T, mode }) {
-  const [d, setD] = useState({...data});
-  const ref = useRef(null);
-  useEffect(()=>{ const t=setTimeout(()=>{ if(ref.current) ref.current.focus(); },80); return()=>clearTimeout(t); },[]);
-  const inp = { width:"100%",background:T.inputBg,border:`1px solid ${T.border}`,borderRadius:9,padding:"10px 12px",color:T.text,fontFamily:"'DM Sans',sans-serif",fontSize:14,outline:"none",boxSizing:"border-box" };
-  const sel = { ...inp,background:mode==="dark"?"#181B23":"#fff",cursor:"pointer" };
-  const lbl = { fontSize:11,fontWeight:600,letterSpacing:"0.08em",textTransform:"uppercase",color:T.textMuted,display:"block",marginBottom:4,marginTop:12,fontFamily:"'DM Sans',sans-serif" };
-  return (
-    <div style={{ position:"fixed",inset:0,zIndex:50,background:"rgba(0,0,0,0.65)",backdropFilter:"blur(6px)",display:"flex",alignItems:"flex-end",justifyContent:"center" }} onClick={e=>e.target===e.currentTarget&&onClose()}>
-      <div style={{ background:T.surface,border:`1px solid ${T.border}`,borderRadius:"20px 20px 0 0",width:"100%",maxWidth:480,maxHeight:"90vh",overflowY:"auto",padding:"24px 20px 40px",boxShadow:"0 -8px 40px rgba(0,0,0,0.3)" }}>
-        <div style={{ width:40,height:4,borderRadius:2,background:T.textMuted,margin:"0 auto 20px",opacity:0.4 }}/>
-        <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:22,color:T.text,marginBottom:4 }}>{d.id?"Edit":"Log"} Expense 💸</div>
-        <div style={{ height:2,width:40,background:"#E84E8A",borderRadius:2,marginBottom:18 }}/>
-        <label style={lbl}>What did you spend on?</label>
-        <input ref={ref} style={inp} value={d.name||""} onChange={e=>setD(p=>({...p,name:e.target.value}))} placeholder="e.g. Groceries, Rent, Gas, Giving..." onKeyDown={e=>{ if(e.key==="Enter"&&d.name?.trim()&&d.amount){e.preventDefault();onSave(d);}}}/>
-        <label style={lbl}>Amount ($)</label>
-        <input style={inp} type="number" min="0" step="0.01" value={d.amount||""} onChange={e=>setD(p=>({...p,amount:e.target.value}))} placeholder="0.00"/>
-        <label style={lbl}>Category</label>
-        <select style={sel} value={d.category||"other"} onChange={e=>setD(p=>({...p,category:e.target.value}))}>
-          {[
-            {id:"housing",label:"🏠 Housing"},{id:"food",label:"🍽️ Food & Dining"},
-            {id:"transport",label:"🚗 Transport"},{id:"health",label:"💊 Health"},
-            {id:"education",label:"🎓 Education"},{id:"faith",label:"✦ Faith & Giving"},
-            {id:"savings",label:"💰 Savings"},{id:"shopping",label:"🛍️ Shopping"},
-            {id:"utilities",label:"⚡ Utilities"},{id:"invest",label:"📈 Investing"},
-            {id:"sub",label:"📱 Subscriptions"},{id:"personal",label:"🌱 Personal"},
-            {id:"other",label:"📦 Other"},
-          ].map(c=><option key={c.id} value={c.id}>{c.label}</option>)}
-        </select>
-        <label style={lbl}>Date</label>
-        <input type="date" style={sel} value={d.date||new Date().toISOString().slice(0,10)} onChange={e=>setD(p=>({...p,date:e.target.value}))}/>
-        <label style={lbl}>Notes (optional)</label>
-        <input style={inp} value={d.notes||""} onChange={e=>setD(p=>({...p,notes:e.target.value}))} placeholder="Any details..."/>
-        <div style={{ display:"flex",gap:10,marginTop:22,justifyContent:"flex-end" }}>
-          <button style={{ padding:"10px 20px",borderRadius:10,border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:600,background:T.inputBg,color:T.textSub }} onClick={onClose}>Cancel</button>
-          <button style={{ padding:"10px 24px",borderRadius:10,border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:700,background:"#E84E8A",color:"#fff" }} onClick={()=>onSave(d)}>Save</button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── BudgetCatForm — set a budget limit for a category ────────────────────────
-function BudgetCatForm({ data, onSave, onClose, T, mode }) {
-  const [d, setD] = useState(data || { name:"",category:"other",limit:"",notes:"" });
-  const ref = useRef(null);
-  useEffect(()=>{ const t=setTimeout(()=>{ if(ref.current) ref.current.focus(); },80); return()=>clearTimeout(t); },[]);
-  const inp = { width:"100%",background:T.inputBg,border:`1px solid ${T.border}`,borderRadius:9,padding:"10px 12px",color:T.text,fontFamily:"'DM Sans',sans-serif",fontSize:14,outline:"none",boxSizing:"border-box" };
-  const sel = { ...inp,background:mode==="dark"?"#181B23":"#fff",cursor:"pointer" };
-  const lbl = { fontSize:11,fontWeight:600,letterSpacing:"0.08em",textTransform:"uppercase",color:T.textMuted,display:"block",marginBottom:4,marginTop:12,fontFamily:"'DM Sans',sans-serif" };
-  const CATS = [{id:"housing",l:"🏠 Housing"},{id:"food",l:"🍽️ Food & Dining"},{id:"transport",l:"🚗 Transport"},{id:"health",l:"💊 Health"},{id:"education",l:"🎓 Education"},{id:"faith",l:"✦ Faith & Giving"},{id:"savings",l:"💰 Savings"},{id:"shopping",l:"🛍️ Shopping"},{id:"utilities",l:"⚡ Utilities"},{id:"invest",l:"📈 Investing"},{id:"sub",l:"📱 Subscriptions"},{id:"personal",l:"🌱 Personal"},{id:"other",l:"📦 Other"}];
-  return (
-    <div style={{ position:"fixed",inset:0,zIndex:50,background:"rgba(0,0,0,0.65)",backdropFilter:"blur(6px)",display:"flex",alignItems:"flex-end",justifyContent:"center" }} onClick={e=>e.target===e.currentTarget&&onClose()}>
-      <div style={{ background:T.surface,border:`1px solid ${T.border}`,borderRadius:"20px 20px 0 0",width:"100%",maxWidth:480,maxHeight:"90vh",overflowY:"auto",padding:"24px 20px 40px",boxShadow:"0 -8px 40px rgba(0,0,0,0.3)" }}>
-        <div style={{ width:40,height:4,borderRadius:2,background:T.textMuted,margin:"0 auto 20px",opacity:0.4 }}/>
-        <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:22,color:T.text,marginBottom:4 }}>{d.id?"Edit":"New"} Budget Category</div>
-        <div style={{ height:2,width:40,background:"#20B2AA",borderRadius:2,marginBottom:6 }}/>
-        <div style={{ fontSize:13,color:T.textSub,marginBottom:18,lineHeight:1.6 }}>
-          Set a monthly spending limit for a category. As you log expenses in that category, the app tracks how much you've used.
-        </div>
-        <label style={lbl}>Name (e.g. Rent, Groceries, Giving)</label>
-        <input ref={ref} style={inp} value={d.name||""} onChange={e=>setD(p=>({...p,name:e.target.value}))} placeholder="e.g. Rent, Groceries, Church Giving..." onKeyDown={e=>{ if(e.key==="Enter"&&d.name?.trim()&&d.limit){e.preventDefault();onSave(d);}}}/>
-        <label style={lbl}>Category</label>
-        <select style={sel} value={d.category||"other"} onChange={e=>setD(p=>({...p,category:e.target.value}))}>
-          {CATS.map(c=><option key={c.id} value={c.id}>{c.l}</option>)}
-        </select>
-        <label style={lbl}>Monthly Limit ($)</label>
-        <input style={inp} type="number" min="0" step="0.01" value={d.limit||""} onChange={e=>setD(p=>({...p,limit:e.target.value}))} placeholder="e.g. 850"/>
-        <label style={lbl}>Notes (optional)</label>
-        <input style={inp} value={d.notes||""} onChange={e=>setD(p=>({...p,notes:e.target.value}))} placeholder="Any context..."/>
-        <div style={{ display:"flex",gap:10,marginTop:22,justifyContent:"flex-end" }}>
-          <button style={{ padding:"10px 20px",borderRadius:10,border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:600,background:T.inputBg,color:T.textSub }} onClick={onClose}>Cancel</button>
-          <button style={{ padding:"10px 24px",borderRadius:10,border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:700,background:"#20B2AA",color:"#fff" }} onClick={()=>onSave(d)}>Save</button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── UnifiedTxForm — logs income OR expense, one simple form ───────────────────
-function UnifiedTxForm({ data, prefill, onSave, onClose, T, mode }) {
-  const defaultType = prefill?.type || data?.type || "expense";
-  const defaultCat  = prefill?.category || data?.category || "other";
-  const defaultCatId= prefill?.catId || data?.catId || null;
-  const [d, setD] = useState(data || { type:defaultType, name:"", amount:"", category:defaultCat, catId:defaultCatId, date:new Date().toISOString().slice(0,10), notes:"" });
-  const ref = useRef(null);
-  useEffect(()=>{ const t=setTimeout(()=>{ if(ref.current) ref.current.focus(); },80); return()=>clearTimeout(t); },[]);
-  const isIncome = d.type==="income";
-  const inp = { width:"100%",background:T.inputBg,border:`1px solid ${T.border}`,borderRadius:9,padding:"10px 12px",color:T.text,fontFamily:"'DM Sans',sans-serif",fontSize:14,outline:"none",boxSizing:"border-box" };
-  const sel = { ...inp,background:mode==="dark"?"#181B23":"#fff",cursor:"pointer" };
-  const lbl = { fontSize:11,fontWeight:600,letterSpacing:"0.08em",textTransform:"uppercase",color:T.textMuted,display:"block",marginBottom:4,marginTop:12,fontFamily:"'DM Sans',sans-serif" };
-  const CATS = [{id:"housing",l:"🏠 Housing"},{id:"food",l:"🍽️ Food & Dining"},{id:"transport",l:"🚗 Transport"},{id:"health",l:"💊 Health"},{id:"education",l:"🎓 Education"},{id:"faith",l:"✦ Faith & Giving"},{id:"savings",l:"💰 Savings"},{id:"shopping",l:"🛍️ Shopping"},{id:"utilities",l:"⚡ Utilities"},{id:"invest",l:"📈 Investing"},{id:"sub",l:"📱 Subscriptions"},{id:"personal",l:"🌱 Personal"},{id:"other",l:"📦 Other"}];
-  return (
-    <div style={{ position:"fixed",inset:0,zIndex:50,background:"rgba(0,0,0,0.65)",backdropFilter:"blur(6px)",display:"flex",alignItems:"flex-end",justifyContent:"center" }} onClick={e=>e.target===e.currentTarget&&onClose()}>
-      <div style={{ background:T.surface,border:`1px solid ${T.border}`,borderRadius:"20px 20px 0 0",width:"100%",maxWidth:480,maxHeight:"90vh",overflowY:"auto",padding:"24px 20px 40px",boxShadow:"0 -8px 40px rgba(0,0,0,0.3)" }}>
-        <div style={{ width:40,height:4,borderRadius:2,background:T.textMuted,margin:"0 auto 20px",opacity:0.4 }}/>
-        {/* Type toggle */}
-        <div style={{ display:"flex",gap:8,marginBottom:18 }}>
-          {[["income","💵 Income","#3DBF8A"],["expense","💸 Expense","#E84E8A"]].map(([v,l,col])=>(
-            <button key={v} onClick={()=>setD(p=>({...p,type:v}))}
-              style={{ flex:1,padding:"11px",borderRadius:12,border:`2px solid ${d.type===v?col:T.border}`,background:d.type===v?col+"15":"transparent",color:d.type===v?col:T.text,fontFamily:"'DM Sans',sans-serif",fontSize:14,cursor:"pointer",fontWeight:d.type===v?700:400,transition:"all 0.15s" }}>
-              {l}
-            </button>
-          ))}
-        </div>
-        {d.catId&&d.catName&&(
-          <div style={{ background:T.inputBg,borderRadius:9,padding:"8px 12px",marginBottom:4,display:"flex",alignItems:"center",gap:8,border:`1px solid ${T.border}` }}>
-            <span style={{ fontSize:13,color:T.textSub }}>Logging against:</span>
-            <span style={{ fontSize:13,fontWeight:700,color:"#20B2AA" }}>{d.catName}</span>
-          </div>
-        )}
-        <label style={lbl}>{isIncome?"Source":"Description (what exactly did you buy?)"}</label>
-        <input ref={ref} style={inp} value={d.name||""} onChange={e=>setD(p=>({...p,name:e.target.value}))} placeholder={isIncome?"e.g. TA Stipend, Salary, Freelance...":"e.g. Walmart groceries, Shell gas, Sunday offering..."} onKeyDown={e=>{ if(e.key==="Enter"&&d.name?.trim()&&d.amount){e.preventDefault();onSave(d);}}}/>
-        <label style={lbl}>Amount ($)</label>
-        <input style={inp} type="number" min="0" step="0.01" value={d.amount||""} onChange={e=>setD(p=>({...p,amount:e.target.value}))} placeholder="0.00"/>
-        {!isIncome&&(
-          <>
-            <label style={lbl}>Category</label>
-            {d.catId ? (
-              <div style={{ ...inp,color:T.textSub,cursor:"default",opacity:0.7 }}>
-                {CATS.find(c=>c.id===d.category)?.l||d.category} (locked to budget line)
-              </div>
+                {/* Card navigator desktop */}
+                {cards.length > 0 && (
+                  <div style={{ display:"flex", gap:8 }}>
+                    <button onClick={()=>{setCardIdx(i=>Math.max(0,i-1));setPhase("read");setTimerOn(false);}} className="nav-btn" style={{ flex:1, border:`1px solid ${T.border}`, background:T.inputBg, color:T.textSub }}>← Prev</button>
+                    <button onClick={()=>{setCardIdx(i=>Math.min(cards.length-1,i+1));setPhase("read");setTimerOn(false);}} className="nav-btn" style={{ flex:1, border:`1px solid ${T.border}`, background:T.inputBg, color:T.textSub }}>Next →</button>
+                    <button onClick={()=>{setCardIdx(Math.floor(Math.random()*cards.length));setPhase("read");setTimerOn(false);}} className="nav-btn" style={{ border:`1px solid ${T.border}`, background:T.inputBg, color:T.textSub }}>↺</button>
+                  </div>
+                )}
+              </>
             ) : (
-              <select style={sel} value={d.category||"other"} onChange={e=>setD(p=>({...p,category:e.target.value}))}>
-                {CATS.map(c=><option key={c.id} value={c.id}>{c.l}</option>)}
-              </select>
+              <>
+                <div style={{ fontFamily:SF, fontSize:15, color:T.text, marginBottom:8 }}>Gloria's cards</div>
+                <button onClick={()=>setShowAddCard(true)} style={{ width:"100%", padding:"12px", borderRadius:12, border:"1px solid #E84E8A44", background:"#E84E8A12", color:"#E84E8A", fontSize:13, fontWeight:600, cursor:"pointer", fontFamily:FF }}>
+                  + Add a card
+                </button>
+                {gloriaCards.length > 0 && (
+                  <div style={{ background:T.surface, border:`1px solid ${T.border}`, borderRadius:12, padding:"16px" }}>
+                    <div style={{ fontFamily:SF, fontSize:14, color:T.text, marginBottom:12 }}>Progress</div>
+                    <div style={{ fontSize:12, color:T.textSub, fontFamily:FF }}>{doneCount} of {gloriaCards.length} mastered</div>
+                    <div style={{ height:6, background:T.border, borderRadius:3, marginTop:8 }}>
+                      <div style={{ height:6, borderRadius:3, background:"#E84E8A", width:`${Math.round(doneCount/Math.max(gloriaCards.length,1)*100)}%`, transition:"width .4s" }}/>
+                    </div>
+                  </div>
+                )}
+              </>
             )}
-          </>
-        )}
-        <label style={lbl}>Date</label>
-        <input type="date" style={sel} value={d.date||new Date().toISOString().slice(0,10)} onChange={e=>setD(p=>({...p,date:e.target.value}))}/>
-        <label style={lbl}>Notes (optional)</label>
-        <input style={inp} value={d.notes||""} onChange={e=>setD(p=>({...p,notes:e.target.value}))} placeholder="Any details..."/>
-        <div style={{ display:"flex",gap:10,marginTop:22,justifyContent:"flex-end" }}>
-          <button style={{ padding:"10px 20px",borderRadius:10,border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:600,background:T.inputBg,color:T.textSub }} onClick={onClose}>Cancel</button>
-          <button style={{ padding:"10px 24px",borderRadius:10,border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:700,background:isIncome?"#3DBF8A":"#E84E8A",color:"#fff" }} onClick={()=>onSave(d)}>Save</button>
-        </div>
-      </div>
-    </div>
-  );
-}
+          </div>
 
-// ── Budget Bulk Import ────────────────────────────────────────────────────────
-function BudgetBulkImport({ onClose, onImport, T, mode, focus }) {
-  const [text,   setText]   = useState("");
-  const [parsed, setParsed] = useState([]);
-  const [step,   setStep]   = useState("input");
-  const ref = useRef(null);
-  useEffect(()=>{ const t=setTimeout(()=>{ if(ref.current) ref.current.focus(); },80); return()=>clearTimeout(t); },[]);
+          {/* ── MAIN CONTENT ── */}
+          <div className="comp-main">
 
-  function detectCat(title) {
-    const t = title.toLowerCase();
-    const map = [
-      ["housing",   ["rent","mortgage","apartment","house","landlord","lease"]],
-      ["food",      ["grocery","groceries","food","restaurant","eat","lunch","dinner","breakfast","coffee","starbucks","mcdonald","chipotle","pizza","uber eats","doordash"]],
-      ["transport", ["gas","fuel","car","uber","lyft","bus","train","metro","parking","toll","insurance","auto"]],
-      ["health",    ["doctor","dentist","pharmacy","medicine","hospital","gym","fitness","health","medical","prescription","therapy"]],
-      ["education", ["tuition","school","university","course","textbook","study","class","fee","exam"]],
-      ["faith",     ["church","tithe","offering","donation","charity","giving","ministry"]],
-      ["savings",   ["savings","emergency fund","save"]],
-      ["shopping",  ["amazon","walmart","target","mall","clothes","shoes","clothing","fashion"]],
-      ["utilities", ["electric","electricity","water","internet","wifi","cable","phone bill","utility","gas bill"]],
-      ["invest",    ["invest","stock","crypto","etf","fidelity","vanguard","robinhood","401k","ira","brokerage"]],
-      ["sub",       ["spotify","netflix","hulu","disney","apple","youtube","subscription","prime","software","app","adobe","notion"]],
-      ["personal",  ["haircut","salon","barber","personal","hygiene","toiletry","clothing"]],
-    ];
-    for (const [cat,kws] of map) if (kws.some(k=>t.includes(k))) return cat;
-    return "other";
-  }
+            {/* Mobile stats row */}
+            {cards.length > 0 && (
+              <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:8, marginBottom:16 }}>
+                {[["Cards",cards.length],["Done",doneCount],["Left",cards.length-doneCount]].map(([l,n])=>(
+                  <div key={l} style={{ background:T.surface, border:`1px solid ${T.border}`, borderRadius:10, padding:"10px 8px", textAlign:"center", fontFamily:FF }}>
+                    <div style={{ fontSize:20, fontWeight:600, color:T.text }}>{n}</div>
+                    <div style={{ fontSize:11, color:T.textSub, marginTop:1 }}>{l}</div>
+                  </div>
+                ))}
+              </div>
+            )}
 
-  function parseLine(line) {
-    const raw = line.trim();
-    if (!raw || raw.startsWith("#")) return null;
-    const parts = raw.split("|").map(p=>p.trim());
-    let name=parts[0], allocated="", spent="", category="other", notes="";
-    for (let i=1;i<parts.length;i++) {
-      const p=parts[i].trim();
-      const amtMatch=p.match(/^\$?([\d,.]+)(?:\s*\/?\s*(\$?[\d,.]+))?$/);
-      if (amtMatch) {
-        if (!allocated) allocated=amtMatch[1].replace(/,/g,"");
-        else if (!spent) spent=p.replace(/[$,]/g,"");
-        continue;
-      }
-      const catMatch=BUDGET_CATS.find(c=>c.id===p.toLowerCase()||c.label.toLowerCase()===p.toLowerCase());
-      if (catMatch) { category=catMatch.id; continue; }
-      if (p.startsWith("@")) {
-        const tag=p.slice(1).toLowerCase();
-        const c2=BUDGET_CATS.find(c=>c.id===tag||c.label.toLowerCase()===tag);
-        if (c2) { category=c2.id; continue; }
-      }
-      notes=p;
-    }
-    // Extract @tags from name
-    const atRe=/@([\w]+)/g; let m;
-    while ((m=atRe.exec(name))!==null) {
-      const tag=m[1].toLowerCase();
-      const c2=BUDGET_CATS.find(c=>c.id===tag);
-      if (c2) category=c2.id;
-    }
-    name=name.replace(/@[\w]+/g,"").trim();
-    // Extract inline amount from name: "Rent 850" or "Rent: $850"
-    const inlineAmt=name.match(/[:\s]\$?([\d,.]+)$/);
-    if (inlineAmt&&!allocated) { allocated=inlineAmt[1].replace(/,/g,""); name=name.replace(inlineAmt[0],"").trim(); }
-    if (!name) return null;
-    if (!category||category==="other") category=detectCat(name);
-    return { name, category, allocated:allocated||"", spent:spent||"", notes, recurring:"monthly", owner:focus };
-  }
-
-  function handleParse() {
-    const lines = text.split("\n").map(l=>l.trim()).filter(Boolean);
-    setParsed(lines.map(parseLine).filter(Boolean));
-    setStep("review");
-  }
-
-  function updateRow(idx, field, val) { setParsed(prev=>prev.map((r,i)=>i===idx?{...r,[field]:val}:r)); }
-  function removeRow(idx) { setParsed(prev=>prev.filter((_,i)=>i!==idx)); }
-
-  const inp = { background:T.inputBg,border:`1px solid ${T.border}`,borderRadius:7,padding:"5px 8px",color:T.text,fontFamily:"'DM Sans',sans-serif",fontSize:12,outline:"none",width:"100%",boxSizing:"border-box" };
-
-  return (
-    <div style={{ position:"fixed",inset:0,zIndex:50,background:"rgba(0,0,0,0.65)",backdropFilter:"blur(6px)",display:"flex",alignItems:"flex-end",justifyContent:"center" }} onClick={e=>e.target===e.currentTarget&&onClose()}>
-      <div style={{ background:T.surface,border:`1px solid ${T.border}`,borderRadius:"20px 20px 0 0",width:"100%",maxWidth:700,maxHeight:"94vh",overflowY:"auto",padding:"24px 20px 40px",boxShadow:"0 -8px 40px rgba(0,0,0,0.35)" }}>
-        <div style={{ width:40,height:4,borderRadius:2,background:T.textMuted,margin:"0 auto 20px",opacity:0.4 }}/>
-        <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:22,color:T.text,marginBottom:4 }}>⇪ Bulk Import Budget Items</div>
-        <div style={{ height:2,width:40,background:"#20B2AA",borderRadius:2,marginBottom:16 }}/>
-
-        {step==="input"&&(
-          <>
-            <div style={{ background:T.inputBg,border:`1px solid ${T.border}`,borderRadius:10,padding:"12px 14px",marginBottom:16,fontSize:12,color:T.textSub,lineHeight:1.9 }}>
-              <div style={{ fontWeight:700,color:T.text,marginBottom:6,fontSize:13 }}>📋 Supported formats (one item per line):</div>
-              {[
-                ["Simple",         "Rent"],
-                ["With budget",    "Rent | 850"],
-                ["Budget & spent", "Groceries | 400 | 280"],
-                ["With category",  "Netflix | 15.99 | @sub"],
-                ["With note",      "Spotify | 10 | sub | Monthly music"],
-                ["Dollar sign ok", "Car Insurance | $180"],
-              ].map(([l,e])=>(
-                <div key={l} style={{ display:"flex",gap:8 }}>
-                  <span style={{ color:T.textMuted,flexShrink:0,minWidth:120 }}>{l}:</span>
-                  <code style={{ color:"#20B2AA",fontSize:11,background:"#20B2AA11",padding:"1px 6px",borderRadius:4 }}>{e}</code>
+            {/* Mobile progress bar */}
+            {cards.length > 0 && (
+              <div style={{ marginBottom:16 }}>
+                <div style={{ display:"flex", justifyContent:"space-between", fontSize:11, color:T.textSub, marginBottom:5, fontFamily:FF }}>
+                  <span>Card {cardIdx+1} of {cards.length}</span>
+                  <span>{Math.round(doneCount/Math.max(cards.length,1)*100)}% mastered</span>
                 </div>
-              ))}
-            </div>
-            <textarea ref={ref} value={text} onChange={e=>setText(e.target.value)}
-              placeholder={"Paste budget items here, one per line:\n\nRent | 850\nGroceries | 400\nSpotify | 10 | @sub\nCar Insurance | 180 | transport\nElectricity | 120 | utilities\nNetflix | 15.99 | sub\nGas | 80 | transport\nPhone Bill | 65 | utilities"}
-              style={{ width:"100%",background:T.inputBg,border:`1px solid ${T.border}`,borderRadius:9,padding:"12px 14px",color:T.text,fontFamily:"'DM Sans',sans-serif",fontSize:13,outline:"none",resize:"vertical",minHeight:200,lineHeight:1.7,boxSizing:"border-box" }}/>
-            <div style={{ fontSize:11,color:T.textMuted,marginTop:6 }}>{text.split("\n").filter(l=>l.trim()&&!l.trim().startsWith("#")).length} items detected</div>
-            <div style={{ display:"flex",gap:10,marginTop:16,justifyContent:"flex-end" }}>
-              <button style={{ padding:"9px 20px",borderRadius:9,border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:600,background:T.inputBg,color:T.textSub }} onClick={onClose}>Cancel</button>
-              <button style={{ padding:"9px 20px",borderRadius:9,border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:600,background:"#20B2AA",color:"#fff" }} onClick={handleParse} disabled={!text.trim()}>Parse Items →</button>
-            </div>
-          </>
-        )}
-
-        {step==="review"&&(
-          <>
-            <div style={{ fontSize:13,color:T.textSub,marginBottom:12 }}>Review {parsed.length} items. Adjust anything then import.</div>
-            {/* Table header */}
-            <div style={{ display:"grid",gridTemplateColumns:"1fr 80px 80px 90px 24px",gap:6,padding:"5px 8px",background:T.inputBg,borderRadius:7,marginBottom:6 }}>
-              {["Name","Budget","Spent","Category",""].map(h=><div key={h} style={{ fontSize:10,fontWeight:700,color:T.textMuted,textTransform:"uppercase" }}>{h}</div>)}
-            </div>
-            <div style={{ maxHeight:360,overflowY:"auto",display:"flex",flexDirection:"column",gap:5 }}>
-              {parsed.map((row,idx)=>(
-                <div key={idx} style={{ display:"grid",gridTemplateColumns:"1fr 80px 80px 90px 24px",gap:6,padding:"5px 8px",background:T.inputBg,border:`1px solid ${T.border}`,borderRadius:8,alignItems:"center" }}>
-                  <input style={inp} value={row.name} onChange={e=>updateRow(idx,"name",e.target.value)}/>
-                  <input style={inp} type="number" value={row.allocated} onChange={e=>updateRow(idx,"allocated",e.target.value)} placeholder="0.00"/>
-                  <input style={inp} type="number" value={row.spent} onChange={e=>updateRow(idx,"spent",e.target.value)} placeholder="0.00"/>
-                  <select style={{...inp,cursor:"pointer"}} value={row.category} onChange={e=>updateRow(idx,"category",e.target.value)}>
-                    {BUDGET_CATS.map(c=><option key={c.id} value={c.id}>{c.emoji} {c.label}</option>)}
-                  </select>
-                  <button onClick={()=>removeRow(idx)} style={{ background:"none",border:"none",color:T.textMuted,cursor:"pointer",fontSize:14 }}>✕</button>
+                <div style={{ height:5, background:T.border, borderRadius:3 }}>
+                  <div style={{ height:5, borderRadius:3, background:accentColor, width:`${Math.round((cardIdx+1)/cards.length*100)}%`, transition:"width .4s" }}/>
                 </div>
-              ))}
-            </div>
-            {parsed.length===0&&<div style={{ textAlign:"center",padding:"24px",color:T.textMuted,fontSize:13,fontStyle:"italic" }}>All items removed. Go back to paste more.</div>}
-            <div style={{ display:"flex",gap:10,marginTop:16,justifyContent:"space-between",flexWrap:"wrap" }}>
-              <button style={{ padding:"9px 16px",borderRadius:9,border:`1px solid ${T.border}`,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:600,background:T.inputBg,color:T.textSub }} onClick={()=>setStep("input")}>← Back</button>
-              <div style={{ display:"flex",gap:10 }}>
-                <button style={{ padding:"9px 20px",borderRadius:9,border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:600,background:T.inputBg,color:T.textSub }} onClick={onClose}>Cancel</button>
-                <button style={{ padding:"9px 22px",borderRadius:9,border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:700,background:"#20B2AA",color:"#fff" }}
-                  onClick={()=>{ onImport(parsed); onClose(); }} disabled={parsed.length===0}>
-                  ⇪ Import {parsed.length} Item{parsed.length!==1?"s":""}
+              </div>
+            )}
+
+            {/* Gloria add button (mobile) */}
+            {!isA && (
+              <div style={{ marginBottom:16 }}>
+                <button onClick={()=>setShowAddCard(true)} style={{ padding:"10px 20px", borderRadius:10, border:"1px solid #E84E8A44", background:"#E84E8A12", color:"#E84E8A", fontSize:13, fontWeight:600, cursor:"pointer", fontFamily:FF }}>
+                  + Add a card
                 </button>
               </div>
-            </div>
-          </>
-        )}
-      </div>
-    </div>
-  );
-}
+            )}
 
-// ── Budget Tour ───────────────────────────────────────────────────────────────
-function BudgetTour({ step, setStep, onClose, T, mode }) {
-  const steps = [
-    { title:"Welcome to Budget! 💰", body:"Plan what you want to spend, track what you actually spend, and watch your net worth grow — all in one place.", tip:null },
-    { title:"Plan vs Actual 📋", body:"Every budget item has an Allocated amount (what you plan to spend) and a Spent amount (what you actually spent). The difference shows instantly in green (under) or red (over).", tip:"Tap 'Log Spend' on any item to quickly record what you spent." },
-    { title:"Bulk Import ⇪", body:"Paste an entire month's budget in one go — name, amount, category. The parser auto-detects categories from keywords like 'Spotify' → Subscriptions, 'Rent' → Housing.", tip:"Use the ⇪ Import button in the top bar." },
-    { title:"Subscriptions Section 📱", body:"The Budget view has a dedicated Subscriptions section so you can see every recurring service — Spotify, Netflix, iCloud, Adobe — and exactly what you're paying monthly.", tip:"Add them with category @sub or select 'Subscriptions' in the form." },
-    { title:"Net Worth Tracker 💎", body:"In the Net Worth tab, log your assets (laptop, car, savings account) and liabilities (student loan, credit card debt). Your net worth = Assets − Liabilities.", tip:"Update asset values anytime as they change." },
-    { title:"Savings Goals 🎯", body:"Set goals with a target amount and deadline. Log deposits as you save. The progress bar and percentage update live. You get a 🏆 when you hit your goal.", tip:"Shared goals appear for both Amen and Gloria in the Shared view." },
-    { title:"Switch Views 👤", body:"Use Amen / Gloria / Shared buttons at the top to see each person's budget separately, or switch to Shared for joint expenses and goals.", tip:"Each person's budget items are completely private to their view." },
-    { title:"You're all set! 🚀", body:"Start by adding your monthly income expectation, then list all your planned expenses. As you spend, tap 'Log Spend' to track actuals. The dashboard updates instantly.", tip:"You can replay this tour anytime via the ⓘ button." },
-  ];
-  const s=steps[step], isLast=step===steps.length-1;
-  const colors=["#20B2AA","#3DBF8A","#9B6EE8","#E8A838","#3B9EDB","#E84E8A","#8B5CF6","#20B2AA"];
-  const accent=colors[step];
-  return (
-    <>
-      <div style={{ position:"fixed",inset:0,zIndex:80,background:"rgba(0,0,0,0.6)",backdropFilter:"blur(3px)",pointerEvents:"none" }}/>
-      <div style={{ position:"fixed",bottom:0,left:0,right:0,zIndex:81,display:"flex",justifyContent:"center",padding:"0 16px 16px" }}>
-        <div style={{ background:T.surface,border:`1px solid ${T.border}`,borderRadius:20,width:"100%",maxWidth:540,boxShadow:"0 -8px 40px rgba(0,0,0,0.4)" }}>
-          <div style={{ height:3,background:T.inputBg,borderRadius:"20px 20px 0 0",overflow:"hidden" }}>
-            <div style={{ height:"100%",width:`${((step+1)/steps.length)*100}%`,background:accent,transition:"width 0.4s" }}/>
-          </div>
-          <div style={{ padding:"20px 22px 18px" }}>
-            <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12 }}>
-              <div style={{ display:"flex",alignItems:"center",gap:6 }}>
-                <div style={{ width:26,height:26,borderRadius:"50%",background:accent+"22",border:`2px solid ${accent}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,color:accent }}>{step+1}</div>
-                <span style={{ fontSize:11,color:T.textMuted }}>of {steps.length}</span>
+            {/* Empty state */}
+            {cards.length === 0 && (
+              <div style={{ textAlign:"center", padding:"64px 24px", color:T.textSub, fontFamily:FF }}>
+                <div style={{ fontSize:48, marginBottom:16 }}>📚</div>
+                <div style={{ fontFamily:SF, fontSize:20, color:T.text, marginBottom:8 }}>No cards yet, {names[who]}</div>
+                <div style={{ fontSize:13, lineHeight:1.7, maxWidth:340, margin:"0 auto" }}>Add your first exam prep card using the button above. You can add definitions, proofs, or any topic you need to memorise.</div>
               </div>
-              <button onClick={onClose} style={{ fontSize:12,color:T.textMuted,background:"none",border:`1px solid ${T.border}`,borderRadius:7,cursor:"pointer",padding:"4px 10px",fontFamily:"'DM Sans',sans-serif" }}>✕ Exit</button>
-            </div>
-            <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:18,color:T.text,marginBottom:8 }}>{s.title}</div>
-            <p style={{ fontSize:13,color:T.text,lineHeight:1.7,margin:"0 0 10px",fontFamily:"'DM Sans',sans-serif" }}>{s.body}</p>
-            {s.tip&&<div style={{ background:accent+"12",border:`1px solid ${accent}33`,borderRadius:9,padding:"9px 12px",marginBottom:12,display:"flex",gap:8 }}>
-              <span>💡</span><span style={{ fontSize:12,color:T.text,lineHeight:1.5,fontFamily:"'DM Sans',sans-serif" }}>{s.tip}</span>
-            </div>}
-            <div style={{ display:"flex",gap:3,marginBottom:14 }}>
-              {steps.map((_,i)=><div key={i} onClick={()=>setStep(i)} style={{ height:5,flex:i===step?3:1,borderRadius:3,background:i===step?accent:T.border,transition:"all 0.25s",cursor:"pointer" }}/>)}
-            </div>
-            <div style={{ display:"flex",gap:8,alignItems:"center" }}>
-              <button onClick={onClose} style={{ fontSize:12,color:T.textMuted,background:"none",border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif" }}>Skip</button>
-              <div style={{ flex:1 }}/>
-              {step>0&&<button onClick={()=>setStep(s=>s-1)} style={{ padding:"9px 18px",borderRadius:9,border:`1px solid ${T.border}`,background:T.inputBg,color:T.textSub,fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:600,cursor:"pointer" }}>← Back</button>}
-              <button onClick={()=>{ if(isLast) onClose(); else setStep(s=>s+1); }} style={{ padding:"9px 22px",borderRadius:9,border:"none",background:accent,color:"#fff",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,cursor:"pointer" }}>
-                {isLast?"Let's go! 🚀":"Next →"}
-              </button>
-            </div>
+            )}
+
+            {/* ── Flash card ── */}
+            {card && (
+              <div style={{ background:T.surface, border:`1px solid ${T.border}`, borderRadius:16, padding:"20px", marginBottom:14, fontFamily:FF }}>
+                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14 }}>
+                  <span style={{ fontSize:12, color:T.textMuted }}>Card {cardIdx+1} / {cards.length}</span>
+                  <div style={{ display:"flex", gap:6, alignItems:"center" }}>
+                    <span style={{ fontSize:11, fontWeight:600, padding:"3px 10px", borderRadius:20, background:tagColors[card.tag]?.[0]||"#eee", color:tagColors[card.tag]?.[1]||"#333" }}>{(card.tag||"define").toUpperCase()}</span>
+                    {!isA && <button onClick={()=>deleteGloriaCard(cardIdx)} style={{ background:"none", border:"none", cursor:"pointer", color:T.textMuted, fontSize:14, padding:"0 2px" }}>✕</button>}
+                  </div>
+                </div>
+                <div style={{ fontFamily:SF, fontSize:19, color:T.text, marginBottom:14, lineHeight:1.4 }}>{card.title}</div>
+                <div style={{ fontSize:14, color:T.textSub, lineHeight:1.85 }} dangerouslySetInnerHTML={{ __html: card.body }}/>
+                {card.hint && phase !== "read" && (
+                  <div style={{ marginTop:14, padding:"10px 14px", background:T.inputBg, borderLeft:`3px solid ${accentColor}`, fontSize:12.5, color:T.textSub, lineHeight:1.6, fontFamily:FF }}>{card.hint}</div>
+                )}
+              </div>
+            )}
+
+            {/* Timer bar */}
+            {card && phase === "reading" && (
+              <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:14, fontFamily:FF }}>
+                <div style={{ flex:1, height:5, background:T.border, borderRadius:3 }}>
+                  <div style={{ height:5, borderRadius:3, background:accentColor, width:`${(readSec/60)*100}%`, transition:"width 1s linear" }}/>
+                </div>
+                <span style={{ fontSize:13, color:T.textSub, minWidth:32 }}>{readSec}s</span>
+              </div>
+            )}
+
+            {/* Quiz box */}
+            {card && phase === "quiz" && (
+              <div style={{ background:isA?"#EEEDFE":"#FBEAF0", border:`1px solid ${accentColor}`, borderRadius:14, padding:"16px", marginBottom:14, fontFamily:FF }}>
+                <div style={{ fontSize:11, fontWeight:700, color:accentColor, letterSpacing:"0.07em", marginBottom:8 }}>QUIZ — answer in chat below</div>
+                <div style={{ fontSize:15, fontWeight:500, color:isA?"#26215C":"#4B1528", lineHeight:1.55, marginBottom:8 }}>
+                  {card.tag==="define"?`Define: ${card.title}`:card.tag==="prove"?`Prove: ${card.title}`:card.tag==="both"?`State and prove: ${card.title}`:`Compute/apply: ${card.title}`}
+                </div>
+                <div style={{ fontSize:12, color:T.textSub, fontStyle:"italic" }}>Type your answer in chat. Mark yourself honestly below.</div>
+              </div>
+            )}
+
+            {/* Action buttons */}
+            {card && (
+              <div style={{ display:"flex", gap:10, marginBottom:16 }}>
+                {phase==="read" && (
+                  <button onClick={startReading} className="action-btn" style={{ background:accentColor, color:"#fff" }}>
+                    Start reading (60s)
+                  </button>
+                )}
+                {phase==="reading" && (<>
+                  <button onClick={skipToQuiz} className="action-btn" style={{ background:accentColor, color:"#fff" }}>I'm ready — quiz me</button>
+                  <button onClick={skipToQuiz} className="action-btn" style={{ background:T.inputBg, color:T.textSub, border:`1px solid ${T.border}` }}>Skip</button>
+                </>)}
+                {phase==="quiz" && (<>
+                  <button onClick={()=>markCard("got")}     className="action-btn" style={{ background:"#085041", color:"#fff" }}>Got it</button>
+                  <button onClick={()=>markCard("partial")} className="action-btn" style={{ background:"#854F0B", color:"#fff" }}>Partial</button>
+                  <button onClick={()=>markCard("missed")}  className="action-btn" style={{ background:"#791F1F", color:"#fff" }}>Missed</button>
+                </>)}
+              </div>
+            )}
+
+            {/* Mobile card navigator */}
+            {cards.length > 0 && (
+              <div style={{ display:"flex", gap:8, marginBottom:16 }} className="hide-on-desktop-flex">
+                <style>{`@media(min-width:1024px){.hide-on-desktop-flex{display:none!important}}`}</style>
+                <button onClick={()=>{setCardIdx(i=>Math.max(0,i-1));setPhase("read");setTimerOn(false);}} className="nav-btn" style={{ flex:1, border:`1px solid ${T.border}`, background:T.inputBg, color:T.textSub }}>← Prev</button>
+                <button onClick={()=>{setCardIdx(i=>Math.min(cards.length-1,i+1));setPhase("read");setTimerOn(false);}} className="nav-btn" style={{ flex:1, border:`1px solid ${T.border}`, background:T.inputBg, color:T.textSub }}>Next →</button>
+                <button onClick={()=>{setCardIdx(Math.floor(Math.random()*cards.length));setPhase("read");setTimerOn(false);}} className="nav-btn" style={{ border:`1px solid ${T.border}`, background:T.inputBg, color:T.textSub }}>↺</button>
+              </div>
+            )}
           </div>
         </div>
       </div>
-    </>
+
+      {/* ── Gloria add card modal ── */}
+      {showAddCard && (
+        <div style={{ position:"fixed", inset:0, zIndex:50, background:"rgba(0,0,0,0.6)", backdropFilter:"blur(4px)", display:"flex", alignItems:"center", justifyContent:"center", padding:16 }} onClick={()=>setShowAddCard(false)}>
+          <div style={{ background:T.surface, width:"100%", maxWidth:520, borderRadius:18, padding:"24px", maxHeight:"90vh", overflowY:"auto", fontFamily:FF }} onClick={e=>e.stopPropagation()}>
+            <div style={{ fontFamily:SF, fontSize:20, color:T.text, marginBottom:4 }}>Add exam prep card</div>
+            <div style={{ fontSize:12, color:T.textSub, marginBottom:20 }}>for {names["B"]}</div>
+            {[["Title / Question","title","text"],["Answer / Full content","body","textarea"],["Hint (optional)","hint","text"]].map(([lbl,field,type])=>(
+              <div key={field} style={{ marginBottom:14 }}>
+                <div style={{ fontSize:12, fontWeight:600, color:T.textSub, marginBottom:5 }}>{lbl}</div>
+                {type==="textarea"
+                  ? <textarea value={newCard[field]} onChange={e=>setNewCard(c=>({...c,[field]:e.target.value}))} rows={5} style={{ width:"100%", padding:"10px 12px", borderRadius:10, border:`1px solid ${T.border}`, background:T.inputBg, color:T.text, fontSize:13, resize:"vertical", fontFamily:FF, boxSizing:"border-box" }}/>
+                  : <input value={newCard[field]} onChange={e=>setNewCard(c=>({...c,[field]:e.target.value}))} style={{ width:"100%", padding:"10px 12px", borderRadius:10, border:`1px solid ${T.border}`, background:T.inputBg, color:T.text, fontSize:13, fontFamily:FF, boxSizing:"border-box" }}/>
+                }
+              </div>
+            ))}
+            <div style={{ marginBottom:18 }}>
+              <div style={{ fontSize:12, fontWeight:600, color:T.textSub, marginBottom:8 }}>Card type</div>
+              <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
+                {["define","prove","both","compute"].map(t=>(
+                  <button key={t} onClick={()=>setNewCard(c=>({...c,tag:t}))} style={{ padding:"7px 16px", borderRadius:20, border:`1px solid ${newCard.tag===t?"#E84E8A":T.border}`, background:newCard.tag===t?"#E84E8A20":"transparent", color:newCard.tag===t?"#E84E8A":T.textSub, fontSize:12, cursor:"pointer", fontWeight:newCard.tag===t?700:400, fontFamily:FF }}>{t.toUpperCase()}</button>
+                ))}
+              </div>
+            </div>
+            <div style={{ display:"flex", gap:10 }}>
+              <button onClick={saveGloriaCard} style={{ flex:1, padding:"12px", borderRadius:10, border:"none", background:"#E84E8A", color:"#fff", fontSize:14, fontWeight:600, cursor:"pointer", fontFamily:FF }}>Save card</button>
+              <button onClick={()=>setShowAddCard(false)} style={{ padding:"12px 20px", borderRadius:10, border:`1px solid ${T.border}`, background:T.inputBg, color:T.textSub, fontSize:14, cursor:"pointer", fontFamily:FF }}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
-
 // ── BudgetApp ─────────────────────────────────────────────────────────────────
 function BudgetApp({ names, mode, T, activeUser, onBack }) {
   // ── All hooks first (Rules of Hooks) ─────────────────────────────────────
