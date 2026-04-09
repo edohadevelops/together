@@ -2302,6 +2302,12 @@ function BudgetApp({ names, mode, T, activeUser, onBack }) {
   const [showDebt,  setShowDebt]     = useState(false);
   const [editDebt,  setEditDebt]     = useState(null);
   const [showBulk,  setShowBulk]     = useState(false);
+  const [conEditing,    setConEditing]    = useState(null);
+  const [conDraft,      setConDraft]      = useState({});
+  const [conAddingNew,  setConAddingNew]  = useState(false);
+  const [conNewItem,    setConNewItem]    = useState({ label:"", emoji:"✨", color:"#E8A838", mode:"fixed", pct:0, fixed:0, desc:"" });
+  const [editSplit,     setEditSplit]     = useState(false);
+  const [splitDraft,    setSplitDraft]    = useState({ needs:50, wants:30, savings:20 });
   const [consecration, setConsecrationState] = useState(null); // { mum, dad, offering, giving } — fixed amounts
   const [splitPlan, setSplitPlanState] = useState(null);       // { needs, wants, savings } — percentages
 
@@ -3037,49 +3043,37 @@ function BudgetApp({ names, mode, T, activeUser, onBack }) {
 
         {/* ════ CONSECRATION ════ */}
         {view==="consecration"&&(()=>{
-          const income = totalIncome;
+          const income   = totalIncome;
+          const COLORS   = ["#E8A838","#3B9EDB","#9B6EE8","#3DBF8A","#E84E8A","#E8704A","#20B2AA","#8B5CF6","#5BAD4E","#E8C050"];
+          const items    = consecration.items || [
+            { id:"mum",      label:"Mum",                     emoji:"🤱", color:"#E8A838", mode:"pct",   pct:5,  fixed:0,  desc:"Honour your mother" },
+            { id:"dad",      label:"Dad",                     emoji:"👨", color:"#3B9EDB", mode:"pct",   pct:5,  fixed:0,  desc:"Honour your father" },
+            { id:"offering", label:"Offering & Thanksgiving", emoji:"🙏", color:"#9B6EE8", mode:"fixed", pct:0,  fixed:25, desc:"Returning to God" },
+            { id:"giving",   label:"Giving to Others",        emoji:"💝", color:"#3DBF8A", mode:"fixed", pct:0,  fixed:20, desc:"Give expecting nothing back" },
+          ];
 
-          // Compute dollar amount for each item based on its mode
           function itemAmt(item){
             return item.mode==="pct" ? income*(parseFloat(item.pct)||0)/100 : parseFloat(item.fixed)||0;
           }
+          const totalCon    = items.reduce((s,it)=>s+itemAmt(it),0);
+          const pctOfIncome = income>0 ? ((totalCon/income)*100).toFixed(1) : "—";
 
-          const items = consecration.items || [
-            { id:"mum",      label:"Mum",                     emoji:"🤱", color:"#E8A838", mode:"pct", pct:5,  fixed:0,  desc:"Honour your mother" },
-            { id:"dad",      label:"Dad",                     emoji:"👨", color:"#3B9EDB", mode:"pct", pct:5,  fixed:0,  desc:"Honour your father" },
-            { id:"offering", label:"Offering & Thanksgiving", emoji:"🙏", color:"#9B6EE8", mode:"fixed",pct:0, fixed:25, desc:"Returning to God" },
-            { id:"giving",   label:"Giving to Others",        emoji:"💝", color:"#3DBF8A", mode:"fixed",pct:0, fixed:20, desc:"Give expecting nothing back" },
-          ];
-
-          const totalCon     = items.reduce((s,it)=>s+itemAmt(it),0);
-          const pctOfIncome  = income>0 ? ((totalCon/income)*100).toFixed(1) : "—";
-
-          const [editing,    setEditing]    = useState(null);   // id of item being edited
-          const [draft,      setDraft]      = useState({});     // draft values while editing
-          const [addingNew,  setAddingNew]  = useState(false);
-          const [newItem,    setNewItem]    = useState({ label:"", emoji:"✨", color:"#E8A838", mode:"fixed", pct:0, fixed:0, desc:"" });
-
-          function startEdit(item){ setEditing(item.id); setDraft({ label:item.label, emoji:item.emoji, color:item.color, mode:item.mode, pct:item.pct, fixed:item.fixed, desc:item.desc }); }
-          function cancelEdit(){ setEditing(null); setDraft({}); }
-
+          function startEdit(item){ setConEditing(item.id); setConDraft({ label:item.label, emoji:item.emoji, color:item.color, mode:item.mode, pct:item.pct, fixed:item.fixed, desc:item.desc }); }
+          function cancelEdit(){ setConEditing(null); setConDraft({}); }
           function saveEdit(id){
-            const upd = items.map(it=> it.id===id ? {...it, ...draft, pct:parseFloat(draft.pct)||0, fixed:parseFloat(draft.fixed)||0 } : it);
-            saveConsecration({...consecration, items:upd}); setEditing(null);
+            const upd = items.map(it => it.id===id ? {...it,...conDraft, pct:parseFloat(conDraft.pct)||0, fixed:parseFloat(conDraft.fixed)||0 } : it);
+            saveConsecration({...consecration, items:upd}); setConEditing(null);
           }
-          function deleteItem(id){
-            saveConsecration({...consecration, items:items.filter(it=>it.id!==id)});
-          }
+          function deleteItem(id){ saveConsecration({...consecration, items:items.filter(it=>it.id!==id)}); }
           function addItem(){
-            if(!newItem.label.trim()) return;
+            if(!conNewItem.label.trim()) return;
             const id = "con_"+Date.now().toString(36);
-            saveConsecration({...consecration, items:[...items,{...newItem,id,pct:parseFloat(newItem.pct)||0,fixed:parseFloat(newItem.fixed)||0}]});
-            setNewItem({ label:"", emoji:"✨", color:"#E8A838", mode:"fixed", pct:0, fixed:0, desc:"" });
-            setAddingNew(false);
+            saveConsecration({...consecration, items:[...items,{...conNewItem,id,pct:parseFloat(conNewItem.pct)||0,fixed:parseFloat(conNewItem.fixed)||0}]});
+            setConNewItem({ label:"", emoji:"✨", color:"#E8A838", mode:"fixed", pct:0, fixed:0, desc:"" });
+            setConAddingNew(false);
           }
 
-          const inp = { background:T.inputBg, border:`1px solid ${T.border}`, borderRadius:8, padding:"7px 10px", color:T.text, fontFamily:"'DM Sans',sans-serif", fontSize:13, outline:"none", boxSizing:"border-box" };
-
-          // SVG Pie chart — same helper used in analytics
+          // SVG Pie
           function ConPie({ slices, size=180 }){
             const total = slices.reduce((s,x)=>s+x.value,0);
             if(!total) return <div style={{ width:size,height:size,borderRadius:"50%",background:T.inputBg,display:"flex",alignItems:"center",justifyContent:"center",color:T.textMuted,fontSize:11 }}>No data</div>;
@@ -3089,52 +3083,64 @@ function BudgetApp({ names, mode, T, activeUser, onBack }) {
               cum+=pct;
               const r=size/2-8, cx=size/2, cy=size/2;
               const x1=cx+r*Math.cos(a1),y1=cy+r*Math.sin(a1),x2=cx+r*Math.cos(a2),y2=cy+r*Math.sin(a2);
-              return {...s, d:`M${cx},${cy}L${x1},${y1}A${r},${r} 0 ${pct>.5?1:0},1 ${x2},${y2}Z`, pct};
+              return {...s,d:`M${cx},${cy}L${x1},${y1}A${r},${r} 0 ${pct>.5?1:0},1 ${x2},${y2}Z`,pct};
             });
             return (
-              <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ filter:"drop-shadow(0 4px 16px rgba(0,0,0,0.13))", flexShrink:0 }}>
+              <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ filter:"drop-shadow(0 4px 16px rgba(0,0,0,0.13))",flexShrink:0 }}>
                 {paths.map((p,i)=><path key={i} d={p.d} fill={p.color} stroke={T.surface} strokeWidth={3}/>)}
                 <circle cx={size/2} cy={size/2} r={size/4} fill={T.surface}/>
-                <text x={size/2} y={size/2-6}  textAnchor="middle" fill={T.text}      fontSize={size*0.09} fontWeight="800" fontFamily="Arial">{income>0?((totalCon/income)*100).toFixed(0)+"%":"$0"}</text>
-                <text x={size/2} y={size/2+12} textAnchor="middle" fill={T.textMuted} fontSize={size*0.07} fontFamily="Arial">consecrated</text>
+                <text x={size/2} y={size/2-5}  textAnchor="middle" fill={T.text}      fontSize={size*0.1}  fontWeight="800" fontFamily="Arial">{income>0?pctOfIncome+"%":"—"}</text>
+                <text x={size/2} y={size/2+13} textAnchor="middle" fill={T.textMuted} fontSize={size*0.07} fontFamily="Arial">of income</text>
               </svg>
             );
           }
 
-          const COLORS = ["#E8A838","#3B9EDB","#9B6EE8","#3DBF8A","#E84E8A","#E8704A","#20B2AA","#8B5CF6","#5BAD4E","#E8C050"];
+          const inp = { background:T.inputBg, border:`1px solid ${T.border}`, borderRadius:8, padding:"7px 10px", color:T.text, fontFamily:"'DM Sans',sans-serif", fontSize:13, outline:"none", boxSizing:"border-box" };
+
+          // Split plan calcs
+          const afterCon     = Math.max(0, income - totalCon);
+          const needsCatIds  = ["housing","food","transport","health","utilities","education"];
+          const savingsCatIds= ["savings","invest"];
+          const catBucket    = cat => savingsCatIds.includes(cat.category)?"savings":needsCatIds.includes(cat.category)?"needs":"wants";
+          const needsSpent   = catRollup.filter(c=>catBucket(c)==="needs").reduce((s,c)=>s+c.spent,0);
+          const wantsSpent   = catRollup.filter(c=>catBucket(c)==="wants").reduce((s,c)=>s+c.spent,0);
+          const savingsSpent = catRollup.filter(c=>catBucket(c)==="savings").reduce((s,c)=>s+c.spent,0);
+          const splitBuckets = [
+            { key:"needs",   label:"Needs",   emoji:"🏠", color:"#3B9EDB", amt:afterCon*(splitPlan.needs/100),   spent:needsSpent,   desc:"Rent, groceries, transport, bills" },
+            { key:"wants",   label:"Wants",   emoji:"🎮", color:"#E84E8A", amt:afterCon*(splitPlan.wants/100),   spent:wantsSpent,   desc:"Dining out, entertainment, shopping" },
+            { key:"savings", label:"Savings", emoji:"💰", color:"#3DBF8A", amt:afterCon*(splitPlan.savings/100), spent:savingsSpent, desc:"Emergency fund, goals, investments" },
+          ];
+          const splitTotal = (splitPlan.needs||0)+(splitPlan.wants||0)+(splitPlan.savings||0);
 
           return (
             <div>
               {/* Header */}
-              <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", marginBottom:20, flexWrap:"wrap", gap:10 }}>
+              <div style={{ display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:20,flexWrap:"wrap",gap:10 }}>
                 <div>
-                  <div style={{ fontFamily:"'DM Serif Display',serif", fontSize:26, color:T.text, marginBottom:4 }}>🕊 Consecration</div>
-                  <div style={{ fontSize:13, color:T.textSub, lineHeight:1.7, maxWidth:480 }}>
-                    Set aside a portion of your income before you spend anything. These commitments are honoured first — every month, without negotiation.
-                  </div>
+                  <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:26,color:T.text,marginBottom:4 }}>🕊 Consecration</div>
+                  <div style={{ fontSize:13,color:T.textSub,lineHeight:1.7,maxWidth:480 }}>Set aside a portion of your income before you spend anything. These commitments are honoured first — every month, without negotiation.</div>
                 </div>
-                <button onClick={()=>setAddingNew(true)} style={{ height:36, padding:"0 16px", borderRadius:9, border:"none", background:"#9B6EE8", color:"#fff", cursor:"pointer", fontFamily:"'DM Sans',sans-serif", fontSize:13, fontWeight:700, flexShrink:0 }}>+ Add Consecration</button>
+                <button onClick={()=>setConAddingNew(true)} style={{ height:36,padding:"0 16px",borderRadius:9,border:"none",background:"#9B6EE8",color:"#fff",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,flexShrink:0 }}>+ Add</button>
               </div>
 
-              {/* Hero — pie + total */}
-              <div style={{ ...card(), padding:"20px 24px", marginBottom:24, display:"flex", alignItems:"center", gap:24, flexWrap:"wrap", background:`linear-gradient(135deg,${T.surface},${T.inputBg})`, borderTop:"4px solid #9B6EE8" }}>
+              {/* Hero pie + total */}
+              <div style={{ ...card(),padding:"20px 24px",marginBottom:24,display:"flex",alignItems:"center",gap:24,flexWrap:"wrap",borderTop:"4px solid #9B6EE8" }}>
                 <ConPie size={160} slices={items.map(it=>({ value:itemAmt(it), color:it.color, label:it.label }))}/>
-                <div style={{ flex:1, minWidth:160 }}>
-                  <div style={{ fontSize:11, fontWeight:700, color:T.textMuted, textTransform:"uppercase", letterSpacing:"0.1em", marginBottom:6 }}>Total Consecrated</div>
-                  <div style={{ fontFamily:"'DM Serif Display',serif", fontSize:40, fontWeight:800, color:"#9B6EE8", lineHeight:1, marginBottom:6 }}>{fmt(totalCon)}</div>
-                  <div style={{ fontSize:13, color:T.textSub, marginBottom:14 }}>
-                    {income>0 ? `${pctOfIncome}% of your ${fmt(income)} income this month` : "Log income in Budget → Income to see live amounts"}
+                <div style={{ flex:1,minWidth:160 }}>
+                  <div style={{ fontSize:11,fontWeight:700,color:T.textMuted,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:6 }}>Total Consecrated This Month</div>
+                  <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:38,fontWeight:800,color:"#9B6EE8",lineHeight:1,marginBottom:6 }}>{fmt(totalCon)}</div>
+                  <div style={{ fontSize:13,color:T.textSub,marginBottom:14 }}>
+                    {income>0 ? `${pctOfIncome}% of your ${fmt(income)} income` : "Log income in Budget → Income first"}
                   </div>
-                  {/* Legend */}
-                  <div style={{ display:"flex", flexDirection:"column", gap:5 }}>
+                  <div style={{ display:"flex",flexDirection:"column",gap:5 }}>
                     {items.map(it=>{
-                      const amt = itemAmt(it);
+                      const amt=itemAmt(it);
                       return (
-                        <div key={it.id} style={{ display:"flex", alignItems:"center", gap:8 }}>
-                          <div style={{ width:10, height:10, borderRadius:2, background:it.color, flexShrink:0 }}/>
-                          <span style={{ fontSize:12, color:T.text, flex:1 }}>{it.emoji} {it.label}</span>
-                          <span style={{ fontSize:12, fontWeight:700, color:it.color }}>{fmt(amt)}</span>
-                          {income>0 && <span style={{ fontSize:11, color:T.textMuted }}>({((amt/income)*100).toFixed(1)}%)</span>}
+                        <div key={it.id} style={{ display:"flex",alignItems:"center",gap:8 }}>
+                          <div style={{ width:10,height:10,borderRadius:2,background:it.color,flexShrink:0 }}/>
+                          <span style={{ fontSize:12,color:T.text,flex:1 }}>{it.emoji} {it.label}</span>
+                          <span style={{ fontSize:12,fontWeight:700,color:it.color }}>{fmt(amt)}</span>
+                          {income>0&&<span style={{ fontSize:11,color:T.textMuted }}>({((amt/income)*100).toFixed(1)}%)</span>}
                         </div>
                       );
                     })}
@@ -3143,92 +3149,65 @@ function BudgetApp({ names, mode, T, activeUser, onBack }) {
               </div>
 
               {/* No income warning */}
-              {income===0 && (
-                <div style={{ background:"#E8A83812", border:"1px solid #E8A83844", borderRadius:10, padding:"12px 16px", marginBottom:16, fontSize:13, color:"#E8A838", display:"flex", gap:10, alignItems:"center" }}>
-                  <span>⚠️</span>
-                  <span>No income logged this month yet — go to <strong>Budget → Income</strong> to add your income first. Percentage-based consecrations will calculate automatically.</span>
+              {income===0&&(
+                <div style={{ background:"#E8A83812",border:"1px solid #E8A83844",borderRadius:10,padding:"12px 16px",marginBottom:16,fontSize:13,color:"#E8A838",display:"flex",gap:10,alignItems:"center" }}>
+                  <span>⚠️</span><span>No income logged this month — go to <strong>Budget → Income</strong> to add income. Percentages calculate automatically.</span>
                 </div>
               )}
 
-              {/* Consecration items */}
-              <div style={{ display:"flex", flexDirection:"column", gap:12, marginBottom:24 }}>
-                {items.map((item,idx)=>{
-                  const amt  = itemAmt(item);
-                  const isEditing = editing===item.id;
+              {/* Items */}
+              <div style={{ display:"flex",flexDirection:"column",gap:12,marginBottom:24 }}>
+                {items.map(item=>{
+                  const amt      = itemAmt(item);
+                  const isEditing= conEditing===item.id;
                   return (
-                    <div key={item.id} style={{ ...card(), padding:"16px 18px", borderLeft:`4px solid ${item.color}` }}>
+                    <div key={item.id} style={{ ...card(),padding:"16px 18px",borderLeft:`4px solid ${item.color}` }}>
                       {isEditing ? (
-                        /* ── EDIT MODE ── */
                         <div>
-                          <div style={{ fontSize:12, fontWeight:700, color:item.color, textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:12 }}>Editing — {item.label}</div>
-                          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:10 }}>
-                            <div>
-                              <div style={{ fontSize:11, color:T.textMuted, marginBottom:4 }}>Label</div>
-                              <input style={{ ...inp, width:"100%" }} value={draft.label} onChange={e=>setDraft(d=>({...d,label:e.target.value}))}/>
-                            </div>
-                            <div>
-                              <div style={{ fontSize:11, color:T.textMuted, marginBottom:4 }}>Emoji</div>
-                              <input style={{ ...inp, width:"100%" }} value={draft.emoji} onChange={e=>setDraft(d=>({...d,emoji:e.target.value}))}/>
+                          <div style={{ fontSize:12,fontWeight:700,color:item.color,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:12 }}>Editing — {item.label}</div>
+                          <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10 }}>
+                            <div><div style={{ fontSize:11,color:T.textMuted,marginBottom:4 }}>Label</div><input style={{ ...inp,width:"100%" }} value={conDraft.label} onChange={e=>setConDraft(d=>({...d,label:e.target.value}))}/></div>
+                            <div><div style={{ fontSize:11,color:T.textMuted,marginBottom:4 }}>Emoji</div><input style={{ ...inp,width:"100%" }} value={conDraft.emoji} onChange={e=>setConDraft(d=>({...d,emoji:e.target.value}))}/></div>
+                          </div>
+                          <div style={{ marginBottom:10 }}><div style={{ fontSize:11,color:T.textMuted,marginBottom:4 }}>Description</div><input style={{ ...inp,width:"100%" }} value={conDraft.desc} onChange={e=>setConDraft(d=>({...d,desc:e.target.value}))} placeholder="e.g. Honour your mother"/></div>
+                          <div style={{ marginBottom:10 }}>
+                            <div style={{ fontSize:11,color:T.textMuted,marginBottom:6 }}>Color</div>
+                            <div style={{ display:"flex",gap:6,flexWrap:"wrap" }}>
+                              {COLORS.map(col=><div key={col} onClick={()=>setConDraft(d=>({...d,color:col}))} style={{ width:24,height:24,borderRadius:6,background:col,cursor:"pointer",border:conDraft.color===col?`3px solid ${T.text}`:"3px solid transparent",boxSizing:"border-box" }}/>)}
                             </div>
                           </div>
                           <div style={{ marginBottom:10 }}>
-                            <div style={{ fontSize:11, color:T.textMuted, marginBottom:4 }}>Description (optional)</div>
-                            <input style={{ ...inp, width:"100%" }} value={draft.desc} onChange={e=>setDraft(d=>({...d,desc:e.target.value}))} placeholder="e.g. Honour your mother"/>
-                          </div>
-                          {/* Color picker */}
-                          <div style={{ marginBottom:10 }}>
-                            <div style={{ fontSize:11, color:T.textMuted, marginBottom:6 }}>Color</div>
-                            <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
-                              {COLORS.map(col=>(
-                                <div key={col} onClick={()=>setDraft(d=>({...d,color:col}))} style={{ width:24, height:24, borderRadius:6, background:col, cursor:"pointer", border:draft.color===col?`3px solid ${T.text}`:"3px solid transparent", boxSizing:"border-box" }}/>
-                              ))}
-                            </div>
-                          </div>
-                          {/* Mode toggle */}
-                          <div style={{ marginBottom:10 }}>
-                            <div style={{ fontSize:11, color:T.textMuted, marginBottom:6 }}>Amount type</div>
-                            <div style={{ display:"flex", gap:6 }}>
+                            <div style={{ fontSize:11,color:T.textMuted,marginBottom:6 }}>Amount type</div>
+                            <div style={{ display:"flex",gap:6 }}>
                               {[["pct","% of income"],["fixed","Fixed $"]].map(([v,l])=>(
-                                <button key={v} onClick={()=>setDraft(d=>({...d,mode:v}))} style={{ flex:1, padding:"7px", borderRadius:8, border:`1px solid ${draft.mode===v?item.color:T.border}`, background:draft.mode===v?item.color+"22":"transparent", color:draft.mode===v?item.color:T.textSub, fontFamily:"'DM Sans',sans-serif", fontSize:13, cursor:"pointer", fontWeight:draft.mode===v?700:400 }}>{l}</button>
+                                <button key={v} onClick={()=>setConDraft(d=>({...d,mode:v}))} style={{ flex:1,padding:"7px",borderRadius:8,border:`1px solid ${conDraft.mode===v?item.color:T.border}`,background:conDraft.mode===v?item.color+"22":"transparent",color:conDraft.mode===v?item.color:T.textSub,fontFamily:"'DM Sans',sans-serif",fontSize:13,cursor:"pointer",fontWeight:conDraft.mode===v?700:400 }}>{l}</button>
                               ))}
                             </div>
                           </div>
-                          {/* Value input */}
-                          {draft.mode==="pct" ? (
-                            <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:14 }}>
-                              <input type="number" min="0" max="100" step="0.5" style={{ ...inp, width:80 }} value={draft.pct} onChange={e=>setDraft(d=>({...d,pct:e.target.value}))}/>
-                              <span style={{ fontSize:13, color:T.textSub }}>% of income = <strong style={{ color:item.color }}>{fmt(income*(parseFloat(draft.pct||0)/100))}</strong>/mo</span>
-                            </div>
-                          ) : (
-                            <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:14 }}>
-                              <span style={{ fontSize:13, color:T.textSub }}>$</span>
-                              <input type="number" min="0" step="1" style={{ ...inp, width:100 }} value={draft.fixed} onChange={e=>setDraft(d=>({...d,fixed:e.target.value}))}/>
-                              <span style={{ fontSize:12, color:T.textMuted }}>fixed/month</span>
-                            </div>
-                          )}
-                          <div style={{ display:"flex", gap:8 }}>
-                            <button onClick={cancelEdit} style={{ flex:1, padding:"8px", borderRadius:8, border:`1px solid ${T.border}`, background:T.inputBg, color:T.textSub, cursor:"pointer", fontFamily:"'DM Sans',sans-serif", fontSize:13 }}>Cancel</button>
-                            <button onClick={()=>saveEdit(item.id)} style={{ flex:2, padding:"8px", borderRadius:8, border:"none", background:item.color, color:"#fff", cursor:"pointer", fontFamily:"'DM Sans',sans-serif", fontSize:13, fontWeight:700 }}>Save</button>
+                          {conDraft.mode==="pct"
+                            ? <div style={{ display:"flex",alignItems:"center",gap:10,marginBottom:14 }}><input type="number" min="0" max="100" step="0.5" style={{ ...inp,width:80 }} value={conDraft.pct} onChange={e=>setConDraft(d=>({...d,pct:e.target.value}))}/><span style={{ fontSize:13,color:T.textSub }}>% = <strong style={{ color:item.color }}>{fmt(income*(parseFloat(conDraft.pct||0)/100))}</strong>/mo</span></div>
+                            : <div style={{ display:"flex",alignItems:"center",gap:10,marginBottom:14 }}><span style={{ fontSize:13,color:T.textSub }}>$</span><input type="number" min="0" step="1" style={{ ...inp,width:100 }} value={conDraft.fixed} onChange={e=>setConDraft(d=>({...d,fixed:e.target.value}))}/><span style={{ fontSize:12,color:T.textMuted }}>fixed/month</span></div>
+                          }
+                          <div style={{ display:"flex",gap:8 }}>
+                            <button onClick={cancelEdit} style={{ flex:1,padding:"8px",borderRadius:8,border:`1px solid ${T.border}`,background:T.inputBg,color:T.textSub,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:13 }}>Cancel</button>
+                            <button onClick={()=>saveEdit(item.id)} style={{ flex:2,padding:"8px",borderRadius:8,border:"none",background:item.color,color:"#fff",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700 }}>Save</button>
                           </div>
                         </div>
                       ) : (
-                        /* ── VIEW MODE ── */
-                        <div style={{ display:"flex", alignItems:"center", gap:12 }}>
-                          <div style={{ width:44, height:44, borderRadius:12, background:item.color+"22", display:"flex", alignItems:"center", justifyContent:"center", fontSize:22, flexShrink:0 }}>{item.emoji}</div>
-                          <div style={{ flex:1, minWidth:0 }}>
-                            <div style={{ fontSize:15, fontWeight:700, color:T.text }}>{item.label}</div>
-                            {item.desc && <div style={{ fontSize:12, color:T.textMuted, fontStyle:"italic" }}>{item.desc}</div>}
-                            <div style={{ display:"flex", alignItems:"baseline", gap:8, marginTop:4 }}>
-                              <span style={{ fontSize:22, fontWeight:800, color:item.color }}>{fmt(amt)}</span>
-                              <span style={{ fontSize:12, color:T.textMuted }}>
-                                {item.mode==="pct" ? `${item.pct}% of income` : "fixed/month"}
-                              </span>
-                              {income>0 && item.mode==="fixed" && <span style={{ fontSize:11, color:T.textMuted }}>({((amt/income)*100).toFixed(1)}% of income)</span>}
+                        <div style={{ display:"flex",alignItems:"center",gap:12 }}>
+                          <div style={{ width:44,height:44,borderRadius:12,background:item.color+"22",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0 }}>{item.emoji}</div>
+                          <div style={{ flex:1,minWidth:0 }}>
+                            <div style={{ fontSize:15,fontWeight:700,color:T.text }}>{item.label}</div>
+                            {item.desc&&<div style={{ fontSize:12,color:T.textMuted,fontStyle:"italic" }}>{item.desc}</div>}
+                            <div style={{ display:"flex",alignItems:"baseline",gap:8,marginTop:4 }}>
+                              <span style={{ fontSize:22,fontWeight:800,color:item.color }}>{fmt(amt)}</span>
+                              <span style={{ fontSize:12,color:T.textMuted }}>{item.mode==="pct"?`${item.pct}% of income`:"fixed/month"}</span>
+                              {income>0&&item.mode==="fixed"&&<span style={{ fontSize:11,color:T.textMuted }}>({((amt/income)*100).toFixed(1)}%)</span>}
                             </div>
                           </div>
-                          <div style={{ display:"flex", gap:4, flexShrink:0 }}>
-                            <button onClick={()=>startEdit(item)} style={{ background:"none", border:"none", color:T.textMuted, cursor:"pointer", fontSize:15, padding:"4px 6px", borderRadius:6 }}>✎</button>
-                            <button onClick={()=>deleteItem(item.id)} style={{ background:"none", border:"none", color:T.textMuted, cursor:"pointer", fontSize:15, padding:"4px 6px", borderRadius:6 }}>✕</button>
+                          <div style={{ display:"flex",gap:4,flexShrink:0 }}>
+                            <button onClick={()=>startEdit(item)} style={{ background:"none",border:"none",color:T.textMuted,cursor:"pointer",fontSize:15,padding:"4px 6px",borderRadius:6 }}>✎</button>
+                            <button onClick={()=>deleteItem(item.id)} style={{ background:"none",border:"none",color:T.textMuted,cursor:"pointer",fontSize:15,padding:"4px 6px",borderRadius:6 }}>✕</button>
                           </div>
                         </div>
                       )}
@@ -3237,144 +3216,99 @@ function BudgetApp({ names, mode, T, activeUser, onBack }) {
                 })}
               </div>
 
-              {/* Add new consecration */}
-              {addingNew && (
-                <div style={{ ...card(), padding:"18px 20px", marginBottom:24, borderLeft:"4px solid #9B6EE8" }}>
-                  <div style={{ fontSize:13, fontWeight:700, color:"#9B6EE8", marginBottom:14 }}>New Consecration</div>
-                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:10 }}>
-                    <div>
-                      <div style={{ fontSize:11, color:T.textMuted, marginBottom:4 }}>Label *</div>
-                      <input style={{ ...inp, width:"100%" }} value={newItem.label} onChange={e=>setNewItem(n=>({...n,label:e.target.value}))} placeholder="e.g. Church, Sibling..."/>
-                    </div>
-                    <div>
-                      <div style={{ fontSize:11, color:T.textMuted, marginBottom:4 }}>Emoji</div>
-                      <input style={{ ...inp, width:"100%" }} value={newItem.emoji} onChange={e=>setNewItem(n=>({...n,emoji:e.target.value}))}/>
-                    </div>
+              {/* Add new form */}
+              {conAddingNew&&(
+                <div style={{ ...card(),padding:"18px 20px",marginBottom:24,borderLeft:"4px solid #9B6EE8" }}>
+                  <div style={{ fontSize:13,fontWeight:700,color:"#9B6EE8",marginBottom:14 }}>New Consecration</div>
+                  <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10 }}>
+                    <div><div style={{ fontSize:11,color:T.textMuted,marginBottom:4 }}>Label *</div><input style={{ ...inp,width:"100%" }} value={conNewItem.label} onChange={e=>setConNewItem(n=>({...n,label:e.target.value}))} placeholder="e.g. Church, Sibling..."/></div>
+                    <div><div style={{ fontSize:11,color:T.textMuted,marginBottom:4 }}>Emoji</div><input style={{ ...inp,width:"100%" }} value={conNewItem.emoji} onChange={e=>setConNewItem(n=>({...n,emoji:e.target.value}))}/></div>
                   </div>
+                  <div style={{ marginBottom:10 }}><div style={{ fontSize:11,color:T.textMuted,marginBottom:4 }}>Description</div><input style={{ ...inp,width:"100%" }} value={conNewItem.desc} onChange={e=>setConNewItem(n=>({...n,desc:e.target.value}))} placeholder="e.g. Supporting a sibling's education"/></div>
                   <div style={{ marginBottom:10 }}>
-                    <div style={{ fontSize:11, color:T.textMuted, marginBottom:4 }}>Description</div>
-                    <input style={{ ...inp, width:"100%" }} value={newItem.desc} onChange={e=>setNewItem(n=>({...n,desc:e.target.value}))} placeholder="e.g. Supporting a sibling's education"/>
-                  </div>
-                  <div style={{ marginBottom:10 }}>
-                    <div style={{ fontSize:11, color:T.textMuted, marginBottom:6 }}>Color</div>
-                    <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
-                      {COLORS.map(col=>(
-                        <div key={col} onClick={()=>setNewItem(n=>({...n,color:col}))} style={{ width:24, height:24, borderRadius:6, background:col, cursor:"pointer", border:newItem.color===col?`3px solid ${T.text}`:"3px solid transparent", boxSizing:"border-box" }}/>
-                      ))}
+                    <div style={{ fontSize:11,color:T.textMuted,marginBottom:6 }}>Color</div>
+                    <div style={{ display:"flex",gap:6,flexWrap:"wrap" }}>
+                      {COLORS.map(col=><div key={col} onClick={()=>setConNewItem(n=>({...n,color:col}))} style={{ width:24,height:24,borderRadius:6,background:col,cursor:"pointer",border:conNewItem.color===col?`3px solid ${T.text}`:"3px solid transparent",boxSizing:"border-box" }}/>)}
                     </div>
                   </div>
                   <div style={{ marginBottom:10 }}>
-                    <div style={{ fontSize:11, color:T.textMuted, marginBottom:6 }}>Amount type</div>
-                    <div style={{ display:"flex", gap:6 }}>
+                    <div style={{ fontSize:11,color:T.textMuted,marginBottom:6 }}>Amount type</div>
+                    <div style={{ display:"flex",gap:6 }}>
                       {[["pct","% of income"],["fixed","Fixed $"]].map(([v,l])=>(
-                        <button key={v} onClick={()=>setNewItem(n=>({...n,mode:v}))} style={{ flex:1, padding:"7px", borderRadius:8, border:`1px solid ${newItem.mode===v?"#9B6EE8":T.border}`, background:newItem.mode===v?"#9B6EE822":"transparent", color:newItem.mode===v?"#9B6EE8":T.textSub, fontFamily:"'DM Sans',sans-serif", fontSize:13, cursor:"pointer", fontWeight:newItem.mode===v?700:400 }}>{l}</button>
+                        <button key={v} onClick={()=>setConNewItem(n=>({...n,mode:v}))} style={{ flex:1,padding:"7px",borderRadius:8,border:`1px solid ${conNewItem.mode===v?"#9B6EE8":T.border}`,background:conNewItem.mode===v?"#9B6EE822":"transparent",color:conNewItem.mode===v?"#9B6EE8":T.textSub,fontFamily:"'DM Sans',sans-serif",fontSize:13,cursor:"pointer",fontWeight:conNewItem.mode===v?700:400 }}>{l}</button>
                       ))}
                     </div>
                   </div>
-                  {newItem.mode==="pct" ? (
-                    <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:14 }}>
-                      <input type="number" min="0" max="100" step="0.5" style={{ ...inp, width:80 }} value={newItem.pct} onChange={e=>setNewItem(n=>({...n,pct:e.target.value}))}/>
-                      <span style={{ fontSize:13, color:T.textSub }}>% = <strong style={{ color:"#9B6EE8" }}>{fmt(income*(parseFloat(newItem.pct||0)/100))}</strong>/mo</span>
-                    </div>
-                  ) : (
-                    <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:14 }}>
-                      <span style={{ fontSize:13, color:T.textSub }}>$</span>
-                      <input type="number" min="0" step="1" style={{ ...inp, width:100 }} value={newItem.fixed} onChange={e=>setNewItem(n=>({...n,fixed:e.target.value}))}/>
-                      <span style={{ fontSize:12, color:T.textMuted }}>fixed/month</span>
-                    </div>
-                  )}
-                  <div style={{ display:"flex", gap:8 }}>
-                    <button onClick={()=>setAddingNew(false)} style={{ flex:1, padding:"9px", borderRadius:9, border:`1px solid ${T.border}`, background:T.inputBg, color:T.textSub, cursor:"pointer", fontFamily:"'DM Sans',sans-serif", fontSize:13 }}>Cancel</button>
-                    <button onClick={addItem} disabled={!newItem.label.trim()} style={{ flex:2, padding:"9px", borderRadius:9, border:"none", background:newItem.label.trim()?"#9B6EE8":"#888", color:"#fff", cursor:newItem.label.trim()?"pointer":"not-allowed", fontFamily:"'DM Sans',sans-serif", fontSize:13, fontWeight:700 }}>Add Consecration</button>
+                  {conNewItem.mode==="pct"
+                    ? <div style={{ display:"flex",alignItems:"center",gap:10,marginBottom:14 }}><input type="number" min="0" max="100" step="0.5" style={{ ...inp,width:80 }} value={conNewItem.pct} onChange={e=>setConNewItem(n=>({...n,pct:e.target.value}))}/><span style={{ fontSize:13,color:T.textSub }}>% = <strong style={{ color:"#9B6EE8" }}>{fmt(income*(parseFloat(conNewItem.pct||0)/100))}</strong>/mo</span></div>
+                    : <div style={{ display:"flex",alignItems:"center",gap:10,marginBottom:14 }}><span style={{ fontSize:13,color:T.textSub }}>$</span><input type="number" min="0" step="1" style={{ ...inp,width:100 }} value={conNewItem.fixed} onChange={e=>setConNewItem(n=>({...n,fixed:e.target.value}))}/><span style={{ fontSize:12,color:T.textMuted }}>fixed/month</span></div>
+                  }
+                  <div style={{ display:"flex",gap:8 }}>
+                    <button onClick={()=>setConAddingNew(false)} style={{ flex:1,padding:"9px",borderRadius:9,border:`1px solid ${T.border}`,background:T.inputBg,color:T.textSub,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:13 }}>Cancel</button>
+                    <button onClick={addItem} disabled={!conNewItem.label.trim()} style={{ flex:2,padding:"9px",borderRadius:9,border:"none",background:conNewItem.label.trim()?"#9B6EE8":"#888",color:"#fff",cursor:conNewItem.label.trim()?"pointer":"not-allowed",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700 }}>Add Consecration</button>
                   </div>
                 </div>
               )}
 
-              {/* 50/30/20 Split Plan */}
-              {(()=>{
-                const afterCon = Math.max(0, income - totalCon);
-                const needsAmt   = afterCon * (splitPlan.needs/100);
-                const wantsAmt   = afterCon * (splitPlan.wants/100);
-                const savingsAmt = afterCon * (splitPlan.savings/100);
-                const total3     = (splitPlan.needs||0)+(splitPlan.wants||0)+(splitPlan.savings||0);
-                const balanced   = Math.round(total3)===100;
-                const [editSplit, setEditSplit]   = useState(false);
-                const [splitDraft, setSplitDraft] = useState({...splitPlan});
-                const needsCatIds   = ["housing","food","transport","health","utilities","education"];
-                const savingsCatIds = ["savings","invest"];
-                const catBucket = cat => savingsCatIds.includes(cat.category)?"savings":needsCatIds.includes(cat.category)?"needs":"wants";
-                const needsSpent   = catRollup.filter(c=>catBucket(c)==="needs").reduce((s,c)=>s+c.spent,0);
-                const wantsSpent   = catRollup.filter(c=>catBucket(c)==="wants").reduce((s,c)=>s+c.spent,0);
-                const savingsSpent = catRollup.filter(c=>catBucket(c)==="savings").reduce((s,c)=>s+c.spent,0);
-                const buckets = [
-                  { key:"needs",   label:"Needs",   emoji:"🏠", color:"#3B9EDB", amt:needsAmt,   spent:needsSpent,   desc:"Rent, groceries, transport, bills" },
-                  { key:"wants",   label:"Wants",   emoji:"🎮", color:"#E84E8A", amt:wantsAmt,   spent:wantsSpent,   desc:"Dining out, entertainment, shopping" },
-                  { key:"savings", label:"Savings", emoji:"💰", color:"#3DBF8A", amt:savingsAmt, spent:savingsSpent, desc:"Emergency fund, goals, investments" },
-                ];
-                const inp2 = { background:T.inputBg, border:`1px solid ${T.border}`, borderRadius:8, padding:"7px 10px", color:T.text, fontFamily:"'DM Sans',sans-serif", fontSize:13, outline:"none", boxSizing:"border-box" };
-                return (
-                  <div>
-                    <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:12 }}>
-                      <div style={{ fontFamily:"'DM Serif Display',serif", fontSize:20, color:T.text }}>📊 Budget Split Plan</div>
-                      <button onClick={()=>{ setSplitDraft({...splitPlan}); setEditSplit(e=>!e); }} style={{ background:"none", border:`1px solid ${T.border}`, borderRadius:7, padding:"4px 12px", color:T.textSub, cursor:"pointer", fontFamily:"'DM Sans',sans-serif", fontSize:12 }}>
-                        {editSplit?"Cancel":"✎ Edit"}
-                      </button>
+              {/* Split plan */}
+              <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12 }}>
+                <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:20,color:T.text }}>📊 Budget Split Plan</div>
+                <button onClick={()=>{ setSplitDraft({...splitPlan}); setEditSplit(e=>!e); }} style={{ background:"none",border:`1px solid ${T.border}`,borderRadius:7,padding:"4px 12px",color:T.textSub,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:12 }}>
+                  {editSplit?"Cancel":"✎ Edit"}
+                </button>
+              </div>
+              <div style={{ fontSize:13,color:T.textSub,marginBottom:14,lineHeight:1.6 }}>
+                After consecration ({fmt(totalCon)}), you have <strong style={{ color:"#3DBF8A" }}>{fmt(afterCon)}</strong> left to split.
+              </div>
+              {editSplit&&(
+                <div style={{ ...card(),padding:"16px 18px",marginBottom:14 }}>
+                  <div style={{ fontSize:12,color:T.textSub,marginBottom:10 }}>Must total 100%</div>
+                  {[["needs","Needs 🏠","#3B9EDB"],["wants","Wants 🎮","#E84E8A"],["savings","Savings 💰","#3DBF8A"]].map(([k,l,col])=>(
+                    <div key={k} style={{ display:"flex",alignItems:"center",gap:10,marginBottom:10 }}>
+                      <span style={{ fontSize:13,color:T.text,minWidth:100,fontWeight:600 }}>{l}</span>
+                      <input type="number" min="0" max="100" style={{ background:T.inputBg,border:`1px solid ${T.border}`,borderRadius:8,padding:"7px 10px",color:T.text,fontFamily:"'DM Sans',sans-serif",fontSize:13,outline:"none",width:70,boxSizing:"border-box" }} value={splitDraft[k]} onChange={e=>setSplitDraft(d=>({...d,[k]:parseFloat(e.target.value)||0}))}/>
+                      <span style={{ fontSize:12,color:col,fontWeight:600 }}>% = {fmt(afterCon*(splitDraft[k]/100))}</span>
                     </div>
-                    <div style={{ fontSize:13, color:T.textSub, marginBottom:14, lineHeight:1.6 }}>
-                      After consecration ({fmt(totalCon)}), you have <strong style={{ color:"#3DBF8A" }}>{fmt(afterCon)}</strong> left to split across your budget.
-                    </div>
-                    {editSplit && (
-                      <div style={{ ...card(), padding:"16px 18px", marginBottom:14 }}>
-                        <div style={{ fontSize:12, color:T.textSub, marginBottom:10 }}>Percentages must total 100%</div>
-                        {[["needs","Needs 🏠","#3B9EDB"],["wants","Wants 🎮","#E84E8A"],["savings","Savings 💰","#3DBF8A"]].map(([k,l,col])=>(
-                          <div key={k} style={{ display:"flex", alignItems:"center", gap:10, marginBottom:10 }}>
-                            <span style={{ fontSize:13, color:T.text, minWidth:90, fontWeight:600 }}>{l}</span>
-                            <input type="number" min="0" max="100" style={{ ...inp2, width:70 }} value={splitDraft[k]} onChange={e=>setSplitDraft(d=>({...d,[k]:parseFloat(e.target.value)||0}))}/>
-                            <span style={{ fontSize:12, color:col, fontWeight:600 }}>% = {fmt(afterCon*(splitDraft[k]/100))}</span>
-                          </div>
-                        ))}
-                        <div style={{ fontSize:12, marginBottom:10, fontWeight:600, color:(splitDraft.needs+splitDraft.wants+splitDraft.savings)===100?"#3DBF8A":"#E84E8A" }}>
-                          Total: {splitDraft.needs+splitDraft.wants+splitDraft.savings}% {(splitDraft.needs+splitDraft.wants+splitDraft.savings)===100?"✓ Balanced":"— needs to equal 100"}
-                        </div>
-                        <button onClick={()=>{ saveSplitPlan(splitDraft); setEditSplit(false); }} disabled={!balanced && (splitDraft.needs+splitDraft.wants+splitDraft.savings)!==100}
-                          style={{ width:"100%", padding:"9px", borderRadius:8, border:"none", background:(splitDraft.needs+splitDraft.wants+splitDraft.savings)===100?"#20B2AA":"#888", color:"#fff", cursor:"pointer", fontFamily:"'DM Sans',sans-serif", fontSize:13, fontWeight:700 }}>
-                          Save Split Plan
-                        </button>
-                      </div>
-                    )}
-                    <div style={{ display:"flex", flexDirection:"column", gap:10, marginBottom:8 }}>
-                      {buckets.map(b=>{
-                        const over  = b.spent > b.amt && b.amt > 0;
-                        const pct   = b.amt>0 ? Math.min(100,Math.round((b.spent/b.amt)*100)) : 0;
-                        return (
-                          <div key={b.key} style={{ ...card(), padding:"14px 16px", borderLeft:`4px solid ${b.color}` }}>
-                            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:8 }}>
-                              <div>
-                                <span style={{ fontSize:15, fontWeight:700, color:T.text }}>{b.emoji} {b.label} </span>
-                                <span style={{ fontSize:12, color:T.textMuted }}>({splitPlan[b.key]}% — {fmt(b.amt)}/mo)</span>
-                                <div style={{ fontSize:11, color:T.textMuted, marginTop:2 }}>{b.desc}</div>
-                              </div>
-                              <div style={{ textAlign:"right", flexShrink:0 }}>
-                                <div style={{ fontSize:14, fontWeight:800, color:over?"#E84E8A":b.color }}>{fmt(b.spent)}</div>
-                                <div style={{ fontSize:11, color:T.textMuted }}>spent</div>
-                              </div>
-                            </div>
-                            <div style={{ height:7, background:T.inputBg, borderRadius:7, overflow:"hidden" }}>
-                              <div style={{ height:"100%", width:`${pct}%`, background:over?"#E84E8A":b.color, borderRadius:7, transition:"width 0.4s" }}/>
-                            </div>
-                            {over && <div style={{ fontSize:11, color:"#E84E8A", marginTop:5, fontWeight:600 }}>⚠ Over budget by {fmt(b.spent-b.amt)}</div>}
-                          </div>
-                        );
-                      })}
-                    </div>
-                    <div style={{ fontSize:11, color:T.textMuted, lineHeight:1.8, padding:"10px 14px", background:T.inputBg, borderRadius:8 }}>
-                      🏠 <strong style={{ color:"#3B9EDB" }}>Needs</strong>: Housing, Food, Transport, Health, Utilities, Education &nbsp;·&nbsp;
-                      💰 <strong style={{ color:"#3DBF8A" }}>Savings</strong>: Savings, Investing &nbsp;·&nbsp;
-                      🎮 <strong style={{ color:"#E84E8A" }}>Wants</strong>: Everything else
-                    </div>
+                  ))}
+                  <div style={{ fontSize:12,marginBottom:10,fontWeight:600,color:(splitDraft.needs+splitDraft.wants+splitDraft.savings)===100?"#3DBF8A":"#E84E8A" }}>
+                    Total: {splitDraft.needs+splitDraft.wants+splitDraft.savings}% {(splitDraft.needs+splitDraft.wants+splitDraft.savings)===100?"✓ Balanced":"— needs to equal 100"}
                   </div>
-                );
-              })()}
+                  <button onClick={()=>{ saveSplitPlan(splitDraft); setEditSplit(false); }} disabled={(splitDraft.needs+splitDraft.wants+splitDraft.savings)!==100}
+                    style={{ width:"100%",padding:"9px",borderRadius:8,border:"none",background:(splitDraft.needs+splitDraft.wants+splitDraft.savings)===100?"#20B2AA":"#888",color:"#fff",cursor:(splitDraft.needs+splitDraft.wants+splitDraft.savings)===100?"pointer":"not-allowed",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700 }}>
+                    Save Split Plan
+                  </button>
+                </div>
+              )}
+              <div style={{ display:"flex",flexDirection:"column",gap:10,marginBottom:12 }}>
+                {splitBuckets.map(b=>{
+                  const over=b.spent>b.amt&&b.amt>0;
+                  const pct=b.amt>0?Math.min(100,Math.round((b.spent/b.amt)*100)):0;
+                  return (
+                    <div key={b.key} style={{ ...card(),padding:"14px 16px",borderLeft:`4px solid ${b.color}` }}>
+                      <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8 }}>
+                        <div>
+                          <span style={{ fontSize:15,fontWeight:700,color:T.text }}>{b.emoji} {b.label} </span>
+                          <span style={{ fontSize:12,color:T.textMuted }}>({splitPlan[b.key]}% — {fmt(b.amt)}/mo)</span>
+                          <div style={{ fontSize:11,color:T.textMuted,marginTop:2 }}>{b.desc}</div>
+                        </div>
+                        <div style={{ textAlign:"right",flexShrink:0 }}>
+                          <div style={{ fontSize:14,fontWeight:800,color:over?"#E84E8A":b.color }}>{fmt(b.spent)}</div>
+                          <div style={{ fontSize:11,color:T.textMuted }}>spent</div>
+                        </div>
+                      </div>
+                      <div style={{ height:7,background:T.inputBg,borderRadius:7,overflow:"hidden" }}>
+                        <div style={{ height:"100%",width:`${pct}%`,background:over?"#E84E8A":b.color,borderRadius:7,transition:"width 0.4s" }}/>
+                      </div>
+                      {over&&<div style={{ fontSize:11,color:"#E84E8A",marginTop:5,fontWeight:600 }}>⚠ Over by {fmt(b.spent-b.amt)}</div>}
+                    </div>
+                  );
+                })}
+              </div>
+              <div style={{ fontSize:11,color:T.textMuted,lineHeight:1.8,padding:"10px 14px",background:T.inputBg,borderRadius:8 }}>
+                🏠 <strong style={{ color:"#3B9EDB" }}>Needs</strong>: Housing, Food, Transport, Health, Utilities, Education &nbsp;·&nbsp;
+                💰 <strong style={{ color:"#3DBF8A" }}>Savings</strong>: Savings, Investing &nbsp;·&nbsp;
+                🎮 <strong style={{ color:"#E84E8A" }}>Wants</strong>: Everything else
+              </div>
             </div>
           );
         })()}
