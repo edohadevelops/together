@@ -1199,24 +1199,23 @@ function ComprehensiveApp({ names, mode, T, activeUser, onBack }) {
   const FF = "'DM Sans',sans-serif";
   const SF = "'DM Serif Display',serif";
   const compStyle = `
-    .comp-wrap { display:flex; flex-direction:column; min-height:100vh; background:inherit; }
-    .comp-inner { width:100%; max-width:1200px; margin:0 auto; padding:20px 24px 100px; }
-    .comp-grid  { display:grid; grid-template-columns:1fr; gap:16px; }
+    .comp-inner { width:100%; padding:16px 16px 100px; box-sizing:border-box; }
+    .comp-grid  { display:grid; grid-template-columns:1fr; gap:16px; width:100%; }
     .comp-sidebar { display:none; }
     @media(min-width:768px){
-      .comp-inner { padding:24px 32px 80px; }
+      .comp-inner { padding:20px 24px 80px; }
     }
     @media(min-width:1024px){
-      .comp-grid { grid-template-columns:320px 1fr; gap:24px; align-items:start; }
-      .comp-sidebar { display:flex; flex-direction:column; gap:12px; position:sticky; top:72px; }
-      .comp-main { min-width:0; }
+      .comp-inner { padding:24px 3vw 80px; }
+      .comp-grid { grid-template-columns:28% 1fr; gap:2vw; align-items:start; }
+      .comp-sidebar { display:flex; flex-direction:column; gap:12px; position:sticky; top:72px; width:100%; }
+      .comp-main { width:100%; min-width:0; }
     }
-    @media(min-width:1280px){
-      .comp-grid { grid-template-columns:360px 1fr; }
-      .comp-inner { padding:28px 48px 80px; }
+    @media(min-width:1400px){
+      .comp-inner { padding:28px 4vw 80px; }
     }
     .course-tab { flex-shrink:0; padding:7px 16px; border-radius:20px; font-size:13px; cursor:pointer; transition:all .15s; font-family:'DM Sans',sans-serif; }
-    .course-tab-desktop { width:100%; padding:12px 16px; border-radius:12px; font-size:14px; cursor:pointer; transition:all .15s; text-align:left; font-family:'DM Sans',sans-serif; display:flex; align-items:center; gap:10px; }
+    .course-tab-desktop { width:100%; padding:12px 16px; border-radius:12px; font-size:14px; cursor:pointer; transition:all .15s; text-align:left; font-family:'DM Sans',sans-serif; display:flex; align-items:center; gap:10px; box-sizing:border-box; }
     .nav-btn { padding:8px 18px; border-radius:8px; font-size:13px; cursor:pointer; font-family:'DM Sans',sans-serif; transition:all .15s; }
     .nav-btn:hover { opacity:0.85; }
     .action-btn { flex:1; padding:12px; border-radius:10px; border:none; font-size:13px; font-weight:600; cursor:pointer; font-family:'DM Sans',sans-serif; transition:opacity .15s; }
@@ -1301,7 +1300,7 @@ function ComprehensiveApp({ names, mode, T, activeUser, onBack }) {
 
       {/* ── Sticky header ── */}
       <div style={{ background:T.topbar, borderBottom:`1px solid ${T.border}`, position:"sticky", top:0, zIndex:20 }}>
-        <div style={{ maxWidth:1200, margin:"0 auto", padding:"12px 24px", display:"flex", alignItems:"center", gap:12 }}>
+        <div style={{ width:"100%", padding:"12px 16px", display:"flex", alignItems:"center", gap:12, boxSizing:"border-box" }}>
           <button onClick={onBack} style={{ background:"none", border:"none", cursor:"pointer", color:T.textSub, fontSize:20, padding:"0 4px", fontFamily:FF }}>←</button>
           <div style={{ flex:1 }}>
             <div style={{ fontFamily:SF, fontSize:18, color:T.text }}>Exam Prep</div>
@@ -1320,7 +1319,7 @@ function ComprehensiveApp({ names, mode, T, activeUser, onBack }) {
 
         {/* ── Mobile course tabs (horizontal scroll, hidden on desktop) ── */}
         {isA && (
-          <div style={{ display:"flex", gap:8, overflowX:"auto", padding:"0 24px 12px", maxWidth:1200, margin:"0 auto" }} className="hide-on-desktop">
+          <div style={{ display:"flex", gap:8, overflowX:"auto", padding:"0 16px 12px", width:"100%", boxSizing:"border-box" }} className="hide-on-desktop">
             <style>{`@media(min-width:1024px){.hide-on-desktop{display:none!important}}`}</style>
             {USER_A_COURSES.map(c => (
               <button key={c.id} onClick={()=>setCourse(c.id)} className="course-tab"
