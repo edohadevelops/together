@@ -4748,6 +4748,211 @@ function PersonRow({ person, onOpen, catOf, daysAgo, urgency, T }) {
 // ── DedupModal ─────────────────────────────────────────────────────────────
 // Finds tasks with identical titles (case-insensitive), shows them grouped,
 // and lets the user delete all duplicates keeping only the first occurrence.
+// ── RestoreBackupButton ───────────────────────────────────────────────────────
+// Lists all individual per-key backups grouped by date.
+// Each data type has its own backup row in Supabase: tasks_backup_YYYY-MM-DD,
+// budget_cats_backup_YYYY-MM-DD, people_list_backup_YYYY-MM-DD, etc.
+
+const BACKUP_MANIFEST = [
+  { key:"tasks",              label:"Tasks",              emoji:"✅" },
+  { key:"budget_cats",        label:"Budget Categories",  emoji:"📋" },
+  { key:"budget_txs",         label:"Transactions",       emoji:"💸" },
+  { key:"budget_goals",       label:"Budget Goals",       emoji:"🎯" },
+  { key:"budget_assets",      label:"Assets",             emoji:"💎" },
+  { key:"budget_liabs",       label:"Liabilities",        emoji:"🏦" },
+  { key:"budget_debts",       label:"Debts",              emoji:"💳" },
+  { key:"budget_consecration",label:"Consecration",       emoji:"🕊" },
+  { key:"budget_splitplan",   label:"Split Plan",         emoji:"📊" },
+  { key:"people_list",        label:"People",             emoji:"🤝" },
+  { key:"mg_templates",       label:"Monthly Goals",      emoji:"📅" },
+  { key:"mg_progress",        label:"Goal Progress",      emoji:"📈" },
+  { key:"reflections",        label:"Reflections",        emoji:"💭" },
+  { key:"prayers",            label:"Prayers",            emoji:"🙏" },
+  { key:"tracker",            label:"Tracker",            emoji:"🔗" },
+  { key:"cookbook",           label:"Cookbook",           emoji:"👨‍🍳" },
+];
+
+const SUPA_URL = "https://sonbphyeomzzcdyuiotl.supabase.co";
+const SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNvbmJwaHllb216emNkeXVpb3RsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyMzkxMjksImV4cCI6MjA4ODgxNTEyOX0.CtcZAFtqCQUOrzPBfhSfN5BZ1EQDJFVxa-FsjMX5IRg";
+const SUPA_H  = { "apikey": SUPA_KEY, "Authorization": `Bearer ${SUPA_KEY}` };
+
+async function supaGet(key) {
+  const r = await fetch(`${SUPA_URL}/rest/v1/together_data?key=eq.${encodeURIComponent(key)}&select=value`, { headers: SUPA_H });
+  const d = await r.json();
+  return d?.[0]?.value ?? null;
+}
+async function supaSet(key, value) {
+  await fetch(`${SUPA_URL}/rest/v1/together_data`, {
+    method: "POST",
+    headers: { ...SUPA_H, "Content-Type": "application/json", "Prefer": "resolution=merge-duplicates" },
+    body: JSON.stringify({ key, value })
+  });
+}
+
+function RestoreBackupButton({ T, onRestored }) {
+  const [open,       setOpen]       = useState(false);
+  const [loading,    setLoading]    = useState(false);
+  const [dates,      setDates]      = useState(null);   // sorted date strings
+  const [selDate,    setSelDate]    = useState(null);   // selected date
+  const [avail,      setAvail]      = useState({});     // { key: count/size }
+  const [loadingDate,setLoadingDate]= useState(false);
+  const [restoring,  setRestoring]  = useState(null);   // key being restored
+  const [restored,   setRestored]   = useState({});     // { key: true }
+
+  async function fetchDates() {
+    setLoading(true);
+    try {
+      // Get all backup keys — any key ending in _backup_YYYY-MM-DD
+      const r = await fetch(
+        `${SUPA_URL}/rest/v1/together_data?key=like.*_backup_2*&select=key&order=key.desc&limit=200`,
+        { headers: SUPA_H }
+      );
+      const rows = await r.json();
+      if (!Array.isArray(rows)) { setDates([]); setLoading(false); return; }
+      // Extract unique dates
+      const dateSet = new Set();
+      rows.forEach(row => {
+        const m = row.key.match(/_backup_(\d{4}-\d{2}-\d{2})$/);
+        if (m) dateSet.add(m[1]);
+      });
+      const sorted = [...dateSet].sort((a,b)=>b.localeCompare(a));
+      setDates(sorted);
+      if (sorted.length > 0) loadDateDetail(sorted[0], rows);
+    } catch(e) { setDates([]); }
+    setLoading(false);
+  }
+
+  async function loadDateDetail(date, existingRows) {
+    setSelDate(date);
+    setLoadingDate(true);
+    try {
+      const rows = existingRows || await fetch(
+        `${SUPA_URL}/rest/v1/together_data?key=like.*_backup_${date}&select=key,value`,
+        { headers: SUPA_H }
+      ).then(r=>r.json());
+      const map = {};
+      rows.filter(r=>r.key.endsWith(`_backup_${date}`)).forEach(row => {
+        const k = row.key.replace(`_backup_${date}`,"");
+        const v = row.value;
+        map[k] = Array.isArray(v) ? v.length : (v ? "✓" : null);
+      });
+      setAvail(map);
+    } catch(e) {}
+    setLoadingDate(false);
+  }
+
+  async function restoreKey(key) {
+    setRestoring(key);
+    try {
+      const val = await supaGet(`${key}_backup_${selDate}`);
+      if (!val) { alert(`No backup found for ${key} on ${selDate}`); setRestoring(null); return; }
+      await supaSet(key, val);
+      setRestored(r => ({...r, [key]: true}));
+    } catch(e) { alert("Restore failed — check your connection."); }
+    setRestoring(null);
+  }
+
+  async function restoreAll() {
+    const keys = BACKUP_MANIFEST.map(m=>m.key).filter(k=>avail[k]);
+    for (const key of keys) {
+      await restoreKey(key);
+    }
+    setTimeout(() => { if (onRestored) onRestored(); }, 800);
+  }
+
+  const T2 = { ...{ surface:"#181B23", border:"rgba(255,255,255,0.08)", text:"#EEEAE3", textSub:"#888D9B", textMuted:"#3E424E", inputBg:"rgba(255,255,255,0.05)", accent:"#E8A838" }, ...T };
+
+  return (
+    <>
+      <button onClick={()=>{ setOpen(true); fetchDates(); }}
+        style={{ padding:"10px 20px", borderRadius:10, border:"1px solid #3B9EDB44", background:"#3B9EDB11", color:"#3B9EDB", cursor:"pointer", fontFamily:"'DM Sans',sans-serif", fontSize:13, fontWeight:600, display:"flex", alignItems:"center", gap:8 }}>
+        🗄 Restore from Backup
+      </button>
+
+      {open&&(
+        <div style={{ position:"fixed",inset:0,zIndex:200,background:"rgba(0,0,0,0.8)",backdropFilter:"blur(8px)",display:"flex",alignItems:"flex-end",justifyContent:"center" }}
+          onClick={e=>e.target===e.currentTarget&&setOpen(false)}>
+          <div style={{ background:T2.surface, border:`1px solid ${T2.border}`, borderRadius:"22px 22px 0 0", width:"100%", maxWidth:560, maxHeight:"90vh", overflowY:"auto", padding:"24px 20px 40px", boxShadow:"0 -12px 60px rgba(0,0,0,0.6)" }}>
+            <div style={{ width:40,height:4,borderRadius:2,background:T2.textMuted,margin:"0 auto 20px",opacity:0.5 }}/>
+            <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:22,color:T2.text,marginBottom:4 }}>🗄 Restore Backup</div>
+            <div style={{ fontSize:13,color:T2.textSub,marginBottom:20,lineHeight:1.7 }}>
+              Every data type is backed up individually each day. Pick a date then choose what to restore.
+            </div>
+
+            {loading ? (
+              <div style={{ textAlign:"center",padding:"30px",color:T2.textSub,fontSize:13 }}>Loading backups...</div>
+            ) : !dates || dates.length===0 ? (
+              <div style={{ textAlign:"center",padding:"30px" }}>
+                <div style={{ fontSize:32,marginBottom:12 }}>📭</div>
+                <div style={{ color:T2.textSub,fontSize:13,lineHeight:1.7 }}>No backups found yet.<br/>Backups are created automatically each day you use the app.</div>
+              </div>
+            ) : (
+              <>
+                {/* Date selector */}
+                <div style={{ marginBottom:16 }}>
+                  <div style={{ fontSize:11,fontWeight:700,color:T2.textMuted,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:8 }}>Select Date</div>
+                  <div style={{ display:"flex",gap:6,flexWrap:"wrap" }}>
+                    {dates.slice(0,10).map(d=>(
+                      <button key={d} onClick={()=>loadDateDetail(d)}
+                        style={{ padding:"6px 14px",borderRadius:20,border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:selDate===d?700:500,background:selDate===d?"#3B9EDB":"transparent",color:selDate===d?"#fff":T2.textSub,outline:selDate===d?"none":`1px solid ${T2.border}` }}>
+                        {d}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Restore All button */}
+                {selDate&&!loadingDate&&Object.keys(avail).length>0&&(
+                  <button onClick={restoreAll} disabled={!!restoring}
+                    style={{ width:"100%",padding:"11px",borderRadius:11,border:"none",background:restoring?"#888":"#3DBF8A",color:"#fff",cursor:restoring?"not-allowed":"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:700,marginBottom:14 }}>
+                    {restoring ? "Restoring..." : `✅ Restore Everything from ${selDate}`}
+                  </button>
+                )}
+
+                {/* Per-key list */}
+                {loadingDate ? (
+                  <div style={{ textAlign:"center",padding:"20px",color:T2.textSub,fontSize:13 }}>Loading backup details...</div>
+                ) : selDate && (
+                  <div style={{ display:"flex",flexDirection:"column",gap:7 }}>
+                    {BACKUP_MANIFEST.map(item=>{
+                      const count   = avail[item.key];
+                      const hasData = count != null;
+                      const isDone  = restored[item.key];
+                      const isRest  = restoring === item.key;
+                      return (
+                        <div key={item.key} style={{ display:"flex",alignItems:"center",gap:12,padding:"11px 14px",background:T2.inputBg,border:`1px solid ${isDone?"#3DBF8A44":hasData?T2.border:T2.border}`,borderRadius:11,borderLeft:`4px solid ${isDone?"#3DBF8A":hasData?"#3B9EDB":"#3E424E"}`,opacity:hasData?1:0.4 }}>
+                          <span style={{ fontSize:18,flexShrink:0 }}>{item.emoji}</span>
+                          <div style={{ flex:1,minWidth:0 }}>
+                            <div style={{ fontSize:13,fontWeight:600,color:T2.text }}>{item.label}</div>
+                            <div style={{ fontSize:11,color:hasData?"#3B9EDB":T2.textMuted,marginTop:1 }}>
+                              {isDone ? "✓ Restored" : hasData ? (typeof count==="number"?`${count} items saved`:"Saved") : "No backup for this date"}
+                            </div>
+                          </div>
+                          {hasData&&(
+                            <button onClick={()=>restoreKey(item.key)} disabled={!!restoring||isDone}
+                              style={{ padding:"6px 14px",borderRadius:8,border:"none",background:isDone?"#3DBF8A":isRest?"#888":"#3B9EDB",color:"#fff",cursor:(restoring||isDone)?"not-allowed":"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:700,flexShrink:0 }}>
+                              {isDone?"Done":isRest?"...":"Restore"}
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </>
+            )}
+
+            <button onClick={()=>setOpen(false)} style={{ width:"100%",marginTop:20,padding:"11px",borderRadius:11,border:`1px solid ${T2.border}`,background:"transparent",color:T2.textSub,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:13 }}>
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+
 function DedupModal({ onClose, tasks, onDelete, T, mode }) {
   // Group tasks by normalised title
   const groups = Object.values(
@@ -6250,14 +6455,36 @@ export default function TogetherApp() {
         const myId  = (() => { try { return localStorage.getItem("together_identity"); } catch { return null; } })();
         const soKey = myId ? `sectionOrder_${myId}` : "sectionOrder";
         const [t, n, m, so, cl] = await Promise.all([dbGet("tasks"), dbGet("names"), dbGet("mode"), dbGet(soKey), dbGet("completedLog")]);
-        let loaded = t
-          ? t.map((tk, i) => ({ order:i, ...tk, createdAt:tk.createdAt||TODAY, dueDate:tk.dueDate||"", lastReset:tk.lastReset||"" }))
-          : SAMPLES.map((tk, i) => ({ order:i, createdAt:TODAY, dueDate:"", lastReset:"", ...tk }));
-        const afterReset = resetDailies(loaded);
+        // ── SAFE LOAD: never overwrite real data with samples ──────────────────
+        // If t is null it means the tasks key doesn't exist in Supabase yet —
+        // could be a brand new user OR could mean data was accidentally cleared.
+        // We check for any backup before deciding it's a new user.
+        let finalTasks;
+        if (t && t.length > 0) {
+          // Normal case — real tasks found
+          finalTasks = t.map((tk, i) => ({ order:i, ...tk, createdAt:tk.createdAt||TODAY, dueDate:tk.dueDate||"", lastReset:tk.lastReset||"" }));
+        } else if (!t) {
+          // No tasks key at all — check if we have any backup before assuming new user
+          const anyBackup = await dbGet(`tasks_backup_${TODAY}`).catch(()=>null)
+            || await dbGet(`tasks_backup_${new Date(Date.now()-86400000).toISOString().slice(0,10)}`).catch(()=>null);
+          if (anyBackup && anyBackup.length > 0) {
+            // Backups exist — data was lost. Show restore screen, DON'T load samples.
+            setStatus("error");
+            setLoadMsg("Your tasks appear missing but backups exist. Use 'Restore from Backup' below.");
+            clearInterval(ti);
+            return;
+          }
+          // Genuinely new user — safe to load samples
+          finalTasks = SAMPLES.map((tk, i) => ({ order:i, createdAt:TODAY, dueDate:"", lastReset:"", ...tk }));
+        } else {
+          // t exists but is empty array — user deleted all tasks intentionally
+          finalTasks = [];
+        }
+        const afterReset = resetDailies(finalTasks);
         tasksRef.current = afterReset;
         setTasksState(afterReset);
-        // Only write to Supabase if: (a) no tasks existed yet, or (b) resetDailies actually changed something
-        const resetChanged = JSON.stringify(afterReset) !== JSON.stringify(loaded);
+        // Only write to Supabase if brand new user or dailies changed
+        const resetChanged = JSON.stringify(afterReset) !== JSON.stringify(finalTasks);
         if (!t) await dbSet("tasks", afterReset);
         else if (resetChanged) await dbSet("tasks", afterReset);
         if (n) setNamesState(n);
@@ -6268,20 +6495,41 @@ export default function TogetherApp() {
         setStatus("live");
         // init seenIds AFTER first load so poll doesn't toast on startup
         seenIdsRef.current = (tasksRef.current || []).map(t => t.id);
-        // ── Daily backup — save snapshot once per day so data is recoverable ──
-        if (t && t.length > 0) {
-          const backupKey = `tasks_backup_${TODAY}`;
-          try {
-            const existing = await dbGet(backupKey);
-            if (!existing) await dbSet(backupKey, t); // save original (pre-reset) data
-          } catch {}
-        }
-      } catch {
-        const fb = resetDailies(SAMPLES);
-        seenIdsRef.current = fb.map(t => t.id);
-        tasksRef.current = fb;
-        setTasksState(fb);
+        // ── Daily backup — each key gets its own dated backup row ─────────────
+        // Format: tasks_backup_2026-04-10, budget_cats_backup_2026-04-10, etc.
+        // Only runs once per day (checks if today's backup already exists).
+        try {
+          const existingCheck = await dbGet(`tasks_backup_${TODAY}`);
+          if (!existingCheck) {
+            const BACKUP_KEYS = [
+              "tasks",
+              "budget_cats","budget_txs","budget_goals",
+              "budget_assets","budget_liabs","budget_debts",
+              "budget_consecration","budget_splitplan",
+              "people_list","mg_templates","mg_progress",
+              "reflections","prayers","tracker","cookbook",
+            ];
+            const liveData = await Promise.all(BACKUP_KEYS.map(k => dbGet(k).catch(()=>null)));
+            await Promise.all(
+              BACKUP_KEYS.map((k, i) => {
+                const val = liveData[i];
+                if (!val) return Promise.resolve();
+                const isEmpty = Array.isArray(val) ? val.length === 0 : Object.keys(val).length === 0;
+                if (isEmpty) return Promise.resolve();
+                return dbSet(`${k}_backup_${TODAY}`, val).catch(()=>null);
+              })
+            );
+            console.log(`[Together] Daily backup saved for ${TODAY}`);
+          }
+        } catch(e) { console.warn("[Together] Backup failed:", e); }
+      } catch(err) {
+        // ── CRITICAL: never silently load sample data on a network error ──
+        // If Supabase is unreachable, show an error with a retry button.
+        // Loading SAMPLES here would make it look like data was lost.
+        console.error("Failed to load from Supabase:", err);
         setStatus("error");
+        setLoadMsg("Could not connect to your data. Check your internet connection.");
+        // Do NOT setTasksState(SAMPLES) — leave tasks as null so loading screen shows
       }
       clearInterval(ti);
     })();
@@ -6574,27 +6822,49 @@ export default function TogetherApp() {
   const aLabel = a  => a==="both"?`${names.A} & ${names.B}`:names[a]||a;
   const aColor = a  => a==="A"?"#E8A838":a==="B"?"#E84E8A":"#3DBF8A";
 
-  // ── Loading screen ─────────────────────────────────────────────────────────
+  // ── Loading / Error screen ─────────────────────────────────────────────────
   if (!tasks) return (
     <div style={{ position:"fixed",inset:0,background:"#0F1117",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",fontFamily:"'DM Sans',sans-serif",gap:20,padding:24 }}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}`}</style>
-      {/* Spinner */}
-      <div style={{ position:"relative",width:72,height:72 }}>
-        <div style={{ position:"absolute",inset:0,border:"3px solid rgba(232,168,56,0.15)",borderRadius:"50%" }}/>
-        <div style={{ position:"absolute",inset:0,border:"3px solid transparent",borderTopColor:"#E8A838",borderRadius:"50%",animation:"spin 0.9s linear infinite" }}/>
-        <div style={{ position:"absolute",inset:10,border:"3px solid transparent",borderTopColor:"#E8A838",opacity:0.4,borderRadius:"50%",animation:"spin 1.3s linear infinite reverse" }}/>
-        <div style={{ position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,color:"#E8A838" }}>♡</div>
-      </div>
-      <div style={{ textAlign:"center" }}>
-        <div style={{ color:"#E8A838",fontSize:22,fontWeight:700,letterSpacing:"0.04em",fontFamily:"'DM Serif Display',serif" }}>Together</div>
-        <div style={{ color:"#888D9B",fontSize:14,marginTop:8,animation:"pulse 1.8s ease-in-out infinite" }}>{loadMsg}</div>
-      </div>
-      {/* Animated dots */}
-      <div style={{ display:"flex",gap:6,marginTop:4 }}>
-        {[0,1,2].map(i=>(
-          <div key={i} style={{ width:6,height:6,borderRadius:"50%",background:"#E8A838",opacity:0.3,animation:`pulse 1.4s ease-in-out ${i*0.2}s infinite` }}/>
-        ))}
-      </div>
+
+      {status === "error" ? (
+        /* ── ERROR STATE — connection failed ── */
+        <>
+          <div style={{ fontSize:44 }}>⚠️</div>
+          <div style={{ textAlign:"center" }}>
+            <div style={{ color:"#E8A838",fontSize:20,fontWeight:700,fontFamily:"'DM Serif Display',serif",marginBottom:8 }}>Couldn't connect</div>
+            <div style={{ color:"#888D9B",fontSize:13,lineHeight:1.7,maxWidth:320,marginBottom:20 }}>
+              {loadMsg}<br/>Your data is safe — this is a network issue.
+            </div>
+          </div>
+          {/* Retry */}
+          <button onClick={()=>{ setStatus("connecting"); setLoadMsg("Reconnecting..."); setTasksState(null); window.location.reload(); }}
+            style={{ padding:"12px 28px",borderRadius:12,border:"none",background:"#E8A838",color:"#0F1117",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:700 }}>
+            🔄 Retry Connection
+          </button>
+          {/* Restore from backup */}
+          <RestoreBackupButton T={{ surface:"#181B23",border:"rgba(255,255,255,0.08)",text:"#EEEAE3",textSub:"#888D9B",textMuted:"#3E424E",inputBg:"rgba(255,255,255,0.05)" }} onRestored={()=>window.location.reload()}/>
+        </>
+      ) : (
+        /* ── LOADING STATE ── */
+        <>
+          <div style={{ position:"relative",width:72,height:72 }}>
+            <div style={{ position:"absolute",inset:0,border:"3px solid rgba(232,168,56,0.15)",borderRadius:"50%" }}/>
+            <div style={{ position:"absolute",inset:0,border:"3px solid transparent",borderTopColor:"#E8A838",borderRadius:"50%",animation:"spin 0.9s linear infinite" }}/>
+            <div style={{ position:"absolute",inset:10,border:"3px solid transparent",borderTopColor:"#E8A838",opacity:0.4,borderRadius:"50%",animation:"spin 1.3s linear infinite reverse" }}/>
+            <div style={{ position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,color:"#E8A838" }}>♡</div>
+          </div>
+          <div style={{ textAlign:"center" }}>
+            <div style={{ color:"#E8A838",fontSize:22,fontWeight:700,letterSpacing:"0.04em",fontFamily:"'DM Serif Display',serif" }}>Together</div>
+            <div style={{ color:"#888D9B",fontSize:14,marginTop:8,animation:"pulse 1.8s ease-in-out infinite" }}>{loadMsg}</div>
+          </div>
+          <div style={{ display:"flex",gap:6,marginTop:4 }}>
+            {[0,1,2].map(i=>(
+              <div key={i} style={{ width:6,height:6,borderRadius:"50%",background:"#E8A838",opacity:0.3,animation:`pulse 1.4s ease-in-out ${i*0.2}s infinite` }}/>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 
@@ -7469,6 +7739,13 @@ export default function TogetherApp() {
               <button onClick={()=>{setShowSett(false);setTourStep(0);setShowTour(true);}} style={{width:"100%",padding:"11px",borderRadius:10,border:`1px solid #9B6EE844`,background:"#9B6EE812",color:"#9B6EE8",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
                 🗺️ Take the App Tour
               </button>
+            </div>
+
+            {/* Restore Backup */}
+            <div style={{marginTop:16,paddingTop:16,borderTop:`1px solid ${T.border}`}}>
+              <div style={{fontSize:12,fontWeight:600,color:T.textMuted,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:4}}>Data & Backups</div>
+              <div style={{fontSize:12,color:T.textMuted,marginBottom:10,lineHeight:1.6}}>Your tasks and all app data are backed up automatically every day. Restore any backup if something goes wrong.</div>
+              <RestoreBackupButton T={T} onRestored={()=>{ setShowSett(false); window.location.reload(); }}/>
             </div>
 
             {/* Push Notifications */}
