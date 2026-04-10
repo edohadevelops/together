@@ -1548,6 +1548,58 @@ function ComprehensiveApp({ names, mode, T, activeUser, onBack }) {
     </div>
   );
 }
+const BUDGET_CATS = [
+  { id:"housing",   label:"Housing",        emoji:"🏠", color:"#3B9EDB" },
+  { id:"food",      label:"Food & Dining",  emoji:"🍽️", color:"#E8A838" },
+  { id:"transport", label:"Transport",      emoji:"🚗", color:"#9B6EE8" },
+  { id:"health",    label:"Health",         emoji:"💊", color:"#3DBF8A" },
+  { id:"education", label:"Education",      emoji:"🎓", color:"#7B61FF" },
+  { id:"faith",     label:"Faith & Giving", emoji:"✦",  color:"#E8C050" },
+  { id:"savings",   label:"Savings",        emoji:"💰", color:"#20B2AA" },
+  { id:"shopping",  label:"Shopping",       emoji:"🛍️", color:"#E84E8A" },
+  { id:"utilities", label:"Utilities",      emoji:"⚡", color:"#E8883A" },
+  { id:"invest",    label:"Investing",      emoji:"📈", color:"#5BAD4E" },
+  { id:"personal",  label:"Personal",       emoji:"🌱", color:"#C8B030" },
+  { id:"sub",       label:"Subscriptions",  emoji:"📱", color:"#8B5CF6" },
+  { id:"other",     label:"Other",          emoji:"📦", color:"#888D9B" },
+];
+
+const BUDGET_MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+const ASSET_CATS = [
+  { id:"cash",      label:"Cash & Savings",  emoji:"💵", color:"#3DBF8A" },
+  { id:"invest",    label:"Investments",     emoji:"📈", color:"#5BAD4E" },
+  { id:"vehicle",   label:"Vehicle",         emoji:"🚗", color:"#9B6EE8" },
+  { id:"property",  label:"Property",        emoji:"🏠", color:"#3B9EDB" },
+  { id:"device",    label:"Electronics",     emoji:"📱", color:"#8B5CF6" },
+  { id:"other",     label:"Other Asset",     emoji:"💎", color:"#E8A838" },
+];
+const LIAB_CATS = [
+  { id:"loan",      label:"Loan",            emoji:"🏦", color:"#E84E8A" },
+  { id:"credit",    label:"Credit Card",     emoji:"💳", color:"#E8704A" },
+  { id:"mortgage",  label:"Mortgage",        emoji:"🏠", color:"#E8883A" },
+  { id:"other",     label:"Other Debt",      emoji:"📋", color:"#888D9B" },
+];
+
+function PieChart({ slices, size=180, T }) {
+  const total = slices.reduce((s,x)=>s+x.value,0);
+  if (!total) return <div style={{ width:size,height:size,borderRadius:"50%",background:T.inputBg,display:"flex",alignItems:"center",justifyContent:"center",color:T.textMuted,fontSize:11 }}>No data</div>;
+  let cum=0;
+  const paths = slices.filter(s=>s.value>0).map(s=>{
+    const pct=s.value/total, a1=cum*2*Math.PI-Math.PI/2, a2=(cum+pct)*2*Math.PI-Math.PI/2;
+    cum+=pct;
+    const r=size/2-6,cx=size/2,cy=size/2;
+    const x1=cx+r*Math.cos(a1),y1=cy+r*Math.sin(a1),x2=cx+r*Math.cos(a2),y2=cy+r*Math.sin(a2);
+    return {...s,d:`M${cx},${cy}L${x1},${y1}A${r},${r} 0 ${pct>.5?1:0},1 ${x2},${y2}Z`,pct};
+  });
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ filter:"drop-shadow(0 4px 12px rgba(0,0,0,0.15))",flexShrink:0 }}>
+      {paths.map((p,i)=><path key={i} d={p.d} fill={p.color} stroke={T.surface} strokeWidth={2}/>)}
+      <circle cx={size/2} cy={size/2} r={size/4.2} fill={T.surface}/>
+    </svg>
+  );
+}
+
 // ── BudgetApp ─────────────────────────────────────────────────────────────────
 function BudgetApp({ names, mode, T, activeUser, onBack }) {
   // ── All hooks first (Rules of Hooks) ─────────────────────────────────────
