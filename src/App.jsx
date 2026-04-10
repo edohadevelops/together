@@ -1133,422 +1133,6 @@ function MiniModal({ title, accent, onClose, onSave, children, T }) {
 
 
 // ══════════════════════════════════════════════════════════════════════════════
-// ── ComprehensiveApp ──────────────────────────────────────────────────────────
-// Exam prep & active recall for Amen (Abstract Algebra, Real Analysis, ODE,
-// AIP) and Gloria (her own courses — she adds her own decks).
-// ══════════════════════════════════════════════════════════════════════════════
-
-const ABSTRACT_CARDS = [
-  { id:1, title:"Definition of a group", tag:"define", body:"A <b>group</b> (G, ★) is an ordered pair where G is a set and ★ is a binary operation satisfying:<br><br><b>(i) Associativity:</b> (a★b)★c = a★(b★c) for all a,b,c ∈ G<br><b>(ii) Identity:</b> ∃ e ∈ G with a★e = e★a = a for all a ∈ G<br><b>(iii) Inverses:</b> For each a ∈ G, ∃ a⁻¹ with a★a⁻¹ = a⁻¹★a = e<br><br>Closure is built into ★ being a binary operation G×G→G. Only 3 axioms.", hint:"Dummit & Foote p.16 — 3 axioms NOT 4. Closure is automatic." },
-  { id:2, title:"Cyclic group", tag:"define", body:"G is <b>cyclic</b> if ∃ g ∈ G such that G = ⟨g⟩ — every element is a power of g. g is called a <b>generator</b>.<br><br>Examples: ℤ = ⟨1⟩ under addition. ℤ/nℤ = ⟨1̄⟩ under addition.<br><br>Every cyclic group is abelian. Number of generators = φ(n).", hint:"φ(n) generators total. A cyclic group of order n has exactly one subgroup per divisor of n." },
-  { id:3, title:"Order of an element", tag:"define", body:"The <b>order</b> |x| of x ∈ G is the <b>smallest positive integer n</b> with xⁿ = e. If none exists, x has infinite order.<br><br><b>Key facts:</b><br>• xᵏ = e ⟺ |x| divides k<br>• ord(xᵏ) = n / gcd(n, k)", hint:"The word POSITIVE is crucial — n=0 always satisfies x⁰=e so it must be smallest POSITIVE." },
-  { id:4, title:"Powers equal {e, x, …, xⁿ⁻¹} — proof", tag:"prove", body:"<b>Proof:</b> By the Division Algorithm write k = qn + r, 0 ≤ r < n.<br><br>xᵏ = x^(qn+r) = (xⁿ)^q · xʳ = eᵍ · xʳ = xʳ<br><br>Since 0 ≤ r < n, xʳ ∈ {e, x, …, xⁿ⁻¹}. ∎<br><br><b>Two tools:</b> Division Algorithm + xⁿ = e.", hint:"WOP gives smallest m. Division Algorithm forces r = 0 by minimality." },
-  { id:5, title:"Orders of powers, generators, subgroup lattice", tag:"compute", body:"If r has order n:<br><br><b>(a)</b> ord(rᵏ) = n / gcd(n, k)<br><b>(b)</b> rᵏ generates ⟨r⟩ ⟺ gcd(n, k) = 1. Number of generators = φ(n).<br><b>(c)</b> One subgroup ⟨r^(n/d)⟩ of order d for each divisor d of n.<br><br>Example n=12: ord(r²)=6, ord(r³)=4, ord(r⁶)=2.", hint:"Subgroup lattice has as many nodes as divisors of n. Lines connect d₁ to d₂ when d₁|d₂ with nothing between." },
-  { id:6, title:"Subgroup criterion", tag:"define", body:"A non-empty H ⊆ G is a subgroup ⟺<br><br><b>For all a, b ∈ H: ab⁻¹ ∈ H</b><br><br>One condition gives three for the price of one:<br>• a=b → e ∈ H (identity)<br>• a=e → b⁻¹ ∈ H (inverses)<br>• combine → ab ∈ H (closure)", hint:"Lead with this in every subgroup proof — it's fastest." },
-  { id:7, title:"Any subgroup of a cyclic group is cyclic", tag:"prove", body:"Let H ≤ ⟨g⟩. If H = {e}, done.<br><br>S = {m ∈ ℤ⁺ : gᵐ ∈ H} is non-empty. By <b>WOP</b>, let m = smallest element.<br><br><b>Claim H = ⟨gᵐ⟩:</b><br>(⊇) Clear. (⊆) For gᵏ ∈ H write k=qm+r. Then gʳ ∈ H so r=0 by minimality. ∎", hint:"WOP → m exists. Division Algorithm → r=0. Minimality bridges them." },
-  { id:8, title:"Center Z(G) — definition", tag:"define", body:"<b>Z(G) = { x ∈ G | xg = gx for all g ∈ G }</b><br><br>Elements that commute with everything in G.<br><br>• Z(G) = G ⟺ G is abelian<br>• Z(D₆) = {e}<br>• Z(D₈) = {e, r²} where r = 90° rotation", hint:"Z(D₂ₙ) = {e, rⁿ} when n even. Z(D₂ₙ) = {e} when n odd." },
-  { id:9, title:"Prove Z(G) is a subgroup", tag:"prove", body:"<b>Non-empty:</b> e ∈ Z(G) since eg=ge. ✓<br><br><b>Closed under ab⁻¹:</b><br>Step 1 — b⁻¹ ∈ Z(G): since bg=gb → gb⁻¹=b⁻¹g. ✓<br>Step 2 — ab⁻¹ ∈ Z(G): (ab⁻¹)g = a(b⁻¹g) = a(gb⁻¹) = (ag)b⁻¹ = (ga)b⁻¹ = g(ab⁻¹). ✓<br><br>So Z(G) ≤ G. ∎", hint:"Show b⁻¹ central first, then combine with a central." },
-  { id:10, title:"Homomorphism definition + consequences", tag:"define", body:"φ: G→H is a <b>homomorphism</b> if <b>φ(ab) = φ(a)φ(b)</b> for all a,b ∈ G.<br><br>Consequences:<br>• φ(eG) = eH<br>• φ(a⁻¹) = φ(a)⁻¹<br>• |φ(a)| divides |a|<br>• Im(φ) ≤ H always", hint:"All four consequences follow from one equation. The image is always a subgroup." },
-  { id:11, title:"Injective iff ker = {e}", tag:"prove", body:"(⟹) Let g ∈ ker. φ(g)=e=φ(eG). By injectivity g=eG. So ker={e}. ✓<br><br>(⟸) Suppose φ(a)=φ(b). Then φ(ab⁻¹)=φ(a)φ(b)⁻¹=e. So ab⁻¹∈ker={e}, meaning a=b. ✓ ∎<br><br><b>Key move:</b> Turn φ(a)=φ(b) into φ(ab⁻¹)=e.", hint:"Both directions use the same algebraic move." },
-  { id:12, title:"Kernel is a normal subgroup", tag:"both", body:"<b>ker(φ) = { g ∈ G | φ(g) = eH }</b><br><br>Subgroup: e∈ker ✓. a,b∈ker → φ(ab⁻¹)=e ✓<br><br><b>Normal</b> — take n∈ker, g∈G:<br>φ(gng⁻¹) = φ(g)·<b>e</b>·φ(g)⁻¹ = e ✓<br>So gng⁻¹ ∈ ker for all g. Therefore ker(φ) ⊴ G. ∎", hint:"Normality is one line: φ(gng⁻¹)=φ(g)eφ(g)⁻¹=e. The e in the middle is because n∈ker." },
-  { id:13, title:"Conjugation f(x)=gxg⁻¹ is an automorphism", tag:"prove", body:"Homo: f(xy)=g(xy)g⁻¹=(gxg⁻¹)(gyg⁻¹)=f(x)f(y) ✓<br>Injective: f(x)=f(y) → x=y (cancel g left, g⁻¹ right) ✓<br>Surjective: preimage of y is g⁻¹yg ✓<br><br>So f is an automorphism. ∎", hint:"Inverse map is conjugation by g⁻¹." },
-  { id:14, title:"Abelian group; squaring map iff abelian", tag:"both", body:"G <b>abelian</b> ⟺ ab=ba for all a,b.<br><br>f(x)=x² is homo ⟺ (ab)²=a²b² ⟺ abab=aabb ⟺ ba=ab ⟺ G abelian. ∎<br><br>Write as a chain of ⟺ — proves both directions simultaneously.", hint:"Chain of equivalences is the cleanest exam presentation." },
-  { id:15, title:"First Isomorphism Theorem", tag:"both", body:"If φ:G→H is a homo then <b>G/ker(φ) ≅ Im(φ)</b>.<br><br>Define Φ(gK)=φ(g). Prove: well-defined → homo → injective → surjective. ∎<br><br>Application: (ℤ×ℤ)/⟨(2,1)⟩ ≅ ℤ via φ(a,b)=a−2b.", hint:"4 steps always in that order: well-defined, homo, injective, surjective." },
-  { id:16, title:"Lagrange's Theorem", tag:"both", body:"If G finite, H≤G: <b>|H| divides |G|</b> and |G|=|H|·[G:H].<br><br>Proof: left cosets partition G. Each has |H| elements. There are [G:H] of them. ∎<br><br>Corollary: |x| divides |G| for all x∈G.", hint:"Lagrange does NOT say every divisor has a subgroup — A₄ has no subgroup of order 6!" },
-  { id:17, title:"Define Aₙ; A₄ has no subgroup of order 6", tag:"both", body:"Aₙ = all even permutations in Sₙ. |Aₙ|=n!/2.<br><br>Suppose H≤A₄, |H|=6. Then [A₄:H]=2 → H⊴A₄ → every x∈A₄ has x²∈H.<br>Computing squares of all 3-cycles gives 7 elements — contradicts |H|=6. ∎", hint:"Normal means closed under conjugation. 1+(conjugacy class sizes) must equal 6 — impossible." },
-  { id:18, title:"G/Z(G) cyclic implies G abelian", tag:"prove", body:"Let G/Z(G)=⟨gZ(G)⟩. Every element of G has form gⁱz (z∈Z(G)).<br><br>For a=gⁱz₁, b=gʲz₂:<br>ab = gⁱz₁gʲz₂ = g^(i+j)z₁z₂ = ba (z₁,z₂ central). ∎", hint:"Contrapositive: non-abelian G → G/Z(G) not cyclic. So G/Z(G) is trivial or non-cyclic." },
-  { id:19, title:"Non-abelian G with abelian G/N", tag:"compute", body:"G=S₃, N=A₃={e,(123),(132)}.<br><br>N normal (index 2 → always normal). ✓<br>G/N ≅ ℤ/2ℤ — abelian. ✓<br>S₃ non-abelian: (12)(13)≠(13)(12). ✓<br><br>By 1st Iso Thm: S₃/A₃ ≅ {±1} ≅ ℤ₂.", hint:"Index-2 subgroups are always normal — key fact to memorise." },
-  { id:20, title:"Class Equation", tag:"both", body:"|G| = |Z(G)| + Σ[G:CG(xᵢ)]<br>(sum over non-central conjugacy class reps)<br><br>Proof: conjugacy classes partition G. Central elements = singletons = Z(G). Non-central class sizes = [G:CG(x)] > 1 by orbit-stabilizer. ∎", hint:"S₃: 6=1+2+3. S₄: 24=1+6+8+6+3. S₅: 120=1+10+15+20+24+20+30." },
-  { id:21, title:"p-group has nontrivial center", tag:"both", body:"<b>Def:</b> |G|=pⁿ for prime p.<br><br>Class Eq: |G|=|Z(G)|+Σ[G:CG(xᵢ)].<br>Each non-central term = p^(n-k) with n-k≥1, so p divides each.<br>p||G| and p|sum → <b>p||Z(G)|</b>.<br>So |Z(G)|≥p>1. ∎", hint:"Most elegant Class Equation application. Learn cold." },
-  { id:22, title:"Cayley's Theorem", tag:"both", body:"Every G ≅ subgroup of a permutation group.<br><br>Step 1: σg(x)=gx is a bijection. ✓<br>Step 2: Γ:G→SG by Γ(g)=σg.<br>Homo: Γ(gh)(x)=ghx=σg(σh(x)). ✓<br>Injective: Γ(g)=Γ(h) → gx=hx for all x → set x=e → g=h. ✓<br><br>So G≅Γ(G)≤SG. ∎", hint:"x=e is chosen because it collapses gx=hx to g=h in one step. Any x works but e is fastest." },
-  { id:23, title:"Solvable groups", tag:"both", body:"G <b>solvable</b> ⟺ chain {e}=G₀⊴…⊴Gₙ=G with each Gᵢ₊₁/Gᵢ abelian.<br><br>Solvable: S₃ ({e}⊴A₃⊴S₃, quotients ℤ₃ and ℤ₂). ✓<br>Not solvable: A₅ (simple, non-abelian). ✗<br><br>Sₙ not solvable for n≥5.", hint:"Galois: polynomial solvable by radicals ⟺ Galois group is solvable." },
-  { id:24, title:"Fundamental Theorem for Finite Abelian Groups", tag:"both", body:"Every finite abelian group ≅ direct product of cyclic p-groups.<br><br><b>Elementary Divisor form:</b> ℤ_{p₁^a₁} × ℤ_{p₂^a₂} × …<br><b>Invariant Factor form:</b> ℤ_{n₁} × … × ℤ_{nₖ} where n₁|…|nₖ<br><br>Order 12: ℤ₄×ℤ₃ or ℤ₂×ℤ₂×ℤ₃ (elem. div.) ≡ ℤ₁₂ or ℤ₂×ℤ₆ (inv. fac.)", hint:"To convert: group elem. divisors by prime, multiply across primes for invariant factors." },
-  { id:25, title:"Sylow's Theorem — all three parts", tag:"define", body:"|G|=pⁿm, p∤m.<br><b>Part 1 (Existence):</b> G has a subgroup of order pⁿ.<br><b>Part 2 (Conjugacy):</b> All Sylow p-subgroups conjugate. nₚ=1 ⟺ unique = normal.<br><b>Part 3 (Count):</b> nₚ≡1(mod p) and nₚ|m.", hint:"Strategy: force nₚ=1 → normal Sylow subgroup → not simple." },
-  { id:26, title:"Simple groups + Sylow to prove non-simplicity", tag:"both", body:"G simple ⟺ no proper normal subgroups.<br><br>To show |G|=441=3²·7² not simple:<br>n₇: divides 9 and ≡1 mod 7 → n₇∈{1,8,15,…}. Only n₇=1 divides 9.<br>So n₇=1 → unique Sylow 7-subgroup is normal → G not simple. ∎", hint:"List nₚ candidates: must satisfy nₚ≡1(mod p) AND nₚ|m. Then show only 1 works." },
-  { id:27, title:"Semidirect product H ⋊_φ K", tag:"define", body:"φ:K→Aut(H). H⋊_φK = H×K with operation:<br><b>(h₁,k₁)(h₂,k₂) = (h₁·φ(k₁)(h₂), k₁k₂)</b><br><br>φ trivial → direct product. D₂ₙ≅Cₙ⋊C₂ where φ(flip)(r)=r⁻¹.<br><br>Key relation: srs⁻¹ = φ(s)(r).", hint:"Once you know φ(s)(r), you can compute the entire multiplication table." },
-];
-
-const ODE_CARDS = [
-  { id:1, title:"1st order linear ODE", tag:"define", body:"Form: <b>y' + P(x)y = Q(x)</b><br><br>Integrating factor: μ(x) = e^(∫P(x)dx)<br><br>Multiply both sides by μ: d/dx[μy] = μQ<br>Integrate both sides: μy = ∫μQ dx<br>Solve for y.", hint:"The integrating factor makes the left side a perfect derivative." },
-  { id:2, title:"Separable ODE", tag:"compute", body:"Form: <b>dy/dx = g(x)h(y)</b><br><br>Separate: dy/h(y) = g(x)dx<br>Integrate both sides.<br><br>Example: dy/dx = xy → dy/y = x dx → ln|y| = x²/2 + C → y = Ae^(x²/2)", hint:"Move all y terms to one side, all x terms to the other, then integrate." },
-  { id:3, title:"2nd order linear ODE — homogeneous", tag:"both", body:"Form: <b>ay'' + by' + cy = 0</b><br><br>Characteristic equation: ar² + br + c = 0<br><br>Cases:<br>• Two real roots r₁≠r₂: y = c₁e^(r₁x) + c₂e^(r₂x)<br>• Repeated root r: y = (c₁+c₂x)e^(rx)<br>• Complex roots α±βi: y = e^(αx)(c₁cos(βx)+c₂sin(βx))", hint:"The characteristic equation replaces y with r, y' with r², etc." },
-  { id:4, title:"Variation of parameters", tag:"prove", body:"For ay''+by'+cy = g(x), given yh = c₁y₁+c₂y₂:<br><br>W = y₁y₂'−y₂y₁' (Wronskian)<br><br>u₁' = −y₂g/aW, u₂' = y₁g/aW<br><br>yp = u₁y₁ + u₂y₂<br>General: y = yh + yp", hint:"Variation of parameters works for any g(x). Undetermined coefficients only works for special forms." },
-  { id:5, title:"Laplace transform — definition and key pairs", tag:"define", body:"<b>L{f(t)} = ∫₀^∞ e^(-st)f(t)dt = F(s)</b><br><br>Key pairs:<br>• L{1} = 1/s<br>• L{t^n} = n!/s^(n+1)<br>• L{e^(at)} = 1/(s-a)<br>• L{sin(bt)} = b/(s²+b²)<br>• L{cos(bt)} = s/(s²+b²)<br>• L{y'} = sY-y(0)", hint:"For IVPs: take Laplace, solve for Y(s) algebraically, take inverse Laplace." },
-  { id:6, title:"Floquet theory — p-group theorem", tag:"both", body:"System x' = A(t)x with A(t) periodic period ω is a <b>Floquet system</b>.<br><br>Floquet multipliers: eigenvalues of C = Φ⁻¹(0)Φ(ω).<br><br>Key result: product of Floquet multipliers = exp(∫₀^ω tr(A(s))ds)<br><br>If tr(A)=0 → product = 1.", hint:"For Mathieu equation y''+( α+βcos t)y=0: tr(A)=0 so μ₁μ₂=1." },
-  { id:7, title:"Lozinski measure μ₁(A)", tag:"compute", body:"μ(A) = lim_{h→0+} (||I+hA||−1)/h<br><br><b>Limit exists because:</b> ||I+θhA||≤θ||I+hA||+(1−θ) → quotient monotone. Bounded below by −||A||. By Monotone Convergence Theorem, limit exists.<br><br><b>Formula for μ₁:</b> μ₁(A) = max_j(a_jj + Σ_{i≠j}|a_ij|) — column sums.", hint:"μ₁ uses COLUMN sums. μ∞ uses ROW sums. Don't mix them up." },
-];
-
-const REAL_CARDS = [
-  { id:1, title:"ε-δ definition of a limit", tag:"define", body:"lim_{x→a} f(x) = L means:<br><br>For every ε > 0, ∃ δ > 0 such that<br>0 < |x−a| < δ ⟹ |f(x)−L| < ε<br><br>Note: x≠a (that's the 0 < |x−a|). The function need not be defined at a.", hint:"ε is the output tolerance. δ is the input tolerance. You pick ε, you find δ." },
-  { id:2, title:"Continuity — definition and types", tag:"define", body:"f is <b>continuous at a</b> if lim_{x→a}f(x) = f(a).<br><br>f is <b>uniformly continuous</b> on S if: for every ε>0, ∃ δ>0 such that |x−y|<δ ⟹ |f(x)−f(y)|<ε for ALL x,y∈S.<br><br>Key: uniform continuity — one δ works for all pairs.", hint:"Uniform continuity: δ depends only on ε, NOT on the point x." },
-  { id:3, title:"Mean Value Theorem", tag:"both", body:"If f continuous on [a,b] and differentiable on (a,b), then ∃ c ∈ (a,b) with:<br><br><b>f'(c) = (f(b)−f(a))/(b−a)</b><br><br>Proof: Apply Rolle's theorem to g(x) = f(x) − [f(a) + (f(b)−f(a))(x−a)/(b−a)].", hint:"MVT = there exists a point where instantaneous rate = average rate." },
-  { id:4, title:"Bolzano-Weierstrass Theorem", tag:"prove", body:"Every bounded sequence in ℝ has a convergent subsequence.<br><br>Proof: Let {xₙ} be bounded, say xₙ ∈ [a,b]. Bisect [a,b] — one half contains infinitely many terms. Bisect that half. Continue. The nested intervals give a convergent subsequence by the nested interval property.", hint:"Bisect and always choose the half with infinitely many terms." },
-  { id:5, title:"Riemann integral — definition", tag:"define", body:"For f:[a,b]→ℝ, partition P = {a=x₀<x₁<…<xₙ=b}.<br><br>Upper sum: U(f,P) = Σ Mᵢ(xᵢ−xᵢ₋₁) where Mᵢ = sup f on [xᵢ₋₁,xᵢ]<br>Lower sum: L(f,P) = Σ mᵢ(xᵢ−xᵢ₋₁)<br><br>f is <b>Riemann integrable</b> if inf U(f,P) = sup L(f,P).", hint:"f integrable ⟺ for every ε>0, ∃ P with U(f,P)−L(f,P)<ε." },
-  { id:6, title:"Fundamental Theorem of Calculus — both parts", tag:"both", body:"<b>Part 1:</b> If f continuous on [a,b], then F(x)=∫ₐˣf(t)dt is differentiable and F'(x)=f(x).<br><br><b>Part 2:</b> If F'=f on [a,b], then ∫ₐᵇf(x)dx = F(b)−F(a).<br><br>Part 1: differentiation undoes integration. Part 2: integration undoes differentiation.", hint:"Part 1 → antiderivative exists. Part 2 → how to compute integrals." },
-  { id:7, title:"Heine-Borel Theorem", tag:"both", body:"A subset S ⊆ ℝⁿ is <b>compact</b> ⟺ S is <b>closed and bounded</b>.<br><br>Proof (⟹): Compact → closed (limit points of sequences are in S) and bounded (take open cover of unit balls).<br>(⟸): Closed and bounded → every sequence has a convergent subsequence (B-W) whose limit is in S (closed).", hint:"Compactness is the key property that makes everything work: max/min exist, continuous functions are uniformly continuous." },
-  { id:8, title:"Weierstrass M-test — uniform convergence", tag:"both", body:"If |fₙ(x)| ≤ Mₙ for all x∈S and Σ Mₙ < ∞, then Σ fₙ converges <b>uniformly and absolutely</b> on S.<br><br>Consequence: if each fₙ is continuous and Σ fₙ converges uniformly, the sum is continuous.", hint:"M-test: bound each term by a number (not depending on x), sum the numbers." },
-];
-
-const AIP_CARDS = [
-  { id:1, title:"Matrix norm induced by vector norm", tag:"define", body:"||A|| = sup_{||x||=1} ||Ax|| = max_{x≠0} ||Ax||/||x||<br><br>Key property: ||Ax|| ≤ ||A||·||x|| for all x.<br><br>Traffic norm: ||A||₁ = max_j Σᵢ|aᵢⱼ| (max column sum)<br>Max norm: ||A||∞ = max_i Σⱼ|aᵢⱼ| (max row sum)", hint:"Traffic norm = column sums. Max norm = row sums. Euclidean norm = sqrt of largest eigenvalue of AᵀA." },
-  { id:2, title:"Lozinski measure — definition and existence", tag:"both", body:"μ(A) = lim_{h→0+} (||I+hA||−1)/h<br><br>Exists because: f(h)=||I+hA|| is convex → difference quotient monotone. Bounded below by −||A|| (reverse triangle inequality). Monotone Convergence Theorem gives limit. ∎<br><br>Properties: |μ(A)|≤||A||, μ(A+B)≤μ(A)+μ(B), Re(λ)≤μ(A) for all eigenvalues λ.", hint:"Proof uses WOP-style argument via Monotone Convergence. Know the textbook proof from Exercise 2.49." },
-  { id:3, title:"Stability via Lozinski measure", tag:"both", body:"If μ(A) < 0, then the trivial solution of x' = Ax is <b>globally asymptotically stable</b>.<br><br>This follows from μ(A) < 0 → all eigenvalues have negative real part → solutions decay to 0.<br><br>Example: if μ₁(A) = −1 < 0 then stable.", hint:"Lozinski measure gives a computable sufficient condition for stability. μ < 0 is sufficient but not necessary." },
-];
-
-function ComprehensiveApp({ names, mode, T, activeUser, onBack }) {
-  const FF = "'DM Sans',sans-serif";
-  const SF = "'DM Serif Display',serif";
-  const compStyle = `
-    .comp-inner { width:100%; padding:16px 16px 100px; box-sizing:border-box; }
-    .comp-grid  { display:grid; grid-template-columns:1fr; gap:16px; width:100%; }
-    .comp-sidebar { display:none; }
-    @media(min-width:768px){
-      .comp-inner { padding:20px 24px 80px; }
-    }
-    @media(min-width:1024px){
-      .comp-inner { padding:24px 3vw 80px; }
-      .comp-grid { grid-template-columns:28% 1fr; gap:2vw; align-items:start; }
-      .comp-sidebar { display:flex; flex-direction:column; gap:12px; position:sticky; top:72px; width:100%; }
-      .comp-main { width:100%; min-width:0; }
-    }
-    @media(min-width:1400px){
-      .comp-inner { padding:28px 4vw 80px; }
-    }
-    .course-tab { flex-shrink:0; padding:7px 16px; border-radius:20px; font-size:13px; cursor:pointer; transition:all .15s; font-family:'DM Sans',sans-serif; }
-    .course-tab-desktop { width:100%; padding:12px 16px; border-radius:12px; font-size:14px; cursor:pointer; transition:all .15s; text-align:left; font-family:'DM Sans',sans-serif; display:flex; align-items:center; gap:10px; box-sizing:border-box; }
-    .nav-btn { padding:8px 18px; border-radius:8px; font-size:13px; cursor:pointer; font-family:'DM Sans',sans-serif; transition:all .15s; }
-    .nav-btn:hover { opacity:0.85; }
-    .action-btn { flex:1; padding:12px; border-radius:10px; border:none; font-size:13px; font-weight:600; cursor:pointer; font-family:'DM Sans',sans-serif; transition:opacity .15s; }
-    .action-btn:hover { opacity:0.88; }
-  `;
-
-  const USER_A_COURSES = [
-    { id:"abstract", label:"Abstract Algebra", color:"#185FA5", emoji:"∑", cards: ABSTRACT_CARDS },
-    { id:"ode",      label:"ODE",              color:"#085041", emoji:"∂", cards: ODE_CARDS },
-    { id:"real",     label:"Real Analysis",    color:"#3C3489", emoji:"ℝ", cards: REAL_CARDS },
-    { id:"aip",      label:"AIP",              color:"#854F0B", emoji:"λ", cards: AIP_CARDS },
-  ];
-
-  const [who,      setWho]      = useState(activeUser || "A");
-  const [course,   setCourse]   = useState("abstract");
-  const [cardIdx,  setCardIdx]  = useState(0);
-  const [phase,    setPhase]    = useState("read");
-  const [readSec,  setReadSec]  = useState(60);
-  const [timerOn,  setTimerOn]  = useState(false);
-  const [known,    setKnown]    = useState({});
-  const [gloriaCards, setGloriaCards] = useState(() => {
-    try { return JSON.parse(localStorage.getItem("gloria_comp_cards") || "[]"); } catch { return []; }
-  });
-  const [showAddCard, setShowAddCard] = useState(false);
-  const [newCard, setNewCard] = useState({ title:"", tag:"define", body:"", hint:"" });
-  const timerRef = useState(null);
-
-  const isA = who === "A";
-  const courses = isA ? USER_A_COURSES : [];
-  const currentCourse = isA ? (courses.find(c => c.id === course) || courses[0]) : null;
-  const cards = isA ? (currentCourse?.cards || []) : gloriaCards;
-  const card = cards[cardIdx];
-  const doneCount = Object.keys(known).filter(k => k.startsWith(who + "_" + (isA ? course : "gloria") + "_") && known[k] === "got").length;
-
-  useEffect(() => {
-    setCardIdx(0);
-    setPhase("read");
-    setReadSec(60);
-    setTimerOn(false);
-  }, [course, who]);
-
-  useEffect(() => {
-    if (!timerOn) return;
-    const iv = setInterval(() => {
-      setReadSec(s => {
-        if (s <= 1) { clearInterval(iv); setTimerOn(false); setPhase("quiz"); return 0; }
-        return s - 1;
-      });
-    }, 1000);
-    return () => clearInterval(iv);
-  }, [timerOn]);
-
-  function startReading() { setPhase("reading"); setReadSec(60); setTimerOn(true); }
-  function skipToQuiz()   { setTimerOn(false); setPhase("quiz"); }
-  function markCard(score) {
-    const key = who + "_" + (isA ? course : "gloria") + "_" + cardIdx;
-    setKnown(k => ({ ...k, [key]: score }));
-    if (cardIdx < cards.length - 1) { setCardIdx(i => i+1); setPhase("read"); setReadSec(60); setTimerOn(false); }
-  }
-  function saveGloriaCard() {
-    if (!newCard.title.trim() || !newCard.body.trim()) return;
-    const updated = [...gloriaCards, { ...newCard, id: Date.now() }];
-    setGloriaCards(updated);
-    try { localStorage.setItem("gloria_comp_cards", JSON.stringify(updated)); } catch {}
-    setNewCard({ title:"", tag:"define", body:"", hint:"" });
-    setShowAddCard(false);
-  }
-  function deleteGloriaCard(idx) {
-    const updated = gloriaCards.filter((_,i) => i !== idx);
-    setGloriaCards(updated);
-    try { localStorage.setItem("gloria_comp_cards", JSON.stringify(updated)); } catch {}
-    if (cardIdx >= updated.length) setCardIdx(Math.max(0, updated.length - 1));
-  }
-
-  const tagColors = { define:["#E6F1FB","#0C447C"], prove:["#FCEBEB","#791F1F"], both:["#EEEDFE","#3C3489"], compute:["#E1F5EE","#085041"] };
-  const s = (style) => ({ fontFamily: FF, ...style });
-  const accentColor = isA ? (currentCourse?.color || "#185FA5") : "#E84E8A";
-
-  return (
-    <div style={{ minHeight:"100vh", background:T.bg, color:T.text }}>
-      <style>{compStyle}</style>
-
-      {/* ── Sticky header ── */}
-      <div style={{ background:T.topbar, borderBottom:`1px solid ${T.border}`, position:"sticky", top:0, zIndex:20 }}>
-        <div style={{ width:"100%", padding:"12px 16px", display:"flex", alignItems:"center", gap:12, boxSizing:"border-box" }}>
-          <button onClick={onBack} style={{ background:"none", border:"none", cursor:"pointer", color:T.textSub, fontSize:20, padding:"0 4px", fontFamily:FF }}>←</button>
-          <div style={{ flex:1 }}>
-            <div style={{ fontFamily:SF, fontSize:18, color:T.text }}>Exam Prep</div>
-            <div style={{ fontSize:11, color:T.textSub, marginTop:1, fontFamily:FF }}>Active recall · {cards.length} cards</div>
-          </div>
-          {/* Who toggle */}
-          <div style={{ display:"flex", gap:6 }}>
-            {["A","B"].map(u => (
-              <button key={u} onClick={()=>{setWho(u);setCourse("abstract");setCardIdx(0);setPhase("read");setTimerOn(false);}}
-                style={{ padding:"6px 16px", borderRadius:20, border:`1px solid ${who===u?(u==="A"?"#E8A838":"#E84E8A"):T.border}`, background:who===u?(u==="A"?"#E8A83820":"#E84E8A20"):"transparent", color:who===u?(u==="A"?"#E8A838":"#E84E8A"):T.textSub, fontSize:13, fontWeight:who===u?700:400, cursor:"pointer", fontFamily:FF }}>
-                {names[u]}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* ── Mobile course tabs (horizontal scroll, hidden on desktop) ── */}
-        {isA && (
-          <div style={{ display:"flex", gap:8, overflowX:"auto", padding:"0 16px 12px", width:"100%", boxSizing:"border-box" }} className="hide-on-desktop">
-            <style>{`@media(min-width:1024px){.hide-on-desktop{display:none!important}}`}</style>
-            {USER_A_COURSES.map(c => (
-              <button key={c.id} onClick={()=>setCourse(c.id)} className="course-tab"
-                style={{ border:`1px solid ${course===c.id?c.color:T.border}`, background:course===c.id?c.color+"20":"transparent", color:course===c.id?c.color:T.textSub, fontWeight:course===c.id?700:400 }}>
-                {c.emoji} {c.label}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* ── Main content area ── */}
-      <div className="comp-inner">
-        <div className="comp-grid">
-
-          {/* ── SIDEBAR (desktop only) ── */}
-          <div className="comp-sidebar">
-            {isA ? (
-              <>
-                <div style={{ fontFamily:SF, fontSize:15, color:T.text, marginBottom:4 }}>Courses</div>
-                {USER_A_COURSES.map(c => (
-                  <button key={c.id} onClick={()=>setCourse(c.id)} className="course-tab-desktop"
-                    style={{ border:`1px solid ${course===c.id?c.color:T.border}`, background:course===c.id?c.color+"18":T.surface, color:course===c.id?c.color:T.text, fontWeight:course===c.id?600:400 }}>
-                    <span style={{ fontSize:18 }}>{c.emoji}</span>
-                    <div style={{ flex:1 }}>
-                      <div style={{ fontSize:14, fontWeight:course===c.id?600:400 }}>{c.label}</div>
-                      <div style={{ fontSize:11, color:T.textSub, marginTop:1 }}>{c.cards.length} cards</div>
-                    </div>
-                    {course===c.id && <span style={{ fontSize:12, color:c.color }}>●</span>}
-                  </button>
-                ))}
-                {/* Desktop stats */}
-                <div style={{ background:T.surface, border:`1px solid ${T.border}`, borderRadius:12, padding:"16px", marginTop:4 }}>
-                  <div style={{ fontFamily:SF, fontSize:14, color:T.text, marginBottom:12 }}>Session progress</div>
-                  {[[cards.length,"Total cards"],[doneCount,"Mastered"],[cards.length-doneCount,"Remaining"]].map(([n,l])=>(
-                    <div key={l} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"6px 0", borderBottom:`1px solid ${T.border}` }}>
-                      <span style={{ fontSize:12, color:T.textSub, fontFamily:FF }}>{l}</span>
-                      <span style={{ fontSize:16, fontWeight:600, color:T.text, fontFamily:FF }}>{n}</span>
-                    </div>
-                  ))}
-                  <div style={{ marginTop:12 }}>
-                    <div style={{ display:"flex", justifyContent:"space-between", fontSize:11, color:T.textSub, marginBottom:5, fontFamily:FF }}>
-                      <span>Mastered</span><span>{Math.round(doneCount/Math.max(cards.length,1)*100)}%</span>
-                    </div>
-                    <div style={{ height:6, background:T.border, borderRadius:3 }}>
-                      <div style={{ height:6, borderRadius:3, background:accentColor, width:`${Math.round(doneCount/Math.max(cards.length,1)*100)}%`, transition:"width .4s" }}/>
-                    </div>
-                  </div>
-                </div>
-                {/* Card navigator desktop */}
-                {cards.length > 0 && (
-                  <div style={{ display:"flex", gap:8 }}>
-                    <button onClick={()=>{setCardIdx(i=>Math.max(0,i-1));setPhase("read");setTimerOn(false);}} className="nav-btn" style={{ flex:1, border:`1px solid ${T.border}`, background:T.inputBg, color:T.textSub }}>← Prev</button>
-                    <button onClick={()=>{setCardIdx(i=>Math.min(cards.length-1,i+1));setPhase("read");setTimerOn(false);}} className="nav-btn" style={{ flex:1, border:`1px solid ${T.border}`, background:T.inputBg, color:T.textSub }}>Next →</button>
-                    <button onClick={()=>{setCardIdx(Math.floor(Math.random()*cards.length));setPhase("read");setTimerOn(false);}} className="nav-btn" style={{ border:`1px solid ${T.border}`, background:T.inputBg, color:T.textSub }}>↺</button>
-                  </div>
-                )}
-              </>
-            ) : (
-              <>
-                <div style={{ fontFamily:SF, fontSize:15, color:T.text, marginBottom:8 }}>Gloria's cards</div>
-                <button onClick={()=>setShowAddCard(true)} style={{ width:"100%", padding:"12px", borderRadius:12, border:"1px solid #E84E8A44", background:"#E84E8A12", color:"#E84E8A", fontSize:13, fontWeight:600, cursor:"pointer", fontFamily:FF }}>
-                  + Add a card
-                </button>
-                {gloriaCards.length > 0 && (
-                  <div style={{ background:T.surface, border:`1px solid ${T.border}`, borderRadius:12, padding:"16px" }}>
-                    <div style={{ fontFamily:SF, fontSize:14, color:T.text, marginBottom:12 }}>Progress</div>
-                    <div style={{ fontSize:12, color:T.textSub, fontFamily:FF }}>{doneCount} of {gloriaCards.length} mastered</div>
-                    <div style={{ height:6, background:T.border, borderRadius:3, marginTop:8 }}>
-                      <div style={{ height:6, borderRadius:3, background:"#E84E8A", width:`${Math.round(doneCount/Math.max(gloriaCards.length,1)*100)}%`, transition:"width .4s" }}/>
-                    </div>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-
-          {/* ── MAIN CONTENT ── */}
-          <div className="comp-main">
-
-            {/* Mobile stats row */}
-            {cards.length > 0 && (
-              <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:8, marginBottom:16 }}>
-                {[["Cards",cards.length],["Done",doneCount],["Left",cards.length-doneCount]].map(([l,n])=>(
-                  <div key={l} style={{ background:T.surface, border:`1px solid ${T.border}`, borderRadius:10, padding:"10px 8px", textAlign:"center", fontFamily:FF }}>
-                    <div style={{ fontSize:20, fontWeight:600, color:T.text }}>{n}</div>
-                    <div style={{ fontSize:11, color:T.textSub, marginTop:1 }}>{l}</div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Mobile progress bar */}
-            {cards.length > 0 && (
-              <div style={{ marginBottom:16 }}>
-                <div style={{ display:"flex", justifyContent:"space-between", fontSize:11, color:T.textSub, marginBottom:5, fontFamily:FF }}>
-                  <span>Card {cardIdx+1} of {cards.length}</span>
-                  <span>{Math.round(doneCount/Math.max(cards.length,1)*100)}% mastered</span>
-                </div>
-                <div style={{ height:5, background:T.border, borderRadius:3 }}>
-                  <div style={{ height:5, borderRadius:3, background:accentColor, width:`${Math.round((cardIdx+1)/cards.length*100)}%`, transition:"width .4s" }}/>
-                </div>
-              </div>
-            )}
-
-            {/* Gloria add button (mobile) */}
-            {!isA && (
-              <div style={{ marginBottom:16 }}>
-                <button onClick={()=>setShowAddCard(true)} style={{ padding:"10px 20px", borderRadius:10, border:"1px solid #E84E8A44", background:"#E84E8A12", color:"#E84E8A", fontSize:13, fontWeight:600, cursor:"pointer", fontFamily:FF }}>
-                  + Add a card
-                </button>
-              </div>
-            )}
-
-            {/* Empty state */}
-            {cards.length === 0 && (
-              <div style={{ textAlign:"center", padding:"64px 24px", color:T.textSub, fontFamily:FF }}>
-                <div style={{ fontSize:48, marginBottom:16 }}>📚</div>
-                <div style={{ fontFamily:SF, fontSize:20, color:T.text, marginBottom:8 }}>No cards yet, {names[who]}</div>
-                <div style={{ fontSize:13, lineHeight:1.7, maxWidth:340, margin:"0 auto" }}>Add your first exam prep card using the button above. You can add definitions, proofs, or any topic you need to memorise.</div>
-              </div>
-            )}
-
-            {/* ── Flash card ── */}
-            {card && (
-              <div style={{ background:T.surface, border:`1px solid ${T.border}`, borderRadius:16, padding:"20px", marginBottom:14, fontFamily:FF }}>
-                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14 }}>
-                  <span style={{ fontSize:12, color:T.textMuted }}>Card {cardIdx+1} / {cards.length}</span>
-                  <div style={{ display:"flex", gap:6, alignItems:"center" }}>
-                    <span style={{ fontSize:11, fontWeight:600, padding:"3px 10px", borderRadius:20, background:tagColors[card.tag]?.[0]||"#eee", color:tagColors[card.tag]?.[1]||"#333" }}>{(card.tag||"define").toUpperCase()}</span>
-                    {!isA && <button onClick={()=>deleteGloriaCard(cardIdx)} style={{ background:"none", border:"none", cursor:"pointer", color:T.textMuted, fontSize:14, padding:"0 2px" }}>✕</button>}
-                  </div>
-                </div>
-                <div style={{ fontFamily:SF, fontSize:19, color:T.text, marginBottom:14, lineHeight:1.4 }}>{card.title}</div>
-                <div style={{ fontSize:14, color:T.textSub, lineHeight:1.85 }} dangerouslySetInnerHTML={{ __html: card.body }}/>
-                {card.hint && phase !== "read" && (
-                  <div style={{ marginTop:14, padding:"10px 14px", background:T.inputBg, borderLeft:`3px solid ${accentColor}`, fontSize:12.5, color:T.textSub, lineHeight:1.6, fontFamily:FF }}>{card.hint}</div>
-                )}
-              </div>
-            )}
-
-            {/* Timer bar */}
-            {card && phase === "reading" && (
-              <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:14, fontFamily:FF }}>
-                <div style={{ flex:1, height:5, background:T.border, borderRadius:3 }}>
-                  <div style={{ height:5, borderRadius:3, background:accentColor, width:`${(readSec/60)*100}%`, transition:"width 1s linear" }}/>
-                </div>
-                <span style={{ fontSize:13, color:T.textSub, minWidth:32 }}>{readSec}s</span>
-              </div>
-            )}
-
-            {/* Quiz box */}
-            {card && phase === "quiz" && (
-              <div style={{ background:isA?"#EEEDFE":"#FBEAF0", border:`1px solid ${accentColor}`, borderRadius:14, padding:"16px", marginBottom:14, fontFamily:FF }}>
-                <div style={{ fontSize:11, fontWeight:700, color:accentColor, letterSpacing:"0.07em", marginBottom:8 }}>QUIZ — answer in chat below</div>
-                <div style={{ fontSize:15, fontWeight:500, color:isA?"#26215C":"#4B1528", lineHeight:1.55, marginBottom:8 }}>
-                  {card.tag==="define"?`Define: ${card.title}`:card.tag==="prove"?`Prove: ${card.title}`:card.tag==="both"?`State and prove: ${card.title}`:`Compute/apply: ${card.title}`}
-                </div>
-                <div style={{ fontSize:12, color:T.textSub, fontStyle:"italic" }}>Type your answer in chat. Mark yourself honestly below.</div>
-              </div>
-            )}
-
-            {/* Action buttons */}
-            {card && (
-              <div style={{ display:"flex", gap:10, marginBottom:16 }}>
-                {phase==="read" && (
-                  <button onClick={startReading} className="action-btn" style={{ background:accentColor, color:"#fff" }}>
-                    Start reading (60s)
-                  </button>
-                )}
-                {phase==="reading" && (<>
-                  <button onClick={skipToQuiz} className="action-btn" style={{ background:accentColor, color:"#fff" }}>I'm ready — quiz me</button>
-                  <button onClick={skipToQuiz} className="action-btn" style={{ background:T.inputBg, color:T.textSub, border:`1px solid ${T.border}` }}>Skip</button>
-                </>)}
-                {phase==="quiz" && (<>
-                  <button onClick={()=>markCard("got")}     className="action-btn" style={{ background:"#085041", color:"#fff" }}>Got it</button>
-                  <button onClick={()=>markCard("partial")} className="action-btn" style={{ background:"#854F0B", color:"#fff" }}>Partial</button>
-                  <button onClick={()=>markCard("missed")}  className="action-btn" style={{ background:"#791F1F", color:"#fff" }}>Missed</button>
-                </>)}
-              </div>
-            )}
-
-            {/* Mobile card navigator */}
-            {cards.length > 0 && (
-              <div style={{ display:"flex", gap:8, marginBottom:16 }} className="hide-on-desktop-flex">
-                <style>{`@media(min-width:1024px){.hide-on-desktop-flex{display:none!important}}`}</style>
-                <button onClick={()=>{setCardIdx(i=>Math.max(0,i-1));setPhase("read");setTimerOn(false);}} className="nav-btn" style={{ flex:1, border:`1px solid ${T.border}`, background:T.inputBg, color:T.textSub }}>← Prev</button>
-                <button onClick={()=>{setCardIdx(i=>Math.min(cards.length-1,i+1));setPhase("read");setTimerOn(false);}} className="nav-btn" style={{ flex:1, border:`1px solid ${T.border}`, background:T.inputBg, color:T.textSub }}>Next →</button>
-                <button onClick={()=>{setCardIdx(Math.floor(Math.random()*cards.length));setPhase("read");setTimerOn(false);}} className="nav-btn" style={{ border:`1px solid ${T.border}`, background:T.inputBg, color:T.textSub }}>↺</button>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* ── Gloria add card modal ── */}
-      {showAddCard && (
-        <div style={{ position:"fixed", inset:0, zIndex:50, background:"rgba(0,0,0,0.6)", backdropFilter:"blur(4px)", display:"flex", alignItems:"center", justifyContent:"center", padding:16 }} onClick={()=>setShowAddCard(false)}>
-          <div style={{ background:T.surface, width:"100%", maxWidth:520, borderRadius:18, padding:"24px", maxHeight:"90vh", overflowY:"auto", fontFamily:FF }} onClick={e=>e.stopPropagation()}>
-            <div style={{ fontFamily:SF, fontSize:20, color:T.text, marginBottom:4 }}>Add exam prep card</div>
-            <div style={{ fontSize:12, color:T.textSub, marginBottom:20 }}>for {names["B"]}</div>
-            {[["Title / Question","title","text"],["Answer / Full content","body","textarea"],["Hint (optional)","hint","text"]].map(([lbl,field,type])=>(
-              <div key={field} style={{ marginBottom:14 }}>
-                <div style={{ fontSize:12, fontWeight:600, color:T.textSub, marginBottom:5 }}>{lbl}</div>
-                {type==="textarea"
-                  ? <textarea value={newCard[field]} onChange={e=>setNewCard(c=>({...c,[field]:e.target.value}))} rows={5} style={{ width:"100%", padding:"10px 12px", borderRadius:10, border:`1px solid ${T.border}`, background:T.inputBg, color:T.text, fontSize:13, resize:"vertical", fontFamily:FF, boxSizing:"border-box" }}/>
-                  : <input value={newCard[field]} onChange={e=>setNewCard(c=>({...c,[field]:e.target.value}))} style={{ width:"100%", padding:"10px 12px", borderRadius:10, border:`1px solid ${T.border}`, background:T.inputBg, color:T.text, fontSize:13, fontFamily:FF, boxSizing:"border-box" }}/>
-                }
-              </div>
-            ))}
-            <div style={{ marginBottom:18 }}>
-              <div style={{ fontSize:12, fontWeight:600, color:T.textSub, marginBottom:8 }}>Card type</div>
-              <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
-                {["define","prove","both","compute"].map(t=>(
-                  <button key={t} onClick={()=>setNewCard(c=>({...c,tag:t}))} style={{ padding:"7px 16px", borderRadius:20, border:`1px solid ${newCard.tag===t?"#E84E8A":T.border}`, background:newCard.tag===t?"#E84E8A20":"transparent", color:newCard.tag===t?"#E84E8A":T.textSub, fontSize:12, cursor:"pointer", fontWeight:newCard.tag===t?700:400, fontFamily:FF }}>{t.toUpperCase()}</button>
-                ))}
-              </div>
-            </div>
-            <div style={{ display:"flex", gap:10 }}>
-              <button onClick={saveGloriaCard} style={{ flex:1, padding:"12px", borderRadius:10, border:"none", background:"#E84E8A", color:"#fff", fontSize:14, fontWeight:600, cursor:"pointer", fontFamily:FF }}>Save card</button>
-              <button onClick={()=>setShowAddCard(false)} style={{ padding:"12px 20px", borderRadius:10, border:`1px solid ${T.border}`, background:T.inputBg, color:T.textSub, fontSize:14, cursor:"pointer", fontFamily:FF }}>Cancel</button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-// ── BudgetApp ─────────────────────────────────────────────────────────────────
 // ── BudgetApp ─────────────────────────────────────────────────────────────────
 // Full-featured budget tracker with income, expenses, savings goals,
 // per-user views, shared view, pie chart, and history.
@@ -2685,8 +2269,7 @@ function BudgetTour({ step, setStep, onClose, T, mode }) {
   );
 }
 
-
-
+// ── BudgetApp ─────────────────────────────────────────────────────────────────
 function BudgetApp({ names, mode, T, activeUser, onBack }) {
   // ── All hooks first (Rules of Hooks) ─────────────────────────────────────
   const [cats,      setCatsState]    = useState(null);  // budget category limits
@@ -3763,6 +3346,982 @@ function BudgetApp({ names, mode, T, activeUser, onBack }) {
       {showDebt&&<DebtForm data={newDebt} setData={setNewDebt} onSave={addDebt} onClose={()=>setShowDebt(false)} T={T} mode={mode}/>}
       {editDebt&&<DebtForm data={editDebt} setData={setEditDebt} onSave={saveEditDebt} onClose={()=>setEditDebt(null)} T={T} mode={mode}/>}
       {showTour&&<BudgetTour step={tourStep} setStep={setTourStep} onClose={finishTour} T={T} mode={mode}/>}
+    </div>
+  );
+}
+
+
+
+
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ── MonthlyGoalsView — Recurring monthly growth targets ───────────────────────
+// Each "goal card" is a template that resets every month.
+// The user marks how many they've done. Tracks streaks month over month.
+// ══════════════════════════════════════════════════════════════════════════════
+
+const MG_CATS = [
+  { id:"faith",      label:"Faith",          emoji:"🙏", color:"#9B6EE8" },
+  { id:"relation",   label:"Relationship",   emoji:"💛", color:"#E84E8A" },
+  { id:"growth",     label:"Personal Growth",emoji:"🌱", color:"#3DBF8A" },
+  { id:"finance",    label:"Finance",        emoji:"💰", color:"#E8A838" },
+  { id:"leadership", label:"Leadership",     emoji:"🧭", color:"#3B9EDB" },
+  { id:"health",     label:"Health",         emoji:"💪", color:"#5BAD4E" },
+  { id:"mentor",     label:"Mentorship",     emoji:"📋", color:"#8B5CF6" },
+  { id:"entertain",  label:"Entertainment",  emoji:"🎬", color:"#E8704A" },
+  { id:"other",      label:"Other",          emoji:"📦", color:"#888D9B" },
+];
+
+const MG_CSS = `
+  .mg-card { transition: transform 0.15s cubic-bezier(.34,1.56,.64,1), box-shadow 0.15s; }
+  .mg-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.12); }
+  .mg-pip { transition: all 0.2s cubic-bezier(.34,1.56,.64,1); cursor: pointer; }
+  .mg-pip:hover { transform: scale(1.2); }
+  .mg-scroll { display:flex; gap:8px; overflow-x:auto; scrollbar-width:none; padding-bottom:4px; }
+  .mg-scroll::-webkit-scrollbar { display:none; }
+  .mg-fade { animation: mgFade 0.25s ease forwards; }
+  @keyframes mgFade { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
+  .mg-progress-bar { transition: width 0.6s cubic-bezier(.34,1.56,.64,1); }
+`;
+
+const MG_MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+function MonthlyGoalsView({ activeUser, names, T, mode, TODAY, genId }) {
+  const [templates, setTemplatesState] = useState(null); // the goal definitions
+  const [progress,  setProgressState]  = useState(null); // { "2026-04": { [goalId]: count } }
+  const [viewMonth, setViewMonth]       = useState(new Date().getMonth());
+  const [viewYear,  setViewYear]        = useState(new Date().getFullYear());
+  const [catFilter, setCatFilter]       = useState(null);
+  const [showAdd,   setShowAdd]         = useState(false);
+  const [editGoal,  setEditGoal]        = useState(null);
+  const [ownerF,    setOwnerF]          = useState("all");
+
+  const blank = { title:"", category:"growth", target:1, unit:"video", owner:activeUser||"A", notes:"", emoji:"" };
+  const [draft, setDraft] = useState({...blank});
+
+  const monthKey = `${viewYear}-${String(viewMonth+1).padStart(2,"0")}`;
+  const todayKey = `${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,"0")}`;
+  const isCurrentMonth = monthKey === todayKey;
+
+  useEffect(()=>{
+    (async()=>{
+      const [t,p] = await Promise.all([dbGet("mg_templates"),dbGet("mg_progress")]);
+      setTemplatesState(t??[]);
+      setProgressState(p??{});
+    })();
+  },[]);
+
+  function saveT(list){ setTemplatesState(list); dbSet("mg_templates",list); }
+  function saveP(map){  setProgressState(map);   dbSet("mg_progress",map);  }
+
+  function getCount(goalId){ return (progress?.[monthKey]?.[goalId])||0; }
+  function setCount(goalId, val){
+    const tmpl = (templates||[]).find(t=>t.id===goalId);
+    if(!tmpl) return;
+    const newCount = Math.max(0, Math.min(tmpl.target, val));
+    const updated = { ...progress, [monthKey]: { ...(progress?.[monthKey]||{}), [goalId]: newCount } };
+    saveP(updated);
+  }
+  function increment(goalId){ setCount(goalId, getCount(goalId)+1); }
+  function decrement(goalId){ setCount(goalId, getCount(goalId)-1); }
+
+  function addGoal(){
+    if(!draft.title.trim()) return;
+    saveT([...(templates||[]),{...draft,id:genId(),createdAt:TODAY,target:parseInt(draft.target)||1}]);
+    setDraft({...blank}); setShowAdd(false);
+  }
+  function saveEdit(){
+    saveT((templates||[]).map(t=>t.id===editGoal.id?{...editGoal,target:parseInt(editGoal.target)||1}:t));
+    setEditGoal(null);
+  }
+  function deleteGoal(id){
+    saveT((templates||[]).filter(t=>t.id!==id));
+  }
+
+  // Streak — how many consecutive months this goal was completed
+  function getStreak(goalId, target){
+    if(!progress) return 0;
+    let streak=0, y=viewYear, m=viewMonth-1;
+    // Don't count current month in streak — only past months
+    while(true){
+      if(m<0){ m=11; y--; }
+      const k=`${y}-${String(m+1).padStart(2,"0")}`;
+      const cnt=(progress[k]?.[goalId])||0;
+      if(cnt>=target) streak++;
+      else break;
+      m--;
+      if(streak>12) break;
+    }
+    return streak;
+  }
+
+  // Month summary stats
+  const myTemplates = (templates||[]).filter(t=>
+    (ownerF==="all" || t.owner===ownerF || t.owner==="shared") &&
+    (!catFilter || t.category===catFilter)
+  );
+  const totalGoals    = myTemplates.length;
+  const completedGoals= myTemplates.filter(t=>getCount(t.id)>=t.target).length;
+  const inProgressGoals=myTemplates.filter(t=>getCount(t.id)>0&&getCount(t.id)<t.target).length;
+  const totalItems    = myTemplates.reduce((s,t)=>s+t.target,0);
+  const doneItems     = myTemplates.reduce((s,t)=>s+Math.min(getCount(t.id),t.target),0);
+  const overallPct    = totalItems>0 ? Math.round((doneItems/totalItems)*100) : 0;
+
+  const catOf = id => MG_CATS.find(c=>c.id===id)||MG_CATS[MG_CATS.length-1];
+
+  const inp  = { width:"100%",background:T.inputBg,border:`1px solid ${T.border}`,borderRadius:10,padding:"10px 12px",color:T.text,fontFamily:"'DM Sans',sans-serif",fontSize:13,outline:"none",boxSizing:"border-box" };
+  const sel  = { ...inp,background:mode==="dark"?"#181B23":"#fff",cursor:"pointer" };
+  const lbl  = { fontSize:11,fontWeight:700,letterSpacing:"0.08em",textTransform:"uppercase",color:T.textMuted,display:"block",marginBottom:5,marginTop:14,fontFamily:"'DM Sans',sans-serif" };
+  const card = (ex={}) => ({ background:T.surface,border:`1px solid ${T.border}`,borderRadius:16,boxShadow:"0 2px 10px rgba(0,0,0,0.07)",...ex });
+
+  if(templates===null||progress===null) return (
+    <div style={{ padding:40,textAlign:"center",color:T.textSub,fontFamily:"'DM Sans',sans-serif" }}>
+      <div style={{ fontSize:36,marginBottom:12 }}>📅</div><div>Loading monthly goals...</div>
+    </div>
+  );
+
+  // Group by category
+  const grouped = MG_CATS.map(cat=>({
+    ...cat, goals: myTemplates.filter(t=>t.category===cat.id)
+  })).filter(g=>g.goals.length>0);
+
+  return (
+    <div style={{ paddingBottom:80,fontFamily:"'DM Sans',sans-serif" }}>
+      <style>{MG_CSS}</style>
+
+      {/* ── HEADER ── */}
+      <div style={{ padding:"20px 16px 0" }}>
+        <div style={{ display:"flex",alignItems:"flex-start",justifyContent:"space-between",flexWrap:"wrap",gap:10,marginBottom:16 }}>
+          <div>
+            <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:26,color:T.text,marginBottom:3 }}>📅 Monthly Goals</div>
+            <div style={{ fontSize:13,color:T.textSub }}>Recurring things you want to do every single month — no exceptions.</div>
+          </div>
+          <button onClick={()=>{setDraft({...blank,owner:activeUser||"A"});setShowAdd(true);}} style={{ height:36,padding:"0 16px",borderRadius:10,border:"none",background:T.accent||"#9B6EE8",color:"#fff",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,flexShrink:0 }}>+ Add Goal</button>
+        </div>
+
+        {/* ── MONTH NAVIGATOR ── */}
+        <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16,...card(),padding:"12px 16px" }}>
+          <button onClick={()=>{ let m=viewMonth-1,y=viewYear; if(m<0){m=11;y--;} setViewMonth(m);setViewYear(y); }}
+            style={{ width:34,height:34,borderRadius:9,border:`1px solid ${T.border}`,background:T.inputBg,cursor:"pointer",fontSize:18,color:T.textSub,display:"flex",alignItems:"center",justifyContent:"center" }}>‹</button>
+          <div style={{ textAlign:"center" }}>
+            <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:22,color:T.text,lineHeight:1 }}>{MG_MONTHS[viewMonth]} {viewYear}</div>
+            {isCurrentMonth
+              ? <div style={{ fontSize:11,color:T.accent||"#9B6EE8",fontWeight:700,marginTop:3 }}>This Month</div>
+              : <div style={{ fontSize:11,color:T.textMuted,marginTop:3,cursor:"pointer" }} onClick={()=>{setViewMonth(new Date().getMonth());setViewYear(new Date().getFullYear());}}>← Back to current</div>
+            }
+          </div>
+          <button onClick={()=>{ let m=viewMonth+1,y=viewYear; if(m>11){m=0;y++;} setViewMonth(m);setViewYear(y); }}
+            style={{ width:34,height:34,borderRadius:9,border:`1px solid ${T.border}`,background:T.inputBg,cursor:"pointer",fontSize:18,color:T.textSub,display:"flex",alignItems:"center",justifyContent:"center" }}>›</button>
+        </div>
+
+        {/* ── MONTH SUMMARY CARDS ── */}
+        {templates.length>0&&(
+          <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(min(100%,160px),1fr))",gap:10,marginBottom:16 }}>
+            {[
+              { l:"Overall",     v:`${overallPct}%`,          c:overallPct===100?"#3DBF8A":overallPct>50?"#E8A838":"#9B6EE8", sub:`${doneItems}/${totalItems} items` },
+              { l:"Completed",   v:`${completedGoals}`,       c:"#3DBF8A", sub:`of ${totalGoals} goals` },
+              { l:"In Progress", v:`${inProgressGoals}`,      c:"#E8A838", sub:"started" },
+              { l:"Not started", v:`${totalGoals-completedGoals-inProgressGoals}`, c:"#888D9B", sub:"remaining" },
+            ].map(s=>(
+              <div key={s.l} style={{ ...card(),padding:"12px 14px",borderLeft:`4px solid ${s.c}` }}>
+                <div style={{ fontSize:22,fontWeight:800,color:T.text,lineHeight:1 }}>{s.v}</div>
+                <div style={{ fontSize:10,fontWeight:700,color:T.textSub,marginTop:3,textTransform:"uppercase",letterSpacing:"0.08em" }}>{s.l}</div>
+                <div style={{ fontSize:11,color:s.c,marginTop:2,fontWeight:600 }}>{s.sub}</div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Overall progress bar */}
+        {templates.length>0&&(
+          <div style={{ ...card(),padding:"14px 16px",marginBottom:16 }}>
+            <div style={{ display:"flex",justifyContent:"space-between",marginBottom:8,fontSize:13 }}>
+              <span style={{ fontWeight:700,color:T.text }}>{MG_MONTHS[viewMonth]} Progress</span>
+              <span style={{ fontWeight:800,color:overallPct===100?"#3DBF8A":overallPct>50?"#E8A838":"#9B6EE8" }}>{overallPct}%</span>
+            </div>
+            <div style={{ height:10,background:T.inputBg,borderRadius:10,overflow:"hidden" }}>
+              <div className="mg-progress-bar" style={{ height:"100%",width:`${overallPct}%`,background:overallPct===100?"linear-gradient(90deg,#3DBF8A,#20B2AA)":overallPct>50?"linear-gradient(90deg,#E8A838,#3DBF8A)":"linear-gradient(90deg,#9B6EE8,#3B9EDB)",borderRadius:10 }}/>
+            </div>
+            <div style={{ display:"flex",justifyContent:"space-between",marginTop:6,fontSize:11,color:T.textMuted }}>
+              <span>{doneItems} items done</span><span>{totalItems-doneItems} remaining</span>
+            </div>
+          </div>
+        )}
+
+        {/* Filters */}
+        <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8,flexWrap:"wrap",gap:8 }}>
+          <div className="mg-scroll" style={{ flex:1 }}>
+            <button onClick={()=>setCatFilter(null)} style={{ padding:"5px 12px",borderRadius:20,border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:!catFilter?700:500,background:!catFilter?T.accent||"#9B6EE8":"transparent",color:!catFilter?"#fff":T.textSub,outline:!catFilter?"none":`1px solid ${T.border}`,flexShrink:0 }}>All</button>
+            {MG_CATS.filter(c=>myTemplates.some(t=>t.category===c.id)).map(cat=>(
+              <button key={cat.id} onClick={()=>setCatFilter(catFilter===cat.id?null:cat.id)} style={{ padding:"5px 12px",borderRadius:20,border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:catFilter===cat.id?700:500,background:catFilter===cat.id?cat.color:"transparent",color:catFilter===cat.id?"#fff":T.textSub,outline:catFilter===cat.id?"none":`1px solid ${T.border}`,flexShrink:0,whiteSpace:"nowrap" }}>
+                {cat.emoji} {cat.label}
+              </button>
+            ))}
+          </div>
+          <div style={{ display:"flex",gap:5,flexShrink:0 }}>
+            {[["all","All"],["A",names.A],["B",names.B]].map(([v,l])=>(
+              <button key={v} onClick={()=>setOwnerF(v)} style={{ padding:"5px 10px",borderRadius:20,border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:ownerF===v?700:500,background:ownerF===v?"#20B2AA":"transparent",color:ownerF===v?"#fff":T.textSub,outline:ownerF===v?"none":`1px solid ${T.border}` }}>{l}</button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ── EMPTY STATE ── */}
+      {templates.length===0&&(
+        <div style={{ padding:"40px 24px",textAlign:"center" }}>
+          <div style={{ fontSize:56,marginBottom:16 }}>📅</div>
+          <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:22,color:T.text,marginBottom:8 }}>Build your monthly rhythm</div>
+          <div style={{ fontSize:13,color:T.textSub,lineHeight:1.9,maxWidth:380,margin:"0 auto 24px" }}>
+            What do you want to do <em>every single month</em> without fail?<br/>
+            2 marriage sermons. 4 Dolapo Lawal videos. 1 finance book.<br/>
+            Set it once — track it every month.
+          </div>
+          <button onClick={()=>{setDraft({...blank,owner:activeUser||"A"});setShowAdd(true);}} style={{ padding:"12px 28px",borderRadius:12,border:"none",background:T.accent||"#9B6EE8",color:"#fff",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:700 }}>Add Your First Monthly Goal</button>
+        </div>
+      )}
+
+      {/* ── GOAL CARDS ── */}
+      <div style={{ padding:"0 16px" }}>
+        {grouped.map(group=>(
+          <div key={group.id} style={{ marginBottom:28 }} className="mg-fade">
+            {/* Category header */}
+            <div style={{ display:"flex",alignItems:"center",gap:8,marginBottom:12 }}>
+              <span style={{ fontSize:16 }}>{group.emoji}</span>
+              <span style={{ fontSize:12,fontWeight:700,color:group.color,textTransform:"uppercase",letterSpacing:"0.08em" }}>{group.label}</span>
+              <div style={{ flex:1,height:1,background:group.color+"33" }}/>
+              <span style={{ fontSize:11,color:T.textMuted,fontWeight:600 }}>
+                {group.goals.filter(g=>getCount(g.id)>=g.target).length}/{group.goals.length} done
+              </span>
+            </div>
+
+            <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(min(100%,300px),1fr))",gap:12 }}>
+              {group.goals.map(goal=>{
+                const count   = getCount(goal.id);
+                const target  = goal.target;
+                const pct     = target>0 ? Math.min(100,Math.round((count/target)*100)) : 0;
+                const done    = count>=target;
+                const streak  = getStreak(goal.id, target);
+                const cat     = catOf(goal.category);
+
+                return (
+                  <div key={goal.id} className="mg-card" style={{ ...card({ borderTop:`4px solid ${done?"#3DBF8A":cat.color}`, position:"relative", overflow:"hidden" }), padding:"16px" }}>
+                    {/* Done shimmer */}
+                    {done&&<div style={{ position:"absolute",inset:0,background:"linear-gradient(135deg,#3DBF8A06,#20B2AA0A)",pointerEvents:"none" }}/>}
+
+                    {/* Header row */}
+                    <div style={{ display:"flex",alignItems:"flex-start",gap:10,marginBottom:12 }}>
+                      <div style={{ width:40,height:40,borderRadius:12,background:done?"#3DBF8A22":cat.color+"22",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0,transition:"background 0.3s" }}>
+                        {done?"✅":(goal.emoji||cat.emoji)}
+                      </div>
+                      <div style={{ flex:1,minWidth:0 }}>
+                        <div style={{ fontSize:14,fontWeight:700,color:T.text,lineHeight:1.3,marginBottom:3 }}>{goal.title}</div>
+                        <div style={{ display:"flex",alignItems:"center",gap:6,flexWrap:"wrap" }}>
+                          <span style={{ fontSize:11,color:done?"#3DBF8A":cat.color,fontWeight:600 }}>
+                            {done?`🎉 All ${target} done!`:`${count} / ${target} ${goal.unit||""}${target>1&&goal.unit&&!goal.unit.endsWith("s")?"s":""}`}
+                          </span>
+                          {streak>0&&<span style={{ fontSize:11,padding:"1px 7px",borderRadius:20,background:"#E8A83822",color:"#E8A838",fontWeight:700 }}>🔥 {streak}mo streak</span>}
+                        </div>
+                      </div>
+                      <button onClick={()=>setEditGoal({...goal})} style={{ background:"none",border:"none",color:T.textMuted,cursor:"pointer",fontSize:14,padding:"2px",flexShrink:0 }}>✎</button>
+                    </div>
+
+                    {/* Progress bar */}
+                    <div style={{ height:8,background:T.inputBg,borderRadius:8,overflow:"hidden",marginBottom:12 }}>
+                      <div className="mg-progress-bar" style={{ height:"100%",width:`${pct}%`,background:done?"linear-gradient(90deg,#3DBF8A,#20B2AA)":pct>60?"linear-gradient(90deg,#E8A838,#3DBF8A)":`linear-gradient(90deg,${cat.color},${cat.color}CC)`,borderRadius:8 }}/>
+                    </div>
+
+                    {/* Pip tracker — tap circles to mark progress */}
+                    <div style={{ display:"flex",alignItems:"center",gap:6,flexWrap:"wrap",marginBottom:goal.notes?10:0 }}>
+                      {Array.from({length:target},(_,i)=>(
+                        <div key={i} className="mg-pip"
+                          onClick={()=> i<count ? decrement(goal.id) : increment(goal.id)}
+                          style={{ width:28,height:28,borderRadius:"50%",
+                            background: i<count?(done?"#3DBF8A":cat.color):"transparent",
+                            border: `2px solid ${i<count?(done?"#3DBF8A":cat.color):T.border}`,
+                            display:"flex",alignItems:"center",justifyContent:"center",
+                            fontSize:13, color:i<count?"#fff":T.textMuted,
+                            boxShadow:i<count?`0 2px 8px ${done?"#3DBF8A":cat.color}44`:"none" }}>
+                          {i<count?"✓":""}
+                        </div>
+                      ))}
+                      {target>8&&(
+                        <span style={{ fontSize:12,color:T.textMuted,marginLeft:4 }}>{count}/{target}</span>
+                      )}
+                    </div>
+
+                    {/* Notes */}
+                    {goal.notes&&<div style={{ fontSize:12,color:T.textMuted,fontStyle:"italic",lineHeight:1.6,marginTop:8,borderTop:`1px solid ${T.border}`,paddingTop:8 }}>{goal.notes}</div>}
+
+                    {/* Owner badge */}
+                    {goal.owner!=="shared"&&<div style={{ fontSize:10,color:T.textMuted,marginTop:6,textAlign:"right" }}>👤 {names[goal.owner]||goal.owner}</div>}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* ── ADD GOAL MODAL ── */}
+      {showAdd&&(
+        <div style={{ position:"fixed",inset:0,zIndex:50,background:"rgba(0,0,0,0.65)",backdropFilter:"blur(6px)",display:"flex",alignItems:"flex-end",justifyContent:"center" }} onClick={e=>e.target===e.currentTarget&&setShowAdd(false)}>
+          <div style={{ background:T.surface,border:`1px solid ${T.border}`,borderRadius:"20px 20px 0 0",width:"100%",maxWidth:520,maxHeight:"92vh",overflowY:"auto",padding:"24px 20px 40px",boxShadow:"0 -8px 40px rgba(0,0,0,0.3)" }}>
+            <div style={{ width:40,height:4,borderRadius:2,background:T.textMuted,margin:"0 auto 20px",opacity:0.4 }}/>
+            <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:22,color:T.text,marginBottom:4 }}>Add Monthly Goal</div>
+            <div style={{ fontSize:13,color:T.textSub,marginBottom:18,lineHeight:1.7 }}>This will appear on your board every month and reset automatically.</div>
+
+            <label style={lbl}>What do you want to do?</label>
+            <input style={inp} value={draft.title} onChange={e=>setDraft(d=>({...d,title:e.target.value}))} placeholder="e.g. Watch Dolapo Lawal sermons"/>
+
+            <label style={lbl}>Category</label>
+            <div style={{ display:"flex",gap:6,flexWrap:"wrap",marginTop:4 }}>
+              {MG_CATS.map(c=>(
+                <button key={c.id} onClick={()=>setDraft(d=>({...d,category:c.id}))} style={{ padding:"6px 11px",borderRadius:20,border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:draft.category===c.id?700:500,background:draft.category===c.id?c.color:"transparent",color:draft.category===c.id?"#fff":T.textSub,outline:draft.category===c.id?"none":`1px solid ${T.border}` }}>
+                  {c.emoji} {c.label}
+                </button>
+              ))}
+            </div>
+
+            <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:12 }}>
+              <div>
+                <label style={lbl}>How many per month?</label>
+                <input type="number" min="1" max="31" style={inp} value={draft.target} onChange={e=>setDraft(d=>({...d,target:e.target.value}))} placeholder="4"/>
+              </div>
+              <div>
+                <label style={lbl}>Unit (what are you counting?)</label>
+                <input style={inp} value={draft.unit} onChange={e=>setDraft(d=>({...d,unit:e.target.value}))} placeholder="video, book, sermon..."/>
+              </div>
+            </div>
+
+            <label style={lbl}>Emoji (optional)</label>
+            <input style={{...inp,maxWidth:80}} value={draft.emoji} onChange={e=>setDraft(d=>({...d,emoji:e.target.value}))} placeholder="🎬"/>
+
+            <label style={lbl}>Notes / context (optional)</label>
+            <textarea style={{...inp,minHeight:60,resize:"vertical",lineHeight:1.8}} value={draft.notes} onChange={e=>setDraft(d=>({...d,notes:e.target.value}))} placeholder="e.g. Focus on his relationship series first, then leadership"/>
+
+            <label style={lbl}>Whose goal?</label>
+            <div style={{ display:"flex",gap:6,marginTop:4 }}>
+              {[["A",names.A],["B",names.B],["shared","Both of us"]].map(([v,l])=>(
+                <button key={v} onClick={()=>setDraft(d=>({...d,owner:v}))} style={{ flex:1,padding:"8px",borderRadius:9,border:`1px solid ${draft.owner===v?"#9B6EE8":T.border}`,background:draft.owner===v?"#9B6EE822":"transparent",color:draft.owner===v?"#9B6EE8":T.textSub,fontFamily:"'DM Sans',sans-serif",fontSize:12,cursor:"pointer",fontWeight:draft.owner===v?700:400 }}>{l}</button>
+              ))}
+            </div>
+
+            <div style={{ display:"flex",gap:10,marginTop:22 }}>
+              <button onClick={()=>setShowAdd(false)} style={{ flex:1,padding:"11px",borderRadius:11,border:`1px solid ${T.border}`,background:T.inputBg,color:T.textSub,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:14 }}>Cancel</button>
+              <button onClick={addGoal} disabled={!draft.title.trim()} style={{ flex:2,padding:"11px",borderRadius:11,border:"none",background:draft.title.trim()?T.accent||"#9B6EE8":"#888",color:"#fff",cursor:draft.title.trim()?"pointer":"not-allowed",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:700 }}>Add Goal</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── EDIT GOAL MODAL ── */}
+      {editGoal&&(
+        <div style={{ position:"fixed",inset:0,zIndex:50,background:"rgba(0,0,0,0.65)",backdropFilter:"blur(6px)",display:"flex",alignItems:"flex-end",justifyContent:"center" }} onClick={e=>e.target===e.currentTarget&&setEditGoal(null)}>
+          <div style={{ background:T.surface,border:`1px solid ${T.border}`,borderRadius:"20px 20px 0 0",width:"100%",maxWidth:520,maxHeight:"90vh",overflowY:"auto",padding:"24px 20px 40px",boxShadow:"0 -8px 40px rgba(0,0,0,0.3)" }}>
+            <div style={{ width:40,height:4,borderRadius:2,background:T.textMuted,margin:"0 auto 20px",opacity:0.4 }}/>
+            <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:22,color:T.text,marginBottom:18 }}>Edit Goal</div>
+
+            <label style={lbl}>Title</label>
+            <input style={inp} value={editGoal.title} onChange={e=>setEditGoal(d=>({...d,title:e.target.value}))}/>
+
+            <label style={lbl}>Category</label>
+            <div style={{ display:"flex",gap:6,flexWrap:"wrap",marginTop:4 }}>
+              {MG_CATS.map(c=>(
+                <button key={c.id} onClick={()=>setEditGoal(d=>({...d,category:c.id}))} style={{ padding:"6px 11px",borderRadius:20,border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:editGoal.category===c.id?700:500,background:editGoal.category===c.id?c.color:"transparent",color:editGoal.category===c.id?"#fff":T.textSub,outline:editGoal.category===c.id?"none":`1px solid ${T.border}` }}>
+                  {c.emoji} {c.label}
+                </button>
+              ))}
+            </div>
+
+            <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:12 }}>
+              <div>
+                <label style={lbl}>Target per month</label>
+                <input type="number" min="1" max="31" style={inp} value={editGoal.target} onChange={e=>setEditGoal(d=>({...d,target:e.target.value}))}/>
+              </div>
+              <div>
+                <label style={lbl}>Unit</label>
+                <input style={inp} value={editGoal.unit||""} onChange={e=>setEditGoal(d=>({...d,unit:e.target.value}))}/>
+              </div>
+            </div>
+
+            <label style={lbl}>Emoji</label>
+            <input style={{...inp,maxWidth:80}} value={editGoal.emoji||""} onChange={e=>setEditGoal(d=>({...d,emoji:e.target.value}))}/>
+
+            <label style={lbl}>Notes</label>
+            <textarea style={{...inp,minHeight:60,resize:"vertical",lineHeight:1.8}} value={editGoal.notes||""} onChange={e=>setEditGoal(d=>({...d,notes:e.target.value}))}/>
+
+            <label style={lbl}>Whose goal?</label>
+            <div style={{ display:"flex",gap:6,marginTop:4 }}>
+              {[["A",names.A],["B",names.B],["shared","Both of us"]].map(([v,l])=>(
+                <button key={v} onClick={()=>setEditGoal(d=>({...d,owner:v}))} style={{ flex:1,padding:"8px",borderRadius:9,border:`1px solid ${editGoal.owner===v?"#9B6EE8":T.border}`,background:editGoal.owner===v?"#9B6EE822":"transparent",color:editGoal.owner===v?"#9B6EE8":T.textSub,fontFamily:"'DM Sans',sans-serif",fontSize:12,cursor:"pointer",fontWeight:editGoal.owner===v?700:400 }}>{l}</button>
+              ))}
+            </div>
+
+            <div style={{ display:"flex",gap:10,marginTop:22,flexWrap:"wrap" }}>
+              <button onClick={saveEdit} style={{ flex:2,padding:"11px",borderRadius:11,border:"none",background:T.accent||"#9B6EE8",color:"#fff",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:700 }}>Save</button>
+              <button onClick={()=>setEditGoal(null)} style={{ flex:1,padding:"11px",borderRadius:11,border:`1px solid ${T.border}`,background:T.inputBg,color:T.textSub,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:14 }}>Cancel</button>
+              <button onClick={()=>{ deleteGoal(editGoal.id); setEditGoal(null); }} style={{ width:"100%",padding:"10px",borderRadius:11,border:"1px solid #E84E8A44",background:"#E84E8A0A",color:"#E84E8A",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:600,marginTop:4 }}>Delete Goal</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ── PeopleView v2 — Inner Circle / Outer Circle UI ───────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+
+const PEOPLE_CATS = [
+  { id:"family",       label:"Family",          emoji:"🏠", color:"#E8A838", ring:"inner", ringLabel:"Inner Circle", desc:"The people you were born into" },
+  { id:"close",        label:"Close Friends",   emoji:"💛", color:"#3DBF8A", ring:"inner", ringLabel:"Inner Circle", desc:"People you trust deeply" },
+  { id:"mentor",       label:"Mentors",         emoji:"🧭", color:"#9B6EE8", ring:"inner", ringLabel:"Inner Circle", desc:"People who pour into you" },
+  { id:"distant",      label:"Distant Friends", emoji:"🌤", color:"#3B9EDB", ring:"outer", ringLabel:"Outer Circle", desc:"People you care about but rarely see" },
+  { id:"acquaintance", label:"Acquaintances",   emoji:"👋", color:"#888D9B", ring:"outer", ringLabel:"Outer Circle", desc:"People worth keeping in your world" },
+];
+
+const FREQ_OPTS = [
+  { id:"weekly",   label:"Weekly",       days:7  },
+  { id:"biweekly", label:"Every 2 weeks",days:14 },
+  { id:"monthly",  label:"Monthly",      days:30 },
+  { id:"quarterly",label:"Quarterly",    days:90 },
+  { id:"asneeded", label:"As needed",    days:null },
+];
+
+const PEOPLE_CSS = `
+  .pv-wrap { font-family: 'DM Sans', sans-serif; }
+  .pv-card { transition: transform 0.18s cubic-bezier(.34,1.56,.64,1), box-shadow 0.18s ease; cursor: pointer; }
+  .pv-card:hover { transform: translateY(-3px) scale(1.01); }
+  .pv-ring-badge { display:inline-flex; align-items:center; gap:5px; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:700; letter-spacing:0.04em; text-transform:uppercase; }
+  .pv-orbit-wrap { position:relative; margin: 0 auto 32px; }
+  .pv-seg-btn { transition: all 0.15s; }
+  .pv-seg-btn:hover { opacity:0.85; }
+  .pv-fade-in { animation: pvFade 0.3s ease forwards; }
+  @keyframes pvFade { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
+  .pv-scroll-x { display:flex; gap:8px; overflow-x:auto; scrollbar-width:none; padding-bottom:4px; }
+  .pv-scroll-x::-webkit-scrollbar { display:none; }
+`;
+
+function PeopleView({ activeUser, names, T, mode, TODAY, genId }) {
+  const [people,      setPeopleState] = useState(null);
+  const [pageView,    setPageView]    = useState("circles"); // circles | list | person
+  const [selected,    setSelected]    = useState(null);
+  const [catFilter,   setCatFilter]   = useState(null);
+  const [ownerFilter, setOwnerFilter] = useState("all");
+  const [showAdd,     setShowAdd]     = useState(false);
+  const [showEdit,    setShowEdit]    = useState(false);
+  const [showLog,     setShowLog]     = useState(false);
+  const [showGoal,    setShowGoal]    = useState(false);
+  const [searchQ,     setSearchQ]     = useState("");
+  const [ringFilter,  setRingFilter]  = useState(null); // inner | outer | null
+
+  const blank    = { name:"", category:"close", owner:activeUser||"A", emoji:"", frequency:"monthly", notes:"", goals:[], log:[], nextDate:"" };
+  const blankLog = { date:TODAY, summary:"", mood:"good", followUp:"" };
+  const blankGoal= { text:"", done:false, createdAt:TODAY };
+  const [draft,     setDraft]     = useState({...blank});
+  const [logDraft,  setLogDraft]  = useState({...blankLog});
+  const [goalDraft, setGoalDraft] = useState({...blankGoal});
+
+  useEffect(()=>{ (async()=>{ const s=await dbGet("people_list"); setPeopleState(s??[]); })(); },[]);
+  function save(list){ setPeopleState(list); dbSet("people_list",list); }
+
+  function addPerson(){ if(!draft.name.trim()) return; save([...(people||[]),{...draft,id:genId(),createdAt:TODAY,goals:[],log:[]}]); setDraft({...blank}); setShowAdd(false); }
+  function updatePerson(id,upd){ save((people||[]).map(p=>p.id===id?{...p,...upd}:p)); }
+  function deletePerson(id){ save((people||[]).filter(p=>p.id!==id)); if(selected===id){setSelected(null);setPageView("circles");} }
+  function addLog(pid){ if(!logDraft.summary.trim()) return; const p=(people||[]).find(x=>x.id===pid); if(!p) return; updatePerson(pid,{log:[{...logDraft,id:genId()},...(p.log||[])],lastContact:TODAY}); setLogDraft({...blankLog}); setShowLog(false); }
+  function deleteLog(pid,lid){ const p=(people||[]).find(x=>x.id===pid); if(!p) return; updatePerson(pid,{log:(p.log||[]).filter(l=>l.id!==lid)}); }
+  function addGoal(pid){ if(!goalDraft.text.trim()) return; const p=(people||[]).find(x=>x.id===pid); if(!p) return; updatePerson(pid,{goals:[...(p.goals||[]),{...goalDraft,id:genId()}]}); setGoalDraft({...blankGoal}); setShowGoal(false); }
+  function toggleGoal(pid,gid){ const p=(people||[]).find(x=>x.id===pid); if(!p) return; updatePerson(pid,{goals:(p.goals||[]).map(g=>g.id===gid?{...g,done:!g.done}:g)}); }
+  function deleteGoal(pid,gid){ const p=(people||[]).find(x=>x.id===pid); if(!p) return; updatePerson(pid,{goals:(p.goals||[]).filter(g=>g.id!==gid)}); }
+
+  const catOf      = id => PEOPLE_CATS.find(c=>c.id===id)||PEOPLE_CATS[0];
+  const daysAgo    = d => d ? Math.ceil((new Date()-new Date(d+' 00:00'))/86400000) : null;
+  const daysUntil  = d => d ? Math.ceil((new Date(d+' 00:00')-new Date())/86400000) : null;
+  const urgency    = p => { const d=daysUntil(p.nextDate); if(d===null) return "none"; if(d<0) return "overdue"; if(d<=3) return "soon"; return "ok"; };
+
+  const inp  = { width:"100%", background:T.inputBg, border:`1px solid ${T.border}`, borderRadius:10, padding:"10px 12px", color:T.text, fontFamily:"'DM Sans',sans-serif", fontSize:13, outline:"none", boxSizing:"border-box" };
+  const sel  = { ...inp, background:mode==="dark"?"#181B23":"#fff", cursor:"pointer" };
+  const lbl  = { fontSize:11, fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase", color:T.textMuted, display:"block", marginBottom:5, marginTop:14, fontFamily:"'DM Sans',sans-serif" };
+  const card = (extra={}) => ({ background:T.surface, border:`1px solid ${T.border}`, borderRadius:16, boxShadow:"0 2px 12px rgba(0,0,0,0.08)", ...extra });
+
+  if(people===null) return <div style={{ padding:40,textAlign:"center",color:T.textSub,fontFamily:"'DM Sans',sans-serif" }}><div style={{ fontSize:40,marginBottom:12 }}>🤝</div><div>Loading your people...</div></div>;
+
+  const allFiltered = people.filter(p=>{
+    if(ownerFilter!=="all" && p.owner!==ownerFilter && p.owner!=="shared") return false;
+    if(searchQ && !p.name.toLowerCase().includes(searchQ.toLowerCase())) return false;
+    if(ringFilter && catOf(p.category).ring!==ringFilter) return false;
+    if(catFilter && p.category!==catFilter) return false;
+    return true;
+  });
+
+  const innerPeople = people.filter(p=>catOf(p.category).ring==="inner");
+  const outerPeople = people.filter(p=>catOf(p.category).ring==="outer");
+  const overduePeople = people.filter(p=>urgency(p)==="overdue");
+  const soonPeople    = people.filter(p=>urgency(p)==="soon");
+
+  // ── PERSON DETAIL ──────────────────────────────────────────────────────────
+  if(pageView==="person" && selected){
+    const person = people.find(p=>p.id===selected);
+    if(!person){ setPageView("circles"); return null; }
+    const cat      = catOf(person.category);
+    const urg      = urgency(person);
+    const lastDays = daysAgo(person.lastContact);
+    const nextDays = daysUntil(person.nextDate);
+    const openGoals= (person.goals||[]).filter(g=>!g.done);
+    const doneGoals= (person.goals||[]).filter(g=>g.done);
+    const urgColor = urg==="overdue"?"#E84E8A":urg==="soon"?"#E8A838":"#3DBF8A";
+
+    return (
+      <div className="pv-wrap pv-fade-in" style={{ paddingBottom:80, maxWidth:700, margin:"0 auto" }}>
+        <style>{PEOPLE_CSS}</style>
+
+        {/* Hero header */}
+        <div style={{ position:"relative", overflow:"hidden", borderRadius:"0 0 24px 24px", background:`linear-gradient(135deg, ${cat.color}18, ${cat.color}08)`, borderBottom:`1px solid ${cat.color}33`, padding:"20px 20px 24px", marginBottom:20 }}>
+          <div style={{ position:"absolute", top:-20, right:-20, width:120, height:120, borderRadius:"50%", background:cat.color+"0A", border:`1px solid ${cat.color}22` }}/>
+          <div style={{ position:"absolute", top:10, right:10, width:60, height:60, borderRadius:"50%", background:cat.color+"12", border:`1px solid ${cat.color}33` }}/>
+          <button onClick={()=>setPageView("circles")} style={{ background:"none",border:`1px solid ${T.border}`,borderRadius:9,padding:"6px 12px",color:T.textSub,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:12,marginBottom:16,display:"flex",alignItems:"center",gap:6 }}>← Back</button>
+          <div style={{ display:"flex", alignItems:"flex-end", gap:16, flexWrap:"wrap" }}>
+            <div style={{ width:64, height:64, borderRadius:20, background:`linear-gradient(135deg,${cat.color}33,${cat.color}22)`, border:`2px solid ${cat.color}44`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:30, flexShrink:0 }}>
+              {person.emoji || cat.emoji}
+            </div>
+            <div style={{ flex:1 }}>
+              <div style={{ fontFamily:"'DM Serif Display',serif", fontSize:28, color:T.text, lineHeight:1.1, marginBottom:6 }}>{person.name}</div>
+              <div style={{ display:"flex", gap:6, flexWrap:"wrap", alignItems:"center" }}>
+                <span className="pv-ring-badge" style={{ background:cat.color+"22", color:cat.color }}>{cat.emoji} {cat.label}</span>
+                <span className="pv-ring-badge" style={{ background:T.inputBg, color:T.textMuted }}>
+                  {cat.ring==="inner"?"⭕ Inner Circle":"🔵 Outer Circle"}
+                </span>
+                {person.owner!=="shared" && <span style={{ fontSize:11, color:T.textMuted }}>👤 {names[person.owner]||person.owner}</span>}
+              </div>
+            </div>
+            <button onClick={()=>{setDraft({...person});setShowEdit(true);}} style={{ background:"none",border:`1px solid ${T.border}`,borderRadius:9,padding:"7px 14px",color:T.textSub,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:600,flexShrink:0 }}>✎ Edit</button>
+          </div>
+        </div>
+
+        <div style={{ padding:"0 16px" }}>
+
+        {/* Status strip */}
+        <div style={{ display:"flex", gap:10, marginBottom:20, flexWrap:"wrap" }}>
+          {[
+            { label:"Last spoke", value: lastDays===null?"Never":lastDays===0?"Today":`${lastDays}d ago`, color: lastDays===null||lastDays>30?"#E84E8A":lastDays>14?"#E8A838":"#3DBF8A" },
+            { label:"Next check-in", value: person.nextDate ? (nextDays===0?"Today":nextDays===1?"Tomorrow":nextDays!==null&&nextDays<0?`${Math.abs(nextDays)}d overdue`:person.nextDate) : "Not set", color:urgColor },
+            { label:"Frequency", value: FREQ_OPTS.find(f=>f.id===person.frequency)?.label||"—", color:cat.color },
+            { label:"Logs", value: `${(person.log||[]).length}`, color:T.textSub },
+          ].map(s=>(
+            <div key={s.label} style={{ ...card(), padding:"12px 14px", flex:"1 1 100px", minWidth:80 }}>
+              <div style={{ fontSize:16, fontWeight:800, color:s.color, lineHeight:1 }}>{s.value}</div>
+              <div style={{ fontSize:10, fontWeight:700, color:T.textMuted, marginTop:3, textTransform:"uppercase", letterSpacing:"0.08em" }}>{s.label}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Log conversation CTA */}
+        <button onClick={()=>setShowLog(true)} style={{ width:"100%", padding:"14px", borderRadius:14, border:`2px dashed ${cat.color}55`, background:cat.color+"08", color:cat.color, cursor:"pointer", fontFamily:"'DM Serif Display',serif", fontSize:16, marginBottom:20, display:"flex", alignItems:"center", justifyContent:"center", gap:8 }}>
+          <span style={{ fontSize:20 }}>✍️</span> Log a Conversation
+        </button>
+
+        {/* Notes */}
+        {person.notes&&(
+          <div style={{ ...card({ borderLeft:`4px solid ${cat.color}`, marginBottom:20 }), padding:"14px 16px" }}>
+            <div style={{ fontSize:11, fontWeight:700, color:T.textMuted, textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:8 }}>About {person.name}</div>
+            <div style={{ fontSize:13, color:T.text, lineHeight:1.8 }}>{person.notes}</div>
+          </div>
+        )}
+
+        {/* Goals */}
+        <div style={{ marginBottom:24 }}>
+          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:12 }}>
+            <div style={{ fontFamily:"'DM Serif Display',serif", fontSize:19, color:T.text }}>🎯 Relationship Goals</div>
+            <button onClick={()=>setShowGoal(true)} style={{ height:30, padding:"0 12px", borderRadius:8, border:"none", background:cat.color, color:"#fff", cursor:"pointer", fontFamily:"'DM Sans',sans-serif", fontSize:12, fontWeight:700 }}>+ Add</button>
+          </div>
+          {openGoals.length===0&&doneGoals.length===0
+            ? <div style={{ ...card(), padding:"20px", textAlign:"center", color:T.textMuted, fontSize:13, fontStyle:"italic", borderStyle:"dashed" }}>No goals yet. What do you want to be intentional about with {person.name}?</div>
+            : <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+                {[...openGoals,...doneGoals].map(goal=>(
+                  <div key={goal.id} style={{ ...card(), padding:"12px 14px", display:"flex", alignItems:"flex-start", gap:10, opacity:goal.done?0.55:1 }}>
+                    <div onClick={()=>toggleGoal(person.id,goal.id)} style={{ width:20, height:20, borderRadius:6, border:`2px solid ${goal.done?cat.color:T.border}`, background:goal.done?cat.color:"transparent", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", flexShrink:0, marginTop:1 }}>
+                      {goal.done&&<span style={{ color:"#fff", fontSize:10, fontWeight:700 }}>✓</span>}
+                    </div>
+                    <div style={{ flex:1, fontSize:13, color:T.text, lineHeight:1.6, textDecoration:goal.done?"line-through":"none" }}>{goal.text}</div>
+                    <button onClick={()=>deleteGoal(person.id,goal.id)} style={{ background:"none", border:"none", color:T.textMuted, cursor:"pointer", fontSize:13, padding:"2px", flexShrink:0 }}>✕</button>
+                  </div>
+                ))}
+              </div>
+          }
+        </div>
+
+        {/* Conversation Log */}
+        <div style={{ marginBottom:24 }}>
+          <div style={{ fontFamily:"'DM Serif Display',serif", fontSize:19, color:T.text, marginBottom:12 }}>📖 Conversation Log</div>
+          {(person.log||[]).length===0
+            ? <div style={{ ...card(), padding:"20px", textAlign:"center", color:T.textMuted, fontSize:13, fontStyle:"italic" }}>No conversations logged yet. Next time you talk — write it down so you never forget.</div>
+            : <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+                {(person.log||[]).map((entry,i)=>(
+                  <div key={entry.id||i} className="pv-fade-in" style={{ ...card({ borderLeft:`4px solid ${cat.color}` }), padding:"14px 16px" }}>
+                    <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:8 }}>
+                      <div style={{ display:"flex", alignItems:"center", gap:8, flexWrap:"wrap" }}>
+                        <span style={{ fontSize:13, fontWeight:700, color:T.text }}>{entry.date}</span>
+                        <span style={{ fontSize:11, padding:"2px 8px", borderRadius:20, fontWeight:600,
+                          background:entry.mood==="great"?"#3DBF8A22":entry.mood==="hard"?"#E84E8A22":"#3B9EDB22",
+                          color:entry.mood==="great"?"#3DBF8A":entry.mood==="hard"?"#E84E8A":"#3B9EDB" }}>
+                          {entry.mood==="great"?"😊 Great":entry.mood==="hard"?"😔 Hard":"🙂 Good"}
+                        </span>
+                      </div>
+                      <button onClick={()=>deleteLog(person.id,entry.id||i)} style={{ background:"none", border:"none", color:T.textMuted, cursor:"pointer", fontSize:12 }}>✕</button>
+                    </div>
+                    <div style={{ fontSize:13, color:T.text, lineHeight:1.8, marginBottom:entry.followUp?10:0 }}>{entry.summary}</div>
+                    {entry.followUp&&(
+                      <div style={{ fontSize:12, color:cat.color, fontWeight:600, background:cat.color+"12", padding:"7px 11px", borderRadius:8 }}>
+                        👆 Follow up: {entry.followUp}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+          }
+        </div>
+        </div>
+
+        {/* Modals */}
+        {showLog&&(
+          <div style={{ position:"fixed",inset:0,zIndex:50,background:"rgba(0,0,0,0.65)",backdropFilter:"blur(6px)",display:"flex",alignItems:"flex-end",justifyContent:"center" }} onClick={e=>e.target===e.currentTarget&&setShowLog(false)}>
+            <div style={{ background:T.surface,border:`1px solid ${T.border}`,borderRadius:"20px 20px 0 0",width:"100%",maxWidth:540,maxHeight:"88vh",overflowY:"auto",padding:"24px 20px 36px",boxShadow:"0 -8px 40px rgba(0,0,0,0.3)" }}>
+              <div style={{ width:40,height:4,borderRadius:2,background:T.textMuted,margin:"0 auto 20px",opacity:0.4 }}/>
+              <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:22,color:T.text,marginBottom:4 }}>✍️ Log Conversation</div>
+              <div style={{ fontSize:13,color:cat.color,marginBottom:18,fontWeight:600 }}>with {person.name}</div>
+              <label style={lbl}>Date</label>
+              <input type="date" style={sel} value={logDraft.date} onChange={e=>setLogDraft(d=>({...d,date:e.target.value}))}/>
+              <label style={lbl}>How was it?</label>
+              <div style={{ display:"flex",gap:8 }}>
+                {[["great","😊 Great"],["good","🙂 Good"],["hard","😔 Hard"]].map(([v,l])=>(
+                  <button key={v} onClick={()=>setLogDraft(d=>({...d,mood:v}))} style={{ flex:1,padding:"9px",borderRadius:10,border:`1px solid ${logDraft.mood===v?cat.color:T.border}`,background:logDraft.mood===v?cat.color+"22":"transparent",color:logDraft.mood===v?cat.color:T.textSub,fontFamily:"'DM Sans',sans-serif",fontSize:13,cursor:"pointer",fontWeight:logDraft.mood===v?700:400 }}>{l}</button>
+                ))}
+              </div>
+              <label style={lbl}>What did you talk about?</label>
+              <textarea value={logDraft.summary} onChange={e=>setLogDraft(d=>({...d,summary:e.target.value}))} placeholder="Summarise the conversation — what was shared, how they're doing, anything meaningful..." style={{ ...inp,minHeight:100,resize:"vertical",lineHeight:1.8 }}/>
+              <label style={lbl}>Follow-up reminder (optional)</label>
+              <input style={inp} value={logDraft.followUp} onChange={e=>setLogDraft(d=>({...d,followUp:e.target.value}))} placeholder="e.g. Check on their exam, send that article, pray for their mum..."/>
+              <label style={lbl}>Schedule next check-in</label>
+              <input type="date" style={sel} value={person.nextDate||""} onChange={e=>updatePerson(person.id,{nextDate:e.target.value})}/>
+              <div style={{ display:"flex",gap:10,marginTop:20 }}>
+                <button onClick={()=>setShowLog(false)} style={{ flex:1,padding:"11px",borderRadius:11,border:`1px solid ${T.border}`,background:T.inputBg,color:T.textSub,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:14 }}>Cancel</button>
+                <button onClick={()=>addLog(person.id)} style={{ flex:2,padding:"11px",borderRadius:11,border:"none",background:cat.color,color:"#fff",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:700 }}>Save Log</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showGoal&&(
+          <div style={{ position:"fixed",inset:0,zIndex:50,background:"rgba(0,0,0,0.65)",backdropFilter:"blur(6px)",display:"flex",alignItems:"flex-end",justifyContent:"center" }} onClick={e=>e.target===e.currentTarget&&setShowGoal(false)}>
+            <div style={{ background:T.surface,border:`1px solid ${T.border}`,borderRadius:"20px 20px 0 0",width:"100%",maxWidth:480,padding:"24px 20px 36px",boxShadow:"0 -8px 40px rgba(0,0,0,0.3)" }}>
+              <div style={{ width:40,height:4,borderRadius:2,background:T.textMuted,margin:"0 auto 20px",opacity:0.4 }}/>
+              <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:22,color:T.text,marginBottom:4 }}>🎯 Add a Goal</div>
+              <div style={{ fontSize:13,color:T.textSub,marginBottom:16 }}>What do you want to be intentional about with {person.name}?</div>
+              <textarea value={goalDraft.text} onChange={e=>setGoalDraft(d=>({...d,text:e.target.value}))} placeholder="e.g. Pray for their PhD applications every week, be present when they're struggling, never let 2 months pass without speaking..." style={{ ...inp,minHeight:90,resize:"vertical",lineHeight:1.8 }}/>
+              <div style={{ display:"flex",gap:10,marginTop:16 }}>
+                <button onClick={()=>setShowGoal(false)} style={{ flex:1,padding:"11px",borderRadius:11,border:`1px solid ${T.border}`,background:T.inputBg,color:T.textSub,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:14 }}>Cancel</button>
+                <button onClick={()=>addGoal(person.id)} style={{ flex:2,padding:"11px",borderRadius:11,border:"none",background:cat.color,color:"#fff",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:700 }}>Add Goal</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showEdit&&(
+          <div style={{ position:"fixed",inset:0,zIndex:50,background:"rgba(0,0,0,0.65)",backdropFilter:"blur(6px)",display:"flex",alignItems:"flex-end",justifyContent:"center" }} onClick={e=>e.target===e.currentTarget&&setShowEdit(false)}>
+            <div style={{ background:T.surface,border:`1px solid ${T.border}`,borderRadius:"20px 20px 0 0",width:"100%",maxWidth:520,maxHeight:"90vh",overflowY:"auto",padding:"24px 20px 36px",boxShadow:"0 -8px 40px rgba(0,0,0,0.3)" }}>
+              <div style={{ width:40,height:4,borderRadius:2,background:T.textMuted,margin:"0 auto 20px",opacity:0.4 }}/>
+              <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:22,color:T.text,marginBottom:18 }}>Edit {person.name}</div>
+              <label style={lbl}>Name</label><input style={inp} value={draft.name} onChange={e=>setDraft(d=>({...d,name:e.target.value}))}/>
+              <label style={lbl}>Emoji</label><input style={{...inp,maxWidth:80}} value={draft.emoji} onChange={e=>setDraft(d=>({...d,emoji:e.target.value}))}/>
+              <label style={lbl}>Category</label>
+              <select style={sel} value={draft.category} onChange={e=>setDraft(d=>({...d,category:e.target.value}))}>
+                {PEOPLE_CATS.map(c=><option key={c.id} value={c.id}>{c.emoji} {c.label} ({c.ringLabel})</option>)}
+              </select>
+              <label style={lbl}>Check-in Frequency</label>
+              <select style={sel} value={draft.frequency} onChange={e=>setDraft(d=>({...d,frequency:e.target.value}))}>
+                {FREQ_OPTS.map(f=><option key={f.id} value={f.id}>{f.label}</option>)}
+              </select>
+              <label style={lbl}>Whose relationship?</label>
+              <div style={{ display:"flex",gap:6,marginTop:4 }}>
+                {[["A",names.A],["B",names.B],["shared","Both of us"]].map(([v,l])=>(
+                  <button key={v} onClick={()=>setDraft(d=>({...d,owner:v}))} style={{ flex:1,padding:"8px",borderRadius:9,border:`1px solid ${draft.owner===v?"#20B2AA":T.border}`,background:draft.owner===v?"#20B2AA22":"transparent",color:draft.owner===v?"#20B2AA":T.textSub,fontFamily:"'DM Sans',sans-serif",fontSize:12,cursor:"pointer",fontWeight:draft.owner===v?700:400 }}>{l}</button>
+                ))}
+              </div>
+              <label style={lbl}>Notes / About them</label>
+              <textarea style={{...inp,minHeight:70,resize:"vertical",lineHeight:1.8}} value={draft.notes} onChange={e=>setDraft(d=>({...d,notes:e.target.value}))} placeholder="What's going on in their life? What do you know about them?"/>
+              <label style={lbl}>Next follow-up date</label>
+              <input type="date" style={sel} value={draft.nextDate||""} onChange={e=>setDraft(d=>({...d,nextDate:e.target.value}))}/>
+              <div style={{ display:"flex",gap:10,marginTop:20,flexWrap:"wrap" }}>
+                <button onClick={()=>{ updatePerson(person.id,draft); setShowEdit(false); }} style={{ flex:2,padding:"11px",borderRadius:11,border:"none",background:"#20B2AA",color:"#fff",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:700 }}>Save Changes</button>
+                <button onClick={()=>setShowEdit(false)} style={{ flex:1,padding:"11px",borderRadius:11,border:`1px solid ${T.border}`,background:T.inputBg,color:T.textSub,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:14 }}>Cancel</button>
+                <button onClick={()=>{ deletePerson(person.id); setShowEdit(false); }} style={{ width:"100%",padding:"10px",borderRadius:11,border:"1px solid #E84E8A44",background:"#E84E8A0A",color:"#E84E8A",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:600,marginTop:4 }}>Remove {person.name}</button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // ── MAIN LIST / CIRCLES VIEW ───────────────────────────────────────────────
+  return (
+    <div className="pv-wrap" style={{ paddingBottom:80 }}>
+      <style>{PEOPLE_CSS}</style>
+
+      {/* Header */}
+      <div style={{ padding:"20px 16px 0" }}>
+        <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", flexWrap:"wrap", gap:10, marginBottom:16 }}>
+          <div>
+            <div style={{ fontFamily:"'DM Serif Display',serif", fontSize:26, color:T.text, marginBottom:3 }}>🤝 My People</div>
+            <div style={{ fontSize:13, color:T.textSub }}>Stay intentional. Adulthood doesn't have to mean losing people.</div>
+          </div>
+          <button onClick={()=>{setDraft({...blank,owner:activeUser||"A"});setShowAdd(true);}} style={{ height:36,padding:"0 16px",borderRadius:10,border:"none",background:"#20B2AA",color:"#fff",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,flexShrink:0 }}>+ Add Person</button>
+        </div>
+
+        {/* Alert strip */}
+        {(overduePeople.length>0||soonPeople.length>0)&&(
+          <div style={{ display:"flex", gap:8, marginBottom:12, flexWrap:"wrap" }}>
+            {overduePeople.length>0&&(
+              <div style={{ flex:1,minWidth:160,background:"#E84E8A12",border:"1px solid #E84E8A33",borderRadius:10,padding:"10px 14px",fontSize:12,color:"#E84E8A",cursor:"pointer" }}
+                onClick={()=>{setRingFilter(null);setCatFilter(null);}}>
+                🔴 <strong>{overduePeople.length}</strong> overdue — {overduePeople.slice(0,2).map(p=>p.name).join(", ")}{overduePeople.length>2?`…`:""}
+              </div>
+            )}
+            {soonPeople.length>0&&(
+              <div style={{ flex:1,minWidth:160,background:"#E8A83812",border:"1px solid #E8A83833",borderRadius:10,padding:"10px 14px",fontSize:12,color:"#E8A838",cursor:"pointer" }}>
+                🟡 <strong>{soonPeople.length}</strong> due soon — {soonPeople.slice(0,2).map(p=>p.name).join(", ")}{soonPeople.length>2?"…":""}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Search */}
+        <input style={{...inp,marginBottom:12}} placeholder="🔍 Search people by name..." value={searchQ} onChange={e=>setSearchQ(e.target.value)}/>
+
+        {/* View toggle + owner */}
+        <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10,flexWrap:"wrap",gap:8 }}>
+          <div style={{ display:"flex",background:T.inputBg,borderRadius:10,padding:3,border:`1px solid ${T.border}`,gap:2 }}>
+            {[["circles","⭕ Circles"],["list","☰ List"]].map(([v,l])=>(
+              <button key={v} className="pv-seg-btn" onClick={()=>setPageView(v)} style={{ padding:"5px 12px",borderRadius:8,border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:pageView===v?700:500,background:pageView===v?"#20B2AA":"transparent",color:pageView===v?"#fff":T.textSub }}>{l}</button>
+            ))}
+          </div>
+          <div style={{ display:"flex",gap:5 }}>
+            {[["all","All"],["A",names.A],["B",names.B]].map(([v,l])=>(
+              <button key={v} onClick={()=>setOwnerFilter(v)} style={{ padding:"5px 11px",borderRadius:20,border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:ownerFilter===v?700:500,background:ownerFilter===v?"#20B2AA":"transparent",color:ownerFilter===v?"#fff":T.textSub,outline:ownerFilter===v?"none":`1px solid ${T.border}` }}>{l}</button>
+            ))}
+          </div>
+        </div>
+
+        {/* Category pills */}
+        <div className="pv-scroll-x" style={{ marginBottom:16 }}>
+          <button onClick={()=>{setCatFilter(null);setRingFilter(null);}} style={{ padding:"5px 12px",borderRadius:20,border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:!catFilter&&!ringFilter?700:500,background:!catFilter&&!ringFilter?"#20B2AA":"transparent",color:!catFilter&&!ringFilter?"#fff":T.textSub,outline:!catFilter&&!ringFilter?"none":`1px solid ${T.border}`,flexShrink:0 }}>All ({people.length})</button>
+          <button onClick={()=>{setRingFilter(ringFilter==="inner"?null:"inner");setCatFilter(null);}} style={{ padding:"5px 12px",borderRadius:20,border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:ringFilter==="inner"?700:500,background:ringFilter==="inner"?"#E8A838":"transparent",color:ringFilter==="inner"?"#fff":T.textSub,outline:ringFilter==="inner"?"none":`1px solid #E8A83855`,flexShrink:0 }}>⭕ Inner ({innerPeople.length})</button>
+          <button onClick={()=>{setRingFilter(ringFilter==="outer"?null:"outer");setCatFilter(null);}} style={{ padding:"5px 12px",borderRadius:20,border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:ringFilter==="outer"?700:500,background:ringFilter==="outer"?"#3B9EDB":"transparent",color:ringFilter==="outer"?"#fff":T.textSub,outline:ringFilter==="outer"?"none":`1px solid #3B9EDB55`,flexShrink:0 }}>🔵 Outer ({outerPeople.length})</button>
+          {PEOPLE_CATS.map(cat=>(
+            <button key={cat.id} onClick={()=>{setCatFilter(catFilter===cat.id?null:cat.id);setRingFilter(null);}} style={{ padding:"5px 12px",borderRadius:20,border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:catFilter===cat.id?700:500,background:catFilter===cat.id?cat.color:"transparent",color:catFilter===cat.id?"#fff":T.textSub,outline:catFilter===cat.id?"none":`1px solid ${T.border}`,flexShrink:0,whiteSpace:"nowrap" }}>
+              {cat.emoji} {cat.label} ({people.filter(p=>p.category===cat.id).length})
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Empty state */}
+      {people.length===0&&(
+        <div style={{ padding:"40px 24px", textAlign:"center" }}>
+          <div style={{ position:"relative", width:180, height:180, margin:"0 auto 24px" }}>
+            {/* Decorative rings */}
+            <div style={{ position:"absolute", inset:0, borderRadius:"50%", border:`2px dashed ${T.border}`, opacity:0.5 }}/>
+            <div style={{ position:"absolute", inset:30, borderRadius:"50%", border:`2px dashed #E8A83844` }}/>
+            <div style={{ position:"absolute", inset:60, borderRadius:"50%", background:"#E8A83822", border:`2px solid #E8A83844`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:28 }}>🤝</div>
+          </div>
+          <div style={{ fontFamily:"'DM Serif Display',serif", fontSize:22, color:T.text, marginBottom:8 }}>Your world, mapped out</div>
+          <div style={{ fontSize:13, color:T.textSub, lineHeight:1.8, maxWidth:340, margin:"0 auto 24px" }}>Add the people in your life. See who's in your inner circle. Be intentional about staying connected — even when adulthood makes it hard.</div>
+          <button onClick={()=>{setDraft({...blank,owner:activeUser||"A"});setShowAdd(true);}} style={{ padding:"12px 28px",borderRadius:12,border:"none",background:"#20B2AA",color:"#fff",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:700 }}>Add Your First Person</button>
+        </div>
+      )}
+
+      {/* ── CIRCLES VIEW ── */}
+      {pageView==="circles" && people.length>0 && (
+        <div style={{ padding:"0 16px" }}>
+          {/* Inner circle */}
+          <div style={{ marginBottom:28 }}>
+            <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:14 }}>
+              <div style={{ width:12, height:12, borderRadius:"50%", background:"linear-gradient(135deg,#E8A838,#9B6EE8)", flexShrink:0 }}/>
+              <span style={{ fontFamily:"'DM Serif Display',serif", fontSize:18, color:T.text }}>Inner Circle</span>
+              <div style={{ flex:1, height:1, background:`linear-gradient(to right,#E8A83844,transparent)` }}/>
+              <span style={{ fontSize:12, color:T.textMuted, fontWeight:600 }}>{innerPeople.length} {innerPeople.length===1?"person":"people"}</span>
+            </div>
+            <div style={{ background:`linear-gradient(135deg,#E8A83808,#9B6EE808)`, border:`1px solid #E8A83822`, borderRadius:20, padding:"16px", position:"relative", overflow:"hidden" }}>
+              <div style={{ position:"absolute", top:-30, right:-30, width:120, height:120, borderRadius:"50%", border:`1px dashed #E8A83833`, pointerEvents:"none" }}/>
+              <div style={{ position:"absolute", top:10, right:10, width:60, height:60, borderRadius:"50%", border:`1px dashed #9B6EE833`, pointerEvents:"none" }}/>
+              {innerPeople.length===0
+                ? <div style={{ textAlign:"center", padding:"20px 0", color:T.textMuted, fontSize:13 }}>
+                    Your inner circle is empty — add family, close friends, and mentors.
+                  </div>
+                : <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(min(100%,260px),1fr))", gap:10 }}>
+                    {(ringFilter==="inner"||!ringFilter?innerPeople:innerPeople.filter(p=>catFilter?p.category===catFilter:true))
+                      .filter(p=>ownerFilter==="all"||p.owner===ownerFilter||p.owner==="shared")
+                      .filter(p=>!searchQ||p.name.toLowerCase().includes(searchQ.toLowerCase()))
+                      .map(person=><PersonCard key={person.id} person={person} onOpen={()=>{setSelected(person.id);setPageView("person");}} catOf={catOf} daysAgo={daysAgo} urgency={urgency} T={T}/>)}
+                  </div>
+              }
+            </div>
+          </div>
+
+          {/* Outer circle */}
+          <div style={{ marginBottom:28 }}>
+            <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:14 }}>
+              <div style={{ width:12, height:12, borderRadius:"50%", background:"linear-gradient(135deg,#3B9EDB,#888D9B)", flexShrink:0 }}/>
+              <span style={{ fontFamily:"'DM Serif Display',serif", fontSize:18, color:T.text }}>Outer Circle</span>
+              <div style={{ flex:1, height:1, background:`linear-gradient(to right,#3B9EDB44,transparent)` }}/>
+              <span style={{ fontSize:12, color:T.textMuted, fontWeight:600 }}>{outerPeople.length} {outerPeople.length===1?"person":"people"}</span>
+            </div>
+            <div style={{ background:`linear-gradient(135deg,#3B9EDB08,#888D9B08)`, border:`1px solid #3B9EDB22`, borderRadius:20, padding:"16px", position:"relative", overflow:"hidden" }}>
+              <div style={{ position:"absolute", bottom:-20, left:-20, width:100, height:100, borderRadius:"50%", border:`1px dashed #3B9EDB22`, pointerEvents:"none" }}/>
+              {outerPeople.length===0
+                ? <div style={{ textAlign:"center", padding:"20px 0", color:T.textMuted, fontSize:13 }}>
+                    Your outer circle is empty — add distant friends and acquaintances.
+                  </div>
+                : <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(min(100%,260px),1fr))", gap:10 }}>
+                    {(ringFilter==="outer"||!ringFilter?outerPeople:outerPeople.filter(p=>catFilter?p.category===catFilter:true))
+                      .filter(p=>ownerFilter==="all"||p.owner===ownerFilter||p.owner==="shared")
+                      .filter(p=>!searchQ||p.name.toLowerCase().includes(searchQ.toLowerCase()))
+                      .map(person=><PersonCard key={person.id} person={person} onOpen={()=>{setSelected(person.id);setPageView("person");}} catOf={catOf} daysAgo={daysAgo} urgency={urgency} T={T}/>)}
+                  </div>
+              }
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── LIST VIEW ── */}
+      {pageView==="list" && people.length>0 && (
+        <div style={{ padding:"0 16px" }}>
+          {PEOPLE_CATS.map(cat=>{
+            const catPeople = allFiltered.filter(p=>p.category===cat.id);
+            if(catPeople.length===0) return null;
+            return (
+              <div key={cat.id} style={{ marginBottom:24 }}>
+                <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:10 }}>
+                  <span style={{ fontSize:15 }}>{cat.emoji}</span>
+                  <span style={{ fontSize:12, fontWeight:700, color:cat.color, textTransform:"uppercase", letterSpacing:"0.08em" }}>{cat.label}</span>
+                  <span style={{ fontSize:11, padding:"1px 7px", borderRadius:20, background:cat.color+"22", color:cat.color, fontWeight:600 }}>{catPeople.length}</span>
+                  <div style={{ flex:1, height:1, background:cat.color+"33" }}/>
+                </div>
+                <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+                  {catPeople.map(person=><PersonRow key={person.id} person={person} onOpen={()=>{setSelected(person.id);setPageView("person");}} catOf={catOf} daysAgo={daysAgo} urgency={urgency} T={T}/>)}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Add person modal */}
+      {showAdd&&(
+        <div style={{ position:"fixed",inset:0,zIndex:50,background:"rgba(0,0,0,0.65)",backdropFilter:"blur(6px)",display:"flex",alignItems:"flex-end",justifyContent:"center" }} onClick={e=>e.target===e.currentTarget&&setShowAdd(false)}>
+          <div style={{ background:T.surface,border:`1px solid ${T.border}`,borderRadius:"20px 20px 0 0",width:"100%",maxWidth:520,maxHeight:"92vh",overflowY:"auto",padding:"24px 20px 40px",boxShadow:"0 -8px 40px rgba(0,0,0,0.3)" }}>
+            <div style={{ width:40,height:4,borderRadius:2,background:T.textMuted,margin:"0 auto 20px",opacity:0.4 }}/>
+            <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:22,color:T.text,marginBottom:4 }}>Add a Person</div>
+            <div style={{ fontSize:13,color:T.textSub,marginBottom:18 }}>Who do you want to stay intentional about?</div>
+            <label style={lbl}>Name *</label><input style={inp} value={draft.name} onChange={e=>setDraft(d=>({...d,name:e.target.value}))} placeholder="e.g. Mum, Kola, Pastor..."/>
+            <label style={lbl}>Emoji (optional)</label><input style={{...inp,maxWidth:80}} value={draft.emoji} onChange={e=>setDraft(d=>({...d,emoji:e.target.value}))} placeholder="👤"/>
+            <label style={lbl}>Where do they sit?</label>
+            <div style={{ display:"flex",flexDirection:"column",gap:6,marginTop:4 }}>
+              {[
+                {ring:"inner",cats:PEOPLE_CATS.filter(c=>c.ring==="inner"),color:"#E8A838"},
+                {ring:"outer",cats:PEOPLE_CATS.filter(c=>c.ring==="outer"),color:"#3B9EDB"},
+              ].map(({ring,cats,color})=>(
+                <div key={ring} style={{ background:color+"0A",border:`1px solid ${color}33`,borderRadius:12,padding:"10px 12px" }}>
+                  <div style={{ fontSize:11,fontWeight:700,color,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:8 }}>
+                    {ring==="inner"?"⭕ Inner Circle":"🔵 Outer Circle"}
+                  </div>
+                  <div style={{ display:"flex",gap:6,flexWrap:"wrap" }}>
+                    {cats.map(c=>(
+                      <button key={c.id} onClick={()=>setDraft(d=>({...d,category:c.id}))} style={{ padding:"6px 12px",borderRadius:20,border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:draft.category===c.id?700:500,background:draft.category===c.id?c.color:"transparent",color:draft.category===c.id?"#fff":T.textSub,outline:draft.category===c.id?"none":`1px solid ${T.border}` }}>
+                        {c.emoji} {c.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <label style={lbl}>How often should you check in?</label>
+            <select style={sel} value={draft.frequency} onChange={e=>setDraft(d=>({...d,frequency:e.target.value}))}>
+              {FREQ_OPTS.map(f=><option key={f.id} value={f.id}>{f.label}</option>)}
+            </select>
+            <label style={lbl}>Whose relationship?</label>
+            <div style={{ display:"flex",gap:6,marginTop:4 }}>
+              {[["A",names.A],["B",names.B],["shared","Both of us"]].map(([v,l])=>(
+                <button key={v} onClick={()=>setDraft(d=>({...d,owner:v}))} style={{ flex:1,padding:"8px",borderRadius:9,border:`1px solid ${draft.owner===v?"#20B2AA":T.border}`,background:draft.owner===v?"#20B2AA22":"transparent",color:draft.owner===v?"#20B2AA":T.textSub,fontFamily:"'DM Sans',sans-serif",fontSize:12,cursor:"pointer",fontWeight:draft.owner===v?700:400 }}>{l}</button>
+              ))}
+            </div>
+            <label style={lbl}>Notes about them</label>
+            <textarea style={{...inp,minHeight:70,resize:"vertical",lineHeight:1.8}} value={draft.notes} onChange={e=>setDraft(d=>({...d,notes:e.target.value}))} placeholder="What's going on in their life? What do you want to be intentional about?"/>
+            <label style={lbl}>First follow-up date (optional)</label>
+            <input type="date" style={sel} value={draft.nextDate||""} onChange={e=>setDraft(d=>({...d,nextDate:e.target.value}))}/>
+            <div style={{ display:"flex",gap:10,marginTop:20 }}>
+              <button onClick={()=>setShowAdd(false)} style={{ flex:1,padding:"11px",borderRadius:11,border:`1px solid ${T.border}`,background:T.inputBg,color:T.textSub,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:14 }}>Cancel</button>
+              <button onClick={addPerson} disabled={!draft.name.trim()} style={{ flex:2,padding:"11px",borderRadius:11,border:"none",background:draft.name.trim()?"#20B2AA":"#888",color:"#fff",cursor:draft.name.trim()?"pointer":"not-allowed",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:700 }}>Add Person</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── PersonCard — grid card used in circles view ───────────────────────────────
+function PersonCard({ person, onOpen, catOf, daysAgo, urgency, T }) {
+  const cat     = catOf(person.category);
+  const lastD   = daysAgo(person.lastContact);
+  const urg     = urgency(person);
+  const urgCol  = urg==="overdue"?"#E84E8A":urg==="soon"?"#E8A838":"#3DBF8A";
+  const openG   = (person.goals||[]).filter(g=>!g.done).length;
+  const lastLog = (person.log||[])[0];
+  return (
+    <div className="pv-card" onClick={onOpen} style={{ background:T.surface, border:`1px solid ${T.border}`, borderRadius:14, padding:"14px 15px", boxShadow:"0 2px 10px rgba(0,0,0,0.07)", borderTop:`3px solid ${cat.color}`, position:"relative", overflow:"hidden" }}>
+      <div style={{ position:"absolute",top:0,right:0,width:60,height:60,borderRadius:"0 14px 0 60px",background:cat.color+"0A",pointerEvents:"none" }}/>
+      <div style={{ display:"flex", alignItems:"flex-start", gap:10, marginBottom:8 }}>
+        <div style={{ width:38,height:38,borderRadius:10,background:`linear-gradient(135deg,${cat.color}33,${cat.color}18)`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0 }}>{person.emoji||cat.emoji}</div>
+        <div style={{ flex:1, minWidth:0 }}>
+          <div style={{ fontSize:14, fontWeight:700, color:T.text, marginBottom:2 }}>{person.name}</div>
+          <div style={{ fontSize:11, color:cat.color, fontWeight:600 }}>{cat.label}</div>
+        </div>
+        {urg!=="none"&&urg!=="ok"&&<div style={{ width:8,height:8,borderRadius:"50%",background:urgCol,flexShrink:0,marginTop:4 }}/>}
+      </div>
+      <div style={{ display:"flex", gap:5, flexWrap:"wrap" }}>
+        {lastD!==null&&<span style={{ fontSize:10,padding:"2px 7px",borderRadius:20,background:lastD>30?"#E84E8A15":lastD>14?"#E8A83815":"#3DBF8A15",color:lastD>30?"#E84E8A":lastD>14?"#E8A838":"#3DBF8A",fontWeight:600 }}>{lastD===0?"Today":`${lastD}d ago`}</span>}
+        {openG>0&&<span style={{ fontSize:10,padding:"2px 7px",borderRadius:20,background:cat.color+"18",color:cat.color,fontWeight:600 }}>🎯 {openG} goal{openG!==1?"s":""}</span>}
+        {(person.log||[]).length>0&&<span style={{ fontSize:10,padding:"2px 7px",borderRadius:20,background:T.inputBg,color:T.textMuted }}>📖 {(person.log||[]).length}</span>}
+      </div>
+      {lastLog&&<div style={{ fontSize:11,color:T.textMuted,marginTop:8,fontStyle:"italic",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",lineHeight:1.5 }}>"{lastLog.summary.slice(0,55)}{lastLog.summary.length>55?"…":""}"</div>}
+    </div>
+  );
+}
+
+// ── PersonRow — compact row used in list view ─────────────────────────────────
+function PersonRow({ person, onOpen, catOf, daysAgo, urgency, T }) {
+  const cat    = catOf(person.category);
+  const lastD  = daysAgo(person.lastContact);
+  const urg    = urgency(person);
+  const urgCol = urg==="overdue"?"#E84E8A":urg==="soon"?"#E8A838":"#3DBF8A";
+  const openG  = (person.goals||[]).filter(g=>!g.done).length;
+  return (
+    <div className="pv-card" onClick={onOpen} style={{ background:T.surface,border:`1px solid ${T.border}`,borderRadius:12,padding:"12px 14px",boxShadow:"0 1px 6px rgba(0,0,0,0.06)",borderLeft:`4px solid ${cat.color}`,display:"flex",alignItems:"center",gap:12 }}>
+      <div style={{ width:36,height:36,borderRadius:9,background:cat.color+"22",display:"flex",alignItems:"center",justifyContent:"center",fontSize:17,flexShrink:0 }}>{person.emoji||cat.emoji}</div>
+      <div style={{ flex:1,minWidth:0 }}>
+        <div style={{ fontSize:14,fontWeight:700,color:T.text,marginBottom:2 }}>{person.name}</div>
+        <div style={{ display:"flex",gap:5,flexWrap:"wrap" }}>
+          {lastD!==null&&<span style={{ fontSize:11,color:lastD>30?"#E84E8A":lastD>14?"#E8A838":"#3DBF8A",fontWeight:600 }}>{lastD===0?"Spoke today":`${lastD}d ago`}</span>}
+          {openG>0&&<span style={{ fontSize:11,color:cat.color,fontWeight:600 }}>· 🎯 {openG}</span>}
+          {(person.log||[]).length>0&&<span style={{ fontSize:11,color:T.textMuted }}>· 📖 {(person.log||[]).length}</span>}
+        </div>
+      </div>
+      {urg!=="none"&&<div style={{ width:9,height:9,borderRadius:"50%",background:urgCol,flexShrink:0 }}/>}
+      <span style={{ fontSize:16,color:T.textMuted,flexShrink:0 }}>›</span>
     </div>
   );
 }
@@ -5704,13 +6263,15 @@ export default function TogetherApp() {
     ["board","Board"],["today","Today"],["someday","Someday"],["accountability","Us"],
     ["analytics","📊 Analytics"],
     ["reflections","💭 Reflections"],
+    ["monthly","📅 Monthly"],
+    ["people","🤝 People"],
     ["tracker","🔗 Tracker"],
     ["cookbook","👨‍🍳 Cookbook"],
     ["prayer","🙏 Prayer"],
     ["urgent","🔴 Urgent"],["week","This Week"],["month","This Month"],
     ["quarter","Next 3 Months"],["year","This Year"],["aitools","AI Tools"],
   ];
-  const isFullScreen=["today","someday","accountability","aitools","urgent","week","month","quarter","year","prayer","analytics","reflections","tracker","cookbook"].includes(view);
+  const isFullScreen=["today","someday","accountability","aitools","urgent","week","month","quarter","year","prayer","analytics","reflections","monthly","people","tracker","cookbook"].includes(view);
   const pad=isFullScreen?"0":"16px 16px";
 
   // ── Reusable timeline section renderer ────────────────────────────────────
@@ -5802,9 +6363,6 @@ export default function TogetherApp() {
   if (appMode === "budget") {
     return <BudgetApp names={names} mode={mode} T={T} activeUser={activeUser} onBack={()=>switchApp("tasks")}/>;
   }
-  if (appMode === "comp") {
-    return <ComprehensiveApp names={names} mode={mode} T={T} activeUser={activeUser} onBack={()=>switchApp("tasks")}/>;
-  }
 
   // ── App home selector (shown once per session if not yet chosen after load) ─
   if (appMode === "home") {
@@ -5827,13 +6385,6 @@ export default function TogetherApp() {
               <div style={{ fontSize:28,marginBottom:8 }}>💰</div>
               <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:19,color:T.text,marginBottom:4 }}>Budget Tracker</div>
               <div style={{ fontSize:13,color:T.textSub,lineHeight:1.5 }}>Track income, expenses, savings goals — per person and shared.</div>
-            </button>
-            <button onClick={()=>switchApp("comp")} style={{ padding:"22px 20px",borderRadius:16,border:"1px solid #7B61FF44",background:T.surface,cursor:"pointer",textAlign:"left",boxShadow:"0 2px 12px rgba(0,0,0,0.1)",transition:"transform 0.15s" }}
-              onMouseEnter={e=>e.currentTarget.style.transform="translateY(-2px)"}
-              onMouseLeave={e=>e.currentTarget.style.transform="none"}>
-              <div style={{ fontSize:28,marginBottom:8 }}>📚</div>
-              <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:19,color:T.text,marginBottom:4 }}>Exam Prep</div>
-              <div style={{ fontSize:13,color:T.textSub,lineHeight:1.5 }}>Active recall sessions for comprehensive exams — Amen's 4 courses + Gloria's cards.</div>
             </button>
           </div>
           <div style={{ marginTop:20,display:"flex",gap:10,justifyContent:"center" }}>
@@ -6223,6 +6774,12 @@ export default function TogetherApp() {
           <AnalyticsView log={completedLog} tasks={tasks} names={names} T={T} mode={mode} SECTIONS={SECTIONS} PRI_COLOR={PRI_COLOR} TODAY={TODAY}/>
         )}
 
+        {/* ── PEOPLE ── */}
+        {/* ── MONTHLY GOALS ── */}
+        {view==="monthly"&&<MonthlyGoalsView activeUser={activeUser} names={names} T={T} mode={mode} TODAY={TODAY} genId={genId}/>}
+
+        {view==="people"&&<PeopleView activeUser={activeUser} names={names} T={T} mode={mode} TODAY={TODAY} genId={genId}/>}
+
         {/* ── TRACKER ── */}
         {view==="tracker"&&(
           <TrackerView activeUser={activeUser} names={names} T={T} mode={mode} TODAY={TODAY} genId={genId}/>
@@ -6474,7 +7031,6 @@ export default function TogetherApp() {
               <div style={{display:"flex",gap:8}}>
                 <button onClick={()=>{setShowSett(false);switchApp("tasks");}} style={{flex:1,padding:"10px",borderRadius:10,border:`1px solid ${appMode==="tasks"?T.accent:T.border}`,background:appMode==="tasks"?T.accent+"15":T.inputBg,color:appMode==="tasks"?T.accent:T.text,fontFamily:"'DM Sans',sans-serif",fontSize:13,cursor:"pointer",fontWeight:appMode==="tasks"?700:400}}>⊞ Tasks</button>
                 <button onClick={()=>{setShowSett(false);switchApp("budget");}} style={{flex:1,padding:"10px",borderRadius:10,border:`1px solid ${appMode==="budget"?"#20B2AA":T.border}`,background:appMode==="budget"?"#20B2AA15":T.inputBg,color:appMode==="budget"?"#20B2AA":T.text,fontFamily:"'DM Sans',sans-serif",fontSize:13,cursor:"pointer",fontWeight:appMode==="budget"?700:400}}>💰 Budget</button>
-                <button onClick={()=>{setShowSett(false);switchApp("comp");}} style={{flex:1,padding:"10px",borderRadius:10,border:`1px solid ${appMode==="comp"?"#7B61FF":T.border}`,background:appMode==="comp"?"#7B61FF15":T.inputBg,color:appMode==="comp"?"#7B61FF":T.text,fontFamily:"'DM Sans',sans-serif",fontSize:13,cursor:"pointer",fontWeight:appMode==="comp"?700:400}}>📚 Exam</button>
               </div>
             </div>
 
