@@ -840,12 +840,12 @@ function ReflectionsView({ activeUser, names, T, mode, TODAY, genId }) {
 
   useEffect(() => {
     (async () => {
-      const stored = await dbGet("reflections");
+      const stored = await dbGet(`reflections_${activeUser||"A"}`);
       setEntriesState(stored ?? []);
     })();
   }, []);
 
-  function save(list) { setEntriesState(list); dbSet("reflections", list); }
+  function save(list) { setEntriesState(list); dbSet(`reflections_${activeUser||"A"}`, list); }
 
   function addEntry() {
     if (!newEntry.title.trim()) return;
@@ -1195,266 +1195,6 @@ const AIP_CARDS = [
   { id:3, title:"Stability via Lozinski measure", tag:"both", body:"If μ(A) < 0, then the trivial solution of x' = Ax is <b>globally asymptotically stable</b>.<br><br>This follows from μ(A) < 0 → all eigenvalues have negative real part → solutions decay to 0.<br><br>Example: if μ₁(A) = −1 < 0 then stable.", hint:"Lozinski measure gives a computable sufficient condition for stability. μ < 0 is sufficient but not necessary." },
 ];
 
-const ABSTRACT2_CARDS = [
-  {
-    id:1, title:"Q1 — Definition of a ring (D&F p.223)", tag:"define",
-    body:"A <b>ring R</b> is a set together with two binary operations, addition (+) and multiplication (×), satisfying three axioms (D&F p.223):<br><br><b>(i) (R, +) is an abelian group.</b> This means: + is associative; ∃ additive identity 0 with a+0=0+a=a for all a; every element has additive inverse −a; and + is commutative: a+b=b+a.<br><b>(ii) Multiplication is associative:</b> (a×b)×c = a×(b×c) for all a,b,c ∈ R.<br><b>(iii) The distributive laws hold:</b> (a+b)×c=(a×c)+(b×c) and a×(b+c)=(a×b)+(a×c) for all a,b,c ∈ R.<br><br>These are the ONLY three axioms required to be a ring. Two additional optional properties:<br><b>Commutative ring:</b> a×b = b×a for all a,b ∈ R.<br><b>Ring with identity:</b> ∃ 1 ∈ R with <b>1≠0</b> such that 1×a = a×1 = a for all a ∈ R.<br><br><b>Note (D&F p.223):</b> If R has a 1, commutativity of addition is FORCED by the distributive laws — expand (1+1)(a+b) two ways to verify. So it is not an independent assumption.",
-    hint:"THREE axioms only. (R,+) abelian is the full group condition. Commutativity of × and identity 1 are SEPARATE optional extras. The condition 1≠0 is required in the identity definition to exclude the trivial zero ring.",
-    quiz:[
-      "State all three ring axioms from D&F p.223 precisely. What does (R,+) being an abelian group require?",
-      "What distinguishes a ring from a commutative ring? What distinguishes a commutative ring from a commutative ring with identity? Give one example of each.",
-      "Why is the condition 1≠0 required in the definition of an identity element?"
-    ]
-  },
-  {
-    id:2, title:"Q2 — Units, zero divisors, group of units (D&F p.226)", tag:"define",
-    body:"<b>Definition (D&F p.226). Let R be a ring.</b><br><br><b>(1) Zero divisor:</b> A <b>nonzero</b> element a ∈ R is a zero divisor if ∃ nonzero b ∈ R with ab = 0 or ba = 0.<br><b>(2) Unit:</b> (R has identity 1≠0) Element u ∈ R is a <b>unit</b> if ∃ v ∈ R with uv = vu = 1. The set R× is the <b>group of units</b>.<br><br><b>Key fact (D&F p.226): A zero divisor can NEVER be a unit.</b><br><b>Proof:</b> Suppose a is a unit with va = 1, and ab = 0 for nonzero b. Then b = 1·b = (va)b = v(ab) = v·0 = 0, contradicting b ≠ 0. Similarly for ba = 0. This shows <b>fields contain no zero divisors</b> since every nonzero element of a field is a unit. ∎<br><br><b>In ℤ₂×ℤ₃:</b><br>An element (a,b) is a unit iff a is a unit in ℤ₂ AND b is a unit in ℤ₃. Units of ℤ₂ = {1}, units of ℤ₃ = {1,2}. So R× = {(1,1),(1,2)}.<br>Zero divisors: (1,0)·(0,1) = (0,0) so (1,0) is a zero divisor. Also (0,1)·(1,0) = (0,0) so (0,1) is a zero divisor.",
-    hint:"Zero divisor must itself be NONZERO. Unit needs a TWO-SIDED inverse uv=vu=1. Key proof: assume ab=0 with a unit, multiply on left by a⁻¹ to force b=0. In ℤ/nℤ: ū is a unit iff gcd(u,n)=1.",
-    quiz:[
-      "State the precise definitions of a zero divisor and a unit from D&F p.226. What is R×?",
-      "List ALL units and ALL zero divisors in ℤ₂×ℤ₃ with full justification.",
-      "Prove that a zero divisor can never be a unit. Write the proof exactly as in D&F p.226.",
-      "Why does this fact imply that fields contain no zero divisors?"
-    ]
-  },
-  {
-    id:3, title:"Q3 — Integral domain and field; we prove: every field is an integral domain (D&F p.228)", tag:"both",
-    body:"<b>Definition (D&F p.228). Integral domain:</b> A commutative ring with identity 1≠0 that has no zero divisors — if ab=0 in R then a=0 or b=0.<br><br><b>Definition. Field:</b> A commutative ring with identity 1≠0 where every nonzero element is a unit: F× = F−{0}.<br><br><b>We choose to prove: Every field is an integral domain.</b><br><b>Proof:</b> Let F be a field. Suppose a,b ∈ F with ab = 0. If a ≠ 0, then since F is a field, a is a unit so a⁻¹ exists. Multiply ab=0 on the left by a⁻¹: b = 1·b = (a⁻¹a)b = a⁻¹(ab) = a⁻¹·0 = 0. So b=0. Therefore F has no zero divisors and is an integral domain. ∎<br><br><b>Corollary 3 (D&F p.228): Every finite integral domain is a field.</b><br><b>Proof:</b> Let R be a finite integral domain and a ≠ 0. The map φ: R→R defined by φ(x)=ax is injective: if ax=ay then a(x−y)=0 and since a≠0 in an integral domain, x−y=0, so x=y. Since R is finite, injective ⟹ surjective. So ∃b with ab=1, meaning a is a unit. Since a was arbitrary, every nonzero element is a unit, so R is a field. ∎<br><br><b>Counterexample (converse is false):</b> ℤ is an integral domain (commutative, identity 1≠0, no zero divisors) but NOT a field because 2 ∈ ℤ has no multiplicative inverse in ℤ.",
-    hint:"We chose: field ⟹ integral domain. Proof: a≠0 ⟹ a⁻¹ exists ⟹ multiply ab=0 by a⁻¹ ⟹ b=0. Corollary 3: map x↦ax is injective (no zero divisors) hence surjective (R finite) giving ab=1. Converse fails: ℤ.",
-    quiz:[
-      "State the full definitions of an integral domain and a field from D&F p.228.",
-      "We chose to prove field ⟹ integral domain. Write the full proof.",
-      "State and prove Corollary 3: every finite integral domain is a field. Why is finiteness essential?",
-      "Give a counterexample showing an integral domain need not be a field."
-    ]
-  },
-  {
-    id:4, title:"Q4 — Unique Factorization Domain (D&F §8.3)", tag:"define",
-    body:"<b>Definition (D&F §8.3).</b> An integral domain R is a <b>UFD</b> if:<br><b>(1) Existence:</b> Every nonzero non-unit r ∈ R can be written as r = p₁p₂···pₙ where each pᵢ is irreducible.<br><b>(2) Uniqueness:</b> This factorization is unique up to reordering and associates — if r=p₁···pₙ=q₁···qₘ are two irreducible factorizations then n=m and after reordering, pᵢ=uᵢqᵢ for some unit uᵢ.<br><br><b>Hierarchy (D&F Ch.8):</b> ED ⟹ PID ⟹ UFD. None of these reverses in general.<br><br><b>Non-example: ℤ[√−5] is NOT a UFD.</b><br>Consider 6 ∈ ℤ[√−5]:<br>&nbsp;&nbsp;6 = 2·3 &nbsp;&nbsp; and &nbsp;&nbsp; 6 = (1+√−5)(1−√−5)<br>(Check: (1+√−5)(1−√−5) = 1−(−5) = 6 ✓)<br>Using the norm N(a+b√−5) = a²+5b² (satisfying N(αβ)=N(α)N(β)):<br>• No element has norm 2 (a²+5b²=2 has no integer solution) ⟹ 2 is irreducible.<br>• No element has norm 3 ⟹ 3 is irreducible.<br>• N(1±√−5)=6 and no element of norm 2 or 3 exists ⟹ 1±√−5 are irreducible.<br>• Only units are ±1 (norm 1) ⟹ none are associates.<br>Two genuinely distinct irreducible factorizations ⟹ uniqueness fails ⟹ ℤ[√−5] is not a UFD.",
-    hint:"Two conditions: existence AND uniqueness. ℤ[√-5] non-example: 6=2·3=(1+√-5)(1-√-5). Norm N(a+b√-5)=a²+5b² is multiplicative. No element has norm 2 or 3 ⟹ all four factors are irreducible. Only units are ±1 ⟹ none are associates.",
-    quiz:[
-      "State the full definition of a UFD including both conditions.",
-      "Give an explicit ring that is NOT a UFD. Write both factorizations of your chosen element.",
-      "Explain how the norm N(a+b√−5)=a²+5b² proves each factor is irreducible.",
-      "State the hierarchy ED ⟹ PID ⟹ UFD."
-    ]
-  },
-  {
-    id:5, title:"Q5 — Fundamental Theorem of Arithmetic", tag:"define",
-    body:"<b>Theorem (FTA).</b> Every integer n &gt; 1 can be written as n = p₁^{a₁}·p₂^{a₂}·…·pₖ^{aₖ} where p₁ &lt; p₂ &lt; … &lt; pₖ are distinct primes and each aᵢ ≥ 1. This factorization is <b>unique</b> — if n = q₁^{b₁}···qₘ^{bₘ} is another such factorization then k=m and pᵢ=qᵢ, aᵢ=bᵢ for all i.<br><br><b>Ring-theoretic proof:</b> FTA = ℤ is a UFD. Proof chain:<br><b>Step 1:</b> ℤ is a Euclidean Domain with norm N(a)=|a|. The Division Algorithm gives: for any a,b ∈ ℤ with b≠0, ∃ q,r ∈ ℤ with a=qb+r and 0≤r &lt; |b|.<br><b>Step 2:</b> Every ED is a PID (WOP + Division Algorithm — proved in Card 15).<br><b>Step 3:</b> Every PID is a UFD. Key step: in a PID, irreducible ⟺ prime (Proposition 11). This equivalence guarantees both existence and uniqueness of factorizations.<br>Therefore: ℤ is ED ⟹ ℤ is PID ⟹ ℤ is UFD = FTA.",
-    hint:"FTA = ℤ is a UFD. The chain is ℤ is ED (norm |a|) ⟹ PID (WOP+Division Algorithm) ⟹ UFD (irreducible=prime in PID makes factorizations unique). The uniqueness clause is what the UFD statement captures.",
-    quiz:[
-      "State the Fundamental Theorem of Arithmetic precisely, including the uniqueness clause.",
-      "Explain the ring-theoretic chain ED ⟹ PID ⟹ UFD that proves the FTA. What is the key property in a PID that makes uniqueness work?"
-    ]
-  },
-  {
-    id:6, title:"Q6 — Algebraically closed field; Fundamental Theorem of Algebra", tag:"define",
-    body:"<b>Definition.</b> A field F is <b>algebraically closed</b> if every non-constant polynomial f(x) ∈ F[x] has at least one root in F. Equivalently, F is algebraically closed iff every polynomial in F[x] splits completely into linear factors over F: f(x) = a(x−r₁)···(x−rₙ) with all rᵢ ∈ F.<br><br><b>Fundamental Theorem of Algebra.</b> The field ℂ is algebraically closed — every non-constant polynomial f(x) ∈ ℂ[x] has at least one root in ℂ. Equivalently, every degree n ≥ 1 polynomial in ℂ[x] has exactly n roots in ℂ counted with multiplicity.<br><br><b>ℝ is NOT algebraically closed.</b> Consider f(x) = x²+1 ∈ ℝ[x]. For any r ∈ ℝ: f(r) = r²+1 ≥ 0+1 = 1 &gt; 0. So f has no root in ℝ. (Its roots ±i lie in ℂ\\ℝ.) This gap between ℝ and ℂ motivates the entire theory of field extensions.",
-    hint:"Algebraically closed = every non-constant polynomial has a root IN F. FTA: ℂ is algebraically closed. ℝ is not: x²+1 ≥ 1 > 0 for all x∈ℝ so no real root. This motivates field extensions.",
-    quiz:[
-      "State the definition of an algebraically closed field.",
-      "State the Fundamental Theorem of Algebra precisely.",
-      "Prove that ℝ is not algebraically closed. Give the specific polynomial and show it has no root in ℝ."
-    ]
-  },
-  {
-    id:7, title:"Q7 — An algebraically closed field must be infinite", tag:"prove",
-    body:"<b>Theorem.</b> If F is algebraically closed then F is infinite.<br><br><b>Proof by contradiction.</b> Suppose F is algebraically closed and finite. Write F = {a₁, a₂, …, aₙ}.<br><br>Define: f(x) = (x−a₁)(x−a₂)···(x−aₙ) + 1 ∈ F[x]. This is non-constant of degree n.<br><br>For any aᵢ ∈ F: f(aᵢ) = (aᵢ−a₁)···(aᵢ−aᵢ)···(aᵢ−aₙ) + 1 = 0·(stuff) + 1 = 1 ≠ 0.<br><br>Since F = {a₁,…,aₙ} and f(aᵢ) = 1 ≠ 0 for every aᵢ, f has no root in F. But f is non-constant in F[x] and F is algebraically closed, so f must have a root. Contradiction.<br><br>Therefore F must be infinite. ∎",
-    hint:"Proof by contradiction. Key polynomial: product of all (x−aᵢ) plus 1. Evaluating at ANY element aᵢ gives 0+1=1≠0. So f has no root anywhere in F, contradicting algebraically closed. The +1 is essential.",
-    quiz:[
-      "Prove that any algebraically closed field must be infinite. Use proof by contradiction.",
-      "What is the key polynomial constructed and why does evaluating it at any element of F give 1≠0?",
-      "Why does the proof fail if you replace the +1 with +0?"
-    ]
-  },
-  {
-    id:8, title:"Q8 — Ideal definition; ring homomorphism; kernel is an ideal (D&F p.239–242)", tag:"both",
-    body:"<b>Definition. Ring homomorphism (D&F p.239).</b> A map φ:R→S is a ring homomorphism if for all a,b ∈ R: (i) φ(a+b)=φ(a)+φ(b) and (ii) φ(ab)=φ(a)φ(b). The <b>kernel</b> is ker(φ) = {r∈R | φ(r)=0_S}. A bijective ring homomorphism is an <b>isomorphism</b>.<br><br><b>Definition. Ideal (D&F p.242).</b> A subset I of ring R is a <b>left ideal</b> if I is a subring and rI⊆I for all r∈R. A <b>right ideal</b> if I is a subring and Ir⊆I for all r∈R. A <b>two-sided ideal</b> if both. For commutative rings: I is an ideal iff (i) I nonempty, (ii) a,b∈I ⟹ a−b∈I, (iii) a∈I and r∈R ⟹ ra∈I (absorption).<br><br><b>Proposition 5 (D&F p.240): ker(φ) is an ideal of R.</b><br><b>Proof:</b><br>(i) <b>Nonempty:</b> φ(0_R)=0_S so 0_R∈ker. ✓<br>(ii) <b>Subtraction:</b> If α,β∈ker then φ(α−β)=φ(α)−φ(β)=0−0=0, so α−β∈ker. ✓<br>(iii) <b>Absorption:</b> Let α∈ker, r∈R arbitrary. Then φ(rα)=φ(r)φ(α)=φ(r)·0=0, so rα∈ker. Similarly φ(αr)=0·φ(r)=0, so αr∈ker. ✓<br>Therefore ker(φ) is an ideal of R. ∎",
-    hint:"Both equations required: φ(a+b)=φ(a)+φ(b) AND φ(ab)=φ(a)φ(b). Kernel proof: three steps — nonempty (φ(0)=0), subtraction (φ(α−β)=0), absorption (φ(rα)=φ(r)·0=0). The absorption step is the key distinguishing step.",
-    quiz:[
-      "State the definition of a ring homomorphism. What two equations must it satisfy?",
-      "State the definition of an ideal for a commutative ring. What are the three conditions?",
-      "Prove Proposition 5: ker(φ) is an ideal. Write all three steps and label them explicitly."
-    ]
-  },
-  {
-    id:9, title:"Q9 — Subring that is not an ideal", tag:"compute",
-    body:"<b>Problem:</b> Give an example of a subring R of a ring S such that R is not an ideal of S, and prove it.<br><br><b>Example:</b> ℤ is a subring of ℚ, but ℤ is NOT an ideal of ℚ.<br><br><b>Proof ℤ IS a subring of ℚ:</b><br>ℤ ⊆ ℚ is nonempty (1∈ℤ). For any a,b∈ℤ: a−b∈ℤ ✓ and a·b∈ℤ ✓. So ℤ is a subring of ℚ. ✓<br><br><b>Proof ℤ is NOT an ideal of ℚ:</b><br>For ℤ to be an ideal of ℚ, the absorption condition requires: for all r∈ℚ and a∈ℤ, ra∈ℤ. Take r=½∈ℚ and a=1∈ℤ. Then r·a = ½·1 = ½ ∉ ℤ. Absorption fails. ✗ ∎<br><br><b>Intuition:</b> A subring only needs closure under multiplication by elements INSIDE itself. An ideal must absorb multiplication by ANYTHING from the whole ring. ℤ cannot absorb multiplication by ½∈ℚ.",
-    hint:"Prove TWO things: (1) ℤ IS a subring of ℚ (nonempty, closed under subtraction, closed under multiplication), (2) ℤ is NOT an ideal (½·1=½∉ℤ, absorption fails).",
-    quiz:[
-      "Give an example of a subring of a ring that is not an ideal.",
-      "Prove it IS a subring. Check all required conditions explicitly.",
-      "Prove it is NOT an ideal. Identify the specific element that violates absorption."
-    ]
-  },
-  {
-    id:10, title:"Q10 — Injective iff trivial kernel (ring homomorphisms)", tag:"prove",
-    body:"<b>Definition.</b> A function f:R→S is <b>injective</b> if for all x,y∈R: f(x)=f(y) ⟹ x=y.<br><br><b>Theorem.</b> A ring homomorphism φ:R→S is injective ⟺ ker(φ) = {0}.<br><br><b>Proof (⟹): Assume φ injective. Show ker(φ)={0}.</b><br>Let r∈ker(φ), so φ(r)=0_S. Also φ(0_R)=0_S. So φ(r)=φ(0_R). By injectivity, r=0_R. Since r was arbitrary, ker(φ)={0_R}. ✓<br><br><b>Proof (⟸): Assume ker(φ)={0}. Show φ injective.</b><br>Let a,b∈R with φ(a)=φ(b). Then φ(a−b)=φ(a)−φ(b)=0_S. So a−b∈ker(φ)={0_R}, meaning a−b=0, so a=b. ✓<br>Therefore φ is injective. ∎<br><br><b>Key algebraic move (⟸ direction):</b> φ(a)=φ(b) ⟹ φ(a−b)=0 ⟹ a−b∈ker={0} ⟹ a=b.",
-    hint:"(⟹): r∈ker ⟹ φ(r)=0=φ(0) ⟹ r=0 by injectivity. (⟸): φ(a)=φ(b) ⟹ φ(a−b)=0 ⟹ a−b=0 ⟹ a=b. BOTH directions must be proved explicitly in an exam.",
-    quiz:[
-      "State the definition of an injective function.",
-      "Prove both directions: a ring homomorphism is injective iff its kernel is the zero ideal. Label each direction clearly.",
-      "What is the key algebraic move in the (⟸) direction and why does it work?"
-    ]
-  },
-  {
-    id:11, title:"Q11 — I = R iff I contains a unit (D&F p.253 Prop 9)", tag:"prove",
-    body:"<b>Proposition 9(1) (D&F p.253).</b> Let I be an ideal of a ring R with identity. Then I=R iff I contains a unit.<br><br><b>Proof (⟸): Assume I contains a unit u with inverse v.</b><br>For any r∈R: r = r·1 = r·(vu) = (rv)·u ∈ I.<br>The last step: u∈I and I absorbs left multiplication by rv∈R so (rv)·u∈I. Since r∈R was arbitrary, R⊆I. Combined with I⊆R: I=R. ✓<br><br><b>Proof (⟹): Assume I=R.</b> Then 1∈R=I and 1 is a unit. ✓ ∎<br><br><b>Corollary.</b> A field F has only trivial ideals {0} and F.<br><b>Proof:</b> Let I be a nonzero ideal of F. Then I contains some nonzero element a. Since F is a field, a is a unit. By Prop 9(1), I=F. So the only ideals of F are {0} and F. ∎",
-    hint:"Key step: r = r·1 = r·(vu) = (rv)·u ∈ I. The element r is pulled into I by rewriting it as a multiple of u. The unit u is a 'magnet' — once it is in I, the whole ring enters through the absorption condition.",
-    quiz:[
-      "State and prove Proposition 9(1): I=R iff I contains a unit. Write the key algebraic step r=r·1=r·(vu)=(rv)·u∈I explicitly.",
-      "Deduce the corollary: a field has only trivial ideals. Write the full proof."
-    ]
-  },
-  {
-    id:12, title:"Q12 — Maximal ideal; we prove both directions: M maximal iff R/M is a field (D&F p.253–254)", tag:"both",
-    body:"<b>Definition (D&F p.253).</b> An ideal M in ring S is <b>maximal</b> if M≠S and the only ideals containing M are M and S itself. No ideal I exists with M⊊I⊊S.<br><br><b>Proposition 12 (D&F p.254): (R commutative with identity) M is maximal iff R/M is a field.</b><br><b>We prove both directions.</b><br><br><b>Proof.</b> By the Lattice Isomorphism Theorem, the ideals of R/M are in bijective correspondence with ideals of R containing M.<br><br>(⟹) Assume M maximal. Then the only ideals of R containing M are M and R. By the correspondence, the only ideals of R/M are {0} and R/M. By Proposition 9(2), R/M is a field. ✓<br><br>(⟸) Assume R/M is a field. By Prop 9(2), the only ideals of R/M are {0} and R/M. By the correspondence, the only ideals of R containing M are M and R. So M is maximal. ✓ ∎<br><br><b>Significance:</b> This is how we CONSTRUCT fields — take R and a maximal ideal M, and R/M is automatically a field.<br><b>Example:</b> nℤ is maximal in ℤ iff ℤ/nℤ is a field iff n is prime.",
-    hint:"M maximal ↔ R/M is a field. Proof uses Lattice Isomorphism Theorem: ideals of R/M ↔ ideals of R containing M. M maximal ⟺ no ideal strictly between M and R ⟺ R/M has no proper nontrivial ideal ⟺ R/M is a field (Prop 9(2)).",
-    quiz:[
-      "State the definition of a maximal ideal from D&F p.253.",
-      "State and prove Proposition 12 (BOTH directions): M is maximal iff R/M is a field. Which theorem links ideals of R/M to ideals of R?",
-      "Give an example: which ideals of ℤ are maximal and why?"
-    ]
-  },
-  {
-    id:13, title:"Q13 — Field of fractions of ℤ and ℤ₅ (D&F §7.5)", tag:"compute",
-    body:"<b>Construction of Frac(R).</b> Let R be an integral domain. The <b>field of fractions</b> Frac(R) is the smallest field containing R. Constructed as equivalence classes of pairs (a,b) with b≠0, where (a,b)~(c,d) iff ad=bc. Write a/b for the class of (a,b). Operations:<br>a/b + c/d = (ad+bc)/(bd), &nbsp;&nbsp; (a/b)(c/d) = (ac)/(bd).<br>Every nonzero element a/b has inverse b/a, making Frac(R) a field.<br><br><b>Frac(ℤ) = ℚ.</b> ℤ is an integral domain but NOT a field — 2 has no multiplicative inverse in ℤ (no integer n satisfies 2n=1). The field of fractions construction adds all missing inverses: all fractions p/q with p∈ℤ, q∈ℤ\\{0}, with p/q=r/s iff ps=qr. This gives exactly ℚ. So Frac(ℤ)=ℚ.<br><br><b>Frac(ℤ₅) = ℤ₅.</b> ℤ₅=ℤ/5ℤ is already a field since 5 is prime — every nonzero element has an inverse inside ℤ₅: 1⁻¹=1, 2⁻¹=3 (2·3=6≡1), 3⁻¹=2, 4⁻¹=4 (4·4=16≡1). No missing inverses to add. So Frac(ℤ₅)=ℤ₅.",
-    hint:"Frac(ℤ)=ℚ because ℤ is missing inverses. Frac(ℤ₅)=ℤ₅ because ℤ₅ is already a field. General rule: Frac(R)=R iff R is already a field. Equivalence: (a,b)~(c,d) iff ad=bc.",
-    quiz:[
-      "What is the field of fractions of ℤ? What is the field of fractions of ℤ₅?",
-      "Explain clearly why Frac(ℤ)=ℚ and why Frac(ℤ₅)=ℤ₅. Why do these two cases differ?"
-    ]
-  },
-  {
-    id:14, title:"Q14 — CRT: write ℤ/30ℤ as a direct product of fields", tag:"compute",
-    body:"<b>Chinese Remainder Theorem (ring version).</b> If n=p₁^{a₁}·p₂^{a₂}·…·pₖ^{aₖ} then: ℤ/nℤ ≅ ℤ/p₁^{a₁}ℤ × ℤ/p₂^{a₂}ℤ × … × ℤ/pₖ^{aₖ}ℤ. Furthermore ℤ/p^aℤ is a field iff a=1.<br><br><b>Write ℤ/30ℤ as a direct product of fields.</b><br>Step 1: Factor 30 = 2·3·5. All prime powers have exponent 1.<br>Step 2: By CRT: ℤ/30ℤ ≅ ℤ/2ℤ × ℤ/3ℤ × ℤ/5ℤ.<br>Step 3: Check each factor:<br>• ℤ/2ℤ: 2 is prime, exponent 1 ⟹ ℤ/2ℤ = 𝔽₂ is a field. ✓<br>• ℤ/3ℤ: 3 is prime, exponent 1 ⟹ ℤ/3ℤ = 𝔽₃ is a field. ✓<br>• ℤ/5ℤ: 5 is prime, exponent 1 ⟹ ℤ/5ℤ = 𝔽₅ is a field. ✓<br>Therefore: ℤ/30ℤ ≅ 𝔽₂×𝔽₃×𝔽₅, a direct product of three fields.<br><br><b>Note:</b> ℤ/nℤ is itself a field iff n is prime. Since 30 is composite, ℤ/30ℤ is not a field but decomposes as a product of fields.",
-    hint:"CRT splits ℤ/nℤ along prime factorisation. ℤ/pᵏℤ is a field iff k=1. Since 30=2·3·5 all exponents are 1 so all three factors are fields. For the exam: factor n, apply CRT, then check each factor.",
-    quiz:[
-      "State the ring version of the Chinese Remainder Theorem.",
-      "Use CRT to write ℤ/30ℤ as a direct product of fields. Show all steps and justify why each factor is a field.",
-      "For which integers n is ℤ/nℤ itself a field?"
-    ]
-  },
-  {
-    id:15, title:"Q15(a)(b) — PID definition; prove ℤ is PID; ED definition; prove every ED is PID (D&F p.270–279)", tag:"both",
-    body:"<b>(a) Definition. PID (D&F p.279).</b> A <b>Principal Ideal Domain</b> is an integral domain in which every ideal is principal: I=(a)={ra|r∈R} for some a∈R.<br><br><b>(a) Proof: ℤ is a PID.</b> Let I≤ℤ. If I={0} then I=(0). ✓ Assume I≠{0}. I contains positive integers. By <b>WOP</b>, let d=min{n∈I|n&gt;0}. Claim I=(d): (⊇) d∈I so (d)⊆I. ✓ (⊆) For a∈I, <b>Division Algorithm</b> gives a=qd+r with 0≤r&lt;d. Then r=a−qd∈I. By minimality of d, r=0, so a=qd∈(d). ✓ Hence I=(d). ∎<br><br><b>(b) Definition. ED (D&F p.270).</b> An integral domain R is a <b>Euclidean Domain</b> if ∃ norm N:R→ℤ⁺∪{0} with N(0)=0 such that for all a,b∈R with b≠0, ∃ q,r∈R with a=qb+r and either r=0 or N(r)&lt;N(b).<br>Examples: ℤ with N(a)=|a|; F[x] with N(f)=deg(f).<br><br><b>(b) Proposition 1 (D&F p.273): Every ED is a PID.</b> [More general version.] Let I be a nonzero ideal in ED R. By <b>WOP</b>, pick d∈I nonzero with N(d) minimal. For any a∈I: a=qd+r, so r=a−qd∈I. If r≠0 then N(r)&lt;N(d), contradicting minimality. So r=0 and a=qd∈(d). Hence I=(d). ∎",
-    hint:"PID: every ideal is principal I=(a). ℤ is PID: WOP gives d=min positive, Division Algorithm forces r=0. ED generalises this with norm N replacing |·|. Every ED is PID — same proof, same two tools.",
-    quiz:[
-      "State the definition of a Principal Ideal Domain.",
-      "Prove ℤ is a PID. Name both tools and explain the role of each.",
-      "State the definition of a Euclidean Domain, including the definition of norm.",
-      "Prove Proposition 1: every ED is a PID. How does this generalise the proof that ℤ is a PID?",
-      "Give two examples of Euclidean Domains."
-    ]
-  },
-  {
-    id:16, title:"Q16 — Irreducible and prime; we prove: prime implies irreducible (D&F p.284)", tag:"both",
-    body:"<b>Definitions (D&F p.284). Let R be an integral domain.</b><br><b>Irreducible:</b> Nonzero non-unit r is <b>irreducible</b> if r=ab ⟹ a or b is a unit. Otherwise r is reducible.<br><b>Prime:</b> Nonzero non-unit p is <b>prime</b> if the ideal (p) is a prime ideal — equivalently, p|ab ⟹ p|a or p|b.<br><b>Associates:</b> a and b are <b>associates</b> if a=ub for some unit u.<br><br><b>We prove: Prime ⟹ irreducible (Proposition 10, D&F p.284).</b><br><b>Proof:</b> Suppose (p) is a nonzero prime ideal and p=ab. Then ab=p∈(p), so by definition of prime ideal, a∈(p) or b∈(p). Say a∈(p), so a=pr for some r. Then p=ab=prb, giving p(1−rb)=0. Since R is an integral domain and p≠0, we have rb=1, so b is a unit. Therefore p is irreducible. ∎<br><br><b>Proposition 11 (D&F p.284):</b> In a PID, prime ⟺ irreducible.<br><br><b>Converse fails in ℤ[√−5]:</b> 3 is irreducible in ℤ[√−5] (no element has norm 3, so 3 cannot factor nontrivially) but 3 is NOT prime: 3|(1+√−5)(1−√−5)=6, yet 3∤(1+√−5) and 3∤(1−√−5) in ℤ[√−5]. So 3 satisfies the irreducible definition but not the prime definition.",
-    hint:"We chose to prove prime ⟹ irreducible. Proof: p=ab ⟹ ab∈(p) ⟹ a∈(p) or b∈(p). Say a=pr. Then p=prb ⟹ rb=1 ⟹ b is a unit ⟹ p irreducible. Counterexample in ℤ[√-5]: 3 is irreducible but not prime.",
-    quiz:[
-      "State the full definitions of irreducible, prime, and associate from D&F p.284.",
-      "We chose to prove prime implies irreducible. Write the full proof from D&F p.284.",
-      "State Proposition 11: in a PID, prime iff irreducible.",
-      "Give the counterexample showing irreducible does not imply prime in ℤ[√−5]. Verify the claim explicitly."
-    ]
-  },
-  {
-    id:17, title:"Q17 — How many elements in ℤ₅[t]/(t³+t²+3)? Is it a field?", tag:"compute",
-    body:"<b>Key theorem.</b> If p(x)∈F[x] is irreducible of degree n then |F[x]/(p(x))| = |F|ⁿ and the quotient is a field. (The count holds regardless of irreducibility.)<br><br><b>Part 1: Count.</b> F=ℤ₅, |ℤ₅|=5, degree n=3. The elements of ℤ₅[t]/(p(t)) are all polynomials a₀+a₁t+a₂t² of degree &lt;3 with coefficients in ℤ₅, giving 5³ = <b>125 elements</b>.<br><br><b>Part 2: Is it a field?</b> The quotient is a field iff p(t)=t³+t²+3 is irreducible over ℤ₅. A degree 3 polynomial is irreducible iff it has no roots in ℤ₅ (if it factored, one factor would be linear, giving a root).<br><br>Check ALL elements of ℤ₅={0,1,2,3,4}:<br>• p(0) = 0+0+3 = 3 ≠ 0 ✓<br>• p(1) = 1+1+3 = 5 ≡ <b>0</b> (mod 5) ✗ — STOP<br><br>Since p(1)=0 in ℤ₅, t=1 is a root, so t³+t²+3 is <b>reducible</b> over ℤ₅. The ideal (t³+t²+3) is NOT maximal in ℤ₅[t], and ℤ₅[t]/(t³+t²+3) is <b>NOT a field</b>.",
-    hint:"Count = 5^3 = 125. Field check: p(t) must be irreducible. For degree 3: check no roots in ℤ₅. CRITICAL: p(1)=1+1+3=5≡0 mod 5. t=1 IS a root ⟹ REDUCIBLE ⟹ NOT a field. Check all five elements to be thorough.",
-    quiz:[
-      "How many elements does ℤ₅[t]/(t³+t²+3) have? State the theorem you use.",
-      "Is this ring a field? Check every element of ℤ₅={0,1,2,3,4} as a potential root. State your conclusion and justify it."
-    ]
-  },
-  {
-    id:18, title:"Q18 — Construct a field with 8 elements as a quotient of ℤ₂[t]", tag:"compute",
-    body:"<b>Goal.</b> Construct a field with exactly 8=2³ elements as a quotient of ℤ₂[t] and explain why it is a field.<br><br><b>Step 1.</b> Need F=ℤ₂[t]/(p(t)) with p(t)∈ℤ₂[t] irreducible of degree 3. Then |F|=|ℤ₂|³=2³=8.<br><br><b>Step 2. Find irreducible poly of degree 3 over ℤ₂.</b> Try p(t)=t³+t+1. Check no roots in ℤ₂={0,1}:<br>• p(0)=0+0+1=1≠0 in ℤ₂. ✓<br>• p(1)=1+1+1=3=1≠0 in ℤ₂. ✓ (3 mod 2 = 1)<br>No roots and degree 3 ⟹ t³+t+1 is irreducible over ℤ₂. ✓<br><br><b>Step 3. Form the quotient.</b> Let F=ℤ₂[t]/(t³+t+1). Let θ=t+(t³+t+1). Every element of F is a polynomial of degree &lt;3 with coefficients in ℤ₂:<br>F = {a₀+a₁θ+a₂θ² | a₀,a₁,a₂∈ℤ₂} = {0,1,θ,1+θ,θ²,1+θ²,θ+θ²,1+θ+θ²}. That is 2³=8 elements. ✓<br><br><b>Step 4. Why it is a field.</b> t³+t+1 is irreducible over ℤ₂ ⟹ (t³+t+1) is a maximal ideal of ℤ₂[t] ⟹ by Proposition 12 (D&F p.254), the quotient is a field. ✓",
-    hint:"For degree 3 over ℤ₂: irreducible iff no roots in {0,1}. t³+t+1 works: p(0)=1≠0 and p(1)=1≠0. 8 elements: all a₀+a₁θ+a₂θ² with aᵢ∈ℤ₂. Field because irreducible ⟹ (t³+t+1) maximal ⟹ quotient is a field.",
-    quiz:[
-      "Construct a field with 8 elements as a quotient of ℤ₂[t]. Show all four steps.",
-      "Which polynomial do you use and how do you verify it is irreducible over ℤ₂?",
-      "List all 8 elements of your field explicitly.",
-      "Prove the quotient ring is a field. Which proposition do you cite?"
-    ]
-  },
-  {
-    id:19, title:"Q19 — First Isomorphism Theorem for rings (D&F Theorem 7, p.243)", tag:"both",
-    body:"<b>Theorem 7 (D&F p.243). First Isomorphism Theorem for Rings.</b> If φ:R→S is a ring homomorphism, then the kernel of φ is an ideal of R, the image of φ is a subring of S, and R/ker(φ) ≅ Im(φ).<br><br><b>Proof.</b> Let I=ker(φ). Define Φ:R/I→Im(φ) by Φ(r+I)=φ(r).<br><br><b>Step 1 — Well-defined:</b> Suppose r+I=r'+I. Then r−r'∈I=ker(φ), so φ(r−r')=0, giving φ(r)=φ(r'). So Φ(r+I)=Φ(r'+I). ✓<br><br><b>Step 2 — Ring homomorphism (both operations):</b><br>Addition: Φ((r+I)+(s+I))=Φ((r+s)+I)=φ(r+s)=φ(r)+φ(s)=Φ(r+I)+Φ(s+I). ✓<br>Multiplication: Φ((r+I)(s+I))=Φ(rs+I)=φ(rs)=φ(r)φ(s)=Φ(r+I)·Φ(s+I). ✓<br><br><b>Step 3 — Injective:</b> Suppose Φ(r+I)=0. Then φ(r)=0, so r∈ker(φ)=I, meaning r+I=I=0_{R/I}. So ker(Φ)={0}, hence Φ is injective. ✓<br><br><b>Step 4 — Surjective onto Im(φ):</b> For any φ(r)∈Im(φ), Φ(r+I)=φ(r). ✓<br>Φ is a bijective ring homomorphism ⟹ isomorphism. Therefore R/I≅Im(φ). ∎",
-    hint:"4 steps always in this order: well-defined → ring homo (BOTH addition AND multiplication) → injective → surjective. Step 1: same coset ⟹ difference in kernel ⟹ same image. Step 3: ker(Φ)={0} ⟹ injective.",
-    quiz:[
-      "State the First Isomorphism Theorem for rings from D&F Theorem 7 p.243.",
-      "Prove it. Label all four steps clearly. Write out BOTH the addition and multiplication parts of Step 2.",
-      "Use the FIT to prove Q[t]/(t³−2) ≅ Q(∛2). Define the homomorphism, find the kernel, show surjectivity, apply FIT."
-    ]
-  },
-  {
-    id:20, title:"Q20 — Use FIT to prove Q[t]/(t³−2) ≅ Q(∛2)", tag:"both",
-    body:"<b>Theorem:</b> ℚ[t]/(t³−2) ≅ ℚ(∛2) as fields.<br><br><b>Step 1 — Define φ.</b> Define φ:ℚ[t]→ℚ(∛2) by φ(f(t))=f(∛2) (evaluation at ∛2). This is a ring homomorphism: φ(f+g)=(f+g)(∛2)=f(∛2)+g(∛2) ✓ and φ(fg)=(fg)(∛2)=f(∛2)g(∛2) ✓.<br><br><b>Step 2 — Show ker(φ)=(t³−2).</b><br>• (t³−2)⊆ker: φ(t³−2)=(∛2)³−2=2−2=0. Since ker is an ideal containing t³−2, (t³−2)⊆ker. ✓<br>• ker⊆(t³−2): Let f(t)∈ker, so f(∛2)=0. By Division Algorithm in ℚ[t]: f(t)=q(t)(t³−2)+r(t) with deg(r)&lt;3. Substitute t=∛2: 0=q(∛2)·0+r(∛2), so r(∛2)=0. Since t³−2 is the minimal polynomial of ∛2 over ℚ (irreducible by Eisenstein p=2, monic, root is ∛2), no nonzero poly of degree &lt;3 can vanish at ∛2. So r(t)=0, giving f(t)=q(t)(t³−2)∈(t³−2). ✓<br><br><b>Step 3 — φ surjective.</b> Elements of ℚ(∛2) have form a+b∛2+c∛4 with a,b,c∈ℚ. For any such element: φ(a+bt+ct²)=a+b∛2+c∛4. ✓<br><br><b>Step 4 — Apply FIT.</b> ℚ[t]/ker(φ)≅Im(φ) ⟹ ℚ[t]/(t³−2)≅ℚ(∛2). ∎",
-    hint:"4-step proof: (1) define φ(f(t))=f(∛2) and verify it is a ring homo, (2) prove ker=(t³−2) using Division Algorithm + minimal polynomial, (3) surjective since every a+b∛2+c∛4 is hit, (4) apply FIT.",
-    quiz:[
-      "Define the ring homomorphism φ used in the proof and verify it is a ring homomorphism.",
-      "Prove ker(φ)=(t³−2). Prove BOTH inclusions. Explain the Division Algorithm argument for the harder inclusion.",
-      "Why can no nonzero polynomial of degree less than 3 vanish at ∛2?",
-      "Prove φ is surjective. What do the elements of ℚ(∛2) look like?",
-      "Apply the FIT to state the conclusion."
-    ]
-  },
-  {
-    id:21, title:"Q21 — Algebraic elements and minimal polynomial (D&F §13.2)", tag:"define",
-    body:"<b>Definition (D&F §13.2).</b> Let K/F be a field extension and α∈K.<br><br><b>Algebraic over F:</b> α is <b>algebraic over F</b> if ∃ nonzero f(x)∈F[x] with f(α)=0.<br><b>Transcendental over F:</b> α is <b>transcendental over F</b> if no such polynomial exists.<br><br><b>Minimal polynomial.</b> If α is algebraic over F, the <b>minimal polynomial</b> m_α(x)∈F[x] is the unique monic polynomial of least degree with m_α(α)=0.<br><br><b>Three key properties:</b><br>(i) <b>Monic</b> (leading coefficient 1).<br>(ii) <b>Irreducible over F.</b> Proof: if m_α=gh with g,h non-units then 0=g(α)h(α) so g(α)=0 or h(α)=0, giving a polynomial of smaller degree vanishing at α — contradicts minimality. ∎<br>(iii) <b>Divides every polynomial vanishing at α.</b> Proof: if f(α)=0, apply Division Algorithm: f=q·m_α+r with deg(r)&lt;deg(m_α). Substitute α: r(α)=0. Minimality forces r=0. So m_α|f. ∎<br><br><b>Examples over ℚ:</b> min poly of √2 is x²−2; min poly of ∛2 is x³−2; i has min poly x²+1 over ℝ. π and e are transcendental over ℚ.",
-    hint:"Minimal polynomial: monic + irreducible + least degree. Three properties — all proved. Irreducibility: factor gives smaller-degree polynomial vanishing at α, contradicts minimality. Divides everything vanishing at α: Division Algorithm gives r(α)=0 with deg(r)<deg(m), so r=0.",
-    quiz:[
-      "Define algebraic over F and transcendental over F. Give one example of each over ℚ.",
-      "State all three key properties of the minimal polynomial.",
-      "Prove the minimal polynomial is irreducible over F.",
-      "Prove the minimal polynomial divides every polynomial vanishing at α. Which tool is used?"
-    ]
-  },
-  {
-    id:22, title:"Q22 — Degree [E:F] of a field extension (D&F p.512)", tag:"define",
-    body:"<b>Definition (D&F p.512).</b> Let K/F be a field extension. Since K is a field containing F as a subfield, K is naturally an F-vector space (scalar multiplication = field multiplication restricted to F×K→K).<br><br>The <b>degree</b> of the extension K/F, denoted <b>[K:F]</b>, is defined as:<br>[K:F] = dim_F(K) = the dimension of K as a vector space over F.<br><br>The extension is <b>finite</b> if [K:F] is a finite integer, and <b>infinite</b> otherwise.<br><br><b>Note:</b> The degree [E:F] and dim_F(E) are the SAME thing. [E:F] is DEFINED to be dim_F(E). The study guide asks for one definition, not two separate ones.<br><br><b>Key theorem (D&F Thm 4, p.513):</b> If p(x)∈F[x] is irreducible of degree n then K=F[x]/(p(x)) has [K:F]=n with F-basis {1,θ,θ²,…,θⁿ⁻¹}.<br><br><b>Tower Law (D&F Thm 14, p.523):</b> F⊆K⊆L ⟹ [L:F]=[L:K]·[K:F].<br><br><b>[ℂ:ℝ]=2</b> with ℝ-basis {1,i}. Min poly of i over ℝ is x²+1 (irreducible over ℝ).",
-    hint:"[K:F] = dim_F(K). Nothing more. Finite means the dimension is a finite integer. Degree [E:F] and dim_F(E) are the same object — the question 'state the definition of [E:F]' wants exactly this single definition.",
-    quiz:[
-      "State the definition of the degree [E:F] of a field extension. What does finite mean?",
-      "Find [ℂ:ℝ] and give an explicit ℝ-basis for ℂ.",
-      "State the Tower Law for extension degrees.",
-      "State the key theorem: if p(x) is irreducible of degree n, what is [F[x]/(p(x)):F]?"
-    ]
-  },
-  {
-    id:23, title:"Q24 — Minimal polynomial of α=1+∛2; find [Q(α):Q] and a basis", tag:"compute",
-    body:"<b>Part (a): Find the minimal polynomial of α=1+∛2 over ℚ and prove it.</b><br><br><b>Step 1.</b> α−1=∛2. Cube: (α−1)³=(∛2)³=2. Expand: α³−3α²+3α−1=2. Rearrange: α³−3α²+3α−3=0. So α is a root of <b>p(x)=x³−3x²+3x−3</b>.<br><br><b>Step 2. Prove irreducibility by Eisenstein with prime p=3:</b><br>• Leading coeff: 1. 3∤1. ✓ (p must NOT divide leading coeff)<br>• Coeff of x²: −3. 3|−3. ✓<br>• Coeff of x: 3. 3|3. ✓<br>• Constant term: −3. 3|−3. ✓<br>• Constant term: −3. 9∤−3 (since −3/9 is not an integer). ✓ (p² must NOT divide constant term)<br>All Eisenstein conditions hold with p=3. Therefore p(x)=x³−3x²+3x−3 is irreducible over ℚ. ✓<br><br>Since p(x) is monic, irreducible over ℚ, and p(α)=0: m_α(x) = x³−3x²+3x−3.<br><br><b>Part (b): [ℚ(α):ℚ] and basis.</b><br>[ℚ(α):ℚ] = deg(m_α) = <b>3</b>.<br>ℚ-basis for ℚ(α): <b>{1, α, α²}</b>. Every element of ℚ(α) is uniquely a+bα+cα² with a,b,c∈ℚ.",
-    hint:"Step 1: cube (α−1)=∛2 to get α³−3α²+3α−3=0. Step 2: Eisenstein with p=3 — check 3 divides ALL non-leading coefficients (−3,3,−3), 3 does NOT divide leading coeff 1, 9 does NOT divide constant −3. Degree 3 ⟹ [ℚ(α):ℚ]=3.",
-    quiz:[
-      "Find the minimal polynomial of α=1+∛2 over ℚ. Show the algebraic derivation from α−1=∛2.",
-      "Prove irreducibility using Eisenstein with p=3. Verify EVERY condition explicitly.",
-      "State [ℚ(α):ℚ] and give a ℚ-basis for ℚ(α)."
-    ]
-  },
-  {
-    id:24, title:"Q25 — Prove or disprove: no roots in ℚ implies irreducible", tag:"both",
-    body:"<b>Statement:</b> If a polynomial in ℚ[x] has no roots in ℚ, then it is irreducible over ℚ.<br><br><b>This statement is FALSE.</b><br><br><b>Disproof — counterexample:</b> f(x) = x⁴+4x²+4 = (x²+2)² ∈ ℚ[x].<br><br><b>Proof f has no roots in ℚ:</b> If f(r)=0 then (r²+2)²=0 ⟹ r²+2=0 ⟹ r²=−2. But r²≥0 for all r∈ℚ, so r²=−2 is impossible. Therefore f has no roots in ℚ. ✓<br><br><b>Proof f is reducible over ℚ:</b> f(x) = x⁴+4x²+4 = (x²+2)(x²+2). This is an explicit factorization into two degree-2 polynomials, neither of which is a unit in ℚ[x]. So f is reducible. ✗<br><br><b>Conclusion:</b> f has no roots in ℚ yet is reducible. The statement is false. ∎<br><br><b>When is 'no roots ⟺ irreducible' valid?</b> ONLY for degree 2 and degree 3. For those degrees any nontrivial factorization must contain a linear factor, which gives a root. For degree ≥ 4, factorizations into two degree-2 pieces are possible with no linear factors and no roots.",
-    hint:"The statement is FALSE. Counterexample: x⁴+4x²+4=(x²+2)². No roots (r²=−2 impossible) but REDUCIBLE ((x²+2)²). No roots rules out LINEAR factors only. For degree ≥4 you must also check factorizations into higher degree pieces.",
-    quiz:[
-      "State whether the following is true or false: if a polynomial in ℚ[x] has no roots in ℚ then it is irreducible. Prove or disprove.",
-      "Give an explicit counterexample. Prove it has no roots in ℚ AND prove it is reducible.",
-      "For which polynomial degrees is 'no roots ⟺ irreducible' a valid equivalence? Why does it fail for degree ≥ 4?"
-    ]
-  },
-  {
-    id:25, title:"Q26 — Finite and algebraic extensions; we prove: finite implies algebraic (D&F Corollary 13, p.535)", tag:"both",
-    body:"<b>Definition. Finite extension:</b> K/F is <b>finite</b> if [K:F]=dim_F(K) is a finite integer.<br><b>Definition. Algebraic extension:</b> K/F is <b>algebraic</b> if every α∈K is algebraic over F — i.e., every α satisfies some nonzero polynomial in F[x].<br><br><b>We choose to prove: Finite ⟹ Algebraic (Corollary 13, D&F p.535).</b><br><b>Proof.</b> Assume K/F is finite. Let n=[K:F] (a finite integer). Let α∈K be arbitrary. Consider:<br>1, α, α², α³, …, αⁿ — these are n+1 elements of the F-vector space K.<br>Since dim_F(K)=n, and we have n+1 elements, by the fundamental theorem of linear algebra these n+1 elements are <b>linearly dependent</b> over F.<br>Therefore ∃ c₀,c₁,…,cₙ∈F, not all zero, with: c₀·1+c₁·α+c₂·α²+…+cₙ·αⁿ=0.<br>Define f(x)=c₀+c₁x+…+cₙxⁿ∈F[x]. This is nonzero and f(α)=0. So α is algebraic over F.<br>Since α∈K was arbitrary, every element of K is algebraic. Therefore K/F is algebraic. ∎<br><br><b>Finiteness is used exactly here:</b> The bound n=[K:F] is finite, which allows us to conclude n+1 elements exceed the dimension and must be dependent.<br><br><b>The converse is false:</b> Q̄/ℚ is algebraic (every element satisfies a polynomial over ℚ by definition) but [Q̄:ℚ]=∞, since [ℚ(2^{1/n}):ℚ]=n for all n≥1 (min poly xⁿ−2, irreducible by Eisenstein p=2), so [Q̄:ℚ]≥n for all n.",
-    hint:"We chose: finite ⟹ algebraic. Proof: n+1 elements in n-dim space must be linearly dependent — that dependence IS the polynomial. Finiteness gives the bound n. Converse fails: Q̄/ℚ algebraic but [Q̄:ℚ]=∞ since [ℚ(2^{1/n}):ℚ]=n for all n.",
-    quiz:[
-      "State the definitions of a finite field extension and an algebraic field extension.",
-      "We chose to prove finite implies algebraic. State and prove Corollary 13 (D&F p.535). Where exactly is finiteness used in the proof?",
-      "Give an algebraic extension that is NOT finite. Justify that it is algebraic AND that it has infinite degree."
-    ]
-  },
-];
-
 function ComprehensiveApp({ names, mode, T, activeUser, onBack }) {
   const FF = "'DM Sans',sans-serif";
   const SF = "'DM Serif Display',serif";
@@ -1483,11 +1223,10 @@ function ComprehensiveApp({ names, mode, T, activeUser, onBack }) {
   `;
 
   const USER_A_COURSES = [
-    { id:"abstract",  label:"Abstract Algebra 1", color:"#185FA5", emoji:"∑",  cards: ABSTRACT_CARDS },
-    { id:"abstract2", label:"Abstract Algebra 2", color:"#7B61FF", emoji:"∂̃", cards: ABSTRACT2_CARDS },
-    { id:"ode",       label:"ODE",                color:"#085041", emoji:"∂",  cards: ODE_CARDS },
-    { id:"real",      label:"Real Analysis",      color:"#3C3489", emoji:"ℝ",  cards: REAL_CARDS },
-    { id:"aip",       label:"AIP",                color:"#854F0B", emoji:"λ",  cards: AIP_CARDS },
+    { id:"abstract", label:"Abstract Algebra", color:"#185FA5", emoji:"∑", cards: ABSTRACT_CARDS },
+    { id:"ode",      label:"ODE",              color:"#085041", emoji:"∂", cards: ODE_CARDS },
+    { id:"real",     label:"Real Analysis",    color:"#3C3489", emoji:"ℝ", cards: REAL_CARDS },
+    { id:"aip",      label:"AIP",              color:"#854F0B", emoji:"λ", cards: AIP_CARDS },
   ];
 
   const [who,      setWho]      = useState(activeUser || "A");
@@ -1734,23 +1473,12 @@ function ComprehensiveApp({ names, mode, T, activeUser, onBack }) {
 
             {/* Quiz box */}
             {card && phase === "quiz" && (
-              <div style={{ background:T.surface, border:`1.5px solid ${accentColor}44`, borderLeft:`4px solid ${accentColor}`, borderRadius:14, padding:"16px", marginBottom:14, fontFamily:FF }}>
-                <div style={{ fontSize:11, fontWeight:700, color:accentColor, letterSpacing:"0.07em", marginBottom:10 }}>QUIZ — answer each question in chat below</div>
-                {card.quiz && card.quiz.length > 0 ? (
-                  <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-                    {card.quiz.map((q, qi) => (
-                      <div key={qi} style={{ background:T.inputBg, border:`1px solid ${T.border}`, borderRadius:10, padding:"10px 12px" }}>
-                        <div style={{ fontSize:10, fontWeight:700, color:T.textMuted, letterSpacing:"0.05em", marginBottom:4 }}>Q{qi+1}</div>
-                        <div style={{ fontSize:14, fontWeight:500, color:T.text, lineHeight:1.55 }}>{q}</div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div style={{ fontSize:15, fontWeight:500, color:T.text, lineHeight:1.55, marginBottom:8 }}>
-                    {card.tag==="define"?`Define: ${card.title}`:card.tag==="prove"?`Prove: ${card.title}`:card.tag==="both"?`State and prove: ${card.title}`:`Compute/apply: ${card.title}`}
-                  </div>
-                )}
-                <div style={{ fontSize:12, color:T.textSub, fontStyle:"italic", marginTop:10 }}>Type your answer in chat. Mark yourself honestly below.</div>
+              <div style={{ background:isA?"#EEEDFE":"#FBEAF0", border:`1px solid ${accentColor}`, borderRadius:14, padding:"16px", marginBottom:14, fontFamily:FF }}>
+                <div style={{ fontSize:11, fontWeight:700, color:accentColor, letterSpacing:"0.07em", marginBottom:8 }}>QUIZ — answer in chat below</div>
+                <div style={{ fontSize:15, fontWeight:500, color:isA?"#26215C":"#4B1528", lineHeight:1.55, marginBottom:8 }}>
+                  {card.tag==="define"?`Define: ${card.title}`:card.tag==="prove"?`Prove: ${card.title}`:card.tag==="both"?`State and prove: ${card.title}`:`Compute/apply: ${card.title}`}
+                </div>
+                <div style={{ fontSize:12, color:T.textSub, fontStyle:"italic" }}>Type your answer in chat. Mark yourself honestly below.</div>
               </div>
             )}
 
@@ -3001,8 +2729,8 @@ function BudgetApp({ names, mode, T, activeUser, onBack }) {
   const [consecration, setConsecrationState] = useState(null); // { mum, dad, offering, giving } — fixed amounts
   const [splitPlan, setSplitPlanState] = useState(null);       // { needs, wants, savings } — percentages
 
-  function saveConsecration(data){ setConsecrationState(data); dbSet("budget_consecration", data); }
-  function saveSplitPlan(data){ setSplitPlanState(data); dbSet("budget_splitplan", data); }
+  function saveConsecration(data){ setConsecrationState(data); dbSet(`budget_consecration_${activeUser||"A"}`, data); }
+  function saveSplitPlan(data){ setSplitPlanState(data); dbSet(`budget_splitplan_${activeUser||"A"}`, data); }
   const [newGoal,  setNewGoal]  = useState({ name:"",target:"",saved:"",deadline:"",emoji:"💰",owner:"A" });
   const [newAsset, setNewAsset] = useState({ name:"",category:"cash",value:"",notes:"",owner:"A" });
   const [newLiab,  setNewLiab]  = useState({ name:"",category:"loan",value:"",notes:"",owner:"A" });
@@ -3014,7 +2742,8 @@ function BudgetApp({ names, mode, T, activeUser, onBack }) {
 
   useEffect(()=>{
     (async()=>{
-      const [ca,tx,g,a,li,d,con,sp] = await Promise.all([dbGet("budget_cats"),dbGet("budget_txs"),dbGet("budget_goals"),dbGet("budget_assets"),dbGet("budget_liabs"),dbGet("budget_debts"),dbGet("budget_consecration"),dbGet("budget_splitplan")]);
+      const u = activeUser||"A";
+      const [ca,tx,g,a,li,d,con,sp] = await Promise.all([dbGet(`budget_cats_${u}`),dbGet(`budget_txs_${u}`),dbGet(`budget_goals_${u}`),dbGet(`budget_assets_${u}`),dbGet(`budget_liabs_${u}`),dbGet(`budget_debts_${u}`),dbGet(`budget_consecration_${u}`),dbGet(`budget_splitplan_${u}`)]);
       const loadedCats = ca??[]; const loadedTxs = tx??[];
       setCatsState(loadedCats); setTxsState(loadedTxs); setGoalsState(g??[]); setAssetsState(a??[]); setLiabsState(li??[]); setDebtsState(d??[]);
       setConsecrationState(con ?? { mum:0, dad:0, offering:25, giving:20, mumPct:5, dadPct:5, mumMode:"pct", dadMode:"pct" });
@@ -3025,12 +2754,13 @@ function BudgetApp({ names, mode, T, activeUser, onBack }) {
     })();
   },[]);
 
-  const saveCats = list => { setCatsState(list); dbSet("budget_cats",list); };
-  const saveTxs  = list => { setTxsState(list);  dbSet("budget_txs",list);  };
-  const saveG    = list => { setGoalsState(list); dbSet("budget_goals",list);};
-  const saveA    = list => { setAssetsState(list);dbSet("budget_assets",list);};
-  const saveLi   = list => { setLiabsState(list); dbSet("budget_liabs",list);};
-  const saveD    = list => { setDebtsState(list); dbSet("budget_debts",list);};
+  const _u = activeUser||"A";
+  const saveCats = list => { setCatsState(list); dbSet(`budget_cats_${_u}`,list); };
+  const saveTxs  = list => { setTxsState(list);  dbSet(`budget_txs_${_u}`,list);  };
+  const saveG    = list => { setGoalsState(list); dbSet(`budget_goals_${_u}`,list);};
+  const saveA    = list => { setAssetsState(list);dbSet(`budget_assets_${_u}`,list);};
+  const saveLi   = list => { setLiabsState(list); dbSet(`budget_liabs_${_u}`,list);};
+  const saveD    = list => { setDebtsState(list); dbSet(`budget_debts_${_u}`,list);};
 
   // Budget category limits (the plan: Rent $850, Groceries $400 etc)
   function addCat(data){ if(!data.name?.trim()) return; saveCats([...(cats||[]),{...data,id:gid(),limit:parseFloat(data.limit||0),owner:focus}]); setShowCat(false); }
@@ -4095,14 +3825,14 @@ function MonthlyGoalsView({ activeUser, names, T, mode, TODAY, genId }) {
 
   useEffect(()=>{
     (async()=>{
-      const [t,p] = await Promise.all([dbGet("mg_templates"),dbGet("mg_progress")]);
+      const [t,p] = await Promise.all([dbGet(`mg_templates_${activeUser||"A"}`),dbGet(`mg_progress_${activeUser||"A"}`)]);
       setTemplatesState(t??[]);
       setProgressState(p??{});
     })();
   },[]);
 
-  function saveT(list){ setTemplatesState(list); dbSet("mg_templates",list); }
-  function saveP(map){  setProgressState(map);   dbSet("mg_progress",map);  }
+  function saveT(list){ setTemplatesState(list); dbSet(`mg_templates_${activeUser||"A"}`,list); }
+  function saveP(map){  setProgressState(map);   dbSet(`mg_progress_${activeUser||"A"}`,map);  }
 
   function getCount(goalId){ return (progress?.[monthKey]?.[goalId])||0; }
   function setCount(goalId, val){
@@ -4514,8 +4244,8 @@ function PeopleView({ activeUser, names, T, mode, TODAY, genId }) {
   const [logDraft,  setLogDraft]  = useState({...blankLog});
   const [goalDraft, setGoalDraft] = useState({...blankGoal});
 
-  useEffect(()=>{ (async()=>{ const s=await dbGet("people_list"); setPeopleState(s??[]); })(); },[]);
-  function save(list){ setPeopleState(list); dbSet("people_list",list); }
+  useEffect(()=>{ (async()=>{ const s=await dbGet(`people_list_${activeUser||"A"}`); setPeopleState(s??[]); })(); },[activeUser]);
+  function save(list){ setPeopleState(list); dbSet(`people_list_${activeUser||"A"}`,list); }
 
   function addPerson(){ if(!draft.name.trim()) return; save([...(people||[]),{...draft,id:genId(),createdAt:TODAY,goals:[],log:[]}]); setDraft({...blank}); setShowAdd(false); }
   function updatePerson(id,upd){ save((people||[]).map(p=>p.id===id?{...p,...upd}:p)); }
@@ -5020,28 +4750,28 @@ function PersonRow({ person, onOpen, catOf, daysAgo, urgency, T }) {
 // ── DedupModal ─────────────────────────────────────────────────────────────
 // Finds tasks with identical titles (case-insensitive), shows them grouped,
 // and lets the user delete all duplicates keeping only the first occurrence.
-// ── RestoreBackupButton ───────────────────────────────────────────────────────
-// Lists all individual per-key backups grouped by date.
-// Each data type has its own backup row in Supabase: tasks_backup_YYYY-MM-DD,
-// budget_cats_backup_YYYY-MM-DD, people_list_backup_YYYY-MM-DD, etc.
-
+// ── BACKUP_MANIFEST ──────────────────────────────────────────────────────────
+// All keys are now per-user. The actual Supabase key is `${key}_${user}` for
+// everything except tasks (shared) and the budget keys (per activeUser).
+// type: "tasks" = shared array filtered by assignee
+//       "peruser" = key is stored as key_A or key_B, belongs entirely to one user
 const BACKUP_MANIFEST = [
-  { key:"tasks",              label:"Tasks",              emoji:"✅" },
-  { key:"budget_cats",        label:"Budget Categories",  emoji:"📋" },
-  { key:"budget_txs",         label:"Transactions",       emoji:"💸" },
-  { key:"budget_goals",       label:"Budget Goals",       emoji:"🎯" },
-  { key:"budget_assets",      label:"Assets",             emoji:"💎" },
-  { key:"budget_liabs",       label:"Liabilities",        emoji:"🏦" },
-  { key:"budget_debts",       label:"Debts",              emoji:"💳" },
-  { key:"budget_consecration",label:"Consecration",       emoji:"🕊" },
-  { key:"budget_splitplan",   label:"Split Plan",         emoji:"📊" },
-  { key:"people_list",        label:"People",             emoji:"🤝" },
-  { key:"mg_templates",       label:"Monthly Goals",      emoji:"📅" },
-  { key:"mg_progress",        label:"Goal Progress",      emoji:"📈" },
-  { key:"reflections",        label:"Reflections",        emoji:"💭" },
-  { key:"prayers",            label:"Prayers",            emoji:"🙏" },
-  { key:"tracker",            label:"Tracker",            emoji:"🔗" },
-  { key:"cookbook",           label:"Cookbook",           emoji:"👨‍🍳" },
+  { key:"tasks",               label:"Tasks",               emoji:"✅", type:"tasks"   },
+  { key:"budget_cats",         label:"Budget Categories",   emoji:"📋", type:"peruser" },
+  { key:"budget_txs",          label:"Transactions",        emoji:"💸", type:"peruser" },
+  { key:"budget_goals",        label:"Budget Goals",        emoji:"🎯", type:"peruser" },
+  { key:"budget_assets",       label:"Assets",              emoji:"💎", type:"peruser" },
+  { key:"budget_liabs",        label:"Liabilities",         emoji:"🏦", type:"peruser" },
+  { key:"budget_debts",        label:"Debts",               emoji:"💳", type:"peruser" },
+  { key:"budget_consecration", label:"Consecration",        emoji:"🕊", type:"peruser" },
+  { key:"budget_splitplan",    label:"Split Plan",          emoji:"📊", type:"peruser" },
+  { key:"people_list",         label:"People",              emoji:"🤝", type:"peruser" },
+  { key:"mg_templates",        label:"Monthly Goals",       emoji:"📅", type:"peruser" },
+  { key:"mg_progress",         label:"Goal Progress",       emoji:"📈", type:"peruser" },
+  { key:"reflections",         label:"Reflections",         emoji:"💭", type:"peruser" },
+  { key:"prayers",             label:"Prayers",             emoji:"🙏", type:"peruser" },
+  { key:"tracker",             label:"Tracker",             emoji:"🔗", type:"peruser" },
+  { key:"cookbook",            label:"Cookbook",            emoji:"👨‍🍳", type:"peruser" },
 ];
 
 const SUPA_URL = "https://sonbphyeomzzcdyuiotl.supabase.co";
@@ -5061,27 +4791,46 @@ async function supaSet(key, value) {
   });
 }
 
-function RestoreBackupButton({ T, onRestored }) {
-  const [open,       setOpen]       = useState(false);
-  const [loading,    setLoading]    = useState(false);
-  const [dates,      setDates]      = useState(null);   // sorted date strings
-  const [selDate,    setSelDate]    = useState(null);   // selected date
-  const [avail,      setAvail]      = useState({});     // { key: count/size }
-  const [loadingDate,setLoadingDate]= useState(false);
-  const [restoring,  setRestoring]  = useState(null);   // key being restored
-  const [restored,   setRestored]   = useState({});     // { key: true }
+// Tasks: keep partner's tasks, restore this user's from backup
+function mergeTasksForUser(current, backup, user) {
+  const mine = new Set([user, "both"]);
+  const otherTasks  = (current||[]).filter(t => !mine.has(t.assignee));
+  const myFromBackup= (backup||[]).filter(t =>  mine.has(t.assignee));
+  return [...otherTasks, ...myFromBackup];
+}
+// Owned arrays (budget, people, goals): keep partner's records, restore mine
+function mergeOwnedForUser(current, backup, user) {
+  const mine = new Set([user, "shared"]);
+  const otherRecords = (current||[]).filter(r => !mine.has(r.owner));
+  const myFromBackup = (backup||[]).filter(r =>  mine.has(r.owner));
+  return [...otherRecords, ...myFromBackup];
+}
+
+function RestoreBackupButton({ T, onRestored, activeUser, names }) {
+  const user      = activeUser || "A";
+  const userName  = names?.[user] || (user === "A" ? "Amen" : "Gloria");
+  const userColor = user === "A" ? "#E8A838" : "#E84E8A";
+
+  const [open,        setOpen]        = useState(false);
+  const [loading,     setLoading]     = useState(false);
+  const [dates,       setDates]       = useState(null);
+  const [selDate,     setSelDate]     = useState(null);
+  const [preview,     setPreview]     = useState({});
+  const [loadingDate, setLoadingDate] = useState(false);
+  const [restoring,   setRestoring]   = useState(null);
+  const [restored,    setRestored]    = useState({});
+  const [allDone,     setAllDone]     = useState(false);
 
   async function fetchDates() {
-    setLoading(true);
+    setLoading(true); setDates(null); setSelDate(null);
+    setPreview({}); setRestored({}); setAllDone(false);
     try {
-      // Get all backup keys — any key ending in _backup_YYYY-MM-DD
       const r = await fetch(
-        `${SUPA_URL}/rest/v1/together_data?key=like.*_backup_2*&select=key&order=key.desc&limit=200`,
+        `${SUPA_URL}/rest/v1/together_data?key=like.*_backup_2*&select=key&order=key.desc&limit=300`,
         { headers: SUPA_H }
       );
       const rows = await r.json();
       if (!Array.isArray(rows)) { setDates([]); setLoading(false); return; }
-      // Extract unique dates
       const dateSet = new Set();
       rows.forEach(row => {
         const m = row.key.match(/_backup_(\d{4}-\d{2}-\d{2})$/);
@@ -5089,26 +4838,42 @@ function RestoreBackupButton({ T, onRestored }) {
       });
       const sorted = [...dateSet].sort((a,b)=>b.localeCompare(a));
       setDates(sorted);
-      if (sorted.length > 0) loadDateDetail(sorted[0], rows);
+      if (sorted.length > 0) await loadDateDetail(sorted[0]);
     } catch(e) { setDates([]); }
     setLoading(false);
   }
 
-  async function loadDateDetail(date, existingRows) {
-    setSelDate(date);
-    setLoadingDate(true);
+  async function loadDateDetail(date) {
+    setSelDate(date); setLoadingDate(true); setPreview({}); setRestored({});
     try {
-      const rows = existingRows || await fetch(
+      const r = await fetch(
         `${SUPA_URL}/rest/v1/together_data?key=like.*_backup_${date}&select=key,value`,
         { headers: SUPA_H }
-      ).then(r=>r.json());
+      );
+      const rows = await r.json();
       const map = {};
-      rows.filter(r=>r.key.endsWith(`_backup_${date}`)).forEach(row => {
+      for (const row of (rows||[])) {
         const k = row.key.replace(`_backup_${date}`,"");
-        const v = row.value;
-        map[k] = Array.isArray(v) ? v.length : (v ? "✓" : null);
-      });
-      setAvail(map);
+        // For peruser keys the Supabase key is like budget_cats_A_backup_DATE
+        // so k would be budget_cats_A — strip the _user suffix to match manifest
+        const baseKey = k.replace(/_[AB]$/, "");
+        const manifest = BACKUP_MANIFEST.find(m => {
+          if (m.type === "tasks") return m.key === k;
+          return m.key === baseKey && k.endsWith(`_${user}`);
+        });
+        if (!manifest || !row.value) continue;
+        const raw   = row.value;
+        const total = Array.isArray(raw) ? raw.length : null;
+        let myCount = null;
+        if (manifest.type === "tasks") {
+          myCount = Array.isArray(raw) ? raw.filter(t=>t.assignee===user||t.assignee==="both").length : null;
+        } else {
+          // peruser — entire key belongs to this user
+          myCount = total;
+        }
+        map[manifest.key] = { myCount, total, raw };
+      }
+      setPreview(map);
     } catch(e) {}
     setLoadingDate(false);
   }
@@ -5116,93 +4881,121 @@ function RestoreBackupButton({ T, onRestored }) {
   async function restoreKey(key) {
     setRestoring(key);
     try {
-      const val = await supaGet(`${key}_backup_${selDate}`);
-      if (!val) { alert(`No backup found for ${key} on ${selDate}`); setRestoring(null); return; }
-      await supaSet(key, val);
-      setRestored(r => ({...r, [key]: true}));
+      const manifest = BACKUP_MANIFEST.find(m=>m.key===key);
+      const backupData = preview[key]?.raw;
+      if (!backupData) { alert(`No backup found for ${key} on ${selDate}`); setRestoring(null); return; }
+      if (manifest.type === "tasks") {
+        // Tasks are shared — merge: keep partner tasks, restore mine from backup
+        const current = await supaGet("tasks") || [];
+        await supaSet("tasks", mergeTasksForUser(current, backupData, user));
+      } else {
+        // peruser — restore entire key for this user (e.g. budget_cats_A)
+        await supaSet(`${key}_${user}`, backupData);
+      }
+      setRestored(r=>({...r,[key]:true}));
     } catch(e) { alert("Restore failed — check your connection."); }
     setRestoring(null);
   }
 
   async function restoreAll() {
-    const keys = BACKUP_MANIFEST.map(m=>m.key).filter(k=>avail[k]);
-    for (const key of keys) {
-      await restoreKey(key);
-    }
-    setTimeout(() => { if (onRestored) onRestored(); }, 800);
+    const keys = BACKUP_MANIFEST.map(m=>m.key).filter(k=>{ const p=preview[k]; return p && (p.myCount===null||p.myCount>0); });
+    for (const key of keys) { if (!restored[key]) await restoreKey(key); }
+    setAllDone(true);
+    setTimeout(()=>{ if(onRestored) onRestored(); }, 1500);
   }
 
-  const T2 = { ...{ surface:"#181B23", border:"rgba(255,255,255,0.08)", text:"#EEEAE3", textSub:"#888D9B", textMuted:"#3E424E", inputBg:"rgba(255,255,255,0.05)", accent:"#E8A838" }, ...T };
+  const T2 = { surface:"#181B23",border:"rgba(255,255,255,0.08)",text:"#EEEAE3",textSub:"#888D9B",textMuted:"#3E424E",inputBg:"rgba(255,255,255,0.05)",...T };
 
   return (
     <>
       <button onClick={()=>{ setOpen(true); fetchDates(); }}
-        style={{ padding:"10px 20px", borderRadius:10, border:"1px solid #3B9EDB44", background:"#3B9EDB11", color:"#3B9EDB", cursor:"pointer", fontFamily:"'DM Sans',sans-serif", fontSize:13, fontWeight:600, display:"flex", alignItems:"center", gap:8 }}>
-        🗄 Restore from Backup
+        style={{ padding:"10px 20px",borderRadius:10,border:`1px solid ${userColor}44`,background:userColor+"11",color:userColor,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:600,display:"flex",alignItems:"center",gap:8 }}>
+        🗄 Restore {userName}'s Data
       </button>
 
       {open&&(
         <div style={{ position:"fixed",inset:0,zIndex:200,background:"rgba(0,0,0,0.8)",backdropFilter:"blur(8px)",display:"flex",alignItems:"flex-end",justifyContent:"center" }}
           onClick={e=>e.target===e.currentTarget&&setOpen(false)}>
-          <div style={{ background:T2.surface, border:`1px solid ${T2.border}`, borderRadius:"22px 22px 0 0", width:"100%", maxWidth:560, maxHeight:"90vh", overflowY:"auto", padding:"24px 20px 40px", boxShadow:"0 -12px 60px rgba(0,0,0,0.6)" }}>
+          <div style={{ background:T2.surface,border:`1px solid ${T2.border}`,borderRadius:"22px 22px 0 0",width:"100%",maxWidth:560,maxHeight:"92vh",overflowY:"auto",padding:"24px 20px 44px",boxShadow:"0 -12px 60px rgba(0,0,0,0.6)" }}>
             <div style={{ width:40,height:4,borderRadius:2,background:T2.textMuted,margin:"0 auto 20px",opacity:0.5 }}/>
-            <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:22,color:T2.text,marginBottom:4 }}>🗄 Restore Backup</div>
+
+            <div style={{ display:"flex",alignItems:"center",gap:12,marginBottom:6 }}>
+              <div style={{ width:40,height:40,borderRadius:12,background:userColor+"22",border:`2px solid ${userColor}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,color:userColor,fontWeight:700,flexShrink:0 }}>{userName[0]}</div>
+              <div>
+                <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:22,color:T2.text }}>🗄 Restore Backup</div>
+                <div style={{ fontSize:13,color:userColor,fontWeight:600 }}>Logged in as {userName}</div>
+              </div>
+            </div>
             <div style={{ fontSize:13,color:T2.textSub,marginBottom:20,lineHeight:1.7 }}>
-              Every data type is backed up individually each day. Pick a date then choose what to restore.
+              Only <strong style={{ color:userColor }}>{userName}'s data</strong> will be restored — your partner's records are never touched. Tasks assigned to both of you are included.
             </div>
 
             {loading ? (
-              <div style={{ textAlign:"center",padding:"30px",color:T2.textSub,fontSize:13 }}>Loading backups...</div>
-            ) : !dates || dates.length===0 ? (
+              <div style={{ textAlign:"center",padding:"30px",color:T2.textSub }}>Loading backups...</div>
+            ) : !dates||dates.length===0 ? (
               <div style={{ textAlign:"center",padding:"30px" }}>
-                <div style={{ fontSize:32,marginBottom:12 }}>📭</div>
-                <div style={{ color:T2.textSub,fontSize:13,lineHeight:1.7 }}>No backups found yet.<br/>Backups are created automatically each day you use the app.</div>
+                <div style={{ fontSize:36,marginBottom:12 }}>📭</div>
+                <div style={{ color:T2.textSub,fontSize:13,lineHeight:1.8 }}>No backups found yet.<br/>Backups save automatically each day you open the app.</div>
+              </div>
+            ) : allDone ? (
+              <div style={{ textAlign:"center",padding:"30px" }}>
+                <div style={{ fontSize:48,marginBottom:10 }}>✅</div>
+                <div style={{ color:"#3DBF8A",fontSize:18,fontWeight:700,fontFamily:"'DM Serif Display',serif",marginBottom:4 }}>All restored!</div>
+                <div style={{ color:T2.textSub,fontSize:13 }}>Reloading now...</div>
               </div>
             ) : (
               <>
-                {/* Date selector */}
-                <div style={{ marginBottom:16 }}>
-                  <div style={{ fontSize:11,fontWeight:700,color:T2.textMuted,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:8 }}>Select Date</div>
+                <div style={{ marginBottom:14 }}>
+                  <div style={{ fontSize:11,fontWeight:700,color:T2.textMuted,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:8 }}>Select backup date</div>
                   <div style={{ display:"flex",gap:6,flexWrap:"wrap" }}>
                     {dates.slice(0,10).map(d=>(
                       <button key={d} onClick={()=>loadDateDetail(d)}
-                        style={{ padding:"6px 14px",borderRadius:20,border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:selDate===d?700:500,background:selDate===d?"#3B9EDB":"transparent",color:selDate===d?"#fff":T2.textSub,outline:selDate===d?"none":`1px solid ${T2.border}` }}>
+                        style={{ padding:"6px 14px",borderRadius:20,border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:selDate===d?700:500,background:selDate===d?userColor:"transparent",color:selDate===d?"#fff":T2.textSub,outline:selDate===d?"none":`1px solid ${T2.border}` }}>
                         {d}
                       </button>
                     ))}
                   </div>
                 </div>
 
-                {/* Restore All button */}
-                {selDate&&!loadingDate&&Object.keys(avail).length>0&&(
+                {selDate&&!loadingDate&&Object.keys(preview).length>0&&(
                   <button onClick={restoreAll} disabled={!!restoring}
-                    style={{ width:"100%",padding:"11px",borderRadius:11,border:"none",background:restoring?"#888":"#3DBF8A",color:"#fff",cursor:restoring?"not-allowed":"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:700,marginBottom:14 }}>
-                    {restoring ? "Restoring..." : `✅ Restore Everything from ${selDate}`}
+                    style={{ width:"100%",padding:"12px",borderRadius:11,border:"none",background:restoring?"#555":userColor,color:"#fff",cursor:restoring?"not-allowed":"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:700,marginBottom:14 }}>
+                    {restoring?"Restoring...": `✅ Restore All of ${userName}'s Data from ${selDate}`}
                   </button>
                 )}
 
-                {/* Per-key list */}
                 {loadingDate ? (
-                  <div style={{ textAlign:"center",padding:"20px",color:T2.textSub,fontSize:13 }}>Loading backup details...</div>
-                ) : selDate && (
+                  <div style={{ textAlign:"center",padding:"20px",color:T2.textSub }}>Loading backup details...</div>
+                ) : selDate&&(
                   <div style={{ display:"flex",flexDirection:"column",gap:7 }}>
                     {BACKUP_MANIFEST.map(item=>{
-                      const count   = avail[item.key];
-                      const hasData = count != null;
+                      const p       = preview[item.key];
+                      const hasData = p && (p.myCount===null||p.myCount>0);
                       const isDone  = restored[item.key];
-                      const isRest  = restoring === item.key;
+                      const isRest  = restoring===item.key;
+                      const countLabel = !p                  ? "No backup for this date"
+                        : item.type==="tasks"  ? `${p.myCount} of ${p.total} tasks are yours`
+                        : item.type==="owned"  ? `${p.myCount} of ${p.total} records are yours`
+                        : `${p.total} shared records`;
+                      const tagColor = item.type==="shared" ? "#9B6EE8" : userColor;
+                      const tagLabel = item.type==="tasks"  ? "Tasks"
+                                     : item.type==="owned"  ? "Yours"
+                                     : "Shared";
                       return (
-                        <div key={item.key} style={{ display:"flex",alignItems:"center",gap:12,padding:"11px 14px",background:T2.inputBg,border:`1px solid ${isDone?"#3DBF8A44":hasData?T2.border:T2.border}`,borderRadius:11,borderLeft:`4px solid ${isDone?"#3DBF8A":hasData?"#3B9EDB":"#3E424E"}`,opacity:hasData?1:0.4 }}>
+                        <div key={item.key} style={{ display:"flex",alignItems:"center",gap:12,padding:"11px 14px",background:T2.inputBg,border:`1px solid ${isDone?"#3DBF8A44":T2.border}`,borderRadius:11,borderLeft:`4px solid ${isDone?"#3DBF8A":hasData?userColor:"#3E424E"}`,opacity:hasData?1:0.35 }}>
                           <span style={{ fontSize:18,flexShrink:0 }}>{item.emoji}</span>
                           <div style={{ flex:1,minWidth:0 }}>
-                            <div style={{ fontSize:13,fontWeight:600,color:T2.text }}>{item.label}</div>
-                            <div style={{ fontSize:11,color:hasData?"#3B9EDB":T2.textMuted,marginTop:1 }}>
-                              {isDone ? "✓ Restored" : hasData ? (typeof count==="number"?`${count} items saved`:"Saved") : "No backup for this date"}
+                            <div style={{ display:"flex",alignItems:"center",gap:6,marginBottom:2 }}>
+                              <span style={{ fontSize:13,fontWeight:600,color:T2.text }}>{item.label}</span>
+                              <span style={{ fontSize:10,padding:"1px 6px",borderRadius:10,background:tagColor+"22",color:tagColor,fontWeight:700 }}>{tagLabel}</span>
+                            </div>
+                            <div style={{ fontSize:11,color:isDone?"#3DBF8A":hasData?T2.textSub:T2.textMuted }}>
+                              {isDone?"✓ Restored":countLabel}
                             </div>
                           </div>
                           {hasData&&(
                             <button onClick={()=>restoreKey(item.key)} disabled={!!restoring||isDone}
-                              style={{ padding:"6px 14px",borderRadius:8,border:"none",background:isDone?"#3DBF8A":isRest?"#888":"#3B9EDB",color:"#fff",cursor:(restoring||isDone)?"not-allowed":"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:700,flexShrink:0 }}>
+                              style={{ padding:"6px 14px",borderRadius:8,border:"none",background:isDone?"#3DBF8A":isRest?"#555":userColor,color:"#fff",cursor:(restoring||isDone)?"not-allowed":"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:700,flexShrink:0 }}>
                               {isDone?"Done":isRest?"...":"Restore"}
                             </button>
                           )}
@@ -5214,16 +5007,13 @@ function RestoreBackupButton({ T, onRestored }) {
               </>
             )}
 
-            <button onClick={()=>setOpen(false)} style={{ width:"100%",marginTop:20,padding:"11px",borderRadius:11,border:`1px solid ${T2.border}`,background:"transparent",color:T2.textSub,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:13 }}>
-              Close
-            </button>
+            <button onClick={()=>setOpen(false)} style={{ width:"100%",marginTop:20,padding:"11px",borderRadius:11,border:`1px solid ${T2.border}`,background:"transparent",color:T2.textSub,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:13 }}>Close</button>
           </div>
         </div>
       )}
     </>
   );
 }
-
 
 function DedupModal({ onClose, tasks, onDelete, T, mode }) {
   // Group tasks by normalised title
@@ -5750,8 +5540,8 @@ function TrackerView({ activeUser, names, T, mode, TODAY, genId }) {
   const blankItem = { title:"", url:"", category:"phd", status:"saved", notes:[], deadline:"", notes_text:"", createdBy:"", createdAt:"" };
   const [newItem, setNewItem] = useState({...blankItem});
 
-  useEffect(()=>{ (async()=>{ const s=await dbGet("tracker"); setItemsState(s??[]); })(); },[]);
-  function save(list) { setItemsState(list); dbSet("tracker",list); }
+  useEffect(()=>{ (async()=>{ const s=await dbGet(`tracker_${activeUser||"A"}`); setItemsState(s??[]); })(); },[activeUser]);
+  function save(list) { setItemsState(list); dbSet(`tracker_${activeUser||"A"}`,list); }
   function addItem() {
     if (!newItem.title.trim()) return;
     save([...(items||[]), { ...newItem, id:genId(), createdBy:activeUser||"A", createdAt:TODAY, notes:[] }]);
@@ -5914,8 +5704,8 @@ function CookbookView({ activeUser, names, T, mode, TODAY, genId }) {
   const blank = { title:"", category:"dinner", ingredients:"", steps:"", notes:"", servings:"", time:"", url:"" };
   const [newRecipe, setNew] = useState({...blank});
 
-  useEffect(()=>{ (async()=>{ const s=await dbGet("cookbook"); setRecipesState(s??[]); })(); },[]);
-  function save(list) { setRecipesState(list); dbSet("cookbook",list); }
+  useEffect(()=>{ (async()=>{ const s=await dbGet(`cookbook_${activeUser||"A"}`); setRecipesState(s??[]); })(); },[activeUser]);
+  function save(list) { setRecipesState(list); dbSet(`cookbook_${activeUser||"A"}`,list); }
   function addRecipe() {
     if (!newRecipe.title.trim()) return;
     save([...(recipes||[]), { ...newRecipe, id:genId(), createdBy:activeUser||"A", createdAt:TODAY }]);
@@ -6064,14 +5854,14 @@ function PrayerView({ tasks, setTasks, names, activeUser, T, mode, aColor, aLabe
 
   useEffect(() => {
     (async () => {
-      const stored = await dbGet("prayers");
+      const stored = await dbGet(`prayers_${activeUser||"A"}`);
       setPrayersState(stored ?? []);
     })();
   }, []);
 
   function savePrayers(list) {
     setPrayersState(list);
-    dbSet("prayers", list);
+    dbSet(`prayers_${activeUser||"A"}`, list);
   }
 
   function addPrayer() {
@@ -6727,81 +6517,78 @@ export default function TogetherApp() {
         const myId  = (() => { try { return localStorage.getItem("together_identity"); } catch { return null; } })();
         const soKey = myId ? `sectionOrder_${myId}` : "sectionOrder";
         const [t, n, m, so, cl] = await Promise.all([dbGet("tasks"), dbGet("names"), dbGet("mode"), dbGet(soKey), dbGet("completedLog")]);
-        // ── SAFE LOAD: never overwrite real data with samples ──────────────────
-        // If t is null it means the tasks key doesn't exist in Supabase yet —
-        // could be a brand new user OR could mean data was accidentally cleared.
-        // We check for any backup before deciding it's a new user.
-        let finalTasks;
-        if (t && t.length > 0) {
-          // Normal case — real tasks found
-          finalTasks = t.map((tk, i) => ({ order:i, ...tk, createdAt:tk.createdAt||TODAY, dueDate:tk.dueDate||"", lastReset:tk.lastReset||"" }));
-        } else if (!t) {
-          // No tasks key at all — check if we have any backup before assuming new user
+
+        // ── SAFE LOAD — never write sample data to Supabase ───────────────────
+        // Rule: if t exists (even empty array), ALWAYS use it. Never overwrite.
+        // Only show samples in memory if t is null AND no backup exists anywhere.
+        if (t !== null) {
+          // ✓ Normal case — real tasks exist in Supabase, use them
+          const loaded = t.map((tk, i) => ({ order:i, ...tk, createdAt:tk.createdAt||TODAY, dueDate:tk.dueDate||"", lastReset:tk.lastReset||"" }));
+          const afterReset = resetDailies(loaded);
+          tasksRef.current = afterReset;
+          setTasksState(afterReset);
+          // Only write back if resetDailies actually changed something (e.g. daily reset)
+          if (JSON.stringify(afterReset) !== JSON.stringify(loaded)) {
+            await dbSet("tasks", afterReset);
+          }
+          // ── Daily backup — tasks + all per-user keys ──────────────────────
+          try {
+            const existingBackup = await dbGet(`tasks_backup_${TODAY}`);
+            if (!existingBackup) {
+              const u = myId || "A";
+              // Always back up shared tasks
+              if (t && t.length > 0) await dbSet(`tasks_backup_${TODAY}`, t);
+              // Back up all per-user keys for whoever is logged in
+              const PER_USER_KEYS = [
+                "budget_cats","budget_txs","budget_goals",
+                "budget_assets","budget_liabs","budget_debts",
+                "budget_consecration","budget_splitplan",
+                "people_list","mg_templates","mg_progress",
+                "reflections","prayers","tracker","cookbook",
+              ];
+              const vals = await Promise.all(PER_USER_KEYS.map(k=>dbGet(`${k}_${u}`).catch(()=>null)));
+              await Promise.all(PER_USER_KEYS.map((k,i)=>{
+                const v = vals[i];
+                if (!v || (Array.isArray(v) && v.length===0)) return Promise.resolve();
+                return dbSet(`${k}_${u}_backup_${TODAY}`, v).catch(()=>null);
+              }));
+              console.log(`[Together] Daily backup saved for ${TODAY} (user ${u})`);
+            }
+          } catch(e) { console.warn("[Together] Backup failed:", e); }
+        } else {
+          // t is null — tasks key does not exist in Supabase at all
+          // Check for any backup before deciding this is a brand new user
+          const yesterday = new Date(Date.now()-86400000).toISOString().slice(0,10);
           const anyBackup = await dbGet(`tasks_backup_${TODAY}`).catch(()=>null)
-            || await dbGet(`tasks_backup_${new Date(Date.now()-86400000).toISOString().slice(0,10)}`).catch(()=>null);
+                         || await dbGet(`tasks_backup_${yesterday}`).catch(()=>null);
           if (anyBackup && anyBackup.length > 0) {
-            // Backups exist — data was lost. Show restore screen, DON'T load samples.
+            // Backups exist — data was lost from the tasks key. Show error, DO NOT load samples.
             setStatus("error");
-            setLoadMsg("Your tasks appear missing but backups exist. Use 'Restore from Backup' below.");
+            setLoadMsg("Your tasks appear missing but backups exist — use Restore from Backup below.");
             clearInterval(ti);
             return;
           }
-          // Genuinely new user — safe to load samples
-          finalTasks = SAMPLES.map((tk, i) => ({ order:i, createdAt:TODAY, dueDate:"", lastReset:"", ...tk }));
-        } else {
-          // t exists but is empty array — user deleted all tasks intentionally
-          finalTasks = [];
+          // Genuinely new user — safe to show samples in memory only, do NOT write to Supabase yet
+          const fb = resetDailies(SAMPLES.map((tk, i) => ({ order:i, createdAt:TODAY, dueDate:"", lastReset:"", ...tk })));
+          tasksRef.current = fb;
+          setTasksState(fb);
+          // Do NOT call dbSet("tasks", ...) here — let the user add their first real task first
         }
-        const afterReset = resetDailies(finalTasks);
-        tasksRef.current = afterReset;
-        setTasksState(afterReset);
-        // Only write to Supabase if brand new user or dailies changed
-        const resetChanged = JSON.stringify(afterReset) !== JSON.stringify(finalTasks);
-        if (!t) await dbSet("tasks", afterReset);
-        else if (resetChanged) await dbSet("tasks", afterReset);
+
         if (n) setNamesState(n);
         if (m) setMode(m);
         if (so) { setSectionOrder(so); sectionOrderRef.current = so; }
         else { const def = SECTIONS.map(s=>s.id); setSectionOrder(def); sectionOrderRef.current = def; await dbSet(soKey, def); }
         if (cl) { setCompletedLog(cl); completedLogRef.current = cl; }
         setStatus("live");
-        // init seenIds AFTER first load so poll doesn't toast on startup
         seenIdsRef.current = (tasksRef.current || []).map(t => t.id);
-        // ── Daily backup — each key gets its own dated backup row ─────────────
-        // Format: tasks_backup_2026-04-10, budget_cats_backup_2026-04-10, etc.
-        // Only runs once per day (checks if today's backup already exists).
-        try {
-          const existingCheck = await dbGet(`tasks_backup_${TODAY}`);
-          if (!existingCheck) {
-            const BACKUP_KEYS = [
-              "tasks",
-              "budget_cats","budget_txs","budget_goals",
-              "budget_assets","budget_liabs","budget_debts",
-              "budget_consecration","budget_splitplan",
-              "people_list","mg_templates","mg_progress",
-              "reflections","prayers","tracker","cookbook",
-            ];
-            const liveData = await Promise.all(BACKUP_KEYS.map(k => dbGet(k).catch(()=>null)));
-            await Promise.all(
-              BACKUP_KEYS.map((k, i) => {
-                const val = liveData[i];
-                if (!val) return Promise.resolve();
-                const isEmpty = Array.isArray(val) ? val.length === 0 : Object.keys(val).length === 0;
-                if (isEmpty) return Promise.resolve();
-                return dbSet(`${k}_backup_${TODAY}`, val).catch(()=>null);
-              })
-            );
-            console.log(`[Together] Daily backup saved for ${TODAY}`);
-          }
-        } catch(e) { console.warn("[Together] Backup failed:", e); }
+
       } catch(err) {
-        // ── CRITICAL: never silently load sample data on a network error ──
-        // If Supabase is unreachable, show an error with a retry button.
-        // Loading SAMPLES here would make it look like data was lost.
-        console.error("Failed to load from Supabase:", err);
+        // Network/Supabase error — show error screen, never load samples
+        console.error("[Together] Load failed:", err);
         setStatus("error");
-        setLoadMsg("Could not connect to your data. Check your internet connection.");
-        // Do NOT setTasksState(SAMPLES) — leave tasks as null so loading screen shows
+        setLoadMsg("Could not connect. Check your internet and tap Retry.");
+        // DO NOT load SAMPLES here — tasks stays null so the error screen shows
       }
       clearInterval(ti);
     })();
@@ -7094,31 +6881,29 @@ export default function TogetherApp() {
   const aLabel = a  => a==="both"?`${names.A} & ${names.B}`:names[a]||a;
   const aColor = a  => a==="A"?"#E8A838":a==="B"?"#E84E8A":"#3DBF8A";
 
-  // ── Loading / Error screen ─────────────────────────────────────────────────
+  // ── Loading screen ─────────────────────────────────────────────────────────
   if (!tasks) return (
     <div style={{ position:"fixed",inset:0,background:"#0F1117",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",fontFamily:"'DM Sans',sans-serif",gap:20,padding:24 }}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}`}</style>
-
-      {status === "error" ? (
-        /* ── ERROR STATE — connection failed ── */
+      {status==="error" ? (
         <>
-          <div style={{ fontSize:44 }}>⚠️</div>
+          <div style={{ fontSize:48 }}>⚠️</div>
           <div style={{ textAlign:"center" }}>
-            <div style={{ color:"#E8A838",fontSize:20,fontWeight:700,fontFamily:"'DM Serif Display',serif",marginBottom:8 }}>Couldn't connect</div>
-            <div style={{ color:"#888D9B",fontSize:13,lineHeight:1.7,maxWidth:320,marginBottom:20 }}>
-              {loadMsg}<br/>Your data is safe — this is a network issue.
-            </div>
+            <div style={{ color:"#E8A838",fontSize:22,fontWeight:700,fontFamily:"'DM Serif Display',serif",marginBottom:8 }}>Couldn't load your data</div>
+            <div style={{ color:"#888D9B",fontSize:13,lineHeight:1.8,maxWidth:320,marginBottom:24 }}>{loadMsg}<br/>Your data is safe — this is a connection issue.</div>
           </div>
-          {/* Retry */}
-          <button onClick={()=>{ setStatus("connecting"); setLoadMsg("Reconnecting..."); setTasksState(null); window.location.reload(); }}
+          <button onClick={()=>window.location.reload()}
             style={{ padding:"12px 28px",borderRadius:12,border:"none",background:"#E8A838",color:"#0F1117",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:700 }}>
-            🔄 Retry Connection
+            🔄 Retry
           </button>
-          {/* Restore from backup */}
-          <RestoreBackupButton T={{ surface:"#181B23",border:"rgba(255,255,255,0.08)",text:"#EEEAE3",textSub:"#888D9B",textMuted:"#3E424E",inputBg:"rgba(255,255,255,0.05)" }} onRestored={()=>window.location.reload()}/>
+          <RestoreBackupButton
+            T={{ surface:"#181B23",border:"rgba(255,255,255,0.08)",text:"#EEEAE3",textSub:"#888D9B",textMuted:"#3E424E",inputBg:"rgba(255,255,255,0.05)" }}
+            activeUser={activeUser}
+            names={names}
+            onRestored={()=>window.location.reload()}
+          />
         </>
       ) : (
-        /* ── LOADING STATE ── */
         <>
           <div style={{ position:"relative",width:72,height:72 }}>
             <div style={{ position:"absolute",inset:0,border:"3px solid rgba(232,168,56,0.15)",borderRadius:"50%" }}/>
@@ -7223,15 +7008,13 @@ export default function TogetherApp() {
     ["board","Board"],["today","Today"],["someday","Someday"],["accountability","Us"],
     ["analytics","📊 Analytics"],
     ["reflections","💭 Reflections"],
-    ["monthly","📅 Monthly"],
-    ["people","🤝 People"],
     ["tracker","🔗 Tracker"],
     ["cookbook","👨‍🍳 Cookbook"],
     ["prayer","🙏 Prayer"],
     ["urgent","🔴 Urgent"],["week","This Week"],["month","This Month"],
     ["quarter","Next 3 Months"],["year","This Year"],["aitools","AI Tools"],
   ];
-  const isFullScreen=["today","someday","accountability","aitools","urgent","week","month","quarter","year","prayer","analytics","reflections","monthly","people","tracker","cookbook"].includes(view);
+  const isFullScreen=["today","someday","accountability","aitools","urgent","week","month","quarter","year","prayer","analytics","reflections","tracker","cookbook"].includes(view);
   const pad=isFullScreen?"0":"16px 16px";
 
   // ── Reusable timeline section renderer ────────────────────────────────────
@@ -7323,7 +7106,6 @@ export default function TogetherApp() {
   if (appMode === "budget") {
     return <BudgetApp names={names} mode={mode} T={T} activeUser={activeUser} onBack={()=>switchApp("tasks")}/>;
   }
-
   if (appMode === "comp") {
     return <ComprehensiveApp names={names} mode={mode} T={T} activeUser={activeUser} onBack={()=>switchApp("tasks")}/>;
   }
@@ -7351,10 +7133,11 @@ export default function TogetherApp() {
               <div style={{ fontSize:13,color:T.textSub,lineHeight:1.5 }}>Track income, expenses, savings goals — per person and shared.</div>
             </button>
             <button onClick={()=>switchApp("comp")} style={{ padding:"22px 20px",borderRadius:16,border:"1px solid #7B61FF44",background:T.surface,cursor:"pointer",textAlign:"left",boxShadow:"0 2px 12px rgba(0,0,0,0.1)",transition:"transform 0.15s" }}
-              onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-2px)";}} onMouseLeave={e=>{e.currentTarget.style.transform="none";}}>
-              <div style={{fontSize:28,marginBottom:8}}>📚</div>
-              <div style={{fontFamily:"'DM Serif Display',serif",fontSize:17,color:T.text,marginBottom:4}}>Exam Prep</div>
-              <div style={{fontSize:12,color:"#7B61FF"}}>Study tools & flash cards</div>
+              onMouseEnter={e=>e.currentTarget.style.transform="translateY(-2px)"}
+              onMouseLeave={e=>e.currentTarget.style.transform="none"}>
+              <div style={{ fontSize:28,marginBottom:8 }}>📚</div>
+              <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:19,color:T.text,marginBottom:4 }}>Exam Prep</div>
+              <div style={{ fontSize:13,color:T.textSub,lineHeight:1.5 }}>Active recall sessions for comprehensive exams — Amen's 4 courses + Gloria's cards.</div>
             </button>
           </div>
           <div style={{ marginTop:20,display:"flex",gap:10,justifyContent:"center" }}>
@@ -7744,12 +7527,6 @@ export default function TogetherApp() {
           <AnalyticsView log={completedLog} tasks={tasks} names={names} T={T} mode={mode} SECTIONS={SECTIONS} PRI_COLOR={PRI_COLOR} TODAY={TODAY}/>
         )}
 
-        {/* ── PEOPLE ── */}
-        {/* ── MONTHLY GOALS ── */}
-        {view==="monthly"&&<MonthlyGoalsView activeUser={activeUser} names={names} T={T} mode={mode} TODAY={TODAY} genId={genId}/>}
-
-        {view==="people"&&<PeopleView activeUser={activeUser} names={names} T={T} mode={mode} TODAY={TODAY} genId={genId}/>}
-
         {/* ── TRACKER ── */}
         {view==="tracker"&&(
           <TrackerView activeUser={activeUser} names={names} T={T} mode={mode} TODAY={TODAY} genId={genId}/>
@@ -8013,11 +7790,13 @@ export default function TogetherApp() {
               </button>
             </div>
 
-            {/* Restore Backup */}
+            {/* Data & Backups */}
             <div style={{marginTop:16,paddingTop:16,borderTop:`1px solid ${T.border}`}}>
               <div style={{fontSize:12,fontWeight:600,color:T.textMuted,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:4}}>Data & Backups</div>
-              <div style={{fontSize:12,color:T.textMuted,marginBottom:10,lineHeight:1.6}}>Your tasks and all app data are backed up automatically every day. Restore any backup if something goes wrong.</div>
-              <RestoreBackupButton T={T} onRestored={()=>{ setShowSett(false); window.location.reload(); }}/>
+              <div style={{fontSize:12,color:T.textMuted,marginBottom:10,lineHeight:1.6}}>
+                Your data is backed up daily. The restore only affects <strong style={{color:activeUser==="A"?"#E8A838":"#E84E8A"}}>{names[activeUser||"A"]}'s</strong> records — your partner's data is never touched.
+              </div>
+              <RestoreBackupButton T={T} activeUser={activeUser} names={names} onRestored={()=>{ setShowSett(false); window.location.reload(); }}/>
             </div>
 
             {/* Push Notifications */}
