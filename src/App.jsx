@@ -2697,7 +2697,7 @@ function BudgetApp({ names, mode, T, activeUser, onBack }) {
   const [liabs,     setLiabsState]   = useState(null);
   const [debts,     setDebtsState]   = useState(null);
   const [view,      setBView]        = useState("budget");
-  const [focus,     setFocus]        = useState(activeUser||"A");
+  const [focus,     setFocus]        = useState(activeUser||"A"); // locked to logged-in user
   const [month,     setMonth]        = useState(new Date().getMonth());
   const [year,      setYear]         = useState(new Date().getFullYear());
   const [catFilter, setCatFilter]    = useState(null);
@@ -2886,13 +2886,9 @@ function BudgetApp({ names, mode, T, activeUser, onBack }) {
         <button onClick={onBack} style={{ width:34,height:34,borderRadius:9,border:`1px solid ${T.border}`,background:T.inputBg,cursor:"pointer",fontSize:16,display:"flex",alignItems:"center",justifyContent:"center",color:T.textSub,flexShrink:0 }}>←</button>
         <span style={{ fontFamily:"'DM Serif Display',serif",fontSize:19,color:"#20B2AA",whiteSpace:"nowrap",flexShrink:0 }}>Budget 💰</span>
         <div style={{ flex:1,minWidth:0 }}/>
-        {/* Focus switcher */}
-        <div style={{ display:"flex",background:T.inputBg,borderRadius:9,padding:2,border:`1px solid ${T.border}`,gap:2,flexShrink:0 }}>
-          {[["A",(names.A||"A")[0]],["B",(names.B||"B")[0]],["shared","S"]].map(([f,l])=>(
-            <button key={f} onClick={()=>setFocus(f)} title={f==="shared"?"Shared":names[f]} style={{ padding:"4px 8px",borderRadius:7,border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:600,background:focus===f?(f==="A"?"#E8A838":f==="B"?"#E84E8A":"#9B6EE8"):"transparent",color:focus===f?"#fff":T.textSub,transition:"all 0.15s",whiteSpace:"nowrap" }}>
-              <span className="b-full-name" style={{ display:"inline" }}>{f==="shared"?"Shared":names[f]}</span>
-            </button>
-          ))}
+        {/* Logged-in user indicator */}
+        <div style={{ padding:"4px 12px",borderRadius:9,background:activeUser==="A"?"#E8A83822":"#E84E8A22",color:activeUser==="A"?"#E8A838":"#E84E8A",fontSize:12,fontWeight:700,flexShrink:0 }}>
+          {names[activeUser||"A"]}
         </div>
         <button onClick={()=>{setTourStep(0);setShowTour(true);}} style={{ width:34,height:34,borderRadius:9,border:`1px solid ${T.border}`,background:T.inputBg,cursor:"pointer",fontSize:16,display:"flex",alignItems:"center",justifyContent:"center",color:T.textSub,flexShrink:0 }} title="Tour">ⓘ</button>
         <button onClick={()=>{
@@ -3877,7 +3873,6 @@ function MonthlyGoalsView({ activeUser, names, T, mode, TODAY, genId }) {
 
   // Month summary stats
   const myTemplates = (templates||[]).filter(t=>
-    (ownerF==="all" || t.owner===ownerF || t.owner==="shared") &&
     (!catFilter || t.category===catFilter)
   );
   const totalGoals    = myTemplates.length;
@@ -3978,11 +3973,7 @@ function MonthlyGoalsView({ activeUser, names, T, mode, TODAY, genId }) {
               </button>
             ))}
           </div>
-          <div style={{ display:"flex",gap:5,flexShrink:0 }}>
-            {[["all","All"],["A",names.A],["B",names.B]].map(([v,l])=>(
-              <button key={v} onClick={()=>setOwnerF(v)} style={{ padding:"5px 10px",borderRadius:20,border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:ownerF===v?700:500,background:ownerF===v?"#20B2AA":"transparent",color:ownerF===v?"#fff":T.textSub,outline:ownerF===v?"none":`1px solid ${T.border}` }}>{l}</button>
-            ))}
-          </div>
+
         </div>
       </div>
 
@@ -4073,7 +4064,7 @@ function MonthlyGoalsView({ activeUser, names, T, mode, TODAY, genId }) {
                     {goal.notes&&<div style={{ fontSize:12,color:T.textMuted,fontStyle:"italic",lineHeight:1.6,marginTop:8,borderTop:`1px solid ${T.border}`,paddingTop:8 }}>{goal.notes}</div>}
 
                     {/* Owner badge */}
-                    {goal.owner!=="shared"&&<div style={{ fontSize:10,color:T.textMuted,marginTop:6,textAlign:"right" }}>👤 {names[goal.owner]||goal.owner}</div>}
+                    
                   </div>
                 );
               })}
@@ -4119,12 +4110,7 @@ function MonthlyGoalsView({ activeUser, names, T, mode, TODAY, genId }) {
             <label style={lbl}>Notes / context (optional)</label>
             <textarea style={{...inp,minHeight:60,resize:"vertical",lineHeight:1.8}} value={draft.notes} onChange={e=>setDraft(d=>({...d,notes:e.target.value}))} placeholder="e.g. Focus on his relationship series first, then leadership"/>
 
-            <label style={lbl}>Whose goal?</label>
-            <div style={{ display:"flex",gap:6,marginTop:4 }}>
-              {[["A",names.A],["B",names.B],["shared","Both of us"]].map(([v,l])=>(
-                <button key={v} onClick={()=>setDraft(d=>({...d,owner:v}))} style={{ flex:1,padding:"8px",borderRadius:9,border:`1px solid ${draft.owner===v?"#9B6EE8":T.border}`,background:draft.owner===v?"#9B6EE822":"transparent",color:draft.owner===v?"#9B6EE8":T.textSub,fontFamily:"'DM Sans',sans-serif",fontSize:12,cursor:"pointer",fontWeight:draft.owner===v?700:400 }}>{l}</button>
-              ))}
-            </div>
+
 
             <div style={{ display:"flex",gap:10,marginTop:22 }}>
               <button onClick={()=>setShowAdd(false)} style={{ flex:1,padding:"11px",borderRadius:11,border:`1px solid ${T.border}`,background:T.inputBg,color:T.textSub,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:14 }}>Cancel</button>
@@ -4170,12 +4156,7 @@ function MonthlyGoalsView({ activeUser, names, T, mode, TODAY, genId }) {
             <label style={lbl}>Notes</label>
             <textarea style={{...inp,minHeight:60,resize:"vertical",lineHeight:1.8}} value={editGoal.notes||""} onChange={e=>setEditGoal(d=>({...d,notes:e.target.value}))}/>
 
-            <label style={lbl}>Whose goal?</label>
-            <div style={{ display:"flex",gap:6,marginTop:4 }}>
-              {[["A",names.A],["B",names.B],["shared","Both of us"]].map(([v,l])=>(
-                <button key={v} onClick={()=>setEditGoal(d=>({...d,owner:v}))} style={{ flex:1,padding:"8px",borderRadius:9,border:`1px solid ${editGoal.owner===v?"#9B6EE8":T.border}`,background:editGoal.owner===v?"#9B6EE822":"transparent",color:editGoal.owner===v?"#9B6EE8":T.textSub,fontFamily:"'DM Sans',sans-serif",fontSize:12,cursor:"pointer",fontWeight:editGoal.owner===v?700:400 }}>{l}</button>
-              ))}
-            </div>
+
 
             <div style={{ display:"flex",gap:10,marginTop:22,flexWrap:"wrap" }}>
               <button onClick={saveEdit} style={{ flex:2,padding:"11px",borderRadius:11,border:"none",background:T.accent||"#9B6EE8",color:"#fff",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:700 }}>Save</button>
@@ -4269,7 +4250,6 @@ function PeopleView({ activeUser, names, T, mode, TODAY, genId }) {
   if(people===null) return <div style={{ padding:40,textAlign:"center",color:T.textSub,fontFamily:"'DM Sans',sans-serif" }}><div style={{ fontSize:40,marginBottom:12 }}>🤝</div><div>Loading your people...</div></div>;
 
   const allFiltered = people.filter(p=>{
-    if(ownerFilter!=="all" && p.owner!==ownerFilter && p.owner!=="shared") return false;
     if(searchQ && !p.name.toLowerCase().includes(searchQ.toLowerCase())) return false;
     if(ringFilter && catOf(p.category).ring!==ringFilter) return false;
     if(catFilter && p.category!==catFilter) return false;
@@ -4463,12 +4443,7 @@ function PeopleView({ activeUser, names, T, mode, TODAY, genId }) {
               <select style={sel} value={draft.frequency} onChange={e=>setDraft(d=>({...d,frequency:e.target.value}))}>
                 {FREQ_OPTS.map(f=><option key={f.id} value={f.id}>{f.label}</option>)}
               </select>
-              <label style={lbl}>Whose relationship?</label>
-              <div style={{ display:"flex",gap:6,marginTop:4 }}>
-                {[["A",names.A],["B",names.B],["shared","Both of us"]].map(([v,l])=>(
-                  <button key={v} onClick={()=>setDraft(d=>({...d,owner:v}))} style={{ flex:1,padding:"8px",borderRadius:9,border:`1px solid ${draft.owner===v?"#20B2AA":T.border}`,background:draft.owner===v?"#20B2AA22":"transparent",color:draft.owner===v?"#20B2AA":T.textSub,fontFamily:"'DM Sans',sans-serif",fontSize:12,cursor:"pointer",fontWeight:draft.owner===v?700:400 }}>{l}</button>
-                ))}
-              </div>
+
               <label style={lbl}>Notes / About them</label>
               <textarea style={{...inp,minHeight:70,resize:"vertical",lineHeight:1.8}} value={draft.notes} onChange={e=>setDraft(d=>({...d,notes:e.target.value}))} placeholder="What's going on in their life? What do you know about them?"/>
               <label style={lbl}>Next follow-up date</label>
@@ -4527,11 +4502,7 @@ function PeopleView({ activeUser, names, T, mode, TODAY, genId }) {
               <button key={v} className="pv-seg-btn" onClick={()=>setPageView(v)} style={{ padding:"5px 12px",borderRadius:8,border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:pageView===v?700:500,background:pageView===v?"#20B2AA":"transparent",color:pageView===v?"#fff":T.textSub }}>{l}</button>
             ))}
           </div>
-          <div style={{ display:"flex",gap:5 }}>
-            {[["all","All"],["A",names.A],["B",names.B]].map(([v,l])=>(
-              <button key={v} onClick={()=>setOwnerFilter(v)} style={{ padding:"5px 11px",borderRadius:20,border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:ownerFilter===v?700:500,background:ownerFilter===v?"#20B2AA":"transparent",color:ownerFilter===v?"#fff":T.textSub,outline:ownerFilter===v?"none":`1px solid ${T.border}` }}>{l}</button>
-            ))}
-          </div>
+
         </div>
 
         {/* Category pills */}
@@ -4672,12 +4643,7 @@ function PeopleView({ activeUser, names, T, mode, TODAY, genId }) {
             <select style={sel} value={draft.frequency} onChange={e=>setDraft(d=>({...d,frequency:e.target.value}))}>
               {FREQ_OPTS.map(f=><option key={f.id} value={f.id}>{f.label}</option>)}
             </select>
-            <label style={lbl}>Whose relationship?</label>
-            <div style={{ display:"flex",gap:6,marginTop:4 }}>
-              {[["A",names.A],["B",names.B],["shared","Both of us"]].map(([v,l])=>(
-                <button key={v} onClick={()=>setDraft(d=>({...d,owner:v}))} style={{ flex:1,padding:"8px",borderRadius:9,border:`1px solid ${draft.owner===v?"#20B2AA":T.border}`,background:draft.owner===v?"#20B2AA22":"transparent",color:draft.owner===v?"#20B2AA":T.textSub,fontFamily:"'DM Sans',sans-serif",fontSize:12,cursor:"pointer",fontWeight:draft.owner===v?700:400 }}>{l}</button>
-              ))}
-            </div>
+
             <label style={lbl}>Notes about them</label>
             <textarea style={{...inp,minHeight:70,resize:"vertical",lineHeight:1.8}} value={draft.notes} onChange={e=>setDraft(d=>({...d,notes:e.target.value}))} placeholder="What's going on in their life? What do you want to be intentional about?"/>
             <label style={lbl}>First follow-up date (optional)</label>
