@@ -7007,6 +7007,8 @@ export default function TogetherApp() {
   const navViews=[
     ["board","Board"],["today","Today"],["someday","Someday"],["accountability","Us"],
     ["analytics","📊 Analytics"],
+    ["monthly","📅 Monthly"],
+    ["people","🤝 People"],
     ["reflections","💭 Reflections"],
     ["tracker","🔗 Tracker"],
     ["cookbook","👨‍🍳 Cookbook"],
@@ -7014,7 +7016,7 @@ export default function TogetherApp() {
     ["urgent","🔴 Urgent"],["week","This Week"],["month","This Month"],
     ["quarter","Next 3 Months"],["year","This Year"],["aitools","AI Tools"],
   ];
-  const isFullScreen=["today","someday","accountability","aitools","urgent","week","month","quarter","year","prayer","analytics","reflections","tracker","cookbook"].includes(view);
+  const isFullScreen=["today","someday","accountability","aitools","urgent","week","month","quarter","year","prayer","analytics","reflections","monthly","people","tracker","cookbook"].includes(view);
   const pad=isFullScreen?"0":"16px 16px";
 
   // ── Reusable timeline section renderer ────────────────────────────────────
@@ -7527,6 +7529,21 @@ export default function TogetherApp() {
           <AnalyticsView log={completedLog} tasks={tasks} names={names} T={T} mode={mode} SECTIONS={SECTIONS} PRI_COLOR={PRI_COLOR} TODAY={TODAY}/>
         )}
 
+        {/* ── MONTHLY GOALS ── */}
+        {view==="monthly"&&(
+          <MonthlyGoalsView activeUser={activeUser} names={names} T={T} mode={mode} TODAY={TODAY} genId={genId}/>
+        )}
+
+        {/* ── PEOPLE ── */}
+        {view==="people"&&(
+          <PeopleView activeUser={activeUser} names={names} T={T} mode={mode} TODAY={TODAY} genId={genId}/>
+        )}
+
+        {/* ── REFLECTIONS ── */}
+        {view==="reflections"&&(
+          <ReflectionsView activeUser={activeUser} names={names} T={T} mode={mode} TODAY={TODAY} genId={genId}/>
+        )}
+
         {/* ── TRACKER ── */}
         {view==="tracker"&&(
           <TrackerView activeUser={activeUser} names={names} T={T} mode={mode} TODAY={TODAY} genId={genId}/>
@@ -7536,18 +7553,6 @@ export default function TogetherApp() {
         {view==="cookbook"&&(
           <CookbookView activeUser={activeUser} names={names} T={T} mode={mode} TODAY={TODAY} genId={genId}/>
         )}
-
-        {/* ── REFLECTIONS ── */}
-        {view==="reflections"&&(
-          <ReflectionsView activeUser={activeUser} names={names} T={T} mode={mode} TODAY={TODAY} genId={genId}/>
-        )}
-
-        {/* ── TRACKER ── */}
-        {view==="tracker"&&<TrackerView activeUser={activeUser} names={names} T={T} mode={mode} TODAY={TODAY} genId={genId}/>}
-
-        {/* ── NOTES ── */}
-        {/* ── COOKBOOK ── */}
-        {view==="cookbook"&&<CookbookView activeUser={activeUser} names={names} T={T} mode={mode} TODAY={TODAY} genId={genId}/>}
 
         {/* ── AI TOOLS ── */}
         {view==="aitools"&&(
