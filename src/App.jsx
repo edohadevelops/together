@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import SummerApp from "./SummerApp.jsx";
 
 // ── Google Fonts ──────────────────────────────────────────────────────────────
 const fontLink = document.createElement("link");
@@ -7068,6 +7069,9 @@ export default function TogetherApp() {
   if (appMode === "comp") {
     return <ComprehensiveApp names={names} mode={mode} T={T} activeUser={activeUser} onBack={()=>switchApp("tasks")}/>;
   }
+  if (appMode === "summer") {
+    return <SummerApp mode={mode} T={T} onBack={()=>switchApp("tasks")}/>;
+  }
 
   // ── App home selector (shown once per session if not yet chosen after load) ─
   if (appMode === "home") {
@@ -7097,6 +7101,13 @@ export default function TogetherApp() {
               <div style={{ fontSize:28,marginBottom:8 }}>📚</div>
               <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:19,color:T.text,marginBottom:4 }}>Exam Prep</div>
               <div style={{ fontSize:13,color:T.textSub,lineHeight:1.5 }}>Active recall sessions for comprehensive exams — Amen's 4 courses + Gloria's cards.</div>
+            </button>
+            <button onClick={()=>switchApp("summer")} style={{ padding:"22px 20px",borderRadius:16,border:"1px solid #E8A83844",background:T.surface,cursor:"pointer",textAlign:"left",boxShadow:"0 2px 12px rgba(0,0,0,0.1)",transition:"transform 0.15s" }}
+              onMouseEnter={e=>e.currentTarget.style.transform="translateY(-2px)"}
+              onMouseLeave={e=>e.currentTarget.style.transform="none"}>
+              <div style={{ fontSize:28,marginBottom:8 }}>☀️</div>
+              <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:19,color:T.text,marginBottom:4 }}>Summer Plans</div>
+              <div style={{ fontSize:13,color:T.textSub,lineHeight:1.5 }}>{"Amen's summer OS — faith, fitness, thesis, reading, Gloria & side gig all in one place."}</div>
             </button>
           </div>
           <div style={{ marginTop:20,display:"flex",gap:10,justifyContent:"center" }}>
@@ -7741,6 +7752,7 @@ export default function TogetherApp() {
                 <button onClick={()=>{setShowSett(false);switchApp("tasks");}} style={{flex:1,padding:"10px",borderRadius:10,border:`1px solid ${appMode==="tasks"?T.accent:T.border}`,background:appMode==="tasks"?T.accent+"15":T.inputBg,color:appMode==="tasks"?T.accent:T.text,fontFamily:"'DM Sans',sans-serif",fontSize:13,cursor:"pointer",fontWeight:appMode==="tasks"?700:400}}>⊞ Tasks</button>
                 <button onClick={()=>{setShowSett(false);switchApp("budget");}} style={{flex:1,padding:"10px",borderRadius:10,border:`1px solid ${appMode==="budget"?"#20B2AA":T.border}`,background:appMode==="budget"?"#20B2AA15":T.inputBg,color:appMode==="budget"?"#20B2AA":T.text,fontFamily:"'DM Sans',sans-serif",fontSize:13,cursor:"pointer",fontWeight:appMode==="budget"?700:400}}>💰 Budget</button>
                 <button onClick={()=>{setShowSett(false);switchApp("comp");}} style={{flex:1,padding:"10px",borderRadius:10,border:`1px solid ${appMode==="comp"?"#7B61FF":T.border}`,background:appMode==="comp"?"#7B61FF15":T.inputBg,color:appMode==="comp"?"#7B61FF":T.text,fontFamily:"'DM Sans',sans-serif",fontSize:13,cursor:"pointer",fontWeight:appMode==="comp"?700:400}}>📚 Exam</button>
+                <button onClick={()=>{setShowSett(false);switchApp("summer");}} style={{flex:1,padding:"10px",borderRadius:10,border:`1px solid ${appMode==="summer"?"#E8A838":T.border}`,background:appMode==="summer"?"#E8A83815":T.inputBg,color:appMode==="summer"?"#E8A838":T.text,fontFamily:"'DM Sans',sans-serif",fontSize:13,cursor:"pointer",fontWeight:appMode==="summer"?700:400}}>{"☀️ Summer"}</button>
               </div>
             </div>
 
