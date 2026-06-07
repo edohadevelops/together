@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import SummerApp from "./SummerApp.jsx";
+import BulkTaskManager from "./BulkTaskManager.jsx";
 
 // ── Google Fonts ──────────────────────────────────────────────────────────────
 const fontLink = document.createElement("link");
@@ -6396,6 +6397,7 @@ export default function TogetherApp() {
   }
   const [showBulk,      setShowBulk]      = useState(false);
   const [showDedup,     setShowDedup]     = useState(false);
+  const [showBulkMgr,   setShowBulkMgr]   = useState(false);
   const [taskModal,     setTaskModal]     = useState(null); // {colId,label,emoji,color,tasks}
   const [appMode,       setAppMode]       = useState(() => { try { return localStorage.getItem("together_appMode")||"tasks"; } catch { return "tasks"; } });
   function switchApp(mode) { setAppMode(mode); try { localStorage.setItem("together_appMode",mode); } catch {} }
@@ -6973,8 +6975,9 @@ export default function TogetherApp() {
     ["prayer","🙏 Prayer"],
     ["urgent","🔴 Urgent"],["week","This Week"],["month","This Month"],
     ["quarter","Next 3 Months"],["year","This Year"],["aitools","AI Tools"],
+    ["myapps","📱 My Applications"],
   ];
-  const isFullScreen=["today","someday","accountability","aitools","urgent","week","month","quarter","year","prayer","analytics","reflections","monthly","people","tracker","cookbook"].includes(view);
+  const isFullScreen=["today","someday","accountability","aitools","urgent","week","month","quarter","year","prayer","analytics","reflections","monthly","people","tracker","cookbook","myapps"].includes(view);
   const pad=isFullScreen?"0":"16px 16px";
 
   // ── Reusable timeline section renderer ────────────────────────────────────
@@ -7109,6 +7112,13 @@ export default function TogetherApp() {
               <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:19,color:T.text,marginBottom:4 }}>Summer Plans</div>
               <div style={{ fontSize:13,color:T.textSub,lineHeight:1.5 }}>{"Amen's summer OS — faith, fitness, thesis, reading, Gloria & side gig all in one place."}</div>
             </button>
+            <button onClick={()=>{switchApp("tasks");}} style={{ padding:"22px 20px",borderRadius:16,border:"1px solid #20B2AA44",background:T.surface,cursor:"pointer",textAlign:"left",boxShadow:"0 2px 12px rgba(0,0,0,0.1)",transition:"transform 0.15s" }}
+              onMouseEnter={e=>e.currentTarget.style.transform="translateY(-2px)"}
+              onMouseLeave={e=>e.currentTarget.style.transform="none"}>
+              <div style={{ fontSize:28,marginBottom:8 }}>📱</div>
+              <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:19,color:T.text,marginBottom:4 }}>My Applications</div>
+              <div style={{ fontSize:13,color:T.textSub,lineHeight:1.5 }}>Audiobook library, podcasts, sermons and all your personal media links.</div>
+            </button>
           </div>
           <div style={{ marginTop:20,display:"flex",gap:10,justifyContent:"center" }}>
             <button onClick={toggleMode} style={{ fontSize:12,color:T.textMuted,background:"none",border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif" }}>{mode==="dark"?"☀ Light mode":"☾ Dark mode"}</button>
@@ -7185,6 +7195,9 @@ export default function TogetherApp() {
           <button onClick={()=>setShowDedup(true)} style={{ height:32,padding:"0 12px",borderRadius:8,border:`1px solid ${T.border}`,background:T.inputBg,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:600,color:T.textSub,display:"flex",alignItems:"center",gap:4,flexShrink:0,whiteSpace:"nowrap" }} title="Remove duplicate tasks">
             🗂 Dedup
           </button>
+          <button onClick={()=>setShowBulkMgr(true)} style={{ height:32,padding:"0 12px",borderRadius:8,border:"1px solid #9B6EE844",background:"#9B6EE810",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:600,color:"#9B6EE8",display:"flex",alignItems:"center",gap:4,flexShrink:0,whiteSpace:"nowrap" }} title="Bulk delete or complete tasks">
+            ⚡ Manage
+          </button>
         </div>
 
         {/* Mobile menu button — shown only on mobile */}
@@ -7197,6 +7210,9 @@ export default function TogetherApp() {
           </button>
           <button onClick={()=>setShowDedup(true)} style={{ height:32,width:32,borderRadius:8,border:`1px solid ${T.border}`,background:T.inputBg,cursor:"pointer",fontSize:15,display:"flex",alignItems:"center",justifyContent:"center",color:T.textSub,flexShrink:0 }} title="Remove duplicates">
             🗂
+          </button>
+          <button onClick={()=>setShowBulkMgr(true)} style={{ height:32,width:32,borderRadius:8,border:"1px solid #9B6EE844",background:"#9B6EE810",cursor:"pointer",fontSize:15,display:"flex",alignItems:"center",justifyContent:"center",color:"#9B6EE8",flexShrink:0 }} title="Bulk manage tasks">
+            ⚡
           </button>
           <button onClick={()=>setShowNav(true)} style={{ width:36,height:36,borderRadius:9,border:`1px solid ${T.border}`,background:T.inputBg,cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:4,flexShrink:0,padding:"9px 8px" }}>
             <span style={{ width:16,height:2,borderRadius:1,background:T.textSub,display:"block" }}/>
@@ -7548,6 +7564,95 @@ export default function TogetherApp() {
             </div>
           </div>
         )}
+
+        {/* ── MY APPLICATIONS ── */}
+        {view==="myapps"&&(
+          <div style={{padding:"24px 16px",maxWidth:900,margin:"0 auto"}}>
+            <div style={{fontFamily:"'DM Serif Display',serif",fontSize:28,color:T.text,marginBottom:4}}>My Applications</div>
+            <div style={{fontSize:13,color:T.textSub,marginBottom:28}}>All of Amen's personal apps and media in one place</div>
+
+            {/* ── Audiobook Library ── */}
+            <div style={{marginBottom:32}}>
+              <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:14}}>
+                <div style={{width:4,height:20,borderRadius:2,background:"#E8A838"}}/>
+                <div style={{fontFamily:"'DM Serif Display',serif",fontSize:18,color:T.text}}>🎧 Audiobook Library</div>
+              </div>
+              <a href="https://edohaaudiobook.netlify.app" target="_blank" rel="noreferrer" style={{textDecoration:"none",display:"block"}}>
+                <div style={{...cardBase(),padding:"22px 24px",borderLeft:"4px solid #E8A838",cursor:"pointer",transition:"transform 0.15s,box-shadow 0.15s",background:mode==="dark"?"#1A1600":"#FFFBF0"}}
+                  onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-2px)";e.currentTarget.style.boxShadow=`0 8px 28px #E8A83840`;}}
+                  onMouseLeave={e=>{e.currentTarget.style.transform="none";e.currentTarget.style.boxShadow=T.cardShadow;}}>
+                  <div style={{display:"flex",alignItems:"center",gap:16,flexWrap:"wrap"}}>
+                    <div style={{width:56,height:56,borderRadius:14,background:"#E8A83822",border:"2px solid #E8A83844",display:"flex",alignItems:"center",justifyContent:"center",fontSize:26,flexShrink:0}}>🎧</div>
+                    <div style={{flex:1,minWidth:0}}>
+                      <div style={{fontFamily:"'DM Serif Display',serif",fontSize:20,color:T.text,marginBottom:4}}>Amen's Audiobook Library</div>
+                      <div style={{fontSize:13,color:"#E8A838",fontWeight:600,marginBottom:4}}>edohaaudiobook.netlify.app ↗</div>
+                      <div style={{fontSize:12,color:T.textSub,lineHeight:1.6}}>Your personal audiobook collection — browse and listen to your library</div>
+                    </div>
+                    <div style={{flexShrink:0,padding:"8px 18px",borderRadius:10,background:"#E8A838",color:"#fff",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700}}>Open ↗</div>
+                  </div>
+                </div>
+              </a>
+            </div>
+
+            {/* ── Podcasts ── */}
+            <div style={{marginBottom:32}}>
+              <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:14}}>
+                <div style={{width:4,height:20,borderRadius:2,background:"#9B6EE8"}}/>
+                <div style={{fontFamily:"'DM Serif Display',serif",fontSize:18,color:T.text}}>🎙️ Podcasts</div>
+                <span style={{fontSize:11,fontWeight:600,color:"#9B6EE8",background:"#9B6EE820",border:"1px solid #9B6EE840",borderRadius:6,padding:"2px 8px"}}>Coming Soon</span>
+              </div>
+              <div style={{...cardBase(),padding:"20px 22px",borderStyle:"dashed",borderWidth:2,background:"transparent",textAlign:"center",color:T.textSub}}>
+                <div style={{fontSize:28,marginBottom:10,opacity:0.5}}>🎙️</div>
+                <div style={{fontSize:14,fontWeight:600,color:T.text,marginBottom:6}}>Your podcast will live here</div>
+                <div style={{fontSize:12,color:T.textSub,lineHeight:1.7,maxWidth:380,margin:"0 auto"}}>
+                  Once you launch your podcast, add the link here. It will appear as a card just like your audiobook library — tap to open and share.
+                </div>
+                <div style={{marginTop:16,fontSize:11,color:"#9B6EE8",fontWeight:600}}>Add link → Settings → My Applications</div>
+              </div>
+            </div>
+
+            {/* ── Sermons ── */}
+            <div style={{marginBottom:32}}>
+              <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:14}}>
+                <div style={{width:4,height:20,borderRadius:2,background:"#8B5CF6"}}/>
+                <div style={{fontFamily:"'DM Serif Display',serif",fontSize:18,color:T.text}}>⛪ Sermons & Teaching</div>
+                <span style={{fontSize:11,fontWeight:600,color:"#8B5CF6",background:"#8B5CF620",border:"1px solid #8B5CF640",borderRadius:6,padding:"2px 8px"}}>Coming Soon</span>
+              </div>
+              <div style={{...cardBase(),padding:"20px 22px",borderStyle:"dashed",borderWidth:2,background:"transparent",textAlign:"center",color:T.textSub}}>
+                <div style={{fontSize:28,marginBottom:10,opacity:0.5}}>⛪</div>
+                <div style={{fontSize:14,fontWeight:600,color:T.text,marginBottom:6}}>Sermons & teaching content</div>
+                <div style={{fontSize:12,color:T.textSub,lineHeight:1.7,maxWidth:380,margin:"0 auto"}}>
+                  Add links to your church sermons, teaching videos, or devotional content here. Each gets its own card you can tap and share.
+                </div>
+                <div style={{marginTop:16,fontSize:11,color:"#8B5CF6",fontWeight:600}}>Add link → Settings → My Applications</div>
+              </div>
+            </div>
+
+            {/* ── Other Media / Future ── */}
+            <div style={{marginBottom:16}}>
+              <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:14}}>
+                <div style={{width:4,height:20,borderRadius:2,background:"#20B2AA"}}/>
+                <div style={{fontFamily:"'DM Serif Display',serif",fontSize:18,color:T.text}}>🌐 More Links</div>
+                <span style={{fontSize:11,fontWeight:600,color:"#20B2AA",background:"#20B2AA20",border:"1px solid #20B2AA40",borderRadius:6,padding:"2px 8px"}}>Growing</span>
+              </div>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(min(100%,200px),1fr))",gap:12}}>
+                {[
+                  {icon:"📚",label:"Goodreads",desc:"Reading list & reviews",color:"#E8883A",placeholder:true},
+                  {icon:"📺",label:"YouTube",desc:"Video content & vlogs",color:"#E84E8A",placeholder:true},
+                  {icon:"✍️",label:"Blog / Newsletter",desc:"Your writing & updates",color:"#3B9EDB",placeholder:true},
+                  {icon:"🎵",label:"Music / Playlists",desc:"Curated playlists",color:"#3DBF8A",placeholder:true},
+                ].map(item=>(
+                  <div key={item.label} style={{...cardBase(),padding:"16px",borderStyle:"dashed",borderWidth:1,background:"transparent",opacity:0.6}}>
+                    <div style={{fontSize:22,marginBottom:8}}>{item.icon}</div>
+                    <div style={{fontSize:13,fontWeight:600,color:T.text,marginBottom:3}}>{item.label}</div>
+                    <div style={{fontSize:11,color:T.textSub,lineHeight:1.5}}>{item.desc}</div>
+                    <div style={{marginTop:10,fontSize:10,color:item.color,fontWeight:600}}>Placeholder — add your link</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ── MOBILE BOTTOM TAB BAR ── */}
@@ -7556,10 +7661,10 @@ export default function TogetherApp() {
           ["board","⊞","Board"],
           ["today","◎","Today"],
           ["accountability","♡","Us"],
-          ["reflections","💭","Reflect"],
+          ["myapps","📱","Apps"],
           ["more","•••","More"],
         ].map(([v,icon,label])=>(
-          <button key={v} onClick={()=>{if(v==="more"){setShowNav(true);}else{setView(v);}}} style={{ display:"flex",flexDirection:"column",alignItems:"center",gap:3,background:"none",border:"none",cursor:"pointer",padding:"4px 8px",minWidth:52,color:view===v&&v!=="more"?T.accent:T.textSub,transition:"color 0.15s" }}>
+          <button key={v} onClick={()=>{if(v==="more"){setShowNav(true);}else{setView(v);}}} style={{ display:"flex",flexDirection:"column",alignItems:"center",gap:3,background:"none",border:"none",cursor:"pointer",padding:"4px 8px",minWidth:48,color:view===v&&v!=="more"?T.accent:T.textSub,transition:"color 0.15s" }}>
             <span style={{ fontSize:v==="more"?18:17,lineHeight:1 }}>{icon}</span>
             <span style={{ fontSize:10,fontWeight:view===v&&v!=="more"?700:400,fontFamily:"'DM Sans',sans-serif",letterSpacing:"0.02em" }}>{label}</span>
           </button>
@@ -7728,6 +7833,7 @@ export default function TogetherApp() {
       {/* Modals */}
       {showBulk&&<BulkImportModal onClose={()=>setShowBulk(false)} onImport={(tasks)=>{tasks.forEach(t=>doAdd(t));}} T={T} mode={mode} names={names} activeUser={activeUser} SECTIONS={SECTIONS} TASK_TYPES={TASK_TYPES} PRIORITIES={PRIORITIES} TODAY={TODAY}/>}
       {showDedup&&<DedupModal onClose={()=>setShowDedup(false)} tasks={tasks} onDelete={(ids)=>{ const next=tasks.filter(t=>!ids.includes(t.id)); setTasks(next); dbSet("tasks",next); }} T={T} mode={mode}/>}
+      {showBulkMgr&&<BulkTaskManager T={T} mode={mode} names={names} SECTIONS={SECTIONS} TODAY={TODAY} tasks={tasks} onClose={()=>setShowBulkMgr(false)} onDelete={(ids)=>{ const next=tasks.filter(t=>!ids.includes(t.id)); setTasks(next); dbSet("tasks",next); }} onComplete={(ids)=>{ const next=tasks.map(t=>ids.includes(t.id)?{...t,done:true,completedAt:new Date().toISOString()}:t); setTasks(next); dbSet("tasks",next); }}/>}
       {showAdd&&<FormModal data={newTask} setData={setNew} onSave={()=>doAdd(newTask)} onClose={()=>{setShowAdd(false);setAddSec(null);}} title="New Task" names={names} sections={SECTIONS} taskTypes={TASK_TYPES} priorities={PRIORITIES} T={T} mode={mode}/>}
       {editTask&&<FormModal data={editTask} setData={setEdit} onSave={saveEdit} onClose={()=>setEdit(null)} title="Edit Task" names={names} sections={SECTIONS} taskTypes={TASK_TYPES} priorities={PRIORITIES} T={T} mode={mode}/>}
 
@@ -7753,6 +7859,9 @@ export default function TogetherApp() {
                 <button onClick={()=>{setShowSett(false);switchApp("budget");}} style={{flex:1,padding:"10px",borderRadius:10,border:`1px solid ${appMode==="budget"?"#20B2AA":T.border}`,background:appMode==="budget"?"#20B2AA15":T.inputBg,color:appMode==="budget"?"#20B2AA":T.text,fontFamily:"'DM Sans',sans-serif",fontSize:13,cursor:"pointer",fontWeight:appMode==="budget"?700:400}}>💰 Budget</button>
                 <button onClick={()=>{setShowSett(false);switchApp("comp");}} style={{flex:1,padding:"10px",borderRadius:10,border:`1px solid ${appMode==="comp"?"#7B61FF":T.border}`,background:appMode==="comp"?"#7B61FF15":T.inputBg,color:appMode==="comp"?"#7B61FF":T.text,fontFamily:"'DM Sans',sans-serif",fontSize:13,cursor:"pointer",fontWeight:appMode==="comp"?700:400}}>📚 Exam</button>
                 <button onClick={()=>{setShowSett(false);switchApp("summer");}} style={{flex:1,padding:"10px",borderRadius:10,border:`1px solid ${appMode==="summer"?"#E8A838":T.border}`,background:appMode==="summer"?"#E8A83815":T.inputBg,color:appMode==="summer"?"#E8A838":T.text,fontFamily:"'DM Sans',sans-serif",fontSize:13,cursor:"pointer",fontWeight:appMode==="summer"?700:400}}>{"☀️ Summer"}</button>
+              </div>
+              <div style={{display:"flex",gap:8,marginTop:8}}>
+                <button onClick={()=>{setShowSett(false);switchApp("tasks");setView("myapps");}} style={{flex:1,padding:"10px",borderRadius:10,border:"1px solid #20B2AA44",background:"#20B2AA10",color:"#20B2AA",fontFamily:"'DM Sans',sans-serif",fontSize:13,cursor:"pointer",fontWeight:600}}>📱 My Applications</button>
               </div>
             </div>
 
