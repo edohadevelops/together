@@ -264,6 +264,56 @@ const NUTRITION_PLAN = {
   hydration: "500ml water the moment you wake up. Keep a large 1.5–2L bottle in your delivery vehicle — you're physically active all day and will lose more water than you think. Aim for 3–4L total by 9pm. Reduce after 9:30pm to protect sleep. Black coffee is fine. No sugary drinks. Hunger often means you're dehydrated — drink water first.",
 };
 
+// ── Nigerian Meal Plan ────────────────────────────────────────────────────
+const NIGERIAN_MEAL_PLAN = {
+  grocery:{
+    estimate:"~$55–70/week",
+    items:[
+      {name:"Eggs (2 dozen)",                              cost:"$6–8",   where:"Walmart / Costco"},
+      {name:"Chicken breast or thighs (3–4 lbs)",         cost:"$8–12",  where:"Walmart / Sam's Club"},
+      {name:"Rice (10 lb bag)",                            cost:"$7–9",   where:"Walmart"},
+      {name:"Dried beans — black-eyed peas or brown beans (2 lbs)", cost:"$2–3", where:"African store / Walmart"},
+      {name:"Spaghetti (2 lbs)",                           cost:"$2–3",   where:"Walmart"},
+      {name:"Oats — large canister",                       cost:"$5–7",   where:"Walmart"},
+      {name:"Canned crushed tomatoes (3–4 cans)",          cost:"$3–4",   where:"Walmart"},
+      {name:"Fresh tomatoes (4–5)",                        cost:"$2–3",   where:"Walmart"},
+      {name:"Bell peppers — red + green (4–5)",            cost:"$3–4",   where:"Walmart"},
+      {name:"Scotch bonnet / habanero peppers",            cost:"$1–2",   where:"African / Asian store or Walmart"},
+      {name:"Onions (3 lb bag)",                           cost:"$2–3",   where:"Walmart"},
+      {name:"Plantain (3–4 — buy unripe/green)",           cost:"$2–4",   where:"African / Latin grocery store"},
+      {name:"Sweet potato (3–4 medium)",                   cost:"$2–3",   where:"Walmart"},
+      {name:"Frozen broccoli or spinach (2 bags)",         cost:"$4–5",   where:"Walmart"},
+      {name:"Bananas (bunch)",                             cost:"$1–2",   where:"Walmart"},
+      {name:"Canned sardines or mackerel / titus (3–4 cans)", cost:"$4–6", where:"African store / Walmart"},
+      {name:"Vegetable oil (small bottle)",                cost:"$3–4",   where:"Walmart"},
+      {name:"Maggi / Knorr seasoning cubes",               cost:"$2–3",   where:"African store / Amazon"},
+      {name:"Ground crayfish (small bag)",                 cost:"$3–5",   where:"African store"},
+      {name:"Cayenne pepper + garlic powder",              cost:"$2–3",   where:"Walmart"},
+      {name:"Hot sauce (Frank's or African brand)",        cost:"$2–3",   where:"Walmart / African store"},
+    ]
+  },
+  prep:"Every Sunday — batch cook for the week. Grill or bake 6–8 chicken pieces (season with garlic, onion powder, cayenne, seasoning cube — bake at 400°F for 25–28 min). Soak and boil a pot of beans (enough for 3 days). Blend and fry your tomato-pepper base (tomatoes + red bell pepper + scotch bonnet + onion) — this becomes your stew for egg stew, chicken stew, spaghetti sauce, and jollof rice all week. Boil 6 eggs to keep in the fridge. Total prep: about 2 hours. This saves you every single weekday.",
+  rotation:[
+    {day:"Monday",   bk:"Nigerian egg stew — 3 eggs scrambled into blended tomato + pepper + onion stew. 1 cup oats on the side (no sugar). Quick, filling, high protein.",  lk:"Rice + beans (50/50) + chicken stew. Pack the night before. Hot sauce on top.",                                               dk:"Beans porridge — brown beans or black-eyed peas cooked in tomato base with crayfish + scotch bonnet + seasoning cube. 2 boiled eggs on the side."},
+    {day:"Tuesday",  bk:"3 boiled eggs + 1 banana + black coffee. Simple and fast.",                                                                                           lk:"Nigerian spaghetti — pasta cooked in tomato-pepper stew with shredded chicken mixed in. Pack extra chicken on the side.",   dk:"Grilled chicken (2 thighs or 1 breast) + steamed frozen broccoli or spinach + small scoop of rice."},
+    {day:"Wednesday",bk:"3 scrambled eggs with onions + bell peppers. 1 cup oats.",                                                                                            lk:"Leftover beans + 1 piece of chicken. Reheat, hot sauce on top. Done.",                                                      dk:"Egg stew (3 eggs in tomato base) + boiled sweet potato (medium). Filling, cheap, good."},
+    {day:"Thursday", bk:"3 eggs any style + 1 cup oats + black coffee.",                                                                                                       lk:"Rice + chicken stew from Sunday batch. Pack a handful of frozen veg on the side.",                                          dk:"Sardine or mackerel (titus) stew — 1 can cooked in tomato + pepper base with onion + crayfish + seasoning. Serve with ½ cup rice or 1 boiled plantain (unripe)."},
+    {day:"Friday",   bk:"3 scrambled eggs with tomatoes + oats.",                                                                                                              lk:"Jollof rice (1 cup cooked — measured) + grilled chicken (big piece). No seconds on the rice.",                              dk:"Beans porridge + half a boiled unripe plantain. High fiber, keeps you full all night."},
+    {day:"Saturday", bk:"3–4 eggs + oats before Gloria time. Post-gym: 1 banana + water (no big meal before church cleaning).",                                                lk:"Rice + beans + chicken packed for delivery route. Eat on route around 2pm.",                                               dk:"Flexible with Gloria — cook together or order sensibly. Keep protein first. Chicken or eggs as the base of whatever you make."},
+    {day:"Sunday",   bk:"Full Nigerian breakfast — 4 eggs in rich tomato-pepper stew. Serve with 1 cup oats. Take your time, you earned it.",                                  lk:"Beans + boiled unripe plantain + small drizzle of palm oil. Real Nigerian comfort food. Batch-cook your beans here for the week.", dk:"Jollof rice (measured) + grilled chicken. Make it spicy. This is your best meal of the week — and it still fits the plan."},
+  ],
+  tips:[
+    {tip:"Tomato-pepper base is everything",    detail:"Blend tomatoes + red bell pepper + scotch bonnet + onion, fry in a small amount of oil with seasoning cubes. This single base makes egg stew, chicken stew, jollof rice, spaghetti sauce, and beans — prep it Sunday and you never start from scratch."},
+    {tip:"Beans is your best weapon",           detail:"Nigerian brown beans or black-eyed peas are high protein, high fiber, extremely filling, and cost ~$3 for 2 lbs. Eat them 3–4x per week. A bowl of beans + 2 eggs is 35g+ protein and keeps you full for hours."},
+    {tip:"Unripe plantain over ripe",           detail:"Unripe (green) plantain has far less sugar than ripe yellow plantain. Boil it — it's starchy, filling, and excellent for weight loss. Once you need a treat, you can go back to ripe. For now, green only."},
+    {tip:"Canned sardines are underrated",      detail:"Canned sardines or titus mackerel cost $1–2 per can and have 20–25g protein + omega-3 fats. Cooked in Nigerian tomato stew they taste excellent. Use them as a cheap protein source on low-cook days."},
+    {tip:"Chicken thighs over breast = savings",detail:"Boneless skinless chicken thighs are often $2–3/lb cheaper than breast, just as protein-rich, and way more flavorful especially in Nigerian stew. Buy in bulk, freeze in portions."},
+    {tip:"Oil discipline is key",               detail:"Nigerian cooking naturally uses a lot of oil. For weight loss, cut it to 1 teaspoon per cook instead of tablespoons. Use a non-stick pan. The stew will still be flavorful — crayfish, peppers, and seasoning cubes carry the taste."},
+    {tip:"Make everything spicy",               detail:"Scotch bonnet, cayenne, and hot sauce boost metabolism, dramatically increase satiety, and make you drink more water. If food tastes good you won't be tempted to stop at a drive-through on route."},
+    {tip:"Water before every meal",             detail:"Drink 500ml before you sit down to eat. It reduces how much you eat by 15–20% and helps distinguish real hunger from thirst. Non-negotiable on weight loss."},
+  ]
+};
+
 // ── Helpers ───────────────────────────────────────────────────────────────
 function weekStr(d=new Date()) {
   const thu=new Date(d); thu.setDate(d.getDate()-((d.getDay()+6)%7)+3);
@@ -804,6 +854,58 @@ export default function SummerApp({mode,T,onBack}) {
                 <Chip label={s.dose} color="#C8B030"/>
               </div>
               <div style={{fontSize:12,color:T.textSub}}>{s.note}</div>
+            </div>
+          ))}
+        </div>
+      </Section>
+
+      <div style={{marginTop:28,marginBottom:8,fontFamily:"'DM Serif Display',serif",fontSize:isMobile?17:20,color:P.nutrition,borderBottom:`1px solid ${T.border}`,paddingBottom:8}}>{"Nigerian Meal Plan 🍛"}</div>
+      <div style={{fontSize:12,color:T.textSub,marginBottom:16}}>{"Real Nigerian food · high protein · weight-loss friendly · cost ~$55–70/week"}</div>
+
+      <Section title={`Weekly Grocery List (${NIGERIAN_MEAL_PLAN.grocery.estimate})`} color="#4CAF50">
+        <div style={{...cs()}}>
+          {NIGERIAN_MEAL_PLAN.grocery.items.map((g,i)=>(
+            <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:10,padding:"7px 0",borderBottom:i<NIGERIAN_MEAL_PLAN.grocery.items.length-1?`1px solid ${T.border}`:"none",flexWrap:"wrap"}}>
+              <div style={{fontSize:13,color:T.text,flex:1}}>{g.name}</div>
+              <div style={{display:"flex",gap:8,flexShrink:0,flexWrap:"wrap",justifyContent:"flex-end"}}>
+                <Chip label={g.cost} color="#4CAF50"/>
+                <span style={{fontSize:11,color:T.textMuted,alignSelf:"center"}}>{g.where}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </Section>
+
+      <Section title="Sunday Meal Prep" color="#E8A838">
+        <div style={{...cs({borderLeft:"3px solid #E8A838"})}}>
+          <div style={{fontSize:13,color:T.text,lineHeight:1.8}}>{NIGERIAN_MEAL_PLAN.prep}</div>
+        </div>
+      </Section>
+
+      <Section title="7-Day Meal Rotation" color={P.nutrition}>
+        <div style={{display:"flex",flexDirection:"column",gap:10}}>
+          {NIGERIAN_MEAL_PLAN.rotation.map((r,i)=>(
+            <div key={i} style={{...cs({padding:"12px 14px"})}}>
+              <div style={{fontWeight:700,fontSize:14,color:P.nutrition,marginBottom:8}}>{r.day}</div>
+              <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                {[["🌅 Breakfast",r.bk],["🥡 Lunch (packed)",r.lk],["🍽 Dinner",r.dk]].map(([label,text])=>(
+                  <div key={label} style={{display:"flex",gap:10,alignItems:"flex-start"}}>
+                    <span style={{fontSize:11,fontWeight:700,color:T.textMuted,minWidth:isMobile?90:110,flexShrink:0,paddingTop:2}}>{label}</span>
+                    <span style={{fontSize:12,color:T.text,lineHeight:1.6}}>{text}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </Section>
+
+      <Section title="Cooking Tips" color="#9B6EE8">
+        <div style={{...cs()}}>
+          {NIGERIAN_MEAL_PLAN.tips.map((t,i)=>(
+            <div key={i} style={{padding:"10px 0",borderBottom:i<NIGERIAN_MEAL_PLAN.tips.length-1?`1px solid ${T.border}`:"none"}}>
+              <div style={{fontSize:13,fontWeight:700,color:"#9B6EE8",marginBottom:4}}>{t.tip}</div>
+              <div style={{fontSize:12,color:T.textSub,lineHeight:1.6}}>{t.detail}</div>
             </div>
           ))}
         </div>
