@@ -25,98 +25,110 @@ const PILLARS = [
 
 // ── Checklist items ────────────────────────────────────────────────────────
 const WD = [
-  {id:"wake",      label:"Wake up + hydrate 500ml (4:30am)",             cat:"morning"  },
-  {id:"devotion",  label:"Morning devotion — prayer + Bible + worship",  cat:"faith"    },
-  {id:"thesis",    label:"Thesis deep work 60–80 min (5:00am)",          cat:"thesis"   },
-  {id:"breakfast", label:"Quick high-protein breakfast before leaving",  cat:"nutrition"},
-  {id:"delivery",  label:"Delivery routes 6am–6pm ($150–$200 goal)",    cat:"work"     },
-  {id:"audiobook", label:"Audiobook during drives all day",              cat:"reading"  },
-  {id:"lunch_eat", label:"Packed clean lunch on route (12:30pm)",        cat:"nutrition"},
-  {id:"snack",     label:"Light pre-workout snack (6:30pm)",             cat:"nutrition"},
-  {id:"warmup",    label:"Dynamic warm-up 10 min (7:00pm)",              cat:"fitness"  },
-  {id:"strength",  label:"Strength workout 60–70 min (7:10pm)",          cat:"fitness"  },
-  {id:"dinner",    label:"Post-workout dinner by 9pm",                   cat:"nutrition"},
-  {id:"evening_r", label:"Wind-down + reading (9:00pm)",                 cat:"reading"  },
-  {id:"gloria",    label:"Time with Gloria — 30–60 min (10:00pm)",       cat:"gloria"   },
-  {id:"night_p",   label:"Night prayer (11:00pm)",                       cat:"faith"    },
-  {id:"water",     label:"3–4L water today",                             cat:"nutrition"},
-  {id:"no_sugar",  label:"No sugar / fried food today",                  cat:"nutrition"},
+  {id:"wake",       label:"Wake up + hydrate 500ml (5:00am)",                      cat:"morning"  },
+  {id:"devotion",   label:"Morning devotion — prayer + Bible (5:00–5:30am)",       cat:"faith"    },
+  {id:"breakfast",  label:"Shower + quick breakfast, out by 6:00am",               cat:"nutrition"},
+  {id:"audiobook",  label:"Audiobook during morning delivery routes",               cat:"reading"  },
+  {id:"delivery",   label:"Delivery routes 6am–6pm ($150–$200 goal)",             cat:"work"     },
+  {id:"lunch_eat",  label:"Packed whole-food lunch on route (1–2pm)",              cat:"nutrition"},
+  {id:"music_pm",   label:"Music during afternoon routes",                          cat:"morning"  },
+  {id:"podcast",    label:"Podcast or sermon on the evening commute home",          cat:"faith"    },
+  {id:"gym",        label:"Gym 45–60 min (7pm) — Mon / Wed / Fri only",           cat:"fitness"  },
+  {id:"dinner",     label:"Dinner — protein + whole food (no eating after 9:30pm)",cat:"nutrition"},
+  {id:"gloria_dev", label:"Evening devotion with Gloria (10pm)",                    cat:"faith"    },
+  {id:"gloria_talk",label:"Brief conversation with Gloria (10:30–11pm)",            cat:"gloria"   },
+  {id:"night_p",    label:"Night prayer (11pm) → sleep by 11:30pm",               cat:"faith"    },
+  {id:"water",      label:"3–4L water today",                                       cat:"nutrition"},
+  {id:"no_sugar",   label:"Zero sugar · zero fast food · zero junk today",          cat:"nutrition"},
 ];
 const SAT = [
-  {id:"devotion",  label:"Morning devotion — prayer + Bible + worship (4:30am)", cat:"faith"    },
-  {id:"thesis",    label:"Thesis deep work 80 min (5:00am)",                      cat:"thesis"   },
-  {id:"breakfast", label:"High-protein breakfast + pack lunch",                   cat:"nutrition"},
-  {id:"delivery",  label:"Delivery routes 6am–6pm ($150–$200 goal)",             cat:"work"     },
-  {id:"audiobook", label:"Audiobook during drives all day",                        cat:"reading"  },
-  {id:"lunch_eat", label:"Packed clean lunch on route",                            cat:"nutrition"},
-  {id:"snack",     label:"Light pre-workout snack (6:30pm)",                      cat:"nutrition"},
-  {id:"long_run",  label:"Long run 35–45 min (7:00pm)",                           cat:"fitness"  },
-  {id:"full_body", label:"Full body circuit workout (7:45pm)",                    cat:"fitness"  },
-  {id:"stretch",   label:"Full stretch + cool-down 15 min (8:30pm)",              cat:"fitness"  },
-  {id:"meal_prep", label:"Meal prep for the week (while dinner cooks, 8:45pm)",  cat:"nutrition"},
-  {id:"dinner",    label:"Post-workout dinner by 9pm",                            cat:"nutrition"},
-  {id:"gloria",    label:"Gloria time + night prayer (10:30pm)",                  cat:"gloria"   },
-  {id:"water",     label:"3–4L water today",                                      cat:"nutrition"},
+  {id:"devotion",   label:"Morning devotion — prayer + Bible (5:00–5:30am)",       cat:"faith"    },
+  {id:"breakfast",  label:"Shower + breakfast",                                     cat:"nutrition"},
+  {id:"gloria_am",  label:"Morning time with Gloria (6:00–8:00am)",                cat:"gloria"   },
+  {id:"gym",        label:"Gym — upper body / full body (8:00–9:00am)",             cat:"fitness"  },
+  {id:"cleaning",   label:"Church cleaning 1 hour (9:30–10:30am)",                 cat:"faith"    },
+  {id:"thesis",     label:"Thesis work 1 hour (10:30–11:30am)",                    cat:"thesis"   },
+  {id:"lunch_pack", label:"Pack lunch + head out for deliveries by 12pm",          cat:"nutrition"},
+  {id:"delivery",   label:"Delivery routes 12pm–6pm ($80–$120 goal)",             cat:"work"     },
+  {id:"audiobook",  label:"Audiobook during delivery routes",                       cat:"reading"  },
+  {id:"lunch_eat",  label:"Packed lunch on route (2pm)",                            cat:"nutrition"},
+  {id:"gloria_pm",  label:"4 hours with Gloria (6pm–10pm)",                         cat:"gloria"   },
+  {id:"friend",     label:"Reach out to at least 1 friend today",                  cat:"morning"  },
+  {id:"gloria_dev", label:"Evening devotion with Gloria (10pm)",                    cat:"faith"    },
+  {id:"gloria_talk",label:"Brief conversation (10:30–11pm) → sleep by 11:30pm",   cat:"gloria"   },
+  {id:"water",      label:"3–4L water today",                                       cat:"nutrition"},
+  {id:"no_sugar",   label:"Zero sugar · zero fast food · zero junk today",          cat:"nutrition"},
 ];
 const SUN = [
-  {id:"long_dev",  label:"Extended devotion — prayer, worship, reflection (5:30am)", cat:"faith"   },
-  {id:"rest_morn", label:"Slow morning + rest",                                       cat:"morning" },
-  {id:"breakfast", label:"Eat well — recovery nutrition",                             cat:"nutrition"},
-  {id:"gig",       label:"Side gig work — 4 hrs (9am)",                              cat:"sidegig" },
-  {id:"lunch",     label:"Lunch — lean protein + complex carbs",                      cat:"nutrition"},
-  {id:"phys_book", label:"Physical book reading — 1 uninterrupted hour (3pm)",       cat:"reading" },
-  {id:"wk_plan",   label:"Weekly planning — review all pillars, set intentions",      cat:"planning"},
-  {id:"warmup",    label:"Warm-up + workout 60 min (7:00pm)",                        cat:"fitness" },
-  {id:"dinner",    label:"Post-workout dinner (9:00pm)",                              cat:"nutrition"},
-  {id:"gloria",    label:"Gloria time + night prayer (10:30pm)",                      cat:"gloria"  },
-  {id:"water",     label:"3–4L water today",                                          cat:"nutrition"},
+  {id:"long_dev",   label:"Extended devotion — prayer, worship, reflection (5am)", cat:"faith"   },
+  {id:"cardio",     label:"Cardio — 30–40 min run or HIIT (7am)",                  cat:"fitness" },
+  {id:"breakfast",  label:"Post-cardio breakfast — eggs or chicken + whole food",  cat:"nutrition"},
+  {id:"thesis1",    label:"Thesis deep work — block 1 (9:00–11:00am)",             cat:"thesis"  },
+  {id:"thesis2",    label:"Thesis deep work — block 2 (11:00am–1:00pm)",           cat:"thesis"  },
+  {id:"lunch",      label:"Lunch — chicken or eggs + rice, beans, or spaghetti",   cat:"nutrition"},
+  {id:"rest",       label:"Rest + physical book reading (2–4pm)",                  cat:"reading" },
+  {id:"wk_plan",    label:"Weekly planning — 1 intention per pillar (4pm)",        cat:"planning"},
+  {id:"gig",        label:"Side gig — client work / content / outreach (5–7pm)",   cat:"sidegig" },
+  {id:"dinner",     label:"Dinner — protein + whole food",                          cat:"nutrition"},
+  {id:"gloria_dev", label:"Evening devotion with Gloria (10pm)",                    cat:"faith"   },
+  {id:"gloria_talk",label:"Brief conversation (10:30–11pm) → sleep by 11:30pm",   cat:"gloria"  },
+  {id:"water",      label:"3–4L water today",                                       cat:"nutrition"},
+  {id:"no_sugar",   label:"Zero sugar · zero fast food · zero junk today",          cat:"nutrition"},
 ];
 
 // ── Schedule data ─────────────────────────────────────────────────────────
 const WD_SCHEDULE = [
-  {time:"4:30am", label:"Wake up + hydrate",      detail:"500ml water immediately. No phone for 10 min. This is your quiet window before a long physical day — protect it.",                                                   cat:"morning",  dur:"10 min"},
-  {time:"4:40am", label:"Morning devotion",        detail:"5 min prayer → 10 min Bible study → 5 min worship. Your spiritual anchor before the grind. Non-negotiable.",                                                        cat:"faith",    dur:"20 min"},
-  {time:"5:00am", label:"Thesis — 60–80 min",     detail:"Deep work while your mind is at its sharpest. Writing, research, proofs. This is your most important intellectual block. End by 6am to leave on time.",             cat:"thesis",   dur:"75 min"},
-  {time:"5:50am", label:"Breakfast + prep",        detail:"Quick high-protein breakfast: 4 eggs + oats or Greek yogurt. Pack your lunch for the route. Get everything ready before you walk out the door.",                    cat:"nutrition",dur:"25 min"},
-  {time:"6:00am", label:"Deliveries — start",     detail:"Head out. Audiobook on from the first minute. Run your routes efficiently. Target: $150–$200 today. Every drop counts — stay focused and move with purpose.",       cat:"work",     dur:"12 hrs"},
-  {time:"12:30pm",label:"Lunch break on route",   detail:"Packed meal: grilled chicken or tuna + rice + vegetables. Eat in the car or at a quick stop. Keep the audiobook going. Refuel and push through the second half.",   cat:"nutrition",dur:"30 min"},
-  {time:"6:00pm", label:"Last drop + home",        detail:"Wrap routes. Commute home with audiobook. Let yourself decompress — you've just put in a full 12-hour physical day. Give yourself transition time.",                cat:"work",     dur:"30 min"},
-  {time:"6:30pm", label:"Shower + light snack",   detail:"Clean up, change, and rest for 20 min. Have a light pre-workout snack: banana + protein shake, or Greek yogurt. No heavy meal yet — workout in 30 min.",           cat:"nutrition",dur:"30 min"},
-  {time:"7:00pm", label:"Dynamic warm-up",         detail:"10 min warm-up: leg swings, arm circles, hip circles, high knees, inchworms. After 12 hrs of delivery driving, the body needs priming before lifting.",            cat:"fitness",  dur:"10 min"},
-  {time:"7:10pm", label:"Strength workout",        detail:"60–70 min strength session following the weekly push/pull/legs split. Yes, you will be tired. Show up anyway — consistency beats motivation every single time.",    cat:"fitness",  dur:"70 min"},
-  {time:"8:20pm", label:"Cool-down + stretch",     detail:"10 min full body stretch. After a long delivery day + workout, this prevents injury and dramatically improves recovery. Never skip it.",                             cat:"fitness",  dur:"10 min"},
-  {time:"8:30pm", label:"Post-workout dinner",     detail:"Your biggest meal of the day. High protein recovery: salmon or chicken + rice + vegetables. Eat within 45 min of finishing the workout. ~700–800 kcal, ~55g protein.", cat:"nutrition",dur:"30 min"},
-  {time:"9:00pm", label:"Wind-down",               detail:"No screens or heavy stimulation. Physical book reading. Journal or pray. Let your nervous system come all the way down before sleep.",                               cat:"evening",  dur:"60 min"},
-  {time:"10:00pm",label:"Time with Gloria",        detail:"30–60 min, fully present. Phones away. After a long day this time matters even more — show up for her tired or not. Connection is built in these small daily moments.", cat:"gloria",   dur:"45 min"},
-  {time:"11:00pm",label:"Night prayer",            detail:"Close the day in prayer. Thanksgiving for the work, surrender the worries, peace before sleep. It seals the day the same way devotion opened it.",                  cat:"faith",    dur:"10 min"},
-  {time:"11:15pm",label:"Sleep",                   detail:"Protect your sleep — 5+ hours minimum. Your body repairs during sleep. Deliveries + strength training means recovery is not optional.",                             cat:"morning",  dur:"5 hrs"},
+  {time:"5:00am", label:"Wake up + hydrate",         detail:"500ml water the moment you wake. No phone — 10 min quiet. You're up earlier than everyone around you. Use these quiet moments as fuel.",                                                       cat:"morning",  dur:"10 min"},
+  {time:"5:00am", label:"Morning devotion",           detail:"30 min with God before you touch anything else. Prayer → Bible study → one worship song. This is your foundation. Protect it like your income depends on it — because it does.",              cat:"faith",    dur:"30 min"},
+  {time:"5:30am", label:"Shower + breakfast",         detail:"Quick shower to fully wake up. Then a fast high-protein breakfast: 3 eggs + oats OR 2 eggs + whole wheat bread. Pack your lunch. Walk out the door by 6am.",                                 cat:"nutrition",dur:"25 min"},
+  {time:"6:00am", label:"Deliveries start",           detail:"Audiobook on from minute one. Run your routes efficiently. Every delivery is one step closer to the target. $150–$200 today — stay focused and move with purpose.",                          cat:"work",     dur:"7 hrs"},
+  {time:"1:00pm", label:"Lunch on route",             detail:"Pull over and eat your packed meal: chicken + rice + beans + hot sauce. This is the mid-day refuel. No fast food. If you didn't pack lunch, you will — this happens once.",                   cat:"nutrition",dur:"45 min"},
+  {time:"1:45pm", label:"Afternoon routes",           detail:"Switch from audiobook to music. Afternoon routes need a different energy — music keeps you moving without taxing your brain. Save the podcast for the commute home.",                          cat:"work",     dur:"4 hrs"},
+  {time:"6:00pm", label:"Last drop + home",           detail:"Wrap it up. Turn on a podcast or sermon for the commute home — wind-down listening. You've earned the evening. Let yourself transition.",                                                       cat:"work",     dur:"30 min"},
+  {time:"6:30pm", label:"Home — shower + rest",       detail:"Change out of work clothes. Sit down and rest for 20–30 min. Eat a light snack only if genuinely hungry. Dinner comes after gym on gym days (Mon/Wed/Fri), or at 7pm on rest days.",        cat:"morning",  dur:"30 min"},
+  {time:"7:00pm", label:"GYM (Mon/Wed/Fri only)",     detail:"45–60 min strength session. Warm up 10 min, lift, cool down + stretch. On Tue/Thu this is your rest window — walk, read, or just breathe. Those rest days are part of the plan.",            cat:"fitness",  dur:"60 min"},
+  {time:"8:00pm", label:"Dinner",                     detail:"High protein: chicken breast or eggs + rice, beans, or spaghetti. Spice it how you like — cayenne, hot sauce, garlic. Make it something you look forward to. No eating after 9:30pm.",       cat:"nutrition",dur:"30 min"},
+  {time:"8:30pm", label:"Wind-down",                  detail:"Decompress. No heavy screens. Read a physical book, journal, or just sit in low stimulation. Let your nervous system come down fully before you go to sleep.",                                 cat:"evening",  dur:"90 min"},
+  {time:"10:00pm",label:"Evening devotion with Gloria",detail:"Short devotion together. A verse, a prayer, maybe a worship song. Even 10 min together before God builds something no conversation can replicate.",                                           cat:"faith",    dur:"20 min"},
+  {time:"10:20pm",label:"Conversation with Gloria",   detail:"30–40 min — present, phones away, real talk. How was the day? What's on your mind? What are you grateful for? These small daily moments are the whole relationship.",                         cat:"gloria",   dur:"40 min"},
+  {time:"11:00pm",label:"Night prayer",               detail:"Close the day in prayer. Alone. Thanksgiving, surrender, peace. What you surrender tonight you won't carry into tomorrow.",                                                                     cat:"faith",    dur:"10 min"},
+  {time:"11:30pm",label:"Sleep",                      detail:"In bed by 11:30pm. Protect 5.5 hours minimum. Deliveries + weight loss + growth — all of it is built in sleep. This is non-negotiable.",                                                      cat:"morning",  dur:"5.5 hrs"},
 ];
 const SAT_SCHEDULE = [
-  {time:"4:30am", label:"Devotion",               detail:"Same devotion — prayer, Bible, worship. Non-negotiable on your hardest day of the week.",                                                                              cat:"faith",    dur:"20 min"},
-  {time:"5:00am", label:"Thesis — 80 min",         detail:"Saturday thesis block. Keep the habit alive even on a full delivery day. 80 min before the world wakes up — this is your week's most consistent session.",           cat:"thesis",   dur:"80 min"},
-  {time:"6:20am", label:"Breakfast + pack lunch",  detail:"High-protein breakfast. Pack your lunch for the route. Head out the door.",                                                                                           cat:"nutrition",dur:"20 min"},
-  {time:"6:00am", label:"Deliveries — all day",    detail:"Saturdays are often busier. Stay efficient. Audiobook the whole route. Target $150–$200. Your legs are the engine today.",                                           cat:"work",     dur:"12 hrs"},
-  {time:"12:30pm",label:"Lunch on route",          detail:"Packed lunch. Keep fuel up — you have a demanding workout later. Protein + carbs. Don't skip this.",                                                                  cat:"nutrition",dur:"30 min"},
-  {time:"6:00pm", label:"Last drop + home",        detail:"Wrap up routes and head back. Decompress on the commute. Let the body settle before the workout.",                                                                    cat:"work",     dur:"30 min"},
-  {time:"6:30pm", label:"Shower + light snack",    detail:"Clean up and rest 20 min. Light pre-workout snack. Your hardest training session of the week starts in 30 min.",                                                    cat:"nutrition",dur:"30 min"},
-  {time:"7:00pm", label:"Long run",                detail:"35–45 min easy run outdoors. Saturday is your cardio day. Zone 2 pace — conversational. This primes you for the full body circuit after.",                           cat:"fitness",  dur:"45 min"},
-  {time:"7:45pm", label:"Full body circuit",       detail:"Hit every muscle group: Deadlift, Bench, Pull-ups, Overhead Press, Squat, Plank. Hardest training day of the week — push through.",                                 cat:"fitness",  dur:"45 min"},
-  {time:"8:30pm", label:"Stretch + cool-down",     detail:"15 min full body stretch. After delivery + run + full body circuit, this is mandatory. Your joints and muscles need it — do not skip.",                              cat:"fitness",  dur:"15 min"},
-  {time:"8:45pm", label:"Meal prep + dinner",      detail:"Start cooking for the entire week: chicken, rice, vegetables, hard-boiled eggs. Prep while dinner is on the stove. Saves you hours during the delivery week.",       cat:"nutrition",dur:"75 min"},
-  {time:"10:30pm",label:"Gloria + night prayer",   detail:"30–60 min. Saturday is your biggest grind day — be present and grateful with her anyway. Close with prayer.",                                                         cat:"gloria",   dur:"45 min"},
-  {time:"11:30pm",label:"Sleep",                   detail:"Recovery is non-negotiable after deliveries + run + full body circuit. Protect your sleep.",                                                                           cat:"morning",  dur:"5 hrs"},
+  {time:"5:00am", label:"Wake up + devotion",        detail:"Morning devotion 5:00–5:30am. Prayer, Bible, worship. Saturday is your most packed day — the devotion is what makes it possible. Don't skip the foundation.",      cat:"faith",    dur:"30 min"},
+  {time:"5:30am", label:"Shower + breakfast",         detail:"Quick shower. High-protein breakfast: 3–4 eggs + oats or whole wheat toast. Get ready — Gloria arrives at 6am.",                                                  cat:"nutrition",dur:"30 min"},
+  {time:"6:00am", label:"Morning with Gloria",        detail:"2 full hours with Gloria — walk, sit, talk, pray, whatever you both need. This is protected time before the world pulls you in different directions. Be present.", cat:"gloria",   dur:"2 hrs"},
+  {time:"8:00am", label:"Gym — upper body",           detail:"1 hour at the gym: Push press, bench, incline dumbbell, lateral raises, tricep dips. Clean and focused. You're home by 9am.",                                     cat:"fitness",  dur:"60 min"},
+  {time:"9:00am", label:"Transition + travel",        detail:"Head out toward church. Hydrate. Light snack if needed.",                                                                                                           cat:"morning",  dur:"30 min"},
+  {time:"9:30am", label:"Church cleaning",            detail:"One hour of service. Show up, clean, give back. This is character built in the small unseen moments.",                                                             cat:"faith",    dur:"60 min"},
+  {time:"10:30am",label:"Thesis — 1 hour",            detail:"One focused thesis hour right after church cleaning. You're already in service mode — channel it into your academic work. Writing, reading, or editing.",          cat:"thesis",   dur:"60 min"},
+  {time:"11:30am",label:"Pack lunch + prep",          detail:"Get your packed lunch and water ready. Leave for deliveries by 12pm.",                                                                                              cat:"nutrition",dur:"30 min"},
+  {time:"12:00pm",label:"Deliveries — start",         detail:"Audiobook on from minute one. Saturday routes 12pm–6pm. Target $80–$120. Efficient pace — you've already put in a full morning.",                                 cat:"work",     dur:"6 hrs"},
+  {time:"2:00pm", label:"Lunch on route",             detail:"Packed meal: chicken + rice or beans + hot sauce. Eat in the car or at a stop. Fuel the afternoon push.",                                                         cat:"nutrition",dur:"30 min"},
+  {time:"6:00pm", label:"Last drop + home",           detail:"Wrap it up. Switch to a podcast or sermon for the commute home. Good work today.",                                                                                 cat:"work",     dur:"30 min"},
+  {time:"6:30pm", label:"Freshen up",                 detail:"Quick shower and change. Get ready for the evening with Gloria.",                                                                                                   cat:"morning",  dur:"30 min"},
+  {time:"7:00pm", label:"4 hours with Gloria",        detail:"Gloria time 7pm–11pm (approximate). Dinner together, conversation, rest, walks — whatever you both want. This is the heart of Saturday. Fully present.",          cat:"gloria",   dur:"4 hrs"},
+  {time:"10:00pm",label:"Evening devotion with Gloria",detail:"10 min devotion together before the night ends. Pray for the week ahead. Gratitude over everything.",                                                             cat:"faith",    dur:"20 min"},
+  {time:"10:20pm",label:"Brief conversation",         detail:"Wind down together. 10:30–11pm light conversation before sleep.",                                                                                                   cat:"gloria",   dur:"30 min"},
+  {time:"11:30pm",label:"Sleep",                      detail:"You've done a full day — Gloria, gym, church, thesis, deliveries, Gloria again. Sleep is your reward.",                                                            cat:"morning",  dur:"5.5 hrs"},
 ];
 const SUN_SCHEDULE = [
-  {time:"5:30am", label:"Extended devotion",       detail:"No deliveries today — more time with God. Extended prayer, worship, reflection. Journal what you're grateful for this week.",                                         cat:"faith",    dur:"60 min"},
-  {time:"7:00am", label:"Slow morning",            detail:"Rest from deliveries. Eat well, move gently. This is genuine recovery — protect it. No rushing, no obligations.",                                                     cat:"morning",  dur:"2 hrs"},
-  {time:"9:00am", label:"Side gig work",           detail:"Your main side income block. Website client work, content creation, cold outreach, invoicing. 4 hrs of focused paid output.",                                        cat:"sidegig",  dur:"4 hrs"},
-  {time:"1:00pm", label:"Lunch + rest",            detail:"Lean protein + complex carbs. Rest or a gentle walk after. Audiobook or genuine downtime. Let your mind have real white space.",                                      cat:"nutrition",dur:"2 hrs"},
-  {time:"3:00pm", label:"Physical book reading",   detail:"One uninterrupted hour with a physical book. Sunday afternoons are your dedicated reading window. Sit with it. No phone.",                                            cat:"reading",  dur:"1 hr"},
-  {time:"4:00pm", label:"Weekly planning",         detail:"Review thesis progress, side gig pipeline, delivery week, reading, meals, Gloria. Write one intention per pillar for the week ahead.",                                cat:"planning", dur:"30 min"},
-  {time:"7:00pm", label:"Warm-up + workout",       detail:"Light to moderate workout — 50–60 min. Active recovery or full session depending on how you feel. Sunday is lighter than the week but stay consistent.",             cat:"fitness",  dur:"60 min"},
-  {time:"8:00pm", label:"Post-workout dinner",     detail:"Nourishing recovery meal. Protein + vegetables + complex carbs. Eat slowly and well. This is your Sunday reset.",                                                    cat:"nutrition",dur:"30 min"},
-  {time:"10:30pm",label:"Gloria + night prayer",   detail:"Sunday is a great night to be more present and unhurried with her. Pray together. Close the week with gratitude.",                                                    cat:"gloria",   dur:"60 min"},
-  {time:"11:30pm",label:"Sleep",                   detail:"End the week in peace. Tomorrow begins a new delivery cycle. Rest well.",                                                                                              cat:"morning",  dur:"5 hrs"},
+  {time:"5:00am", label:"Extended devotion",          detail:"Your longest devotion of the week. Prayer, worship, word, reflection. Journal what God has been doing. No rush — you have no deliveries today.",                  cat:"faith",    dur:"45 min"},
+  {time:"5:45am", label:"Breakfast",                  detail:"Post-devotion breakfast: 3–4 eggs + oats or whole wheat toast. Fuel up before cardio.",                                                                           cat:"nutrition",dur:"30 min"},
+  {time:"7:00am", label:"Cardio — run or HIIT",       detail:"30–40 min outdoor run or HIIT at home. Zone 2 pace — you should be able to speak in sentences. Sunday cardio is your reset for the week ahead.",                 cat:"fitness",  dur:"40 min"},
+  {time:"7:40am", label:"Stretch + cool-down",        detail:"10–15 min full body stretch while still warm. Hip flexors, hamstrings, calves. After 6 days of delivery driving + lifting, your body needs this.",              cat:"fitness",  dur:"15 min"},
+  {time:"8:00am", label:"Slow morning",               detail:"Rest. Shower, breathe, read, prepare. No urgency. Let the morning be genuinely restful before the thesis blocks start at 9am.",                                   cat:"morning",  dur:"60 min"},
+  {time:"9:00am", label:"Thesis deep work — block 1", detail:"2 hours of focused writing or research. Phone on DND. This is your most important intellectual output of the week. Protect it absolutely.",                       cat:"thesis",   dur:"2 hrs"},
+  {time:"11:00am",label:"Thesis deep work — block 2", detail:"Second 2-hour thesis block. Take a 5 min break then continue. You will produce meaningful work in these 4 hours combined.",                                       cat:"thesis",   dur:"2 hrs"},
+  {time:"1:00pm", label:"Lunch + rest",               detail:"Chicken or eggs + rice, beans, or spaghetti. Spice it up. Rest for 30–45 min — no screen, no pressure. Physical book or just sit.",                             cat:"nutrition",dur:"90 min"},
+  {time:"2:30pm", label:"Physical book reading",       detail:"60–90 min with a real book. Sunday afternoon is your reading window. Sit with it fully.",                                                                         cat:"reading",  dur:"90 min"},
+  {time:"4:00pm", label:"Weekly planning",             detail:"30 min. Review thesis goals, side gig pipeline, delivery week ahead, meals, Gloria time. Set one intention per pillar.",                                          cat:"planning", dur:"30 min"},
+  {time:"5:00pm", label:"Side gig work",               detail:"2 hours of focused side income work. Client projects, content, cold outreach, invoicing. This is your $500+/month builder.",                                     cat:"sidegig",  dur:"2 hrs"},
+  {time:"7:00pm", label:"Dinner",                      detail:"Nourishing Sunday dinner. Chicken + rice or beans. Meal prep a little for the week while you're at it — boil eggs, pack lunches for Monday.",                   cat:"nutrition",dur:"60 min"},
+  {time:"8:00pm", label:"Rest + wind-down",            detail:"Free time. Walk, watch something, decompress fully. Tomorrow is a full delivery day. Let Sunday evening be genuinely light.",                                     cat:"evening",  dur:"2 hrs"},
+  {time:"10:00pm",label:"Evening devotion with Gloria",detail:"Short Sunday night devotion. Thank God for the week, pray over the week ahead. This is a powerful ritual — two people aligned before Monday.",                   cat:"faith",    dur:"20 min"},
+  {time:"10:20pm",label:"Brief conversation",          detail:"10:30–11pm. Unhurried Sunday night conversation. Close the week together.",                                                                                        cat:"gloria",   dur:"40 min"},
+  {time:"11:30pm",label:"Sleep",                       detail:"End the week in peace. You've rested, worked, worshipped, and planned. Tomorrow starts a new cycle. Sleep well.",                                                 cat:"morning",  dur:"5.5 hrs"},
 ];
 
 // ── Workout data ──────────────────────────────────────────────────────────
@@ -141,7 +153,7 @@ const SPLITS = {
     {name:"Tricep Dips",              sets:"3",reps:"10–12",rest:"75 sec",note:"Bodyweight or weighted"},
     {name:"Tricep Pushdown",          sets:"3",reps:"12–15",rest:"60 sec",note:"Cable or resistance band"},
   ]},
-  Tue: { label:"Pull — Back, Biceps, Rear Delts", exercises:[
+  Wed: { label:"Pull — Back, Biceps, Rear Delts", exercises:[
     {name:"Pull-ups",                 sets:"4",reps:"Max reps",rest:"90 sec",note:"Full hang, chin over bar — add weight if 10+ easy"},
     {name:"Barbell Bent-Over Row",    sets:"4",reps:"8–10",rest:"90 sec",note:"Brace core, pull to lower chest"},
     {name:"Dumbbell Single-Arm Row",  sets:"3",reps:"10–12 each",rest:"60 sec",note:"Full range, elbow drives back"},
@@ -149,7 +161,7 @@ const SPLITS = {
     {name:"Barbell Curl",             sets:"3",reps:"10–12",rest:"75 sec",note:"No body English — strict form"},
     {name:"Hammer Curl",              sets:"3",reps:"12",rest:"60 sec",note:"Neutral grip, both arms alternating"},
   ]},
-  Wed: { label:"Legs — Quads, Hamstrings, Glutes, Calves", exercises:[
+  Fri: { label:"Legs — Quads, Hamstrings, Glutes, Calves", exercises:[
     {name:"Barbell Back Squat",       sets:"4",reps:"8–10",rest:"2 min",note:"Depth below parallel, drive through heels"},
     {name:"Romanian Deadlift",        sets:"3",reps:"10–12",rest:"90 sec",note:"Feel the hamstring stretch, hinge at hips"},
     {name:"Bulgarian Split Squat",    sets:"3",reps:"10 each leg",rest:"90 sec",note:"Rear foot elevated, knee tracks over toes"},
@@ -157,100 +169,99 @@ const SPLITS = {
     {name:"Leg Curl",                 sets:"3",reps:"12–15",rest:"60 sec",note:"Machine or Nordic curl"},
     {name:"Standing Calf Raise",      sets:"4",reps:"20",rest:"45 sec",note:"Full stretch at bottom, peak contraction at top"},
   ]},
-  Thu: { label:"Push — Chest, Shoulders, Triceps (variation)", exercises:[
-    {name:"Dumbbell Flat Press",      sets:"4",reps:"10–12",rest:"90 sec",note:"Slightly different angle than barbell"},
-    {name:"Arnold Press",             sets:"3",reps:"10–12",rest:"75 sec",note:"Rotate palms during press"},
-    {name:"Cable Crossover / Flye",   sets:"3",reps:"12–15",rest:"60 sec",note:"Squeeze chest at center"},
-    {name:"Front Raises",             sets:"3",reps:"12",rest:"60 sec",note:"Dumbbell or plate — front delt"},
-    {name:"Overhead Tricep Extension",sets:"3",reps:"12–15",rest:"60 sec",note:"Dumbbell or cable, full stretch"},
-    {name:"Close-Grip Push-ups",      sets:"2",reps:"Max reps",rest:"60 sec",note:"Tricep burnout to finish"},
-  ]},
-  Fri: { label:"Pull — Back, Biceps (variation)", exercises:[
-    {name:"Lat Pulldown",             sets:"4",reps:"10–12",rest:"90 sec",note:"Wide grip, pull to upper chest"},
+  Sat: { label:"Upper Body — Chest, Back, Shoulders (AM session)", exercises:[
+    {name:"Barbell Bench Press",      sets:"4",reps:"8–10",rest:"90 sec",note:"Primary push movement — lead with this fresh"},
+    {name:"Pull-ups",                 sets:"4",reps:"Max reps",rest:"90 sec",note:"Superset-ready with bench if time is tight"},
+    {name:"Dumbbell Shoulder Press",  sets:"3",reps:"10–12",rest:"75 sec",note:"Seated or standing"},
     {name:"Seated Cable Row",         sets:"3",reps:"10–12",rest:"75 sec",note:"Elbows in, squeeze shoulder blades"},
-    {name:"Dumbbell Pullover",        sets:"3",reps:"12",rest:"60 sec",note:"Great lat stretch at top"},
-    {name:"Rear Delt Flye",           sets:"3",reps:"15",rest:"60 sec",note:"Bent over or on incline bench"},
-    {name:"Incline Dumbbell Curl",    sets:"3",reps:"12",rest:"60 sec",note:"Long head bicep stretch"},
-    {name:"Cable Curl",               sets:"3",reps:"12–15",rest:"60 sec",note:"Keep elbows anchored at sides"},
+    {name:"Lateral Raises",           sets:"3",reps:"12–15",rest:"60 sec",note:"Light weight, strict control"},
+    {name:"Plank",                    sets:"3",reps:"45–60 sec",rest:"45 sec",note:"Full body tension — core finisher"},
   ]},
-  Sat: { label:"Full Body Circuit — Strength + Conditioning", exercises:[
-    {name:"Deadlift",                 sets:"4",reps:"6–8",rest:"2 min",note:"King of compound lifts. Brace everything."},
-    {name:"Barbell Bench Press",      sets:"3",reps:"8–10",rest:"90 sec",note:""},
-    {name:"Pull-ups",                 sets:"3",reps:"Max reps",rest:"90 sec",note:""},
-    {name:"Overhead Press",           sets:"3",reps:"10",rest:"90 sec",note:"Standing, core tight"},
-    {name:"Goblet Squat",             sets:"3",reps:"12",rest:"75 sec",note:"Dumbbell or kettlebell"},
-    {name:"Plank",                    sets:"3",reps:"45–60 sec",rest:"45 sec",note:"Full body tension, don't let hips sag"},
+  Sun: { label:"Cardio — Run or HIIT", exercises:[
+    {name:"Warm-up walk",             sets:"1",reps:"5 min",rest:"—",note:"Easy pace to get the blood moving"},
+    {name:"Zone 2 run (outdoor)",     sets:"1",reps:"25–35 min",rest:"—",note:"Conversational pace — you should be able to speak in sentences"},
+    {name:"OR: HIIT intervals",       sets:"6",reps:"30 sec sprint / 90 sec walk",rest:"—",note:"If shorter on time — more intense, same fat-burning effect"},
+    {name:"Cool-down walk",           sets:"1",reps:"5 min",rest:"—",note:"Easy pace, let heart rate come all the way down"},
+    {name:"Full body stretch",        sets:"1",reps:"10–15 min",rest:"—",note:"Hip flexors, hamstrings, calves, lower back — delivery drivers need this"},
   ]},
 };
 
 // ── Nutrition data ────────────────────────────────────────────────────────
 const NUTRITION_PLAN = {
-  targets: { calories:2700, protein:175, carbs:300, fat:75 },
+  targets: { calories:1900, protein:150, carbs:200, fat:55 },
+  weightLossRules:[
+    "Zero sugar — no sweets, candy, soda, juice, or sweetened coffee until end of summer",
+    "Zero fast food — pack your lunch every single day, no exceptions",
+    "Zero junk snacks — chips, crackers, cookies, anything processed",
+    "Stop eating by 9:30pm — late eating stores fat and wrecks sleep",
+    "3–4L water every day — hunger is often thirst in disguise",
+    "Every meal must have a protein source (eggs or chicken) + a whole food carb",
+    "Make your food spicy — cayenne, hot sauce, garlic boost metabolism and satiety",
+    "No liquid calories except water and black coffee (no sugar)",
+  ],
   meals: [
     {
-      name:"Pre-Route Breakfast",
-      time:"5:50am — quick before heading out",
-      kcal:710, protein:55, carbs:72, fat:18,
-      why:"Fast to prepare, high protein to sustain energy through a 12-hour delivery day. Eat before you leave.",
+      name:"Breakfast — Pre-Route",
+      time:"5:30am — quick before leaving by 6am",
+      kcal:420, protein:38, carbs:35, fat:14,
+      why:"Fast to prep, high protein, sustains energy for the first half of a long delivery day. If you skip breakfast you will buy fast food — don't skip breakfast.",
       foods:[
-        {item:"4 large eggs (scrambled or fried in olive oil)", kcal:280, protein:28, carbs:2,  fat:18},
-        {item:"1 cup non-fat Greek yogurt",                     kcal:130, protein:17, carbs:9,  fat:0},
-        {item:"1 cup rolled oats (cooked with water)",          kcal:300, protein:10, carbs:54, fat:5},
-        {item:"Optional: 1 banana",                             kcal:89,  protein:1,  carbs:23, fat:0},
+        {item:"3 large eggs (scrambled in non-stick or air-fried)", kcal:210, protein:21, carbs:2,  fat:14},
+        {item:"1 cup rolled oats (cooked with water, no sugar)",     kcal:150, protein:5,  carbs:27, fat:3},
+        {item:"1 medium banana or apple",                            kcal:80,  protein:1,  carbs:21, fat:0},
+        {item:"Black coffee (no sugar)",                             kcal:5,   protein:0,  carbs:1,  fat:0},
       ],
     },
     {
-      name:"Lunch on Route",
-      time:"12:30pm — packed, eaten during a delivery break",
-      kcal:575, protein:61, carbs:52, fat:12,
-      why:"Midday refuel during a long physical day. Prep this the night before or on Saturday. Protein keeps energy stable through the afternoon routes.",
+      name:"Lunch on Route (Packed)",
+      time:"1:00–2:00pm — packed from home, eaten on a delivery break",
+      kcal:520, protein:55, carbs:48, fat:10,
+      why:"The most important meal to prep. If you didn't pack lunch you will buy fast food. Cook chicken in batches on Sunday. Spice it heavily — make it a meal you look forward to.",
       foods:[
-        {item:"6oz grilled chicken breast",                     kcal:280, protein:52, carbs:0,  fat:6},
-        {item:"1 cup cooked brown rice or sweet potato",        kcal:215, protein:5,  carbs:44, fat:2},
-        {item:"2 cups mixed vegetables (broccoli, spinach, peppers)", kcal:80, protein:4, carbs:16, fat:0},
-        {item:"1 tsp olive oil (cooking/dressing)",             kcal:40,  protein:0,  carbs:0,  fat:5},
+        {item:"6oz grilled chicken breast (seasoned + cayenne)",     kcal:280, protein:52, carbs:0,  fat:6},
+        {item:"1 cup cooked rice, beans, or spaghetti",              kcal:200, protein:5,  carbs:42, fat:1},
+        {item:"Hot sauce, garlic powder, spices (as much as you want)", kcal:10, protein:0, carbs:2, fat:0},
+        {item:"Water — 500ml minimum",                               kcal:0,   protein:0,  carbs:0,  fat:0},
       ],
     },
     {
-      name:"Pre-Workout Snack",
-      time:"6:30pm — light, 30 min before warm-up",
-      kcal:220, protein:18, carbs:26, fat:4,
-      why:"Light fuel before the 7pm workout. Big enough to power the session, small enough not to sit heavy in your stomach during lifting.",
+      name:"Dinner (Gym Days: Post-Workout)",
+      time:"8:00–8:30pm — after gym on Mon/Wed/Fri, 7:30pm on rest days",
+      kcal:600, protein:52, carbs:55, fat:16,
+      why:"Your biggest meal. After deliveries + gym your body is starving for protein and carbs. Eat fully here. This is recovery fuel — not the place to under-eat.",
       foods:[
-        {item:"1 banana",                                        kcal:89,  protein:1,  carbs:23, fat:0},
-        {item:"1 scoop protein shake (mixed with water)",        kcal:120, protein:25, carbs:3,  fat:2},
-        {item:"OR: 1 cup Greek yogurt + handful of berries",     kcal:160, protein:17, carbs:18, fat:1},
+        {item:"6–8oz chicken breast or 4 eggs (your choice)",        kcal:320, protein:48, carbs:2,  fat:12},
+        {item:"1.5 cups rice, beans, or spaghetti (whole grain if available)", kcal:250, protein:7, carbs:50, fat:2},
+        {item:"1 cup steamed or stir-fried vegetables (broccoli, peppers, spinach)", kcal:60, protein:4, carbs:12, fat:0},
+        {item:"Spices, hot sauce, garlic — make it taste good",      kcal:10,  protein:0,  carbs:2,  fat:0},
       ],
     },
     {
-      name:"Post-Workout Dinner",
-      time:"8:30pm — within 45 min of finishing workout",
-      kcal:700, protein:60, carbs:62, fat:18,
-      why:"Your biggest recovery meal. After deliveries + strength training your body needs protein for muscle repair and carbs to reload glycogen. Eat this fully.",
+      name:"Optional Small Snack (Gym Days Only)",
+      time:"6:30pm — light pre-workout fuel if genuinely hungry",
+      kcal:120, protein:12, carbs:10, fat:3,
+      why:"Only if you need it before gym on Mon/Wed/Fri. If not hungry, skip it — let the deficit work.",
       foods:[
-        {item:"6oz salmon or 8oz grilled chicken breast",        kcal:360, protein:52, carbs:0,  fat:14},
-        {item:"1.5 cups cooked rice or quinoa",                  kcal:280, protein:6,  carbs:58, fat:3},
-        {item:"1 cup steamed broccoli or asparagus",             kcal:55,  protein:4,  carbs:11, fat:0},
-        {item:"1 tsp olive oil",                                  kcal:40,  protein:0,  carbs:0,  fat:5},
+        {item:"2 hard-boiled eggs OR 1 cup Greek yogurt (plain, no sugar)", kcal:120, protein:12, carbs:10, fat:3},
       ],
     },
   ],
   avoid:[
-    {item:"Fast food on route",  reason:"Easy temptation during long delivery days — prep your lunch to avoid this"},
-    {item:"Fried foods",         reason:"Spike inflammation, kill energy, undo training adaptations"},
-    {item:"Added sugar / candy", reason:"Causes energy crashes mid-delivery route, promotes fat storage"},
-    {item:"Sugary energy drinks", reason:"Crash after the peak — replace with water and a real snack"},
-    {item:"Ultra-processed food", reason:"Nutrient-poor, high sodium, disrupts gut health"},
-    {item:"Alcohol",             reason:"Impairs protein synthesis, kills sleep quality, dehydrates"},
-    {item:"Eating after 10pm",   reason:"Late-night eating past the post-workout window disrupts sleep"},
+    {item:"Fast food",           reason:"You will pass 10 fast food restaurants a day — pack your lunch or you will stop"},
+    {item:"Sweets + candy",      reason:"Pure sugar, zero satiety, zero protein — directly stored as fat"},
+    {item:"Sugary drinks",       reason:"Soda, juice, sweetened coffee — liquid sugar is the #1 hidden calorie source"},
+    {item:"Junk snacks",         reason:"Chips, crackers, cookies — engineered to make you eat past full"},
+    {item:"Fried foods",         reason:"High calorie density, spike inflammation, slow digestion"},
+    {item:"Eating after 9:30pm", reason:"Disrupts sleep and pushes calories past your daily budget"},
+    {item:"Skipping breakfast",  reason:"You will make bad decisions on route — prep and eat before 6am"},
   ],
   supplements:[
-    {name:"Creatine Monohydrate",dose:"5g daily (any time)",note:"Best-studied supplement. Improves strength and recovery."},
-    {name:"Vitamin D3",          dose:"2,000–4,000 IU with breakfast",note:"Most people are deficient, especially indoor workers."},
-    {name:"Magnesium Glycinate", dose:"400mg before bed",note:"Improves sleep quality and muscle recovery."},
-    {name:"Protein Powder",      dose:"1 scoop if missing protein targets",note:"Whey or plant-based. Only use if food is falling short."},
+    {name:"Creatine Monohydrate",dose:"5g daily with breakfast",note:"Improves strength and muscle preservation during weight loss — take daily."},
+    {name:"Vitamin D3",          dose:"2,000 IU with breakfast",note:"Supports energy, mood, and immunity. Most people are deficient."},
+    {name:"Magnesium Glycinate", dose:"400mg before bed",note:"Better sleep and faster muscle recovery — non-negotiable."},
+    {name:"Protein Powder",      dose:"1 scoop only if below 130g protein from food",note:"Whey isolate preferred. Food first always."},
   ],
-  hydration: "Drink 500ml immediately upon waking. Keep a large water bottle in the delivery vehicle — you're physically active all day and will dehydrate fast. Aim for 3–4L by 9pm. Add a pinch of sea salt to your first morning water for electrolytes. Reduce water after 9:30pm to protect sleep.",
+  hydration: "500ml water the moment you wake up. Keep a large 1.5–2L bottle in your delivery vehicle — you're physically active all day and will lose more water than you think. Aim for 3–4L total by 9pm. Reduce after 9:30pm to protect sleep. Black coffee is fine. No sugary drinks. Hunger often means you're dehydrated — drink water first.",
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────
@@ -419,7 +430,7 @@ export default function SummerApp({mode,T,onBack}) {
       )}
 
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(140px,1fr))",gap:10,marginBottom:20}}>
-        <SCard T={T} label="Thesis hrs/wk" value={weekHrs.toFixed(1)} sub="Target: 8 hrs" color={P.thesis}/>
+        <SCard T={T} label="Thesis hrs/wk" value={weekHrs.toFixed(1)} sub="Target: 5 hrs" color={P.thesis}/>
         <SCard T={T} label="Books/month" value={`${monthBooks}/3`} sub="Target: 3" color={P.reading}/>
         <SCard T={T} label="Devotion streak" value={`${devStreak}d`} sub="Days in a row" color={P.faith}/>
         <SCard T={T} label="Fitness streak" value={`${fitStreak}d`} sub="Mon–Sat" color={P.fitness}/>
@@ -428,9 +439,9 @@ export default function SummerApp({mode,T,onBack}) {
       </div>
 
       <div style={{...cs({marginBottom:14})}}>
-        <div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}><span style={{fontWeight:700,color:T.text}}>{"✎ Thesis This Week"}</span><span style={{fontWeight:700,color:P.thesis}}>{weekHrs.toFixed(1)}{"/8 hrs"}</span></div>
-        <PBar value={weekHrs} max={8} color={P.thesis} h={8} bg={T.inputBg}/>
-        <div style={{fontSize:11,color:T.textMuted,marginTop:6}}>{"6 days × 80 min = 8 hrs/week · Mon–Sat at 5:30pm"}</div>
+        <div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}><span style={{fontWeight:700,color:T.text}}>{"✎ Thesis This Week"}</span><span style={{fontWeight:700,color:P.thesis}}>{weekHrs.toFixed(1)}{"/5 hrs"}</span></div>
+        <PBar value={weekHrs} max={5} color={P.thesis} h={8} bg={T.inputBg}/>
+        <div style={{fontSize:11,color:T.textMuted,marginTop:6}}>{"Sat 1hr (10:30am) + Sun 4hrs (9am–1pm) = 5 hrs/week"}</div>
       </div>
 
       <div style={{...cs({marginBottom:14})}}>
@@ -610,7 +621,7 @@ export default function SummerApp({mode,T,onBack}) {
       <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:20,gap:12,flexWrap:"wrap"}}>
         <div>
           <div style={{fontFamily:"'DM Serif Display',serif",fontSize:isMobile?22:28,color:P.fitness}}>{"◈ Fitness"}</div>
-          <div style={{fontSize:13,color:T.textSub,marginTop:2}}>{"Run · Strength · Mon–Sat · Rest Sunday"}</div>
+          <div style={{fontSize:13,color:T.textSub,marginTop:2}}>{"Gym Mon/Wed/Fri (eve) + Sat AM · Cardio Sunday · Rest Tue/Thu"}</div>
         </div>
         <button onClick={()=>{setFf({runDist:"",runTime:"",workoutType:"Push"});setShowForm("fitness");}}
           style={{padding:"9px 16px",borderRadius:9,border:"none",background:P.fitness,color:"#111",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,flexShrink:0}}>{"+ Log Workout"}</button>
@@ -619,12 +630,12 @@ export default function SummerApp({mode,T,onBack}) {
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))",gap:10,marginBottom:20}}>
         <SCard T={T} label="Streak" value={`${fitStreak}d`} sub="Mon–Sat" color={P.fitness}/>
         <SCard T={T} label="Month miles" value={`${data.fitness.filter(f=>f.date?.startsWith(today.slice(0,7))).reduce((s,f)=>s+(Number(f.runDist)||0),0).toFixed(1)} mi`} sub="Running total" color="#3B9EDB"/>
-        <SCard T={T} label="This week" value={`${(()=>{const d=new Date();d.setDate(d.getDate()-((d.getDay()+6)%7));return data.fitness.filter(f=>f.date>=d.toISOString().slice(0,10)).length;})()} sessions`} sub="Target: 6" color="#E8A838"/>
+        <SCard T={T} label="This week" value={`${(()=>{const d=new Date();d.setDate(d.getDate()-((d.getDay()+6)%7));return data.fitness.filter(f=>f.date>=d.toISOString().slice(0,10)).length;})()} sessions`} sub="Target: 5" color="#E8A838"/>
       </div>
 
-      <Section title="Run Guide" color={P.fitness}>
+      <Section title="Cardio Guide (Sundays)" color={P.fitness}>
         <div style={{...cs()}}>
-          {[["Pace","Easy / conversational pace — you should be able to speak full sentences"],["Zone","Zone 2 heart rate: 120–140 bpm. This burns fat and builds aerobic base."],["Mon–Fri distance","3–4 km (20–25 min). Don't race it. Consistent easy effort."],["Saturday distance","5–7 km (35–45 min). Slightly longer. Still easy pace."],["Sunday","Complete rest from running. Your body repairs on rest days."]].map(([l,d])=>(
+          {[["When","Sunday only — one dedicated cardio day per week. Tue/Thu are full rest from training."],["Option A — Run","25–35 min easy outdoor run. Conversational pace (Zone 2, 120–140 bpm). Burns fat, builds aerobic base."],["Option B — HIIT","6–8 rounds of 30 sec sprint / 90 sec walk. Better for time, same fat-burning effect."],["After cardio","10–15 min full body stretch. Hip flexors, hamstrings, calves — delivery driving tightens all of these."],["Weight loss note","Cardio supports fat loss. The real work is done in the kitchen — stick to the nutrition rules."]].map(([l,d])=>(
             <InfoRow key={l} label={l} value={d} T={T}/>
           ))}
         </div>
@@ -709,14 +720,25 @@ export default function SummerApp({mode,T,onBack}) {
       <div style={{fontFamily:"'DM Serif Display',serif",fontSize:isMobile?22:28,color:P.nutrition,marginBottom:4}}>{"🥗 Nutrition"}</div>
       <div style={{fontSize:13,color:T.textSub,marginBottom:20}}>{"Full meal plan · calories · macros · what to eat and avoid"}</div>
 
+      <Section title="Weight Loss Rules" color="#E84E8A">
+        <div style={{...cs()}}>
+          {NUTRITION_PLAN.weightLossRules.map((rule,i)=>(
+            <div key={i} style={{display:"flex",alignItems:"flex-start",gap:10,padding:"7px 0",borderBottom:i<NUTRITION_PLAN.weightLossRules.length-1?`1px solid ${T.border}`:"none"}}>
+              <span style={{fontSize:14,flexShrink:0,color:"#E84E8A"}}>{"→"}</span>
+              <div style={{fontSize:13,color:T.text,lineHeight:1.5}}>{rule}</div>
+            </div>
+          ))}
+        </div>
+      </Section>
+
       <Section title="Daily Targets" color={P.nutrition}>
         <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))",gap:10,marginBottom:14}}>
-          {[["Calories","~2,700 kcal","Total daily intake"],["Protein","175g","~1g per lb bodyweight"],["Carbs","~300g","For energy + glycogen"],["Fat","~75g","Hormones + absorption"]].map(([l,v,s])=>(
+          {[["Calories","~1,900 kcal","Weight loss deficit"],["Protein","150g","High protein to preserve muscle"],["Carbs","~200g","Whole foods only"],["Fat","~55g","Healthy fats only"]].map(([l,v,s])=>(
             <SCard key={l} T={T} label={l} value={v} sub={s} color={P.nutrition}/>
           ))}
         </div>
         <div style={{...cs({borderLeft:`3px solid ${P.nutrition}`})}}>
-          <div style={{fontSize:13,color:T.text,lineHeight:1.7}}>{"Hydration: "}<strong style={{color:P.nutrition}}>{"3–4L water daily."}</strong>{" Drink 500ml immediately upon waking. Add a pinch of sea salt to your morning water for electrolytes. Reduce intake after 8pm to protect sleep quality."}</div>
+          <div style={{fontSize:13,color:T.text,lineHeight:1.7}}>{"Hydration: "}<strong style={{color:P.nutrition}}>{"3–4L water daily."}</strong>{" 500ml immediately upon waking. Large bottle in your delivery vehicle — you lose more water than you think while driving and lifting. Reduce after 9:30pm. No sugary drinks."}</div>
         </div>
       </Section>
 
@@ -794,7 +816,7 @@ export default function SummerApp({mode,T,onBack}) {
       <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:20,gap:12,flexWrap:"wrap"}}>
         <div>
           <div style={{fontFamily:"'DM Serif Display',serif",fontSize:isMobile?22:28,color:P.thesis}}>{"✎ Thesis Work"}</div>
-          <div style={{fontSize:13,color:T.textSub,marginTop:2}}>{"80 min · Mon–Sat · 5:30pm · 8 hrs/week"}</div>
+          <div style={{fontSize:13,color:T.textSub,marginTop:2}}>{"Weekend only · Sat 1hr + Sun 4hrs · ~5 hrs/week"}</div>
         </div>
         <button onClick={()=>{setTf({notes:"",duration:80});setShowForm("thesis");}}
           style={{padding:"9px 16px",borderRadius:9,border:"none",background:P.thesis,color:"#fff",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,flexShrink:0}}>{"+ Log Session"}</button>
@@ -803,9 +825,9 @@ export default function SummerApp({mode,T,onBack}) {
       <div style={{...cs({marginBottom:20})}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
           <div style={{fontWeight:700,color:T.text,fontSize:15}}>{"This Week"}</div>
-          <div style={{fontSize:14,fontWeight:700,color:P.thesis}}>{weekHrs.toFixed(1)}{" / 8 hrs"}</div>
+          <div style={{fontSize:14,fontWeight:700,color:P.thesis}}>{weekHrs.toFixed(1)}{" / 5 hrs"}</div>
         </div>
-        <PBar value={weekHrs} max={8} color={P.thesis} h={10} bg={T.inputBg}/>
+        <PBar value={weekHrs} max={5} color={P.thesis} h={10} bg={T.inputBg}/>
         <div style={{display:"grid",gridTemplateColumns:"repeat(6,1fr)",gap:4,marginTop:12}}>
           {["Mon","Tue","Wed","Thu","Fri","Sat"].map((d,i)=>{
             const dd=new Date(); dd.setDate(dd.getDate()-((dd.getDay()+6)%7)+i);
@@ -833,7 +855,7 @@ export default function SummerApp({mode,T,onBack}) {
       </Section>
 
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))",gap:10,marginBottom:20}}>
-        <SCard T={T} label="This week" value={`${weekHrs.toFixed(1)} hrs`} sub="Target 8 hrs" color={P.thesis}/>
+        <SCard T={T} label="This week" value={`${weekHrs.toFixed(1)} hrs`} sub="Target 5 hrs" color={P.thesis}/>
         <SCard T={T} label="All-time" value={`${(data.thesis.reduce((s,e)=>s+(Number(e.duration)||80),0)/60).toFixed(1)} hrs`} sub="Total focused" color="#E8A838"/>
         <SCard T={T} label="Sessions" value={data.thesis.length} sub="Total logged" color="#3DBF8A"/>
       </div>
