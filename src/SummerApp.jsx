@@ -11,16 +11,51 @@ const P = { faith:"#E8C050", fitness:"#3DBF8A", thesis:"#9B6EE8", reading:"#3B9E
 const CAT = { faith:"#E8C050",fitness:"#3DBF8A",reading:"#3B9EDB",thesis:"#9B6EE8",gloria:"#E84E8A",sidegig:"#20B2AA",nutrition:"#F97316",morning:"#E8704A",evening:"#9B6EE8",work:"#888",planning:"#C8B030" };
 
 const PILLARS = [
-  {id:"overview",  label:"Overview",   icon:"◉", color:"#E8A838"},
-  {id:"schedule",  label:"Schedule",   icon:"📅", color:"#C8B030"},
-  {id:"checklist", label:"Checklist",  icon:"☐", color:"#E8704A"},
-  {id:"faith",     label:"Faith",      icon:"✦", color:P.faith},
-  {id:"fitness",   label:"Fitness",    icon:"◈", color:P.fitness},
-  {id:"nutrition", label:"Nutrition",  icon:"🥗", color:P.nutrition},
-  {id:"thesis",    label:"Thesis",     icon:"✎", color:P.thesis},
-  {id:"reading",   label:"Reading",    icon:"◐", color:P.reading},
-  {id:"gloria",    label:"Gloria",     icon:"♡", color:P.gloria},
-  {id:"sidegig",   label:"Side Gig",   icon:"◆", color:P.sidegig},
+  {id:"overview",       label:"Overview",   icon:"◉", color:"#E8A838"},
+  {id:"tracker",        label:"Tracker",    icon:"📊", color:"#3B9EDB"},
+  {id:"schedule",       label:"Schedule",   icon:"📅", color:"#C8B030"},
+  {id:"checklist",      label:"Checklist",  icon:"☐", color:"#E8704A"},
+  {id:"faith",          label:"Faith",      icon:"✦", color:P.faith},
+  {id:"fitness",        label:"Fitness",    icon:"◈", color:P.fitness},
+  {id:"nutrition",      label:"Nutrition",  icon:"🥗", color:P.nutrition},
+  {id:"thesis",         label:"Thesis",     icon:"✎", color:P.thesis},
+  {id:"reading",        label:"Reading",    icon:"◐", color:P.reading},
+  {id:"gloria",         label:"Gloria",     icon:"♡", color:P.gloria},
+  {id:"sidegig",        label:"Side Gig",   icon:"◆", color:P.sidegig},
+];
+const GLORIA_PILLARS = [
+  {id:"gloria_overview",label:"Overview",   icon:"◉", color:"#E84E8A"},
+  {id:"gloria_schedule",label:"Schedule",   icon:"📅", color:"#C8B030"},
+  {id:"gloria_faith",   label:"Faith",      icon:"✦", color:P.faith},
+  {id:"gloria_reading", label:"Reading",    icon:"◐", color:P.reading},
+  {id:"gloria_notes",   label:"Notes",      icon:"✎", color:"#9B6EE8"},
+];
+
+// Gloria's schedule (she is not doing deliveries — her own daily rhythm)
+const GLORIA_WD = [
+  {time:"6:00am", label:"Wake up + devotion",       cat:"faith",    detail:"Start with God before the day starts. Prayer, Bible, one worship song."},
+  {time:"7:00am", label:"Morning routine",           cat:"morning",  detail:"Shower, breakfast, prepare for the day ahead."},
+  {time:"8:00am", label:"Work / studies",            cat:"work",     detail:"Focused work or study block — your primary responsibility for the day."},
+  {time:"12:00pm",label:"Lunch break",               cat:"nutrition",detail:"Real meal, step away from the screen. Rest your eyes."},
+  {time:"1:00pm", label:"Afternoon work / studies",  cat:"work",     detail:"Continue focused work. Deep effort in the afternoon."},
+  {time:"5:00pm", label:"End of work",               cat:"work",     detail:"Close out tasks. Rest before evening."},
+  {time:"6:00pm", label:"Personal time / exercise",  cat:"fitness",  detail:"Walk, workout, or creative time. Move your body."},
+  {time:"7:00pm", label:"Connection with Amen",      cat:"gloria",   detail:"Call, text, or time together. Stay connected across the distance."},
+  {time:"9:00pm", label:"Wind-down",                 cat:"evening",  detail:"No screens. Read, journal, or just rest."},
+  {time:"10:00pm",label:"Evening devotion with Amen",cat:"faith",    detail:"Short devotion together. A verse, a prayer. Non-negotiable."},
+  {time:"10:30pm",label:"Conversation with Amen",    cat:"gloria",   detail:"Real talk — how was the day? What are you grateful for?"},
+  {time:"11:30pm",label:"Sleep",                     cat:"morning",  detail:"Rest. You matter too. Protect your sleep."},
+];
+const GLORIA_WD_CHECKLIST = [
+  {id:"g_wake",    label:"Wake up + morning devotion",      cat:"faith"    },
+  {id:"g_work",    label:"Focused work / study session",    cat:"work"     },
+  {id:"g_lunch",   label:"Real lunch — away from screen",  cat:"nutrition"},
+  {id:"g_move",    label:"Move your body — walk or workout",cat:"fitness"  },
+  {id:"g_amen",    label:"Connect with Amen (call / text)", cat:"gloria"   },
+  {id:"g_dev",     label:"Evening devotion with Amen (10pm)",cat:"faith"   },
+  {id:"g_water",   label:"Drink 2L water today",            cat:"nutrition"},
+  {id:"g_read",    label:"Read something good today",       cat:"reading"  },
+  {id:"g_sleep",   label:"In bed by midnight",              cat:"morning"  },
 ];
 
 // ── Checklist items ────────────────────────────────────────────────────────
@@ -393,7 +428,9 @@ export default function SummerApp({mode,T,onBack}) {
   const [isMobile,setIsMobile]=useState(()=>window.innerWidth<700);
   useEffect(()=>{const h=()=>setIsMobile(window.innerWidth<700); window.addEventListener("resize",h); return()=>window.removeEventListener("resize",h);},[]);
 
-  const [pillar,setPillar]=useState("overview");
+  const [profile,setProfile]=useState(()=>{try{return localStorage.getItem("summer_profile")||"amen";}catch{return"amen";}});
+  const switchProfile=p=>{setProfile(p);try{localStorage.setItem("summer_profile",p);}catch{}setPillar(p==="gloria"?"gloria_overview":"overview");};
+  const [pillar,setPillar]=useState(()=>profile==="gloria"?"gloria_overview":"overview");
   const [data,setDataState]=useState(null);
   const [showForm,setShowForm]=useState(null);
   const [schedTab,setSchedTab]=useState("weekday");
@@ -410,7 +447,7 @@ export default function SummerApp({mode,T,onBack}) {
   useEffect(()=>{
     (async()=>{
       const stored=await sGet("summer_amen");
-      setDataState(stored??{checklist:{},devotion:[],thesis:[],reading:[],fitness:[],gloria:[],sidegig:[],intentions:{},nutrition:[]});
+      setDataState(stored??{checklist:{},devotion:[],thesis:[],reading:[],fitness:[],gloria:[],sidegig:[],intentions:{},nutrition:[],weight:[],spending:[],meals:[],doordash:[]});
     })();
   },[]);
 
@@ -461,6 +498,388 @@ export default function SummerApp({mode,T,onBack}) {
   const SIDEBAR_W=isMobile?0:200;
 
   // ── Views ──────────────────────────────────────────────────────────────
+
+  // ── Tracker helpers ─────────────────────────────────────────────────────
+  const curMonth=today.slice(0,7);
+  const [trackerTab,setTrackerTab]=useState("weight");
+  const [wtf,setWtf]=useState({weight:"",note:""});
+  const [expf,setExpf]=useState({amount:"",category:"food",note:""});
+  const [mealf,setMealf]=useState({meal:"breakfast",foods:"",protein:true,noSugar:true});
+  const [ddf,setDdf]=useState({startTime:"",endTime:"",orders:0,earnings:"",tips:"",miles:"",note:""});
+  const SPEND_CATS=["food","groceries","gas","gym","clothing","household","other"];
+  const monthWeight=(data.weight||[]).filter(w=>w.date?.startsWith(curMonth)).sort((a,b)=>a.date<b.date?1:-1);
+  const monthSpending=(data.spending||[]).filter(s=>s.date?.startsWith(curMonth)).sort((a,b)=>a.date<b.date?1:-1);
+  const monthMeals=(data.meals||[]).filter(m=>m.date?.startsWith(curMonth)).sort((a,b)=>a.date<b.date?1:-1);
+  const monthGym=(data.fitness||[]).filter(f=>f.date?.startsWith(curMonth));
+  const totalSpend=monthSpending.reduce((s,e)=>s+(Number(e.amount)||0),0);
+  const spendByCat=SPEND_CATS.reduce((acc,c)=>({...acc,[c]:monthSpending.filter(s=>s.category===c).reduce((s,e)=>s+(Number(e.amount)||0),0)}),{});
+  const latestWeight=monthWeight[0]?.weight||(data.weight||[]).slice(-1)[0]?.weight||"—";
+  const startWeight=(data.weight||[]).sort((a,b)=>a.date<b.date?1:-1).slice(-1)[0]?.weight||null;
+  const weightChange=monthWeight.length>1?Number(monthWeight[0].weight)-Number(monthWeight[monthWeight.length-1].weight):null;
+  const monthDD=(data.doordash||[]).filter(d=>d.date?.startsWith(curMonth)).sort((a,b)=>a.date<b.date?1:-1);
+  const ddTotalEarn=monthDD.reduce((s,d)=>s+(Number(d.earnings)||0)+(Number(d.tips)||0),0);
+  const ddTotalHrs=monthDD.reduce((s,d)=>{if(!d.startTime||!d.endTime)return s;const[sh,sm]=d.startTime.split(":").map(Number);const[eh,em]=d.endTime.split(":").map(Number);return s+Math.max(0,(eh*60+em-sh*60-sm)/60);},0);
+  const ddTotalOrders=monthDD.reduce((s,d)=>s+(Number(d.orders)||0),0);
+  const ddAvgPerHr=ddTotalHrs>0?(ddTotalEarn/ddTotalHrs):0;
+  const ddAvgPerOrder=ddTotalOrders>0?(ddTotalEarn/ddTotalOrders):0;
+  const ddBestDay=monthDD.reduce((best,d)=>{const earn=(Number(d.earnings)||0)+(Number(d.tips)||0);return earn>best.earn?{earn,date:d.date}:best;},{earn:0,date:null});
+
+  const viewTracker=(
+    <div>
+      <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:20,gap:12,flexWrap:"wrap"}}>
+        <div>
+          <div style={{fontFamily:"'DM Serif Display',serif",fontSize:isMobile?22:28,color:"#3B9EDB",marginBottom:4}}>{"📊 Monthly Tracker"}</div>
+          <div style={{fontSize:13,color:T.textSub}}>{new Date().toLocaleDateString("en-US",{month:"long",year:"numeric"})}{" — weight · gym · meals · spending"}</div>
+        </div>
+      </div>
+
+      {/* Month summary cards */}
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))",gap:10,marginBottom:24}}>
+        <SCard T={T} label="Current weight" value={latestWeight==="—"?latestWeight:`${latestWeight} lbs`} sub={weightChange!==null?`${weightChange>0?"+":""}${weightChange.toFixed(1)} lbs this month`:"Log your weight"} color="#3B9EDB"/>
+        <SCard T={T} label="Gym sessions" value={`${monthGym.length}`} sub={`Target: ~${Math.round(new Date().getDate()/7*5)} this month`} color="#3DBF8A"/>
+        <SCard T={T} label="Month spend" value={`$${totalSpend.toFixed(0)}`} sub="All categories" color="#E84E8A"/>
+        <SCard T={T} label="Meals logged" value={`${monthMeals.length}`} sub="This month" color="#F97316"/>
+        <SCard T={T} label="Clean days" value={`${monthMeals.filter(m=>m.noSugar).length}`} sub="Zero sugar days" color="#E8A838"/>
+      </div>
+
+      {/* Tab bar */}
+      <div style={{display:"flex",gap:6,marginBottom:20,flexWrap:"wrap"}}>
+        {[["weight","⚖ Weight"],["gym","◈ Gym"],["meals","🍛 Meals"],["spending","💸 Spending"],["doordash","🚗 DoorDash"]].map(([id,label])=>(
+          <button key={id} onClick={()=>setTrackerTab(id)}
+            style={{padding:"8px 16px",borderRadius:9,border:`1px solid ${trackerTab===id?"#3B9EDB44":T.border}`,background:trackerTab===id?"#3B9EDB22":T.inputBg,color:trackerTab===id?"#3B9EDB":T.textSub,fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:trackerTab===id?700:400,cursor:"pointer"}}>
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {/* ── Weight tab ── */}
+      {trackerTab==="weight"&&(
+        <div>
+          <Section title="Log Weight" color="#3B9EDB">
+            <div style={{...cs({padding:"16px 18px"})}}>
+              <div style={{display:"flex",gap:10,flexWrap:"wrap",alignItems:"flex-end"}}>
+                <div style={{flex:"1 1 120px"}}>
+                  <label style={{...lbl}}>{"Weight (lbs)"}</label>
+                  <input style={{...inp}} type="number" step="0.1" placeholder="e.g. 185.5" value={wtf.weight} onChange={e=>setWtf(p=>({...p,weight:e.target.value}))}/>
+                </div>
+                <div style={{flex:"2 1 200px"}}>
+                  <label style={{...lbl}}>{"Note (optional)"}</label>
+                  <input style={{...inp}} placeholder="morning, after workout…" value={wtf.note} onChange={e=>setWtf(p=>({...p,note:e.target.value}))}/>
+                </div>
+                <button onClick={()=>{
+                  if(!wtf.weight)return;
+                  const entry={date:today,weight:Number(wtf.weight),unit:"lbs",note:wtf.note};
+                  setData(p=>({...p,weight:[...(p.weight||[]),entry]}));
+                  setWtf({weight:"",note:""});
+                }} style={{padding:"10px 20px",borderRadius:9,border:"none",background:"#3B9EDB",color:"#fff",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,cursor:"pointer",whiteSpace:"nowrap"}}>{"Log"}</button>
+              </div>
+            </div>
+          </Section>
+
+          <Section title={`Weight Log — ${new Date().toLocaleDateString("en-US",{month:"long"})}`} color="#3B9EDB">
+            {monthWeight.length===0&&<div style={{textAlign:"center",padding:"30px 0",color:T.textMuted,fontSize:13}}>{"No weight logs this month yet."}</div>}
+            {monthWeight.map((w,i)=>(
+              <div key={i} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 0",borderBottom:i<monthWeight.length-1?`1px solid ${T.border}`:"none",gap:12,flexWrap:"wrap"}}>
+                <div>
+                  <div style={{fontWeight:700,fontSize:14,color:T.text}}>{w.weight}{" lbs"}</div>
+                  {w.note&&<div style={{fontSize:12,color:T.textSub,marginTop:2}}>{w.note}</div>}
+                </div>
+                <div style={{display:"flex",alignItems:"center",gap:12}}>
+                  {i<monthWeight.length-1&&<span style={{fontSize:12,fontWeight:700,color:Number(monthWeight[i].weight)<Number(monthWeight[i+1].weight)?"#3DBF8A":"#E84E8A"}}>
+                    {(Number(monthWeight[i].weight)-Number(monthWeight[i+1].weight)).toFixed(1)>0?"+":""}{(Number(monthWeight[i].weight)-Number(monthWeight[i+1].weight)).toFixed(1)}{" lbs"}
+                  </span>}
+                  <span style={{fontSize:12,color:T.textMuted}}>{new Date(w.date+"T12:00:00").toLocaleDateString("en-US",{month:"short",day:"numeric"})}</span>
+                  <button onClick={()=>setData(p=>({...p,weight:(p.weight||[]).filter((_,j)=>(p.weight||[]).sort((a,b)=>a.date<b.date?1:-1)[j]!==_||(p.weight||[]).sort((a,b)=>a.date<b.date?1:-1).indexOf(_)!==i)}))} style={{fontSize:11,color:"#E84E8A",background:"none",border:"none",cursor:"pointer",padding:"2px 6px"}}>{"✕"}</button>
+                </div>
+              </div>
+            ))}
+          </Section>
+
+          {(data.weight||[]).length>0&&(
+            <Section title="All-Time" color="#3B9EDB">
+              <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
+                <SCard T={T} label="Starting" value={`${[...(data.weight||[])].sort((a,b)=>a.date>b.date?1:-1)[0]?.weight||"—"} lbs`} sub={[...(data.weight||[])].sort((a,b)=>a.date>b.date?1:-1)[0]?.date||""} color="#3B9EDB"/>
+                <SCard T={T} label="Current" value={`${[...(data.weight||[])].sort((a,b)=>a.date<b.date?1:-1)[0]?.weight||"—"} lbs`} sub="Most recent" color="#3DBF8A"/>
+                <SCard T={T} label="Total change" value={(()=>{const arr=[...(data.weight||[])].sort((a,b)=>a.date>b.date?1:-1);if(arr.length<2)return"—";const diff=Number(arr[arr.length-1].weight)-Number(arr[0].weight);return`${diff>0?"+":""}${diff.toFixed(1)} lbs`;})()}  sub="Since you started" color={weightChange<0?"#3DBF8A":"#E84E8A"}/>
+              </div>
+            </Section>
+          )}
+        </div>
+      )}
+
+      {/* ── Gym tab ── */}
+      {trackerTab==="gym"&&(
+        <div>
+          <Section title={`Gym Sessions — ${new Date().toLocaleDateString("en-US",{month:"long"})}`} color="#3DBF8A">
+            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))",gap:10,marginBottom:16}}>
+              <SCard T={T} label="This month" value={`${monthGym.length} sessions`} sub="Logged" color="#3DBF8A"/>
+              <SCard T={T} label="Week streak" value={`${fitStreak}d`} sub="Consecutive days" color="#E8A838"/>
+              <SCard T={T} label="Avg per week" value={`${monthGym.length?((monthGym.length/(new Date().getDate()/7)).toFixed(1)):0}`} sub="Sessions / week" color="#3B9EDB"/>
+            </div>
+            {/* Month calendar grid */}
+            <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:4,marginBottom:16}}>
+              {["M","T","W","T","F","S","S"].map((d,i)=><div key={i} style={{textAlign:"center",fontSize:10,color:T.textMuted,fontWeight:700,paddingBottom:4}}>{d}</div>)}
+              {(()=>{
+                const d=new Date(today);
+                const firstDay=new Date(d.getFullYear(),d.getMonth(),1);
+                const totalDays=new Date(d.getFullYear(),d.getMonth()+1,0).getDate();
+                const startDow=(firstDay.getDay()+6)%7;
+                const cells=[];
+                for(let i=0;i<startDow;i++) cells.push(<div key={`e${i}`}/>);
+                for(let day=1;day<=totalDays;day++){
+                  const dateStr=`${curMonth}-${String(day).padStart(2,"0")}`;
+                  const hasGym=monthGym.some(f=>f.date===dateStr);
+                  const isToday=dateStr===today;
+                  cells.push(<div key={day} style={{textAlign:"center",padding:"5px 2px",borderRadius:7,background:hasGym?"#3DBF8A22":isToday?"#3B9EDB11":"transparent",border:isToday?`1px solid #3B9EDB44`:`1px solid ${hasGym?"#3DBF8A33":"transparent"}`}}>
+                    <div style={{fontSize:10,color:isToday?"#3B9EDB":T.textMuted}}>{day}</div>
+                    {hasGym&&<div style={{fontSize:12,marginTop:1}}>{"◈"}</div>}
+                  </div>);
+                }
+                return cells;
+              })()}
+            </div>
+          </Section>
+          <Section title="Recent Sessions" color="#3DBF8A">
+            {[...monthGym].reverse().slice(0,15).map((f,i)=>(
+              <div key={i} style={{padding:"8px 0",borderBottom:i<Math.min(monthGym.length-1,14)?`1px solid ${T.border}`:"none",display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8}}>
+                <div>
+                  <div style={{fontWeight:700,fontSize:13,color:T.text}}>{f.workoutType||"Workout"}</div>
+                  {f.notes&&<div style={{fontSize:12,color:T.textSub,marginTop:2}}>{f.notes}</div>}
+                </div>
+                <span style={{fontSize:12,color:T.textMuted}}>{new Date(f.date+"T12:00:00").toLocaleDateString("en-US",{month:"short",day:"numeric"})}</span>
+              </div>
+            ))}
+            {!monthGym.length&&<div style={{textAlign:"center",padding:"30px 0",color:T.textMuted,fontSize:13}}>{"No gym sessions logged this month. Log them in the Fitness tab."}</div>}
+          </Section>
+        </div>
+      )}
+
+      {/* ── Meals tab ── */}
+      {trackerTab==="meals"&&(
+        <div>
+          <Section title="Log a Meal" color="#F97316">
+            <div style={{...cs({padding:"16px 18px"})}}>
+              <div style={{display:"flex",gap:10,flexWrap:"wrap",marginBottom:10}}>
+                <div style={{flex:"1 1 140px"}}>
+                  <label style={{...lbl}}>{"Meal"}</label>
+                  <select style={{...inp}} value={mealf.meal} onChange={e=>setMealf(p=>({...p,meal:e.target.value}))}>
+                    {["breakfast","lunch","dinner","snack"].map(m=><option key={m} value={m}>{m.charAt(0).toUpperCase()+m.slice(1)}</option>)}
+                  </select>
+                </div>
+                <div style={{flex:"3 1 200px"}}>
+                  <label style={{...lbl}}>{"What did you eat?"}</label>
+                  <input style={{...inp}} placeholder="e.g. 3 eggs + oats, chicken + rice…" value={mealf.foods} onChange={e=>setMealf(p=>({...p,foods:e.target.value}))}/>
+                </div>
+              </div>
+              <div style={{display:"flex",gap:16,alignItems:"center",flexWrap:"wrap",marginBottom:12}}>
+                <label style={{display:"flex",alignItems:"center",gap:7,cursor:"pointer",fontSize:13,color:T.text}}>
+                  <input type="checkbox" checked={mealf.protein} onChange={e=>setMealf(p=>({...p,protein:e.target.checked}))} style={{width:16,height:16,accentColor:"#3DBF8A"}}/>
+                  {"Had protein source (eggs / chicken)"}
+                </label>
+                <label style={{display:"flex",alignItems:"center",gap:7,cursor:"pointer",fontSize:13,color:T.text}}>
+                  <input type="checkbox" checked={mealf.noSugar} onChange={e=>setMealf(p=>({...p,noSugar:e.target.checked}))} style={{width:16,height:16,accentColor:"#E8A838"}}/>
+                  {"Zero sugar / no fast food"}
+                </label>
+              </div>
+              <button onClick={()=>{
+                if(!mealf.foods.trim())return;
+                const entry={date:today,meal:mealf.meal,foods:mealf.foods,protein:mealf.protein,noSugar:mealf.noSugar};
+                setData(p=>({...p,meals:[...(p.meals||[]),entry]}));
+                setMealf(p=>({...p,foods:""}));
+              }} style={{padding:"10px 24px",borderRadius:9,border:"none",background:"#F97316",color:"#fff",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,cursor:"pointer"}}>{"Log Meal"}</button>
+            </div>
+          </Section>
+
+          <Section title={`Meal Log — ${new Date().toLocaleDateString("en-US",{month:"long"})}`} color="#F97316">
+            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(110px,1fr))",gap:10,marginBottom:16}}>
+              <SCard T={T} label="Meals logged" value={`${monthMeals.length}`} sub="This month" color="#F97316"/>
+              <SCard T={T} label="Protein hits" value={`${monthMeals.filter(m=>m.protein).length}`} sub="Had protein" color="#3DBF8A"/>
+              <SCard T={T} label="Clean days" value={`${monthMeals.filter(m=>m.noSugar).length}`} sub="Zero sugar" color="#E8A838"/>
+            </div>
+            {[...monthMeals].reverse().slice(0,30).map((m,i)=>(
+              <div key={i} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 0",borderBottom:i<Math.min(monthMeals.length-1,29)?`1px solid ${T.border}`:"none",flexWrap:"wrap"}}>
+                <span style={{fontSize:11,fontWeight:700,color:"#F97316",minWidth:70,flexShrink:0}}>{m.meal.toUpperCase()}</span>
+                <span style={{fontSize:13,color:T.text,flex:1}}>{m.foods}</span>
+                <div style={{display:"flex",gap:5,flexShrink:0}}>
+                  {m.protein&&<span style={{fontSize:10,background:"#3DBF8A22",color:"#3DBF8A",borderRadius:5,padding:"2px 6px",fontWeight:700}}>{"P✓"}</span>}
+                  {m.noSugar&&<span style={{fontSize:10,background:"#E8A83822",color:"#E8A838",borderRadius:5,padding:"2px 6px",fontWeight:700}}>{"0🍬"}</span>}
+                  <span style={{fontSize:11,color:T.textMuted}}>{new Date(m.date+"T12:00:00").toLocaleDateString("en-US",{month:"short",day:"numeric"})}</span>
+                  <button onClick={()=>setData(p=>({...p,meals:[...(p.meals||[])].reverse().filter((_,j)=>j!==i).reverse()}))} style={{fontSize:11,color:"#E84E8A",background:"none",border:"none",cursor:"pointer",padding:"2px 4px"}}>{"✕"}</button>
+                </div>
+              </div>
+            ))}
+            {!monthMeals.length&&<div style={{textAlign:"center",padding:"30px 0",color:T.textMuted,fontSize:13}}>{"No meals logged this month yet."}</div>}
+          </Section>
+        </div>
+      )}
+
+      {/* ── Spending tab ── */}
+      {trackerTab==="spending"&&(
+        <div>
+          <Section title="Log Expense" color="#E84E8A">
+            <div style={{...cs({padding:"16px 18px"})}}>
+              <div style={{display:"flex",gap:10,flexWrap:"wrap",alignItems:"flex-end"}}>
+                <div style={{flex:"1 1 100px"}}>
+                  <label style={{...lbl}}>{"Amount ($)"}</label>
+                  <input style={{...inp}} type="number" step="0.01" placeholder="0.00" value={expf.amount} onChange={e=>setExpf(p=>({...p,amount:e.target.value}))}/>
+                </div>
+                <div style={{flex:"1 1 130px"}}>
+                  <label style={{...lbl}}>{"Category"}</label>
+                  <select style={{...inp}} value={expf.category} onChange={e=>setExpf(p=>({...p,category:e.target.value}))}>
+                    {SPEND_CATS.map(c=><option key={c} value={c}>{c.charAt(0).toUpperCase()+c.slice(1)}</option>)}
+                  </select>
+                </div>
+                <div style={{flex:"2 1 180px"}}>
+                  <label style={{...lbl}}>{"Note"}</label>
+                  <input style={{...inp}} placeholder="e.g. Walmart groceries…" value={expf.note} onChange={e=>setExpf(p=>({...p,note:e.target.value}))}/>
+                </div>
+                <button onClick={()=>{
+                  if(!expf.amount)return;
+                  const entry={date:today,amount:Number(expf.amount),category:expf.category,note:expf.note};
+                  setData(p=>({...p,spending:[...(p.spending||[]),entry]}));
+                  setExpf(p=>({...p,amount:"",note:""}));
+                }} style={{padding:"10px 20px",borderRadius:9,border:"none",background:"#E84E8A",color:"#fff",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,cursor:"pointer",whiteSpace:"nowrap"}}>{"Add"}</button>
+              </div>
+            </div>
+          </Section>
+
+          <Section title="Monthly Summary" color="#E84E8A">
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14,flexWrap:"wrap",gap:8}}>
+              <div style={{fontFamily:"'DM Serif Display',serif",fontSize:22,color:"#E84E8A"}}>{`$${totalSpend.toFixed(2)}`}</div>
+              <div style={{fontSize:13,color:T.textSub}}>{"total this month"}</div>
+            </div>
+            <div style={{display:"flex",flexDirection:"column",gap:8}}>
+              {SPEND_CATS.filter(c=>spendByCat[c]>0).sort((a,b)=>spendByCat[b]-spendByCat[a]).map(c=>(
+                <div key={c}>
+                  <div style={{display:"flex",justifyContent:"space-between",marginBottom:3}}>
+                    <span style={{fontSize:13,color:T.text,textTransform:"capitalize"}}>{c}</span>
+                    <span style={{fontSize:13,fontWeight:700,color:"#E84E8A"}}>{`$${spendByCat[c].toFixed(2)}`}</span>
+                  </div>
+                  <PBar value={spendByCat[c]} max={totalSpend||1} color="#E84E8A" h={6} bg={T.inputBg}/>
+                </div>
+              ))}
+              {!totalSpend&&<div style={{textAlign:"center",padding:"20px 0",color:T.textMuted,fontSize:13}}>{"No spending logged this month."}</div>}
+            </div>
+          </Section>
+
+          <Section title={`All Transactions — ${new Date().toLocaleDateString("en-US",{month:"long"})}`} color="#E84E8A">
+            {[...monthSpending].map((s,i)=>(
+              <div key={i} style={{display:"flex",alignItems:"center",gap:10,padding:"9px 0",borderBottom:i<monthSpending.length-1?`1px solid ${T.border}`:"none",flexWrap:"wrap"}}>
+                <span style={{fontSize:11,fontWeight:700,color:"#E84E8A",minWidth:70,flexShrink:0,textTransform:"capitalize"}}>{s.category}</span>
+                <span style={{fontSize:13,color:T.text,flex:1}}>{s.note||"—"}</span>
+                <div style={{display:"flex",gap:8,alignItems:"center",flexShrink:0}}>
+                  <span style={{fontSize:14,fontWeight:700,color:T.text}}>{`$${Number(s.amount).toFixed(2)}`}</span>
+                  <span style={{fontSize:11,color:T.textMuted}}>{new Date(s.date+"T12:00:00").toLocaleDateString("en-US",{month:"short",day:"numeric"})}</span>
+                  <button onClick={()=>setData(p=>({...p,spending:[...(p.spending||[])].filter((_,j)=>[...(p.spending||[])].sort((a,b)=>a.date<b.date?1:-1)[j]!==_||(p.spending||[]).sort((a,b)=>a.date<b.date?1:-1).indexOf(_)!==i)}))} style={{fontSize:11,color:"#E84E8A",background:"none",border:"none",cursor:"pointer",padding:"2px 4px"}}>{"✕"}</button>
+                </div>
+              </div>
+            ))}
+            {!monthSpending.length&&<div style={{textAlign:"center",padding:"30px 0",color:T.textMuted,fontSize:13}}>{"No transactions logged this month."}</div>}
+          </Section>
+        </div>
+      )}
+
+      {/* ── DoorDash tab ── */}
+      {trackerTab==="doordash"&&(
+        <div>
+          {/* Analytics cards */}
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))",gap:10,marginBottom:20}}>
+            <SCard T={T} label="Month earnings" value={`$${ddTotalEarn.toFixed(0)}`} sub="Base + tips" color="#E8A838"/>
+            <SCard T={T} label="Hours on road" value={`${ddTotalHrs.toFixed(1)} hrs`} sub="This month" color="#3B9EDB"/>
+            <SCard T={T} label="$/hour" value={ddTotalHrs>0?`$${ddAvgPerHr.toFixed(2)}`:"—"} sub="Avg rate" color="#3DBF8A"/>
+            <SCard T={T} label="Orders" value={`${ddTotalOrders}`} sub="Completed" color="#9B6EE8"/>
+            <SCard T={T} label="$/order" value={ddTotalOrders>0?`$${ddAvgPerOrder.toFixed(2)}`:"—"} sub="Avg per drop" color="#F97316"/>
+            <SCard T={T} label="Best day" value={ddBestDay.earn>0?`$${ddBestDay.earn.toFixed(0)}`:"—"} sub={ddBestDay.date?new Date(ddBestDay.date+"T12:00:00").toLocaleDateString("en-US",{month:"short",day:"numeric"}):"no data"} color="#E84E8A"/>
+          </div>
+
+          {/* Daily target tracker */}
+          {ddTotalHrs>0&&(
+            <div style={{...cs({marginBottom:20,padding:"14px 18px"})}}>
+              <div style={{display:"flex",justifyContent:"space-between",marginBottom:6,flexWrap:"wrap",gap:6}}>
+                <span style={{fontWeight:700,color:T.text,fontSize:13}}>{"Monthly target — $3,000"}</span>
+                <span style={{fontWeight:700,color:ddTotalEarn>=3000?"#3DBF8A":"#E8A838",fontSize:13}}>{`$${ddTotalEarn.toFixed(0)} / $3,000`}</span>
+              </div>
+              <PBar value={ddTotalEarn} max={3000} color={ddTotalEarn>=3000?"#3DBF8A":"#E8A838"} h={8} bg={T.inputBg}/>
+              <div style={{fontSize:11,color:T.textMuted,marginTop:5}}>{`$${Math.max(0,3000-ddTotalEarn).toFixed(0)} to go · ${new Date().getDate()} days in · avg $${(ddTotalEarn/new Date().getDate()).toFixed(0)}/day`}</div>
+            </div>
+          )}
+
+          <Section title="Log a Session" color="#E8A838">
+            <div style={{...cs({padding:"16px 18px"})}}>
+              <div style={{display:"flex",gap:10,flexWrap:"wrap",marginBottom:10}}>
+                <div style={{flex:"1 1 110px"}}>
+                  <label style={{...lbl}}>{"Start time"}</label>
+                  <input style={{...inp}} type="time" value={ddf.startTime} onChange={e=>setDdf(p=>({...p,startTime:e.target.value}))}/>
+                </div>
+                <div style={{flex:"1 1 110px"}}>
+                  <label style={{...lbl}}>{"End time"}</label>
+                  <input style={{...inp}} type="time" value={ddf.endTime} onChange={e=>setDdf(p=>({...p,endTime:e.target.value}))}/>
+                </div>
+                <div style={{flex:"1 1 80px"}}>
+                  <label style={{...lbl}}>{"Orders #"}</label>
+                  <input style={{...inp}} type="number" min="0" placeholder="0" value={ddf.orders} onChange={e=>setDdf(p=>({...p,orders:e.target.value}))}/>
+                </div>
+              </div>
+              <div style={{display:"flex",gap:10,flexWrap:"wrap",marginBottom:12}}>
+                <div style={{flex:"1 1 100px"}}>
+                  <label style={{...lbl}}>{"Base pay ($)"}</label>
+                  <input style={{...inp}} type="number" step="0.01" placeholder="0.00" value={ddf.earnings} onChange={e=>setDdf(p=>({...p,earnings:e.target.value}))}/>
+                </div>
+                <div style={{flex:"1 1 100px"}}>
+                  <label style={{...lbl}}>{"Tips ($)"}</label>
+                  <input style={{...inp}} type="number" step="0.01" placeholder="0.00" value={ddf.tips} onChange={e=>setDdf(p=>({...p,tips:e.target.value}))}/>
+                </div>
+                <div style={{flex:"1 1 100px"}}>
+                  <label style={{...lbl}}>{"Miles driven"}</label>
+                  <input style={{...inp}} type="number" step="0.1" placeholder="0" value={ddf.miles} onChange={e=>setDdf(p=>({...p,miles:e.target.value}))}/>
+                </div>
+                <div style={{flex:"2 1 180px"}}>
+                  <label style={{...lbl}}>{"Note"}</label>
+                  <input style={{...inp}} placeholder="zone, conditions…" value={ddf.note} onChange={e=>setDdf(p=>({...p,note:e.target.value}))}/>
+                </div>
+              </div>
+              <button onClick={()=>{
+                if(!ddf.earnings&&!ddf.tips)return;
+                const entry={date:today,startTime:ddf.startTime,endTime:ddf.endTime,orders:Number(ddf.orders),earnings:Number(ddf.earnings),tips:Number(ddf.tips),miles:Number(ddf.miles),note:ddf.note};
+                setData(p=>({...p,doordash:[...(p.doordash||[]),entry]}));
+                setDdf({startTime:"",endTime:"",orders:0,earnings:"",tips:"",miles:"",note:""});
+              }} style={{padding:"10px 24px",borderRadius:9,border:"none",background:"#E8A838",color:"#000",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,cursor:"pointer"}}>{"Log Session"}</button>
+            </div>
+          </Section>
+
+          <Section title={`Session Log — ${new Date().toLocaleDateString("en-US",{month:"long"})}`} color="#E8A838">
+            {monthDD.map((d,i)=>{
+              const hrs=d.startTime&&d.endTime?(()=>{const[sh,sm]=d.startTime.split(":").map(Number);const[eh,em]=d.endTime.split(":").map(Number);return Math.max(0,(eh*60+em-sh*60-sm)/60);})():null;
+              const total=(Number(d.earnings)||0)+(Number(d.tips)||0);
+              return(
+                <div key={i} style={{padding:"12px 0",borderBottom:i<monthDD.length-1?`1px solid ${T.border}`:"none"}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:6,marginBottom:6}}>
+                    <div>
+                      <span style={{fontWeight:700,fontSize:14,color:T.text}}>{`$${total.toFixed(2)}`}</span>
+                      {d.tips>0&&<span style={{fontSize:12,color:"#3DBF8A",marginLeft:8}}>{`+$${Number(d.tips).toFixed(2)} tips`}</span>}
+                    </div>
+                    <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                      <span style={{fontSize:12,color:T.textMuted}}>{new Date(d.date+"T12:00:00").toLocaleDateString("en-US",{month:"short",day:"numeric"})}</span>
+                      <button onClick={()=>setData(p=>({...p,doordash:[...(p.doordash||[])].filter((_,j)=>[...(p.doordash||[])].sort((a,b)=>a.date<b.date?1:-1)[j]!==_)}))} style={{fontSize:11,color:"#E84E8A",background:"none",border:"none",cursor:"pointer",padding:"2px 4px"}}>{"✕"}</button>
+                    </div>
+                  </div>
+                  <div style={{display:"flex",gap:12,flexWrap:"wrap"}}>
+                    {d.orders>0&&<span style={{fontSize:12,color:T.textSub}}>{`${d.orders} orders`}</span>}
+                    {hrs!==null&&<span style={{fontSize:12,color:T.textSub}}>{`${hrs.toFixed(1)} hrs`}</span>}
+                    {hrs!==null&&total>0&&<span style={{fontSize:12,color:"#E8A838",fontWeight:700}}>{`$${(total/hrs).toFixed(2)}/hr`}</span>}
+                    {d.miles>0&&<span style={{fontSize:12,color:T.textSub}}>{`${d.miles} mi`}</span>}
+                    {d.startTime&&d.endTime&&<span style={{fontSize:12,color:T.textMuted}}>{`${d.startTime}–${d.endTime}`}</span>}
+                    {d.note&&<span style={{fontSize:12,color:T.textMuted}}>{d.note}</span>}
+                  </div>
+                </div>
+              );
+            })}
+            {!monthDD.length&&<div style={{textAlign:"center",padding:"30px 0",color:T.textMuted,fontSize:13}}>{"No DoorDash sessions logged this month. Log your first shift."}</div>}
+          </Section>
+        </div>
+      )}
+    </div>
+  );
 
   const viewOverview=(
     <div>
@@ -1193,30 +1612,151 @@ export default function SummerApp({mode,T,onBack}) {
     </div>
   );
 
+  // ── Gloria views ────────────────────────────────────────────────────────
+  const gloriaChecks=data.checklist?.gloria||{};
+  const toggleGloriaCheck=id=>setData(p=>({...p,checklist:{...p.checklist,gloria:{...(p.checklist?.gloria||{}),[id]:!(p.checklist?.gloria||{})[id]}}}));
+  const gloriaDone=GLORIA_WD_CHECKLIST.filter(i=>gloriaChecks[i.id]).length;
+  const gloriaPct=Math.round((gloriaDone/GLORIA_WD_CHECKLIST.length)*100);
+
+  const viewGloriaOverview=(
+    <div>
+      <div style={{fontFamily:"'DM Serif Display',serif",fontSize:isMobile?22:28,color:"#E84E8A",marginBottom:4}}>{"Gloria's Summer ♡"}</div>
+      <div style={{fontSize:13,color:T.textSub,marginBottom:20}}>{"Your personal space — schedule, faith, growth"}</div>
+      <div style={{...cs({marginBottom:20,padding:"18px 20px"})}}>
+        <div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}>
+          <span style={{fontWeight:700,color:T.text}}>{"Today's checklist"}</span>
+          <span style={{fontWeight:700,color:"#E84E8A"}}>{gloriaPct}{"%"}</span>
+        </div>
+        <PBar value={gloriaDone} max={GLORIA_WD_CHECKLIST.length} color="#E84E8A" h={8} bg={T.inputBg}/>
+        <div style={{fontSize:11,color:T.textMuted,marginTop:5}}>{gloriaDone}{"/"}{GLORIA_WD_CHECKLIST.length}{" done today"}</div>
+      </div>
+      <div style={{fontWeight:700,color:T.text,fontSize:14,marginBottom:10}}>{"Today's checklist"}</div>
+      <div style={{display:"flex",flexDirection:"column",gap:7}}>
+        {GLORIA_WD_CHECKLIST.map(item=>{
+          const done=!!gloriaChecks[item.id];
+          const cc=CAT[item.cat]||"#888";
+          return(
+            <button key={item.id} onClick={()=>toggleGloriaCheck(item.id)}
+              style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",borderRadius:11,border:`1px solid ${done?cc+"44":T.border}`,background:done?cc+"11":T.surface,cursor:"pointer",textAlign:"left",width:"100%"}}>
+              <div style={{width:20,height:20,borderRadius:5,border:`2px solid ${done?cc:T.border}`,background:done?cc:"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                {done&&<span style={{color:"#fff",fontSize:12,fontWeight:900}}>{"✓"}</span>}
+              </div>
+              <span style={{fontSize:13,color:done?T.textSub:T.text,textDecoration:done?"line-through":"none"}}>{item.label}</span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+
+  const viewGloriaSchedule=(
+    <div>
+      <div style={{fontFamily:"'DM Serif Display',serif",fontSize:isMobile?22:28,color:"#C8B030",marginBottom:4}}>{"Gloria's Daily Schedule"}</div>
+      <div style={{fontSize:13,color:T.textSub,marginBottom:20}}>{"Your rhythm for the summer — faith, work, rest, connection"}</div>
+      <div style={{display:"flex",flexDirection:"column",gap:2}}>
+        {GLORIA_WD.map((block,i)=>{
+          const cc=CAT[block.cat]||"#888";
+          return(
+            <div key={i} style={{...cs({borderLeft:`3px solid ${cc}`,padding:"14px 16px",marginBottom:8})}}>
+              <div style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap",marginBottom:4}}>
+                <span style={{fontSize:13,fontWeight:700,color:cc,minWidth:52}}>{block.time}</span>
+                <span style={{fontSize:14,fontWeight:700,color:T.text}}>{block.label}</span>
+              </div>
+              <div style={{fontSize:13,color:T.textSub,lineHeight:1.6,paddingLeft:62}}>{block.detail}</div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+
+  const viewGloriaFaith=(
+    <div>
+      <div style={{fontFamily:"'DM Serif Display',serif",fontSize:isMobile?22:28,color:P.faith,marginBottom:4}}>{"Gloria's Faith"}</div>
+      <div style={{fontSize:13,color:T.textSub,marginBottom:20}}>{"Your devotional space — track your time with God"}</div>
+      <Section title="Devotion Focus" color={P.faith}>
+        <div style={{...cs()}}>
+          {[["Morning devotion","Every day — prayer + Bible before anything else. This is your anchor."],["Scripture to carry","Write a verse each week that speaks to your current season."],["Worship","Let music be part of your daily rhythm — even 5 min of worship changes your atmosphere."],["Evening devotion with Amen","10pm every day — short, consistent, together. This builds something over time."]].map(([l,d])=>(
+            <InfoRow key={l} label={l} value={d} T={T}/>
+          ))}
+        </div>
+      </Section>
+    </div>
+  );
+
+  const viewGloriaReading=(
+    <div>
+      <div style={{fontFamily:"'DM Serif Display',serif",fontSize:isMobile?22:28,color:P.reading,marginBottom:4}}>{"Gloria's Reading"}</div>
+      <div style={{fontSize:13,color:T.textSub,marginBottom:20}}>{"Books, articles, growth — your intellectual life matters"}</div>
+      <Section title="Reading Rhythm" color={P.reading}>
+        <div style={{...cs()}}>
+          {[["When","Evening wind-down — 20–30 min before bed. No screens. Just a good book."],["What to read","Fiction, non-fiction, theology, personal development — whatever you genuinely enjoy."],["Audiobooks","Commutes, chores, walks. Use the time you already have."],["Goal","One book per month minimum. Write one sentence about what you got from each book."]].map(([l,d])=>(
+            <InfoRow key={l} label={l} value={d} T={T}/>
+          ))}
+        </div>
+      </Section>
+    </div>
+  );
+
+  const viewGloriaNotes=(
+    <div>
+      <div style={{fontFamily:"'DM Serif Display',serif",fontSize:isMobile?22:28,color:"#9B6EE8",marginBottom:4}}>{"Notes & Reflections"}</div>
+      <div style={{fontSize:13,color:T.textSub,marginBottom:20}}>{"Your space to write, plan, and reflect"}</div>
+      <Section title="Weekly Intentions" color="#9B6EE8">
+        <div style={{...cs({padding:"16px 18px"})}}>
+          <div style={{fontSize:13,color:T.textSub,marginBottom:14}}>{"One thing you want to focus on this week in each area:"}</div>
+          {[["Faith 🙏","What do you want to grow in spiritually this week?"],["Work/Study 📚","What's the one thing that would make this week a win?"],["Health 💪","One healthy habit to protect this week."],["Amen ♡","One thing you want to do for/with Amen this week."],["Personal 🌱","Something just for you — rest, creativity, joy."]].map(([l,ph])=>(
+            <div key={l} style={{marginBottom:12}}>
+              <label style={{...lbl}}>{l}</label>
+              <input style={{...inp}} placeholder={ph}/>
+            </div>
+          ))}
+        </div>
+      </Section>
+    </div>
+  );
+
   return (
     <div style={{display:"flex",height:"100vh",fontFamily:"'DM Sans',sans-serif",background:T.bg,overflow:"hidden"}}>
 
       {/* ── Desktop sidebar ── */}
       {!isMobile&&(
         <div style={{width:SIDEBAR_W,minWidth:SIDEBAR_W,background:"#111418",borderRight:"1px solid rgba(255,255,255,0.07)",display:"flex",flexDirection:"column",overflowY:"auto",flexShrink:0}}>
-          <div style={{padding:"18px 14px 10px"}}>
-            <div style={{fontFamily:"'DM Serif Display',serif",fontSize:16,color:"#E8A838"}}>{"Summer OS ☀️"}</div>
-            <div style={{fontSize:10,color:"#555",marginTop:2}}>{"Amen · "}{new Date().toLocaleDateString("en-US",{month:"short",day:"numeric"})}</div>
+          {/* Profile switcher */}
+          <div style={{padding:"14px 10px 10px",borderBottom:"1px solid rgba(255,255,255,0.07)"}}>
+            <div style={{display:"flex",gap:5,marginBottom:8}}>
+              <button onClick={()=>switchProfile("amen")} style={{flex:1,padding:"6px 4px",borderRadius:8,border:`1px solid ${profile==="amen"?"#E8A83866":"rgba(255,255,255,0.06)"}`,background:profile==="amen"?"#E8A83820":"transparent",color:profile==="amen"?"#E8A838":"#555",fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:700,cursor:"pointer"}}>{"☀️ Amen"}</button>
+              <button onClick={()=>switchProfile("gloria")} style={{flex:1,padding:"6px 4px",borderRadius:8,border:`1px solid ${profile==="gloria"?"#E84E8A66":"rgba(255,255,255,0.06)"}`,background:profile==="gloria"?"#E84E8A20":"transparent",color:profile==="gloria"?"#E84E8A":"#555",fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:700,cursor:"pointer"}}>{"♡ Gloria"}</button>
+            </div>
+            <div style={{fontSize:9,color:"#444",textAlign:"center"}}>{new Date().toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"})}</div>
           </div>
 
-          <div style={{padding:"8px 14px 12px",borderBottom:"1px solid rgba(255,255,255,0.07)"}}>
-            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6}}>
-              <span style={{fontSize:10,color:"#555",fontWeight:600,textTransform:"uppercase",letterSpacing:"0.06em"}}>{"Today"}</span>
-              <span style={{fontSize:12,fontWeight:700,color:pct>=80?"#3DBF8A":"#E8A838"}}>{pct}{"%"}</span>
+          {profile==="amen"&&(
+            <div style={{padding:"8px 14px 12px",borderBottom:"1px solid rgba(255,255,255,0.07)"}}>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6}}>
+                <span style={{fontSize:10,color:"#555",fontWeight:600,textTransform:"uppercase",letterSpacing:"0.06em"}}>{"Today"}</span>
+                <span style={{fontSize:12,fontWeight:700,color:pct>=80?"#3DBF8A":"#E8A838"}}>{pct}{"%"}</span>
+              </div>
+              <div style={{height:4,background:"rgba(255,255,255,0.07)",borderRadius:2,overflow:"hidden"}}>
+                <div style={{height:"100%",width:`${pct}%`,background:pct>=80?"#3DBF8A":"#E8A838",borderRadius:2,transition:"width 0.4s"}}/>
+              </div>
+              <div style={{fontSize:9,color:"#444",marginTop:3}}>{doneCount}{"/"}{todayItems.length}{" blocks done"}</div>
             </div>
-            <div style={{height:4,background:"rgba(255,255,255,0.07)",borderRadius:2,overflow:"hidden"}}>
-              <div style={{height:"100%",width:`${pct}%`,background:pct>=80?"#3DBF8A":"#E8A838",borderRadius:2,transition:"width 0.4s"}}/>
+          )}
+          {profile==="gloria"&&(
+            <div style={{padding:"8px 14px 12px",borderBottom:"1px solid rgba(255,255,255,0.07)"}}>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6}}>
+                <span style={{fontSize:10,color:"#555",fontWeight:600,textTransform:"uppercase",letterSpacing:"0.06em"}}>{"Gloria's day"}</span>
+                <span style={{fontSize:12,fontWeight:700,color:"#E84E8A"}}>{gloriaPct}{"%"}</span>
+              </div>
+              <div style={{height:4,background:"rgba(255,255,255,0.07)",borderRadius:2,overflow:"hidden"}}>
+                <div style={{height:"100%",width:`${gloriaPct}%`,background:"#E84E8A",borderRadius:2,transition:"width 0.4s"}}/>
+              </div>
             </div>
-            <div style={{fontSize:9,color:"#444",marginTop:3}}>{doneCount}{"/"}{todayItems.length}{" blocks done"}</div>
-          </div>
+          )}
 
           <div style={{padding:"8px 6px",flex:1}}>
-            {PILLARS.map(p=>(
+            {(profile==="amen"?PILLARS:GLORIA_PILLARS).map(p=>(
               <button key={p.id} onClick={()=>setPillar(p.id)}
                 style={{width:"100%",display:"flex",alignItems:"center",gap:8,padding:"8px 10px",borderRadius:9,border:"none",background:pillar===p.id?p.color+"20":"transparent",cursor:"pointer",textAlign:"left",marginBottom:2,outline:pillar===p.id?`1px solid ${p.color}33`:"none",transition:"all 0.15s"}}>
                 <span style={{fontSize:14,width:18,textAlign:"center",color:pillar===p.id?p.color:"#555"}}>{p.icon}</span>
@@ -1233,35 +1773,44 @@ export default function SummerApp({mode,T,onBack}) {
 
       {/* ── Mobile header ── */}
       {isMobile&&(
-        <div style={{position:"fixed",top:0,left:0,right:0,zIndex:20,background:"#111418",borderBottom:"1px solid rgba(255,255,255,0.07)",padding:"10px 14px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-          <div>
-            <div style={{fontFamily:"'DM Serif Display',serif",fontSize:15,color:"#E8A838"}}>{"Summer OS ☀️"}</div>
+        <div style={{position:"fixed",top:0,left:0,right:0,zIndex:20,background:"#111418",borderBottom:"1px solid rgba(255,255,255,0.07)",padding:"8px 14px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:10}}>
+          <div style={{display:"flex",gap:5}}>
+            <button onClick={()=>switchProfile("amen")} style={{padding:"5px 10px",borderRadius:7,border:`1px solid ${profile==="amen"?"#E8A83866":"rgba(255,255,255,0.08)"}`,background:profile==="amen"?"#E8A83820":"transparent",color:profile==="amen"?"#E8A838":"#555",fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:700,cursor:"pointer"}}>{"☀️ Amen"}</button>
+            <button onClick={()=>switchProfile("gloria")} style={{padding:"5px 10px",borderRadius:7,border:`1px solid ${profile==="gloria"?"#E84E8A66":"rgba(255,255,255,0.08)"}`,background:profile==="gloria"?"#E84E8A20":"transparent",color:profile==="gloria"?"#E84E8A":"#555",fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:700,cursor:"pointer"}}>{"♡ Gloria"}</button>
           </div>
-          <div style={{display:"flex",alignItems:"center",gap:10}}>
-            <div style={{fontSize:12,fontWeight:700,color:pct>=80?"#3DBF8A":"#E8A838"}}>{pct}{"%"}</div>
+          <div style={{display:"flex",alignItems:"center",gap:8}}>
+            <div style={{fontSize:12,fontWeight:700,color:profile==="gloria"?"#E84E8A":pct>=80?"#3DBF8A":"#E8A838"}}>{profile==="gloria"?gloriaPct:pct}{"%"}</div>
             <button onClick={onBack} style={{fontSize:11,color:"#666",background:"none",border:"1px solid rgba(255,255,255,0.1)",borderRadius:7,padding:"5px 10px",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontWeight:600}}>{"← Back"}</button>
           </div>
         </div>
       )}
 
       {/* ── Main content ── */}
-      <div style={{flex:1,overflowY:"auto",padding:isMobile?"76px 16px 90px":"28px 28px 40px",maxHeight:"100vh"}}>
-        {pillar==="overview"  && viewOverview}
-        {pillar==="schedule"  && viewSchedule}
-        {pillar==="checklist" && viewChecklist}
-        {pillar==="faith"     && viewFaith}
-        {pillar==="fitness"   && viewFitness}
-        {pillar==="nutrition" && viewNutrition}
-        {pillar==="thesis"    && viewThesis}
-        {pillar==="reading"   && viewReading}
-        {pillar==="gloria"    && viewGloria}
-        {pillar==="sidegig"   && viewSidegig}
+      <div style={{flex:1,overflowY:"auto",padding:isMobile?"72px 16px 90px":"28px 28px 40px",maxHeight:"100vh",minWidth:0}}>
+        {/* Amen views */}
+        {profile==="amen"&&pillar==="tracker"   && viewTracker}
+        {profile==="amen"&&pillar==="overview"  && viewOverview}
+        {profile==="amen"&&pillar==="schedule"  && viewSchedule}
+        {profile==="amen"&&pillar==="checklist" && viewChecklist}
+        {profile==="amen"&&pillar==="faith"     && viewFaith}
+        {profile==="amen"&&pillar==="fitness"   && viewFitness}
+        {profile==="amen"&&pillar==="nutrition" && viewNutrition}
+        {profile==="amen"&&pillar==="thesis"    && viewThesis}
+        {profile==="amen"&&pillar==="reading"   && viewReading}
+        {profile==="amen"&&pillar==="gloria"    && viewGloria}
+        {profile==="amen"&&pillar==="sidegig"   && viewSidegig}
+        {/* Gloria views */}
+        {profile==="gloria"&&pillar==="gloria_overview" && viewGloriaOverview}
+        {profile==="gloria"&&pillar==="gloria_schedule" && viewGloriaSchedule}
+        {profile==="gloria"&&pillar==="gloria_faith"    && viewGloriaFaith}
+        {profile==="gloria"&&pillar==="gloria_reading"  && viewGloriaReading}
+        {profile==="gloria"&&pillar==="gloria_notes"    && viewGloriaNotes}
       </div>
 
       {/* ── Mobile bottom tabs ── */}
       {isMobile&&(
         <div style={{position:"fixed",bottom:0,left:0,right:0,zIndex:20,background:"#111418",borderTop:"1px solid rgba(255,255,255,0.07)",display:"flex",overflowX:"auto",paddingBottom:"env(safe-area-inset-bottom)"}}>
-          {PILLARS.map(p=>(
+          {(profile==="amen"?PILLARS:GLORIA_PILLARS).map(p=>(
             <button key={p.id} onClick={()=>setPillar(p.id)} style={{flex:"1 0 auto",minWidth:60,padding:"8px 4px",border:"none",background:"transparent",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:9,color:pillar===p.id?p.color:"#555",borderTop:`2px solid ${pillar===p.id?p.color:"transparent"}`,transition:"all 0.15s",display:"flex",flexDirection:"column",alignItems:"center",gap:2}}>
               <span style={{fontSize:15}}>{p.icon}</span>
               <span style={{whiteSpace:"nowrap"}}>{p.label}</span>
