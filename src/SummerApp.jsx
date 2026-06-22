@@ -442,7 +442,11 @@ export default function SummerApp({mode,T,onBack}) {
   const [sf,setSf]=useState({project:"",hours:"",revenue:"",contentBatched:false});
   const [ff,setFf]=useState({runDist:"",runTime:"",workoutType:"Push"});
   const [wf,setWf]=useState({faith:"",fitness:"",thesis:"",reading:"",gloria:"",sidegig:""});
-
+  const [trackerTab,setTrackerTab]=useState("weight");
+  const [wtf,setWtf]=useState({weight:"",note:""});
+  const [expf,setExpf]=useState({amount:"",category:"food",note:""});
+  const [mealf,setMealf]=useState({meal:"breakfast",foods:"",protein:true,noSugar:true});
+  const [ddf,setDdf]=useState({startTime:"",endTime:"",orders:0,earnings:"",tips:"",miles:"",note:""});
 
   useEffect(()=>{
     (async()=>{
@@ -501,11 +505,6 @@ export default function SummerApp({mode,T,onBack}) {
 
   // ── Tracker helpers ─────────────────────────────────────────────────────
   const curMonth=today.slice(0,7);
-  const [trackerTab,setTrackerTab]=useState("weight");
-  const [wtf,setWtf]=useState({weight:"",note:""});
-  const [expf,setExpf]=useState({amount:"",category:"food",note:""});
-  const [mealf,setMealf]=useState({meal:"breakfast",foods:"",protein:true,noSugar:true});
-  const [ddf,setDdf]=useState({startTime:"",endTime:"",orders:0,earnings:"",tips:"",miles:"",note:""});
   const SPEND_CATS=["food","groceries","gas","gym","clothing","household","other"];
   const monthWeight=(data.weight||[]).filter(w=>w.date?.startsWith(curMonth)).sort((a,b)=>a.date<b.date?1:-1);
   const monthSpending=(data.spending||[]).filter(s=>s.date?.startsWith(curMonth)).sort((a,b)=>a.date<b.date?1:-1);
@@ -569,7 +568,7 @@ export default function SummerApp({mode,T,onBack}) {
                 <button onClick={()=>{
                   if(!wtf.weight)return;
                   const entry={date:today,weight:Number(wtf.weight),unit:"lbs",note:wtf.note};
-                  setData(p=>({...p,weight:[...(p.weight||[]),entry]}));
+                  save(p=>({...p,weight:[...(p.weight||[]),entry]}));
                   setWtf({weight:"",note:""});
                 }} style={{padding:"10px 20px",borderRadius:9,border:"none",background:"#3B9EDB",color:"#fff",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,cursor:"pointer",whiteSpace:"nowrap"}}>{"Log"}</button>
               </div>
@@ -589,7 +588,7 @@ export default function SummerApp({mode,T,onBack}) {
                     {(Number(monthWeight[i].weight)-Number(monthWeight[i+1].weight)).toFixed(1)>0?"+":""}{(Number(monthWeight[i].weight)-Number(monthWeight[i+1].weight)).toFixed(1)}{" lbs"}
                   </span>}
                   <span style={{fontSize:12,color:T.textMuted}}>{new Date(w.date+"T12:00:00").toLocaleDateString("en-US",{month:"short",day:"numeric"})}</span>
-                  <button onClick={()=>setData(p=>({...p,weight:(p.weight||[]).filter((_,j)=>(p.weight||[]).sort((a,b)=>a.date<b.date?1:-1)[j]!==_||(p.weight||[]).sort((a,b)=>a.date<b.date?1:-1).indexOf(_)!==i)}))} style={{fontSize:11,color:"#E84E8A",background:"none",border:"none",cursor:"pointer",padding:"2px 6px"}}>{"✕"}</button>
+                  <button onClick={()=>save(p=>({...p,weight:(p.weight||[]).filter((_,j)=>(p.weight||[]).sort((a,b)=>a.date<b.date?1:-1)[j]!==_||(p.weight||[]).sort((a,b)=>a.date<b.date?1:-1).indexOf(_)!==i)}))} style={{fontSize:11,color:"#E84E8A",background:"none",border:"none",cursor:"pointer",padding:"2px 6px"}}>{"✕"}</button>
                 </div>
               </div>
             ))}
@@ -684,7 +683,7 @@ export default function SummerApp({mode,T,onBack}) {
               <button onClick={()=>{
                 if(!mealf.foods.trim())return;
                 const entry={date:today,meal:mealf.meal,foods:mealf.foods,protein:mealf.protein,noSugar:mealf.noSugar};
-                setData(p=>({...p,meals:[...(p.meals||[]),entry]}));
+                save(p=>({...p,meals:[...(p.meals||[]),entry]}));
                 setMealf(p=>({...p,foods:""}));
               }} style={{padding:"10px 24px",borderRadius:9,border:"none",background:"#F97316",color:"#fff",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,cursor:"pointer"}}>{"Log Meal"}</button>
             </div>
@@ -704,7 +703,7 @@ export default function SummerApp({mode,T,onBack}) {
                   {m.protein&&<span style={{fontSize:10,background:"#3DBF8A22",color:"#3DBF8A",borderRadius:5,padding:"2px 6px",fontWeight:700}}>{"P✓"}</span>}
                   {m.noSugar&&<span style={{fontSize:10,background:"#E8A83822",color:"#E8A838",borderRadius:5,padding:"2px 6px",fontWeight:700}}>{"0🍬"}</span>}
                   <span style={{fontSize:11,color:T.textMuted}}>{new Date(m.date+"T12:00:00").toLocaleDateString("en-US",{month:"short",day:"numeric"})}</span>
-                  <button onClick={()=>setData(p=>({...p,meals:[...(p.meals||[])].reverse().filter((_,j)=>j!==i).reverse()}))} style={{fontSize:11,color:"#E84E8A",background:"none",border:"none",cursor:"pointer",padding:"2px 4px"}}>{"✕"}</button>
+                  <button onClick={()=>save(p=>({...p,meals:[...(p.meals||[])].reverse().filter((_,j)=>j!==i).reverse()}))} style={{fontSize:11,color:"#E84E8A",background:"none",border:"none",cursor:"pointer",padding:"2px 4px"}}>{"✕"}</button>
                 </div>
               </div>
             ))}
@@ -736,7 +735,7 @@ export default function SummerApp({mode,T,onBack}) {
                 <button onClick={()=>{
                   if(!expf.amount)return;
                   const entry={date:today,amount:Number(expf.amount),category:expf.category,note:expf.note};
-                  setData(p=>({...p,spending:[...(p.spending||[]),entry]}));
+                  save(p=>({...p,spending:[...(p.spending||[]),entry]}));
                   setExpf(p=>({...p,amount:"",note:""}));
                 }} style={{padding:"10px 20px",borderRadius:9,border:"none",background:"#E84E8A",color:"#fff",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,cursor:"pointer",whiteSpace:"nowrap"}}>{"Add"}</button>
               </div>
@@ -770,7 +769,7 @@ export default function SummerApp({mode,T,onBack}) {
                 <div style={{display:"flex",gap:8,alignItems:"center",flexShrink:0}}>
                   <span style={{fontSize:14,fontWeight:700,color:T.text}}>{`$${Number(s.amount).toFixed(2)}`}</span>
                   <span style={{fontSize:11,color:T.textMuted}}>{new Date(s.date+"T12:00:00").toLocaleDateString("en-US",{month:"short",day:"numeric"})}</span>
-                  <button onClick={()=>setData(p=>({...p,spending:[...(p.spending||[])].filter((_,j)=>[...(p.spending||[])].sort((a,b)=>a.date<b.date?1:-1)[j]!==_||(p.spending||[]).sort((a,b)=>a.date<b.date?1:-1).indexOf(_)!==i)}))} style={{fontSize:11,color:"#E84E8A",background:"none",border:"none",cursor:"pointer",padding:"2px 4px"}}>{"✕"}</button>
+                  <button onClick={()=>save(p=>({...p,spending:[...(p.spending||[])].filter((_,j)=>[...(p.spending||[])].sort((a,b)=>a.date<b.date?1:-1)[j]!==_||(p.spending||[]).sort((a,b)=>a.date<b.date?1:-1).indexOf(_)!==i)}))} style={{fontSize:11,color:"#E84E8A",background:"none",border:"none",cursor:"pointer",padding:"2px 4px"}}>{"✕"}</button>
                 </div>
               </div>
             ))}
@@ -841,7 +840,7 @@ export default function SummerApp({mode,T,onBack}) {
               <button onClick={()=>{
                 if(!ddf.earnings&&!ddf.tips)return;
                 const entry={date:today,startTime:ddf.startTime,endTime:ddf.endTime,orders:Number(ddf.orders),earnings:Number(ddf.earnings),tips:Number(ddf.tips),miles:Number(ddf.miles),note:ddf.note};
-                setData(p=>({...p,doordash:[...(p.doordash||[]),entry]}));
+                save(p=>({...p,doordash:[...(p.doordash||[]),entry]}));
                 setDdf({startTime:"",endTime:"",orders:0,earnings:"",tips:"",miles:"",note:""});
               }} style={{padding:"10px 24px",borderRadius:9,border:"none",background:"#E8A838",color:"#000",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,cursor:"pointer"}}>{"Log Session"}</button>
             </div>
@@ -860,7 +859,7 @@ export default function SummerApp({mode,T,onBack}) {
                     </div>
                     <div style={{display:"flex",gap:8,alignItems:"center"}}>
                       <span style={{fontSize:12,color:T.textMuted}}>{new Date(d.date+"T12:00:00").toLocaleDateString("en-US",{month:"short",day:"numeric"})}</span>
-                      <button onClick={()=>setData(p=>({...p,doordash:[...(p.doordash||[])].filter((_,j)=>[...(p.doordash||[])].sort((a,b)=>a.date<b.date?1:-1)[j]!==_)}))} style={{fontSize:11,color:"#E84E8A",background:"none",border:"none",cursor:"pointer",padding:"2px 4px"}}>{"✕"}</button>
+                      <button onClick={()=>save(p=>({...p,doordash:[...(p.doordash||[])].filter((_,j)=>[...(p.doordash||[])].sort((a,b)=>a.date<b.date?1:-1)[j]!==_)}))} style={{fontSize:11,color:"#E84E8A",background:"none",border:"none",cursor:"pointer",padding:"2px 4px"}}>{"✕"}</button>
                     </div>
                   </div>
                   <div style={{display:"flex",gap:12,flexWrap:"wrap"}}>
@@ -1614,7 +1613,7 @@ export default function SummerApp({mode,T,onBack}) {
 
   // ── Gloria views ────────────────────────────────────────────────────────
   const gloriaChecks=data.checklist?.gloria||{};
-  const toggleGloriaCheck=id=>setData(p=>({...p,checklist:{...p.checklist,gloria:{...(p.checklist?.gloria||{}),[id]:!(p.checklist?.gloria||{})[id]}}}));
+  const toggleGloriaCheck=id=>save(p=>({...p,checklist:{...p.checklist,gloria:{...(p.checklist?.gloria||{}),[id]:!(p.checklist?.gloria||{})[id]}}}));
   const gloriaDone=GLORIA_WD_CHECKLIST.filter(i=>gloriaChecks[i.id]).length;
   const gloriaPct=Math.round((gloriaDone/GLORIA_WD_CHECKLIST.length)*100);
 
