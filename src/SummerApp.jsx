@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { GymView, SchoolsView, LifeView } from "./SummerExtra";
 
 const SUPABASE_URL = "https://sonbphyeomzzcdyuiotl.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNvbmJwaHllb216emNkeXVpb3RsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyMzkxMjksImV4cCI6MjA4ODgxNTEyOX0.CtcZAFtqCQUOrzPBfhSfN5BZ1EQDJFVxa-FsjMX5IRg";
@@ -22,6 +23,9 @@ const PILLARS = [
   {id:"reading",        label:"Reading",    icon:"◐", color:P.reading},
   {id:"gloria",         label:"Gloria",     icon:"♡", color:P.gloria},
   {id:"sidegig",        label:"Side Gig",   icon:"◆", color:P.sidegig},
+  {id:"gym",            label:"Gym",        icon:"🏋", color:"#E8704A"},
+  {id:"schools",        label:"Schools",    icon:"🎓", color:"#7B61FF"},
+  {id:"life",           label:"Life",       icon:"❤", color:"#E84E8A"},
 ];
 const GLORIA_PILLARS = [
   {id:"gloria_overview",label:"Overview",   icon:"◉", color:"#E84E8A"},
@@ -357,10 +361,10 @@ function weekStr(d=new Date()) {
 }
 function calcStreak(arr) {
   if (!arr?.length) return 0;
-  const today=new Date().toISOString().slice(0,10);
+  const _n=new Date(); const today=`${_n.getFullYear()}-${String(_n.getMonth()+1).padStart(2,'0')}-${String(_n.getDate()).padStart(2,'0')}`;
   const dates=[...new Set(arr.map(e=>e.date))].sort().reverse();
-  let s=0; const d=new Date(today);
-  for (const dt of dates) { if(dt===d.toISOString().slice(0,10)){s++;d.setDate(d.getDate()-1);}else break; }
+  let s=0; const d=new Date(today+"T12:00:00");
+  for (const dt of dates) { const dd=new Date(d); const ds=`${dd.getFullYear()}-${String(dd.getMonth()+1).padStart(2,'0')}-${String(dd.getDate()).padStart(2,'0')}`; if(dt===ds){s++;d.setDate(d.getDate()-1);}else break; }
   return s;
 }
 
@@ -420,7 +424,7 @@ function Modal({title,accent,onClose,onSave,children,T}) {
 
 // ── Main ──────────────────────────────────────────────────────────────────
 export default function SummerApp({mode,T,onBack}) {
-  const today=new Date().toISOString().slice(0,10);
+  const _td2=new Date(); const today=`${_td2.getFullYear()}-${String(_td2.getMonth()+1).padStart(2,'0')}-${String(_td2.getDate()).padStart(2,'0')}`;
   const dow=new Date().getDay();
   const isSat=dow===6, isSun=dow===0;
   const thisWeek=weekStr();
@@ -451,7 +455,7 @@ export default function SummerApp({mode,T,onBack}) {
   useEffect(()=>{
     (async()=>{
       const stored=await sGet("summer_amen");
-      setDataState(stored??{checklist:{},devotion:[],thesis:[],reading:[],fitness:[],gloria:[],sidegig:[],intentions:{},nutrition:[],weight:[],spending:[],meals:[],doordash:[]});
+      setDataState(stored??{checklist:{},devotion:[],thesis:[],reading:[],fitness:[],gloria:[],sidegig:[],intentions:{},nutrition:[],weight:[],spending:[],meals:[],doordash:[],gymWeekly:[],schools:[],helpers:[],family:[]});
     })();
   },[]);
 
@@ -1611,6 +1615,11 @@ export default function SummerApp({mode,T,onBack}) {
     </div>
   );
 
+  // ── Extra views (Gym, Schools, Life) ────────────────────────────────────
+  const viewGym = <GymView T={T} data={data} save={save} today={today} isMobile={isMobile}/>;
+  const viewSchools = <SchoolsView T={T} data={data} save={save} today={today} isMobile={isMobile}/>;
+  const viewLife = <LifeView T={T} data={data} save={save} isMobile={isMobile}/>;
+
   // ── Gloria views ────────────────────────────────────────────────────────
   const gloriaChecks=data.checklist?.gloria||{};
   const toggleGloriaCheck=id=>save(p=>({...p,checklist:{...p.checklist,gloria:{...(p.checklist?.gloria||{}),[id]:!(p.checklist?.gloria||{})[id]}}}));
@@ -1798,6 +1807,9 @@ export default function SummerApp({mode,T,onBack}) {
         {profile==="amen"&&pillar==="reading"   && viewReading}
         {profile==="amen"&&pillar==="gloria"    && viewGloria}
         {profile==="amen"&&pillar==="sidegig"   && viewSidegig}
+        {profile==="amen"&&pillar==="gym"      && viewGym}
+        {profile==="amen"&&pillar==="schools"  && viewSchools}
+        {profile==="amen"&&pillar==="life"     && viewLife}
         {/* Gloria views */}
         {profile==="gloria"&&pillar==="gloria_overview" && viewGloriaOverview}
         {profile==="gloria"&&pillar==="gloria_schedule" && viewGloriaSchedule}

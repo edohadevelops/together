@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+﻿import { useState, useEffect, useRef, useCallback } from "react";
 import SummerApp from "./SummerApp.jsx";
 import BulkTaskManager from "./BulkTaskManager.jsx";
 
@@ -71,7 +71,7 @@ const WEEK_DAY_FULL = ["Monday","Tuesday","Wednesday","Thursday","Friday","Satur
 const PRIORITIES = ["Low", "Medium", "High", "Urgent"];
 const PRI_COLOR  = { Urgent:"#E84E8A", High:"#E8704A", Medium:"#E8A838", Low:"#3DBF8A" };
 const DONE_COL   = "__done__";
-const TODAY      = new Date().toISOString().slice(0, 10);
+const _td=new Date(); const TODAY=`${_td.getFullYear()}-${String(_td.getMonth()+1).padStart(2,'0')}-${String(_td.getDate()).padStart(2,'0')}`;
 
 // ── AI Tools ──────────────────────────────────────────────────────────────────
 const AI_TOOLS = [
@@ -1126,421 +1126,224 @@ function MiniModal({ title, accent, onClose, onSave, children, T }) {
 
 
 // ══════════════════════════════════════════════════════════════════════════════
-// ── ComprehensiveApp ──────────────────────────────────────────────────────────
-// Exam prep & active recall for Amen (Abstract Algebra, Real Analysis, ODE,
-// AIP) and Gloria (her own courses — she adds her own decks).
+// ── BookApp — personal reading library ───────────────────────────────────────
 // ══════════════════════════════════════════════════════════════════════════════
 
-const ABSTRACT_CARDS = [
-  { id:1, title:"Definition of a group", tag:"define", body:"A <b>group</b> (G, ★) is an ordered pair where G is a set and ★ is a binary operation satisfying:<br><br><b>(i) Associativity:</b> (a★b)★c = a★(b★c) for all a,b,c ∈ G<br><b>(ii) Identity:</b> ∃ e ∈ G with a★e = e★a = a for all a ∈ G<br><b>(iii) Inverses:</b> For each a ∈ G, ∃ a⁻¹ with a★a⁻¹ = a⁻¹★a = e<br><br>Closure is built into ★ being a binary operation G×G→G. Only 3 axioms.", hint:"Dummit & Foote p.16 — 3 axioms NOT 4. Closure is automatic." },
-  { id:2, title:"Cyclic group", tag:"define", body:"G is <b>cyclic</b> if ∃ g ∈ G such that G = ⟨g⟩ — every element is a power of g. g is called a <b>generator</b>.<br><br>Examples: ℤ = ⟨1⟩ under addition. ℤ/nℤ = ⟨1̄⟩ under addition.<br><br>Every cyclic group is abelian. Number of generators = φ(n).", hint:"φ(n) generators total. A cyclic group of order n has exactly one subgroup per divisor of n." },
-  { id:3, title:"Order of an element", tag:"define", body:"The <b>order</b> |x| of x ∈ G is the <b>smallest positive integer n</b> with xⁿ = e. If none exists, x has infinite order.<br><br><b>Key facts:</b><br>• xᵏ = e ⟺ |x| divides k<br>• ord(xᵏ) = n / gcd(n, k)", hint:"The word POSITIVE is crucial — n=0 always satisfies x⁰=e so it must be smallest POSITIVE." },
-  { id:4, title:"Powers equal {e, x, …, xⁿ⁻¹} — proof", tag:"prove", body:"<b>Proof:</b> By the Division Algorithm write k = qn + r, 0 ≤ r < n.<br><br>xᵏ = x^(qn+r) = (xⁿ)^q · xʳ = eᵍ · xʳ = xʳ<br><br>Since 0 ≤ r < n, xʳ ∈ {e, x, …, xⁿ⁻¹}. ∎<br><br><b>Two tools:</b> Division Algorithm + xⁿ = e.", hint:"WOP gives smallest m. Division Algorithm forces r = 0 by minimality." },
-  { id:5, title:"Orders of powers, generators, subgroup lattice", tag:"compute", body:"If r has order n:<br><br><b>(a)</b> ord(rᵏ) = n / gcd(n, k)<br><b>(b)</b> rᵏ generates ⟨r⟩ ⟺ gcd(n, k) = 1. Number of generators = φ(n).<br><b>(c)</b> One subgroup ⟨r^(n/d)⟩ of order d for each divisor d of n.<br><br>Example n=12: ord(r²)=6, ord(r³)=4, ord(r⁶)=2.", hint:"Subgroup lattice has as many nodes as divisors of n. Lines connect d₁ to d₂ when d₁|d₂ with nothing between." },
-  { id:6, title:"Subgroup criterion", tag:"define", body:"A non-empty H ⊆ G is a subgroup ⟺<br><br><b>For all a, b ∈ H: ab⁻¹ ∈ H</b><br><br>One condition gives three for the price of one:<br>• a=b → e ∈ H (identity)<br>• a=e → b⁻¹ ∈ H (inverses)<br>• combine → ab ∈ H (closure)", hint:"Lead with this in every subgroup proof — it's fastest." },
-  { id:7, title:"Any subgroup of a cyclic group is cyclic", tag:"prove", body:"Let H ≤ ⟨g⟩. If H = {e}, done.<br><br>S = {m ∈ ℤ⁺ : gᵐ ∈ H} is non-empty. By <b>WOP</b>, let m = smallest element.<br><br><b>Claim H = ⟨gᵐ⟩:</b><br>(⊇) Clear. (⊆) For gᵏ ∈ H write k=qm+r. Then gʳ ∈ H so r=0 by minimality. ∎", hint:"WOP → m exists. Division Algorithm → r=0. Minimality bridges them." },
-  { id:8, title:"Center Z(G) — definition", tag:"define", body:"<b>Z(G) = { x ∈ G | xg = gx for all g ∈ G }</b><br><br>Elements that commute with everything in G.<br><br>• Z(G) = G ⟺ G is abelian<br>• Z(D₆) = {e}<br>• Z(D₈) = {e, r²} where r = 90° rotation", hint:"Z(D₂ₙ) = {e, rⁿ} when n even. Z(D₂ₙ) = {e} when n odd." },
-  { id:9, title:"Prove Z(G) is a subgroup", tag:"prove", body:"<b>Non-empty:</b> e ∈ Z(G) since eg=ge. ✓<br><br><b>Closed under ab⁻¹:</b><br>Step 1 — b⁻¹ ∈ Z(G): since bg=gb → gb⁻¹=b⁻¹g. ✓<br>Step 2 — ab⁻¹ ∈ Z(G): (ab⁻¹)g = a(b⁻¹g) = a(gb⁻¹) = (ag)b⁻¹ = (ga)b⁻¹ = g(ab⁻¹). ✓<br><br>So Z(G) ≤ G. ∎", hint:"Show b⁻¹ central first, then combine with a central." },
-  { id:10, title:"Homomorphism definition + consequences", tag:"define", body:"φ: G→H is a <b>homomorphism</b> if <b>φ(ab) = φ(a)φ(b)</b> for all a,b ∈ G.<br><br>Consequences:<br>• φ(eG) = eH<br>• φ(a⁻¹) = φ(a)⁻¹<br>• |φ(a)| divides |a|<br>• Im(φ) ≤ H always", hint:"All four consequences follow from one equation. The image is always a subgroup." },
-  { id:11, title:"Injective iff ker = {e}", tag:"prove", body:"(⟹) Let g ∈ ker. φ(g)=e=φ(eG). By injectivity g=eG. So ker={e}. ✓<br><br>(⟸) Suppose φ(a)=φ(b). Then φ(ab⁻¹)=φ(a)φ(b)⁻¹=e. So ab⁻¹∈ker={e}, meaning a=b. ✓ ∎<br><br><b>Key move:</b> Turn φ(a)=φ(b) into φ(ab⁻¹)=e.", hint:"Both directions use the same algebraic move." },
-  { id:12, title:"Kernel is a normal subgroup", tag:"both", body:"<b>ker(φ) = { g ∈ G | φ(g) = eH }</b><br><br>Subgroup: e∈ker ✓. a,b∈ker → φ(ab⁻¹)=e ✓<br><br><b>Normal</b> — take n∈ker, g∈G:<br>φ(gng⁻¹) = φ(g)·<b>e</b>·φ(g)⁻¹ = e ✓<br>So gng⁻¹ ∈ ker for all g. Therefore ker(φ) ⊴ G. ∎", hint:"Normality is one line: φ(gng⁻¹)=φ(g)eφ(g)⁻¹=e. The e in the middle is because n∈ker." },
-  { id:13, title:"Conjugation f(x)=gxg⁻¹ is an automorphism", tag:"prove", body:"Homo: f(xy)=g(xy)g⁻¹=(gxg⁻¹)(gyg⁻¹)=f(x)f(y) ✓<br>Injective: f(x)=f(y) → x=y (cancel g left, g⁻¹ right) ✓<br>Surjective: preimage of y is g⁻¹yg ✓<br><br>So f is an automorphism. ∎", hint:"Inverse map is conjugation by g⁻¹." },
-  { id:14, title:"Abelian group; squaring map iff abelian", tag:"both", body:"G <b>abelian</b> ⟺ ab=ba for all a,b.<br><br>f(x)=x² is homo ⟺ (ab)²=a²b² ⟺ abab=aabb ⟺ ba=ab ⟺ G abelian. ∎<br><br>Write as a chain of ⟺ — proves both directions simultaneously.", hint:"Chain of equivalences is the cleanest exam presentation." },
-  { id:15, title:"First Isomorphism Theorem", tag:"both", body:"If φ:G→H is a homo then <b>G/ker(φ) ≅ Im(φ)</b>.<br><br>Define Φ(gK)=φ(g). Prove: well-defined → homo → injective → surjective. ∎<br><br>Application: (ℤ×ℤ)/⟨(2,1)⟩ ≅ ℤ via φ(a,b)=a−2b.", hint:"4 steps always in that order: well-defined, homo, injective, surjective." },
-  { id:16, title:"Lagrange's Theorem", tag:"both", body:"If G finite, H≤G: <b>|H| divides |G|</b> and |G|=|H|·[G:H].<br><br>Proof: left cosets partition G. Each has |H| elements. There are [G:H] of them. ∎<br><br>Corollary: |x| divides |G| for all x∈G.", hint:"Lagrange does NOT say every divisor has a subgroup — A₄ has no subgroup of order 6!" },
-  { id:17, title:"Define Aₙ; A₄ has no subgroup of order 6", tag:"both", body:"Aₙ = all even permutations in Sₙ. |Aₙ|=n!/2.<br><br>Suppose H≤A₄, |H|=6. Then [A₄:H]=2 → H⊴A₄ → every x∈A₄ has x²∈H.<br>Computing squares of all 3-cycles gives 7 elements — contradicts |H|=6. ∎", hint:"Normal means closed under conjugation. 1+(conjugacy class sizes) must equal 6 — impossible." },
-  { id:18, title:"G/Z(G) cyclic implies G abelian", tag:"prove", body:"Let G/Z(G)=⟨gZ(G)⟩. Every element of G has form gⁱz (z∈Z(G)).<br><br>For a=gⁱz₁, b=gʲz₂:<br>ab = gⁱz₁gʲz₂ = g^(i+j)z₁z₂ = ba (z₁,z₂ central). ∎", hint:"Contrapositive: non-abelian G → G/Z(G) not cyclic. So G/Z(G) is trivial or non-cyclic." },
-  { id:19, title:"Non-abelian G with abelian G/N", tag:"compute", body:"G=S₃, N=A₃={e,(123),(132)}.<br><br>N normal (index 2 → always normal). ✓<br>G/N ≅ ℤ/2ℤ — abelian. ✓<br>S₃ non-abelian: (12)(13)≠(13)(12). ✓<br><br>By 1st Iso Thm: S₃/A₃ ≅ {±1} ≅ ℤ₂.", hint:"Index-2 subgroups are always normal — key fact to memorise." },
-  { id:20, title:"Class Equation", tag:"both", body:"|G| = |Z(G)| + Σ[G:CG(xᵢ)]<br>(sum over non-central conjugacy class reps)<br><br>Proof: conjugacy classes partition G. Central elements = singletons = Z(G). Non-central class sizes = [G:CG(x)] > 1 by orbit-stabilizer. ∎", hint:"S₃: 6=1+2+3. S₄: 24=1+6+8+6+3. S₅: 120=1+10+15+20+24+20+30." },
-  { id:21, title:"p-group has nontrivial center", tag:"both", body:"<b>Def:</b> |G|=pⁿ for prime p.<br><br>Class Eq: |G|=|Z(G)|+Σ[G:CG(xᵢ)].<br>Each non-central term = p^(n-k) with n-k≥1, so p divides each.<br>p||G| and p|sum → <b>p||Z(G)|</b>.<br>So |Z(G)|≥p>1. ∎", hint:"Most elegant Class Equation application. Learn cold." },
-  { id:22, title:"Cayley's Theorem", tag:"both", body:"Every G ≅ subgroup of a permutation group.<br><br>Step 1: σg(x)=gx is a bijection. ✓<br>Step 2: Γ:G→SG by Γ(g)=σg.<br>Homo: Γ(gh)(x)=ghx=σg(σh(x)). ✓<br>Injective: Γ(g)=Γ(h) → gx=hx for all x → set x=e → g=h. ✓<br><br>So G≅Γ(G)≤SG. ∎", hint:"x=e is chosen because it collapses gx=hx to g=h in one step. Any x works but e is fastest." },
-  { id:23, title:"Solvable groups", tag:"both", body:"G <b>solvable</b> ⟺ chain {e}=G₀⊴…⊴Gₙ=G with each Gᵢ₊₁/Gᵢ abelian.<br><br>Solvable: S₃ ({e}⊴A₃⊴S₃, quotients ℤ₃ and ℤ₂). ✓<br>Not solvable: A₅ (simple, non-abelian). ✗<br><br>Sₙ not solvable for n≥5.", hint:"Galois: polynomial solvable by radicals ⟺ Galois group is solvable." },
-  { id:24, title:"Fundamental Theorem for Finite Abelian Groups", tag:"both", body:"Every finite abelian group ≅ direct product of cyclic p-groups.<br><br><b>Elementary Divisor form:</b> ℤ_{p₁^a₁} × ℤ_{p₂^a₂} × …<br><b>Invariant Factor form:</b> ℤ_{n₁} × … × ℤ_{nₖ} where n₁|…|nₖ<br><br>Order 12: ℤ₄×ℤ₃ or ℤ₂×ℤ₂×ℤ₃ (elem. div.) ≡ ℤ₁₂ or ℤ₂×ℤ₆ (inv. fac.)", hint:"To convert: group elem. divisors by prime, multiply across primes for invariant factors." },
-  { id:25, title:"Sylow's Theorem — all three parts", tag:"define", body:"|G|=pⁿm, p∤m.<br><b>Part 1 (Existence):</b> G has a subgroup of order pⁿ.<br><b>Part 2 (Conjugacy):</b> All Sylow p-subgroups conjugate. nₚ=1 ⟺ unique = normal.<br><b>Part 3 (Count):</b> nₚ≡1(mod p) and nₚ|m.", hint:"Strategy: force nₚ=1 → normal Sylow subgroup → not simple." },
-  { id:26, title:"Simple groups + Sylow to prove non-simplicity", tag:"both", body:"G simple ⟺ no proper normal subgroups.<br><br>To show |G|=441=3²·7² not simple:<br>n₇: divides 9 and ≡1 mod 7 → n₇∈{1,8,15,…}. Only n₇=1 divides 9.<br>So n₇=1 → unique Sylow 7-subgroup is normal → G not simple. ∎", hint:"List nₚ candidates: must satisfy nₚ≡1(mod p) AND nₚ|m. Then show only 1 works." },
-  { id:27, title:"Semidirect product H ⋊_φ K", tag:"define", body:"φ:K→Aut(H). H⋊_φK = H×K with operation:<br><b>(h₁,k₁)(h₂,k₂) = (h₁·φ(k₁)(h₂), k₁k₂)</b><br><br>φ trivial → direct product. D₂ₙ≅Cₙ⋊C₂ where φ(flip)(r)=r⁻¹.<br><br>Key relation: srs⁻¹ = φ(s)(r).", hint:"Once you know φ(s)(r), you can compute the entire multiplication table." },
-];
-
-const ODE_CARDS = [
-  { id:1, title:"1st order linear ODE", tag:"define", body:"Form: <b>y' + P(x)y = Q(x)</b><br><br>Integrating factor: μ(x) = e^(∫P(x)dx)<br><br>Multiply both sides by μ: d/dx[μy] = μQ<br>Integrate both sides: μy = ∫μQ dx<br>Solve for y.", hint:"The integrating factor makes the left side a perfect derivative." },
-  { id:2, title:"Separable ODE", tag:"compute", body:"Form: <b>dy/dx = g(x)h(y)</b><br><br>Separate: dy/h(y) = g(x)dx<br>Integrate both sides.<br><br>Example: dy/dx = xy → dy/y = x dx → ln|y| = x²/2 + C → y = Ae^(x²/2)", hint:"Move all y terms to one side, all x terms to the other, then integrate." },
-  { id:3, title:"2nd order linear ODE — homogeneous", tag:"both", body:"Form: <b>ay'' + by' + cy = 0</b><br><br>Characteristic equation: ar² + br + c = 0<br><br>Cases:<br>• Two real roots r₁≠r₂: y = c₁e^(r₁x) + c₂e^(r₂x)<br>• Repeated root r: y = (c₁+c₂x)e^(rx)<br>• Complex roots α±βi: y = e^(αx)(c₁cos(βx)+c₂sin(βx))", hint:"The characteristic equation replaces y with r, y' with r², etc." },
-  { id:4, title:"Variation of parameters", tag:"prove", body:"For ay''+by'+cy = g(x), given yh = c₁y₁+c₂y₂:<br><br>W = y₁y₂'−y₂y₁' (Wronskian)<br><br>u₁' = −y₂g/aW, u₂' = y₁g/aW<br><br>yp = u₁y₁ + u₂y₂<br>General: y = yh + yp", hint:"Variation of parameters works for any g(x). Undetermined coefficients only works for special forms." },
-  { id:5, title:"Laplace transform — definition and key pairs", tag:"define", body:"<b>L{f(t)} = ∫₀^∞ e^(-st)f(t)dt = F(s)</b><br><br>Key pairs:<br>• L{1} = 1/s<br>• L{t^n} = n!/s^(n+1)<br>• L{e^(at)} = 1/(s-a)<br>• L{sin(bt)} = b/(s²+b²)<br>• L{cos(bt)} = s/(s²+b²)<br>• L{y'} = sY-y(0)", hint:"For IVPs: take Laplace, solve for Y(s) algebraically, take inverse Laplace." },
-  { id:6, title:"Floquet theory — p-group theorem", tag:"both", body:"System x' = A(t)x with A(t) periodic period ω is a <b>Floquet system</b>.<br><br>Floquet multipliers: eigenvalues of C = Φ⁻¹(0)Φ(ω).<br><br>Key result: product of Floquet multipliers = exp(∫₀^ω tr(A(s))ds)<br><br>If tr(A)=0 → product = 1.", hint:"For Mathieu equation y''+( α+βcos t)y=0: tr(A)=0 so μ₁μ₂=1." },
-  { id:7, title:"Lozinski measure μ₁(A)", tag:"compute", body:"μ(A) = lim_{h→0+} (||I+hA||−1)/h<br><br><b>Limit exists because:</b> ||I+θhA||≤θ||I+hA||+(1−θ) → quotient monotone. Bounded below by −||A||. By Monotone Convergence Theorem, limit exists.<br><br><b>Formula for μ₁:</b> μ₁(A) = max_j(a_jj + Σ_{i≠j}|a_ij|) — column sums.", hint:"μ₁ uses COLUMN sums. μ∞ uses ROW sums. Don't mix them up." },
-];
-
-const REAL_CARDS = [
-  { id:1, title:"ε-δ definition of a limit", tag:"define", body:"lim_{x→a} f(x) = L means:<br><br>For every ε > 0, ∃ δ > 0 such that<br>0 < |x−a| < δ ⟹ |f(x)−L| < ε<br><br>Note: x≠a (that's the 0 < |x−a|). The function need not be defined at a.", hint:"ε is the output tolerance. δ is the input tolerance. You pick ε, you find δ." },
-  { id:2, title:"Continuity — definition and types", tag:"define", body:"f is <b>continuous at a</b> if lim_{x→a}f(x) = f(a).<br><br>f is <b>uniformly continuous</b> on S if: for every ε>0, ∃ δ>0 such that |x−y|<δ ⟹ |f(x)−f(y)|<ε for ALL x,y∈S.<br><br>Key: uniform continuity — one δ works for all pairs.", hint:"Uniform continuity: δ depends only on ε, NOT on the point x." },
-  { id:3, title:"Mean Value Theorem", tag:"both", body:"If f continuous on [a,b] and differentiable on (a,b), then ∃ c ∈ (a,b) with:<br><br><b>f'(c) = (f(b)−f(a))/(b−a)</b><br><br>Proof: Apply Rolle's theorem to g(x) = f(x) − [f(a) + (f(b)−f(a))(x−a)/(b−a)].", hint:"MVT = there exists a point where instantaneous rate = average rate." },
-  { id:4, title:"Bolzano-Weierstrass Theorem", tag:"prove", body:"Every bounded sequence in ℝ has a convergent subsequence.<br><br>Proof: Let {xₙ} be bounded, say xₙ ∈ [a,b]. Bisect [a,b] — one half contains infinitely many terms. Bisect that half. Continue. The nested intervals give a convergent subsequence by the nested interval property.", hint:"Bisect and always choose the half with infinitely many terms." },
-  { id:5, title:"Riemann integral — definition", tag:"define", body:"For f:[a,b]→ℝ, partition P = {a=x₀<x₁<…<xₙ=b}.<br><br>Upper sum: U(f,P) = Σ Mᵢ(xᵢ−xᵢ₋₁) where Mᵢ = sup f on [xᵢ₋₁,xᵢ]<br>Lower sum: L(f,P) = Σ mᵢ(xᵢ−xᵢ₋₁)<br><br>f is <b>Riemann integrable</b> if inf U(f,P) = sup L(f,P).", hint:"f integrable ⟺ for every ε>0, ∃ P with U(f,P)−L(f,P)<ε." },
-  { id:6, title:"Fundamental Theorem of Calculus — both parts", tag:"both", body:"<b>Part 1:</b> If f continuous on [a,b], then F(x)=∫ₐˣf(t)dt is differentiable and F'(x)=f(x).<br><br><b>Part 2:</b> If F'=f on [a,b], then ∫ₐᵇf(x)dx = F(b)−F(a).<br><br>Part 1: differentiation undoes integration. Part 2: integration undoes differentiation.", hint:"Part 1 → antiderivative exists. Part 2 → how to compute integrals." },
-  { id:7, title:"Heine-Borel Theorem", tag:"both", body:"A subset S ⊆ ℝⁿ is <b>compact</b> ⟺ S is <b>closed and bounded</b>.<br><br>Proof (⟹): Compact → closed (limit points of sequences are in S) and bounded (take open cover of unit balls).<br>(⟸): Closed and bounded → every sequence has a convergent subsequence (B-W) whose limit is in S (closed).", hint:"Compactness is the key property that makes everything work: max/min exist, continuous functions are uniformly continuous." },
-  { id:8, title:"Weierstrass M-test — uniform convergence", tag:"both", body:"If |fₙ(x)| ≤ Mₙ for all x∈S and Σ Mₙ < ∞, then Σ fₙ converges <b>uniformly and absolutely</b> on S.<br><br>Consequence: if each fₙ is continuous and Σ fₙ converges uniformly, the sum is continuous.", hint:"M-test: bound each term by a number (not depending on x), sum the numbers." },
-];
-
-const AIP_CARDS = [
-  { id:1, title:"Matrix norm induced by vector norm", tag:"define", body:"||A|| = sup_{||x||=1} ||Ax|| = max_{x≠0} ||Ax||/||x||<br><br>Key property: ||Ax|| ≤ ||A||·||x|| for all x.<br><br>Traffic norm: ||A||₁ = max_j Σᵢ|aᵢⱼ| (max column sum)<br>Max norm: ||A||∞ = max_i Σⱼ|aᵢⱼ| (max row sum)", hint:"Traffic norm = column sums. Max norm = row sums. Euclidean norm = sqrt of largest eigenvalue of AᵀA." },
-  { id:2, title:"Lozinski measure — definition and existence", tag:"both", body:"μ(A) = lim_{h→0+} (||I+hA||−1)/h<br><br>Exists because: f(h)=||I+hA|| is convex → difference quotient monotone. Bounded below by −||A|| (reverse triangle inequality). Monotone Convergence Theorem gives limit. ∎<br><br>Properties: |μ(A)|≤||A||, μ(A+B)≤μ(A)+μ(B), Re(λ)≤μ(A) for all eigenvalues λ.", hint:"Proof uses WOP-style argument via Monotone Convergence. Know the textbook proof from Exercise 2.49." },
-  { id:3, title:"Stability via Lozinski measure", tag:"both", body:"If μ(A) < 0, then the trivial solution of x' = Ax is <b>globally asymptotically stable</b>.<br><br>This follows from μ(A) < 0 → all eigenvalues have negative real part → solutions decay to 0.<br><br>Example: if μ₁(A) = −1 < 0 then stable.", hint:"Lozinski measure gives a computable sufficient condition for stability. μ < 0 is sufficient but not necessary." },
-];
-
-function ComprehensiveApp({ names, mode, T, activeUser, onBack }) {
-  const FF = "'DM Sans',sans-serif";
-  const SF = "'DM Serif Display',serif";
-  const compStyle = `
-    .comp-inner { width:100%; padding:16px 16px 100px; box-sizing:border-box; }
-    .comp-grid  { display:grid; grid-template-columns:1fr; gap:16px; width:100%; }
-    .comp-sidebar { display:none; }
-    @media(min-width:768px){
-      .comp-inner { padding:20px 24px 80px; }
-    }
-    @media(min-width:1024px){
-      .comp-inner { padding:24px 3vw 80px; }
-      .comp-grid { grid-template-columns:28% 1fr; gap:2vw; align-items:start; }
-      .comp-sidebar { display:flex; flex-direction:column; gap:12px; position:sticky; top:72px; width:100%; }
-      .comp-main { width:100%; min-width:0; }
-    }
-    @media(min-width:1400px){
-      .comp-inner { padding:28px 4vw 80px; }
-    }
-    .course-tab { flex-shrink:0; padding:7px 16px; border-radius:20px; font-size:13px; cursor:pointer; transition:all .15s; font-family:'DM Sans',sans-serif; }
-    .course-tab-desktop { width:100%; padding:12px 16px; border-radius:12px; font-size:14px; cursor:pointer; transition:all .15s; text-align:left; font-family:'DM Sans',sans-serif; display:flex; align-items:center; gap:10px; box-sizing:border-box; }
-    .nav-btn { padding:8px 18px; border-radius:8px; font-size:13px; cursor:pointer; font-family:'DM Sans',sans-serif; transition:all .15s; }
-    .nav-btn:hover { opacity:0.85; }
-    .action-btn { flex:1; padding:12px; border-radius:10px; border:none; font-size:13px; font-weight:600; cursor:pointer; font-family:'DM Sans',sans-serif; transition:opacity .15s; }
-    .action-btn:hover { opacity:0.88; }
-  `;
-
-  const USER_A_COURSES = [
-    { id:"abstract", label:"Abstract Algebra", color:"#185FA5", emoji:"∑", cards: ABSTRACT_CARDS },
-    { id:"ode",      label:"ODE",              color:"#085041", emoji:"∂", cards: ODE_CARDS },
-    { id:"real",     label:"Real Analysis",    color:"#3C3489", emoji:"ℝ", cards: REAL_CARDS },
-    { id:"aip",      label:"AIP",              color:"#854F0B", emoji:"λ", cards: AIP_CARDS },
+// ── BookApp ──────────────────────────────────────────────────────────────────
+function BookApp({ names, mode, T, activeUser, onBack }) {
+  const [books, setBooksState] = useState(null);
+  const [showForm, setShowForm] = useState(false);
+  const [editBook, setEditBook] = useState(null);
+  const [search, setSearch] = useState("");
+  const [filterGenre, setFilterGenre] = useState("all");
+  const saveBooks = list => { setBooksState(list); dbSet(`book_library_${activeUser||"A"}`, list); };
+  const gid = () => "bk" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
+  const emptyBook = { title:"", author:"", dateRead:"", rating:5, genre:"nonfiction", emoji:"📚", learnings:"", howToApply:"", notes:"" };
+  const [form, setForm] = useState(emptyBook);
+  useEffect(() => {
+    (async () => {
+      const data = await dbGet(`book_library_${activeUser||"A"}`);
+      setBooksState(data ?? []);
+    })();
+  }, []);
+  function openAdd() { setForm(emptyBook); setEditBook(null); setShowForm(true); }
+  function openEdit(b) { setForm({...b}); setEditBook(b); setShowForm(true); }
+  function saveBook() {
+    if (!form.title?.trim()) return;
+    if (editBook) { saveBooks((books||[]).map(b => b.id===editBook.id ? {...form,id:editBook.id} : b)); }
+    else { saveBooks([...(books||[]), {...form, id:gid()}]); }
+    setShowForm(false);
+  }
+  function deleteBook(id) { saveBooks((books||[]).filter(b => b.id !== id)); }
+  const GENRES = [
+    { id:"all",       label:"All Books",   emoji:"📚" },
+    { id:"nonfiction",label:"Non-Fiction", emoji:"🧠" },
+    { id:"selfhelp",  label:"Self-Help",   emoji:"🌱" },
+    { id:"business",  label:"Business",    emoji:"💼" },
+    { id:"faith",     label:"Faith",       emoji:"✦" },
+    { id:"biography", label:"Biography",   emoji:"👤" },
+    { id:"fiction",   label:"Fiction",     emoji:"📖" },
+    { id:"science",   label:"Science",     emoji:"🔬" },
+    { id:"finance",   label:"Finance",     emoji:"💰" },
+    { id:"other",     label:"Other",       emoji:"📋" },
   ];
-
-  const [who,      setWho]      = useState(activeUser || "A");
-  const [course,   setCourse]   = useState("abstract");
-  const [cardIdx,  setCardIdx]  = useState(0);
-  const [phase,    setPhase]    = useState("read");
-  const [readSec,  setReadSec]  = useState(60);
-  const [timerOn,  setTimerOn]  = useState(false);
-  const [known,    setKnown]    = useState({});
-  const [gloriaCards, setGloriaCards] = useState(() => {
-    try { return JSON.parse(localStorage.getItem("gloria_comp_cards") || "[]"); } catch { return []; }
-  });
-  const [showAddCard, setShowAddCard] = useState(false);
-  const [newCard, setNewCard] = useState({ title:"", tag:"define", body:"", hint:"" });
-  const timerRef = useState(null);
-
-  const isA = who === "A";
-  const courses = isA ? USER_A_COURSES : [];
-  const currentCourse = isA ? (courses.find(c => c.id === course) || courses[0]) : null;
-  const cards = isA ? (currentCourse?.cards || []) : gloriaCards;
-  const card = cards[cardIdx];
-  const doneCount = Object.keys(known).filter(k => k.startsWith(who + "_" + (isA ? course : "gloria") + "_") && known[k] === "got").length;
-
-  useEffect(() => {
-    setCardIdx(0);
-    setPhase("read");
-    setReadSec(60);
-    setTimerOn(false);
-  }, [course, who]);
-
-  useEffect(() => {
-    if (!timerOn) return;
-    const iv = setInterval(() => {
-      setReadSec(s => {
-        if (s <= 1) { clearInterval(iv); setTimerOn(false); setPhase("quiz"); return 0; }
-        return s - 1;
-      });
-    }, 1000);
-    return () => clearInterval(iv);
-  }, [timerOn]);
-
-  function startReading() { setPhase("reading"); setReadSec(60); setTimerOn(true); }
-  function skipToQuiz()   { setTimerOn(false); setPhase("quiz"); }
-  function markCard(score) {
-    const key = who + "_" + (isA ? course : "gloria") + "_" + cardIdx;
-    setKnown(k => ({ ...k, [key]: score }));
-    if (cardIdx < cards.length - 1) { setCardIdx(i => i+1); setPhase("read"); setReadSec(60); setTimerOn(false); }
-  }
-  function saveGloriaCard() {
-    if (!newCard.title.trim() || !newCard.body.trim()) return;
-    const updated = [...gloriaCards, { ...newCard, id: Date.now() }];
-    setGloriaCards(updated);
-    try { localStorage.setItem("gloria_comp_cards", JSON.stringify(updated)); } catch {}
-    setNewCard({ title:"", tag:"define", body:"", hint:"" });
-    setShowAddCard(false);
-  }
-  function deleteGloriaCard(idx) {
-    const updated = gloriaCards.filter((_,i) => i !== idx);
-    setGloriaCards(updated);
-    try { localStorage.setItem("gloria_comp_cards", JSON.stringify(updated)); } catch {}
-    if (cardIdx >= updated.length) setCardIdx(Math.max(0, updated.length - 1));
-  }
-
-  const tagColors = { define:["#E6F1FB","#0C447C"], prove:["#FCEBEB","#791F1F"], both:["#EEEDFE","#3C3489"], compute:["#E1F5EE","#085041"] };
-  const s = (style) => ({ fontFamily: FF, ...style });
-  const accentColor = isA ? (currentCourse?.color || "#185FA5") : "#E84E8A";
-
+  const thisYear = new Date().getFullYear().toString();
+  const allBooks = books || [];
+  const filtered = allBooks
+    .filter(b => filterGenre==="all" || b.genre===filterGenre)
+    .filter(b => !search || b.title?.toLowerCase().includes(search.toLowerCase()) || b.author?.toLowerCase().includes(search.toLowerCase()))
+    .sort((a,b) => (b.dateRead||"").localeCompare(a.dateRead||""));
+  const avgRating = allBooks.length ? (allBooks.reduce((s,b) => s+(b.rating||0), 0) / allBooks.length).toFixed(1) : "—";
+  const thisYearCount = allBooks.filter(b => (b.dateRead||"").startsWith(thisYear)).length;
+  const card = (ex={}) => ({ background:T.surface, border:`1px solid ${T.border}`, borderRadius:16, boxShadow:"0 2px 12px rgba(0,0,0,0.07)", ...ex });
+  if (books === null) return (
+    <div style={{ display:"flex",alignItems:"center",justifyContent:"center",height:"100vh",background:T.bg,color:T.text,fontFamily:"'DM Sans',sans-serif" }}>
+      <div style={{ textAlign:"center" }}><div style={{ fontSize:32,marginBottom:12 }}>📚</div><div style={{ fontSize:14,color:T.textSub }}>Loading library...</div></div>
+    </div>
+  );
   return (
-    <div style={{ minHeight:"100vh", background:T.bg, color:T.text }}>
-      <style>{compStyle}</style>
-
-      {/* ── Sticky header ── */}
-      <div style={{ background:T.topbar, borderBottom:`1px solid ${T.border}`, position:"sticky", top:0, zIndex:20 }}>
-        <div style={{ width:"100%", padding:"12px 16px", display:"flex", alignItems:"center", gap:12, boxSizing:"border-box" }}>
-          <button onClick={onBack} style={{ background:"none", border:"none", cursor:"pointer", color:T.textSub, fontSize:20, padding:"0 4px", fontFamily:FF }}>←</button>
+    <div style={{ minHeight:"100vh",background:T.bg,color:T.text,fontFamily:"'DM Sans',sans-serif" }}>
+      <style>{`
+        .book-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:14px;}
+        .book-stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,130px),1fr));gap:10px;}
+        .genre-scroll{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;scrollbar-width:none;}
+        .genre-scroll::-webkit-scrollbar{display:none;}
+      `}</style>
+      <div style={{ padding:"16px 20px 60px",maxWidth:960,margin:"0 auto" }}>
+        <div style={{ display:"flex",alignItems:"center",gap:10,marginBottom:20 }}>
+          <button onClick={onBack} style={{ background:"none",border:"none",color:T.textSub,cursor:"pointer",fontSize:20,padding:"2px 6px",borderRadius:7,fontFamily:"'DM Sans',sans-serif" }}>←</button>
           <div style={{ flex:1 }}>
-            <div style={{ fontFamily:SF, fontSize:18, color:T.text }}>Exam Prep</div>
-            <div style={{ fontSize:11, color:T.textSub, marginTop:1, fontFamily:FF }}>Active recall · {cards.length} cards</div>
+            <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:26,color:T.text,lineHeight:1.2 }}>📚 Book Library</div>
+            <div style={{ fontSize:13,color:T.textSub,marginTop:2 }}>Your reading journey — knowledge captured & applied</div>
           </div>
-          {/* Who toggle */}
-          <div style={{ display:"flex", gap:6 }}>
-            {["A","B"].map(u => (
-              <button key={u} onClick={()=>{setWho(u);setCourse("abstract");setCardIdx(0);setPhase("read");setTimerOn(false);}}
-                style={{ padding:"6px 16px", borderRadius:20, border:`1px solid ${who===u?(u==="A"?"#E8A838":"#E84E8A"):T.border}`, background:who===u?(u==="A"?"#E8A83820":"#E84E8A20"):"transparent", color:who===u?(u==="A"?"#E8A838":"#E84E8A"):T.textSub, fontSize:13, fontWeight:who===u?700:400, cursor:"pointer", fontFamily:FF }}>
-                {names[u]}
-              </button>
-            ))}
-          </div>
+          <button onClick={openAdd} style={{ height:38,padding:"0 18px",borderRadius:10,border:"none",background:"#7B61FF",color:"#fff",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,cursor:"pointer" }}>+ Log Book</button>
         </div>
-
-        {/* ── Mobile course tabs (horizontal scroll, hidden on desktop) ── */}
-        {isA && (
-          <div style={{ display:"flex", gap:8, overflowX:"auto", padding:"0 16px 12px", width:"100%", boxSizing:"border-box" }} className="hide-on-desktop">
-            <style>{`@media(min-width:1024px){.hide-on-desktop{display:none!important}}`}</style>
-            {USER_A_COURSES.map(c => (
-              <button key={c.id} onClick={()=>setCourse(c.id)} className="course-tab"
-                style={{ border:`1px solid ${course===c.id?c.color:T.border}`, background:course===c.id?c.color+"20":"transparent", color:course===c.id?c.color:T.textSub, fontWeight:course===c.id?700:400 }}>
-                {c.emoji} {c.label}
-              </button>
-            ))}
+        <div className="book-stats" style={{ marginBottom:18 }}>
+          {[
+            { l:"Total Read",  v:`${allBooks.length}`,   c:"#7B61FF" },
+            { l:"This Year",   v:`${thisYearCount}`,     c:"#3B9EDB" },
+            { l:"Avg Rating",  v:`⭐ ${avgRating}`,      c:"#E8A838" },
+            { l:"Genres",      v:`${new Set(allBooks.map(b=>b.genre)).size}`, c:"#3DBF8A" },
+          ].map(s => (
+            <div key={s.l} style={{ ...card(),padding:"14px 16px",borderLeft:`4px solid ${s.c}` }}>
+              <div style={{ fontSize:20,fontWeight:800,color:T.text,lineHeight:1 }}>{s.v}</div>
+              <div style={{ fontSize:10,fontWeight:700,color:T.textSub,marginTop:3,textTransform:"uppercase",letterSpacing:"0.08em" }}>{s.l}</div>
+            </div>
+          ))}
+        </div>
+        <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search title or author..."
+          style={{ width:"100%",background:T.inputBg,border:`1px solid ${T.border}`,borderRadius:9,padding:"9px 12px",color:T.text,fontFamily:"'DM Sans',sans-serif",fontSize:13,outline:"none",boxSizing:"border-box",marginBottom:12 }}/>
+        <div className="genre-scroll" style={{ marginBottom:16 }}>
+          {GENRES.map(g => (
+            <button key={g.id} onClick={()=>setFilterGenre(g.id)}
+              style={{ flexShrink:0,padding:"6px 14px",borderRadius:20,border:`1px solid ${filterGenre===g.id?"#7B61FF":T.border}`,background:filterGenre===g.id?"#7B61FF18":"transparent",color:filterGenre===g.id?"#7B61FF":T.textSub,fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:filterGenre===g.id?700:400,cursor:"pointer",whiteSpace:"nowrap" }}>
+              {g.emoji} {g.label}
+            </button>
+          ))}
+        </div>
+        {filtered.length === 0 ? (
+          <div style={{ ...card(),padding:"60px 20px",textAlign:"center" }}>
+            <div style={{ fontSize:48,marginBottom:12 }}>📖</div>
+            <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:20,color:T.text,marginBottom:8 }}>{allBooks.length===0?"Start Your Library":"No books match"}</div>
+            <div style={{ fontSize:13,color:T.textSub,marginBottom:20,lineHeight:1.6 }}>{allBooks.length===0?"Log your first book — capture what you learned and how you will apply it.":"Try a different search or filter."}</div>
+            {allBooks.length===0&&<button onClick={openAdd} style={{ padding:"11px 22px",borderRadius:10,border:"none",background:"#7B61FF",color:"#fff",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:700,cursor:"pointer" }}>+ Log First Book</button>}
+          </div>
+        ) : (
+          <div className="book-grid">
+            {filtered.map(b => <BookCard key={b.id} book={b} T={T} onEdit={openEdit} onDelete={deleteBook}/>)}
           </div>
         )}
       </div>
-
-      {/* ── Main content area ── */}
-      <div className="comp-inner">
-        <div className="comp-grid">
-
-          {/* ── SIDEBAR (desktop only) ── */}
-          <div className="comp-sidebar">
-            {isA ? (
-              <>
-                <div style={{ fontFamily:SF, fontSize:15, color:T.text, marginBottom:4 }}>Courses</div>
-                {USER_A_COURSES.map(c => (
-                  <button key={c.id} onClick={()=>setCourse(c.id)} className="course-tab-desktop"
-                    style={{ border:`1px solid ${course===c.id?c.color:T.border}`, background:course===c.id?c.color+"18":T.surface, color:course===c.id?c.color:T.text, fontWeight:course===c.id?600:400 }}>
-                    <span style={{ fontSize:18 }}>{c.emoji}</span>
-                    <div style={{ flex:1 }}>
-                      <div style={{ fontSize:14, fontWeight:course===c.id?600:400 }}>{c.label}</div>
-                      <div style={{ fontSize:11, color:T.textSub, marginTop:1 }}>{c.cards.length} cards</div>
-                    </div>
-                    {course===c.id && <span style={{ fontSize:12, color:c.color }}>●</span>}
-                  </button>
-                ))}
-                {/* Desktop stats */}
-                <div style={{ background:T.surface, border:`1px solid ${T.border}`, borderRadius:12, padding:"16px", marginTop:4 }}>
-                  <div style={{ fontFamily:SF, fontSize:14, color:T.text, marginBottom:12 }}>Session progress</div>
-                  {[[cards.length,"Total cards"],[doneCount,"Mastered"],[cards.length-doneCount,"Remaining"]].map(([n,l])=>(
-                    <div key={l} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"6px 0", borderBottom:`1px solid ${T.border}` }}>
-                      <span style={{ fontSize:12, color:T.textSub, fontFamily:FF }}>{l}</span>
-                      <span style={{ fontSize:16, fontWeight:600, color:T.text, fontFamily:FF }}>{n}</span>
-                    </div>
-                  ))}
-                  <div style={{ marginTop:12 }}>
-                    <div style={{ display:"flex", justifyContent:"space-between", fontSize:11, color:T.textSub, marginBottom:5, fontFamily:FF }}>
-                      <span>Mastered</span><span>{Math.round(doneCount/Math.max(cards.length,1)*100)}%</span>
-                    </div>
-                    <div style={{ height:6, background:T.border, borderRadius:3 }}>
-                      <div style={{ height:6, borderRadius:3, background:accentColor, width:`${Math.round(doneCount/Math.max(cards.length,1)*100)}%`, transition:"width .4s" }}/>
-                    </div>
-                  </div>
-                </div>
-                {/* Card navigator desktop */}
-                {cards.length > 0 && (
-                  <div style={{ display:"flex", gap:8 }}>
-                    <button onClick={()=>{setCardIdx(i=>Math.max(0,i-1));setPhase("read");setTimerOn(false);}} className="nav-btn" style={{ flex:1, border:`1px solid ${T.border}`, background:T.inputBg, color:T.textSub }}>← Prev</button>
-                    <button onClick={()=>{setCardIdx(i=>Math.min(cards.length-1,i+1));setPhase("read");setTimerOn(false);}} className="nav-btn" style={{ flex:1, border:`1px solid ${T.border}`, background:T.inputBg, color:T.textSub }}>Next →</button>
-                    <button onClick={()=>{setCardIdx(Math.floor(Math.random()*cards.length));setPhase("read");setTimerOn(false);}} className="nav-btn" style={{ border:`1px solid ${T.border}`, background:T.inputBg, color:T.textSub }}>↺</button>
-                  </div>
-                )}
-              </>
-            ) : (
-              <>
-                <div style={{ fontFamily:SF, fontSize:15, color:T.text, marginBottom:8 }}>Gloria's cards</div>
-                <button onClick={()=>setShowAddCard(true)} style={{ width:"100%", padding:"12px", borderRadius:12, border:"1px solid #E84E8A44", background:"#E84E8A12", color:"#E84E8A", fontSize:13, fontWeight:600, cursor:"pointer", fontFamily:FF }}>
-                  + Add a card
-                </button>
-                {gloriaCards.length > 0 && (
-                  <div style={{ background:T.surface, border:`1px solid ${T.border}`, borderRadius:12, padding:"16px" }}>
-                    <div style={{ fontFamily:SF, fontSize:14, color:T.text, marginBottom:12 }}>Progress</div>
-                    <div style={{ fontSize:12, color:T.textSub, fontFamily:FF }}>{doneCount} of {gloriaCards.length} mastered</div>
-                    <div style={{ height:6, background:T.border, borderRadius:3, marginTop:8 }}>
-                      <div style={{ height:6, borderRadius:3, background:"#E84E8A", width:`${Math.round(doneCount/Math.max(gloriaCards.length,1)*100)}%`, transition:"width .4s" }}/>
-                    </div>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-
-          {/* ── MAIN CONTENT ── */}
-          <div className="comp-main">
-
-            {/* Mobile stats row */}
-            {cards.length > 0 && (
-              <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:8, marginBottom:16 }}>
-                {[["Cards",cards.length],["Done",doneCount],["Left",cards.length-doneCount]].map(([l,n])=>(
-                  <div key={l} style={{ background:T.surface, border:`1px solid ${T.border}`, borderRadius:10, padding:"10px 8px", textAlign:"center", fontFamily:FF }}>
-                    <div style={{ fontSize:20, fontWeight:600, color:T.text }}>{n}</div>
-                    <div style={{ fontSize:11, color:T.textSub, marginTop:1 }}>{l}</div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Mobile progress bar */}
-            {cards.length > 0 && (
-              <div style={{ marginBottom:16 }}>
-                <div style={{ display:"flex", justifyContent:"space-between", fontSize:11, color:T.textSub, marginBottom:5, fontFamily:FF }}>
-                  <span>Card {cardIdx+1} of {cards.length}</span>
-                  <span>{Math.round(doneCount/Math.max(cards.length,1)*100)}% mastered</span>
-                </div>
-                <div style={{ height:5, background:T.border, borderRadius:3 }}>
-                  <div style={{ height:5, borderRadius:3, background:accentColor, width:`${Math.round((cardIdx+1)/cards.length*100)}%`, transition:"width .4s" }}/>
-                </div>
-              </div>
-            )}
-
-            {/* Gloria add button (mobile) */}
-            {!isA && (
-              <div style={{ marginBottom:16 }}>
-                <button onClick={()=>setShowAddCard(true)} style={{ padding:"10px 20px", borderRadius:10, border:"1px solid #E84E8A44", background:"#E84E8A12", color:"#E84E8A", fontSize:13, fontWeight:600, cursor:"pointer", fontFamily:FF }}>
-                  + Add a card
-                </button>
-              </div>
-            )}
-
-            {/* Empty state */}
-            {cards.length === 0 && (
-              <div style={{ textAlign:"center", padding:"64px 24px", color:T.textSub, fontFamily:FF }}>
-                <div style={{ fontSize:48, marginBottom:16 }}>📚</div>
-                <div style={{ fontFamily:SF, fontSize:20, color:T.text, marginBottom:8 }}>No cards yet, {names[who]}</div>
-                <div style={{ fontSize:13, lineHeight:1.7, maxWidth:340, margin:"0 auto" }}>Add your first exam prep card using the button above. You can add definitions, proofs, or any topic you need to memorise.</div>
-              </div>
-            )}
-
-            {/* ── Flash card ── */}
-            {card && (
-              <div style={{ background:T.surface, border:`1px solid ${T.border}`, borderRadius:16, padding:"20px", marginBottom:14, fontFamily:FF }}>
-                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14 }}>
-                  <span style={{ fontSize:12, color:T.textMuted }}>Card {cardIdx+1} / {cards.length}</span>
-                  <div style={{ display:"flex", gap:6, alignItems:"center" }}>
-                    <span style={{ fontSize:11, fontWeight:600, padding:"3px 10px", borderRadius:20, background:tagColors[card.tag]?.[0]||"#eee", color:tagColors[card.tag]?.[1]||"#333" }}>{(card.tag||"define").toUpperCase()}</span>
-                    {!isA && <button onClick={()=>deleteGloriaCard(cardIdx)} style={{ background:"none", border:"none", cursor:"pointer", color:T.textMuted, fontSize:14, padding:"0 2px" }}>✕</button>}
-                  </div>
-                </div>
-                <div style={{ fontFamily:SF, fontSize:19, color:T.text, marginBottom:14, lineHeight:1.4 }}>{card.title}</div>
-                <div style={{ fontSize:14, color:T.textSub, lineHeight:1.85 }} dangerouslySetInnerHTML={{ __html: card.body }}/>
-                {card.hint && phase !== "read" && (
-                  <div style={{ marginTop:14, padding:"10px 14px", background:T.inputBg, borderLeft:`3px solid ${accentColor}`, fontSize:12.5, color:T.textSub, lineHeight:1.6, fontFamily:FF }}>{card.hint}</div>
-                )}
-              </div>
-            )}
-
-            {/* Timer bar */}
-            {card && phase === "reading" && (
-              <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:14, fontFamily:FF }}>
-                <div style={{ flex:1, height:5, background:T.border, borderRadius:3 }}>
-                  <div style={{ height:5, borderRadius:3, background:accentColor, width:`${(readSec/60)*100}%`, transition:"width 1s linear" }}/>
-                </div>
-                <span style={{ fontSize:13, color:T.textSub, minWidth:32 }}>{readSec}s</span>
-              </div>
-            )}
-
-            {/* Quiz box */}
-            {card && phase === "quiz" && (
-              <div style={{ background:isA?"#EEEDFE":"#FBEAF0", border:`1px solid ${accentColor}`, borderRadius:14, padding:"16px", marginBottom:14, fontFamily:FF }}>
-                <div style={{ fontSize:11, fontWeight:700, color:accentColor, letterSpacing:"0.07em", marginBottom:8 }}>QUIZ — answer in chat below</div>
-                <div style={{ fontSize:15, fontWeight:500, color:isA?"#26215C":"#4B1528", lineHeight:1.55, marginBottom:8 }}>
-                  {card.tag==="define"?`Define: ${card.title}`:card.tag==="prove"?`Prove: ${card.title}`:card.tag==="both"?`State and prove: ${card.title}`:`Compute/apply: ${card.title}`}
-                </div>
-                <div style={{ fontSize:12, color:T.textSub, fontStyle:"italic" }}>Type your answer in chat. Mark yourself honestly below.</div>
-              </div>
-            )}
-
-            {/* Action buttons */}
-            {card && (
-              <div style={{ display:"flex", gap:10, marginBottom:16 }}>
-                {phase==="read" && (
-                  <button onClick={startReading} className="action-btn" style={{ background:accentColor, color:"#fff" }}>
-                    Start reading (60s)
-                  </button>
-                )}
-                {phase==="reading" && (<>
-                  <button onClick={skipToQuiz} className="action-btn" style={{ background:accentColor, color:"#fff" }}>I'm ready — quiz me</button>
-                  <button onClick={skipToQuiz} className="action-btn" style={{ background:T.inputBg, color:T.textSub, border:`1px solid ${T.border}` }}>Skip</button>
-                </>)}
-                {phase==="quiz" && (<>
-                  <button onClick={()=>markCard("got")}     className="action-btn" style={{ background:"#085041", color:"#fff" }}>Got it</button>
-                  <button onClick={()=>markCard("partial")} className="action-btn" style={{ background:"#854F0B", color:"#fff" }}>Partial</button>
-                  <button onClick={()=>markCard("missed")}  className="action-btn" style={{ background:"#791F1F", color:"#fff" }}>Missed</button>
-                </>)}
-              </div>
-            )}
-
-            {/* Mobile card navigator */}
-            {cards.length > 0 && (
-              <div style={{ display:"flex", gap:8, marginBottom:16 }} className="hide-on-desktop-flex">
-                <style>{`@media(min-width:1024px){.hide-on-desktop-flex{display:none!important}}`}</style>
-                <button onClick={()=>{setCardIdx(i=>Math.max(0,i-1));setPhase("read");setTimerOn(false);}} className="nav-btn" style={{ flex:1, border:`1px solid ${T.border}`, background:T.inputBg, color:T.textSub }}>← Prev</button>
-                <button onClick={()=>{setCardIdx(i=>Math.min(cards.length-1,i+1));setPhase("read");setTimerOn(false);}} className="nav-btn" style={{ flex:1, border:`1px solid ${T.border}`, background:T.inputBg, color:T.textSub }}>Next →</button>
-                <button onClick={()=>{setCardIdx(Math.floor(Math.random()*cards.length));setPhase("read");setTimerOn(false);}} className="nav-btn" style={{ border:`1px solid ${T.border}`, background:T.inputBg, color:T.textSub }}>↺</button>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* ── Gloria add card modal ── */}
-      {showAddCard && (
-        <div style={{ position:"fixed", inset:0, zIndex:50, background:"rgba(0,0,0,0.6)", backdropFilter:"blur(4px)", display:"flex", alignItems:"center", justifyContent:"center", padding:16 }} onClick={()=>setShowAddCard(false)}>
-          <div style={{ background:T.surface, width:"100%", maxWidth:520, borderRadius:18, padding:"24px", maxHeight:"90vh", overflowY:"auto", fontFamily:FF }} onClick={e=>e.stopPropagation()}>
-            <div style={{ fontFamily:SF, fontSize:20, color:T.text, marginBottom:4 }}>Add exam prep card</div>
-            <div style={{ fontSize:12, color:T.textSub, marginBottom:20 }}>for {names["B"]}</div>
-            {[["Title / Question","title","text"],["Answer / Full content","body","textarea"],["Hint (optional)","hint","text"]].map(([lbl,field,type])=>(
-              <div key={field} style={{ marginBottom:14 }}>
-                <div style={{ fontSize:12, fontWeight:600, color:T.textSub, marginBottom:5 }}>{lbl}</div>
-                {type==="textarea"
-                  ? <textarea value={newCard[field]} onChange={e=>setNewCard(c=>({...c,[field]:e.target.value}))} rows={5} style={{ width:"100%", padding:"10px 12px", borderRadius:10, border:`1px solid ${T.border}`, background:T.inputBg, color:T.text, fontSize:13, resize:"vertical", fontFamily:FF, boxSizing:"border-box" }}/>
-                  : <input value={newCard[field]} onChange={e=>setNewCard(c=>({...c,[field]:e.target.value}))} style={{ width:"100%", padding:"10px 12px", borderRadius:10, border:`1px solid ${T.border}`, background:T.inputBg, color:T.text, fontSize:13, fontFamily:FF, boxSizing:"border-box" }}/>
-                }
-              </div>
-            ))}
-            <div style={{ marginBottom:18 }}>
-              <div style={{ fontSize:12, fontWeight:600, color:T.textSub, marginBottom:8 }}>Card type</div>
-              <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
-                {["define","prove","both","compute"].map(t=>(
-                  <button key={t} onClick={()=>setNewCard(c=>({...c,tag:t}))} style={{ padding:"7px 16px", borderRadius:20, border:`1px solid ${newCard.tag===t?"#E84E8A":T.border}`, background:newCard.tag===t?"#E84E8A20":"transparent", color:newCard.tag===t?"#E84E8A":T.textSub, fontSize:12, cursor:"pointer", fontWeight:newCard.tag===t?700:400, fontFamily:FF }}>{t.toUpperCase()}</button>
-                ))}
-              </div>
-            </div>
-            <div style={{ display:"flex", gap:10 }}>
-              <button onClick={saveGloriaCard} style={{ flex:1, padding:"12px", borderRadius:10, border:"none", background:"#E84E8A", color:"#fff", fontSize:14, fontWeight:600, cursor:"pointer", fontFamily:FF }}>Save card</button>
-              <button onClick={()=>setShowAddCard(false)} style={{ padding:"12px 20px", borderRadius:10, border:`1px solid ${T.border}`, background:T.inputBg, color:T.textSub, fontSize:14, cursor:"pointer", fontFamily:FF }}>Cancel</button>
-            </div>
-          </div>
-        </div>
-      )}
+      {showForm && <BookForm form={form} setForm={setForm} onSave={saveBook} onClose={()=>setShowForm(false)} T={T} mode={mode} isEdit={!!editBook} GENRES={GENRES}/>}
     </div>
   );
 }
+
+function BookCard({ book, T, onEdit, onDelete }) {
+  const [expanded, setExpanded] = useState(false);
+  const GENRE_COLOR = { nonfiction:"#3B9EDB",selfhelp:"#3DBF8A",business:"#E8A838",faith:"#E8C050",biography:"#9B6EE8",fiction:"#E84E8A",science:"#3DBF8A",finance:"#20B2AA",other:"#888D9B" };
+  const c = GENRE_COLOR[book.genre] || "#888D9B";
+  return (
+    <div style={{ background:T.surface,border:`1px solid ${T.border}`,borderRadius:16,overflow:"hidden",boxShadow:"0 2px 12px rgba(0,0,0,0.07)",borderTop:`4px solid ${c}` }}>
+      <div style={{ padding:"18px 18px 14px" }}>
+        <div style={{ display:"flex",gap:12,alignItems:"flex-start",marginBottom:12 }}>
+          <div style={{ fontSize:36,flexShrink:0,lineHeight:1 }}>{book.emoji||"📚"}</div>
+          <div style={{ flex:1,minWidth:0 }}>
+            <div style={{ fontSize:15,fontWeight:700,color:T.text,lineHeight:1.3,wordBreak:"break-word" }}>{book.title}</div>
+            {book.author&&<div style={{ fontSize:12,color:T.textSub,marginTop:2 }}>by {book.author}</div>}
+            <div style={{ display:"flex",alignItems:"center",gap:8,marginTop:6,flexWrap:"wrap" }}>
+              <span style={{ fontSize:11,color:c,fontWeight:700,background:c+"15",padding:"2px 8px",borderRadius:10 }}>{book.genre||"other"}</span>
+              {book.dateRead&&<span style={{ fontSize:11,color:T.textMuted }}>{book.dateRead}</span>}
+              {book.rating>0&&<span style={{ fontSize:11,color:"#E8A838",fontWeight:600 }}>{"⭐".repeat(book.rating)} {book.rating}/5</span>}
+            </div>
+          </div>
+          <div style={{ display:"flex",gap:3,flexShrink:0 }}>
+            <button onClick={()=>onEdit(book)} style={{ background:"none",border:"none",color:T.textMuted,cursor:"pointer",fontSize:14,padding:"3px" }}>✎</button>
+            <button onClick={()=>onDelete(book.id)} style={{ background:"none",border:"none",color:T.textMuted,cursor:"pointer",fontSize:14,padding:"3px" }}>✕</button>
+          </div>
+        </div>
+        {book.learnings&&(
+          <div style={{ marginBottom:8 }}>
+            <div style={{ fontSize:10,fontWeight:700,color:"#7B61FF",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:4 }}>Key Learnings</div>
+            <div style={{ fontSize:12,color:T.text,lineHeight:1.6,background:T.inputBg,borderRadius:8,padding:"8px 10px",maxHeight:expanded?9999:72,overflow:"hidden" }}>{book.learnings}</div>
+          </div>
+        )}
+        {book.howToApply&&(
+          <div style={{ marginBottom:8 }}>
+            <div style={{ fontSize:10,fontWeight:700,color:"#3DBF8A",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:4 }}>How I Will Apply It</div>
+            <div style={{ fontSize:12,color:T.text,lineHeight:1.6,background:T.inputBg,borderRadius:8,padding:"8px 10px",maxHeight:expanded?9999:72,overflow:"hidden" }}>{book.howToApply}</div>
+          </div>
+        )}
+        {((book.learnings||"").length>120||(book.howToApply||"").length>120)&&(
+          <button onClick={()=>setExpanded(p=>!p)} style={{ background:"none",border:"none",color:"#7B61FF",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:600,padding:0,marginTop:2 }}>
+            {expanded?"▲ Show less":"▼ Read more"}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function BookForm({ form, setForm, onSave, onClose, T, mode, isEdit, GENRES }) {
+  const ref = useRef(null);
+  useEffect(()=>{ const t=setTimeout(()=>{ if(ref.current) ref.current.focus(); },80); return()=>clearTimeout(t); },[]);
+  const inp = { width:"100%",background:T.inputBg,border:`1px solid ${T.border}`,borderRadius:9,padding:"10px 12px",color:T.text,fontFamily:"'DM Sans',sans-serif",fontSize:14,outline:"none",boxSizing:"border-box" };
+  const ta  = { ...inp,resize:"vertical",minHeight:80,lineHeight:1.6 };
+  const sel = { ...inp,background:mode==="dark"?"#181B23":"#fff",cursor:"pointer" };
+  const lbl = { fontSize:11,fontWeight:600,letterSpacing:"0.08em",textTransform:"uppercase",color:T.textMuted,display:"block",marginBottom:4,marginTop:12,fontFamily:"'DM Sans',sans-serif" };
+  const EMOJIS = ["📚","📖","🧠","💡","🌱","💼","✦","📜","🔬","💰","🎯","🏆","🎭","🌍","⚡"];
+  return (
+    <div style={{ position:"fixed",inset:0,zIndex:50,background:"rgba(0,0,0,0.65)",backdropFilter:"blur(6px)",display:"flex",alignItems:"flex-end",justifyContent:"center" }} onClick={e=>e.target===e.currentTarget&&onClose()}>
+      <div style={{ background:T.surface,border:`1px solid ${T.border}`,borderRadius:"20px 20px 0 0",width:"100%",maxWidth:560,maxHeight:"95vh",overflowY:"auto",padding:"24px 20px 40px",boxShadow:"0 -8px 40px rgba(0,0,0,0.3)" }}>
+        <div style={{ width:40,height:4,borderRadius:2,background:T.textMuted,margin:"0 auto 20px",opacity:0.4 }}/>
+        <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:22,color:T.text,marginBottom:4 }}>{isEdit?"Edit":"Log"} Book</div>
+        <div style={{ height:2,width:40,background:"#7B61FF",borderRadius:2,marginBottom:18 }}/>
+        <label style={lbl}>Emoji</label>
+        <div style={{ display:"flex",gap:6,flexWrap:"wrap",marginBottom:4 }}>
+          {EMOJIS.map(e=>(
+            <button key={e} onClick={()=>setForm(p=>({...p,emoji:e}))}
+              style={{ width:36,height:36,borderRadius:9,border:`2px solid ${form.emoji===e?"#7B61FF":T.border}`,background:form.emoji===e?"#7B61FF18":"transparent",fontSize:18,cursor:"pointer" }}>{e}</button>
+          ))}
+        </div>
+        <label style={lbl}>Title *</label>
+        <input ref={ref} style={inp} value={form.title||""} onChange={e=>setForm(p=>({...p,title:e.target.value}))} placeholder="Book title..."/>
+        <label style={lbl}>Author</label>
+        <input style={inp} value={form.author||""} onChange={e=>setForm(p=>({...p,author:e.target.value}))} placeholder="Author name..."/>
+        <label style={lbl}>Date Read</label>
+        <input type="date" style={sel} value={form.dateRead||""} onChange={e=>setForm(p=>({...p,dateRead:e.target.value}))}/>
+        <label style={lbl}>Genre</label>
+        <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(min(100%,120px),1fr))",gap:6 }}>
+          {GENRES.filter(g=>g.id!=="all").map(g=>(
+            <button key={g.id} onClick={()=>setForm(p=>({...p,genre:g.id}))}
+              style={{ padding:"7px 10px",borderRadius:9,border:`1px solid ${form.genre===g.id?"#7B61FF":T.border}`,background:form.genre===g.id?"#7B61FF18":"transparent",color:form.genre===g.id?"#7B61FF":T.text,fontFamily:"'DM Sans',sans-serif",fontSize:12,cursor:"pointer",fontWeight:form.genre===g.id?700:400,textAlign:"left" }}>
+              {g.emoji} {g.label}
+            </button>
+          ))}
+        </div>
+        <label style={lbl}>Rating (1–5)</label>
+        <div style={{ display:"flex",gap:8,marginBottom:4 }}>
+          {[1,2,3,4,5].map(n=>(
+            <button key={n} onClick={()=>setForm(p=>({...p,rating:n}))}
+              style={{ width:40,height:40,borderRadius:10,border:`2px solid ${(form.rating||0)>=n?"#E8A838":T.border}`,background:(form.rating||0)>=n?"#E8A83818":"transparent",fontSize:18,cursor:"pointer",color:(form.rating||0)>=n?"#E8A838":T.textSub }}>
+              ⭐
+            </button>
+          ))}
+        </div>
+        <label style={lbl}>Key Learnings</label>
+        <textarea style={ta} value={form.learnings||""} onChange={e=>setForm(p=>({...p,learnings:e.target.value}))} placeholder="What were the main takeaways? What ideas surprised or challenged you?"/>
+        <label style={lbl}>How I Will Apply It To My Life</label>
+        <textarea style={{...ta,minHeight:80}} value={form.howToApply||""} onChange={e=>setForm(p=>({...p,howToApply:e.target.value}))} placeholder="What specific actions or mindset shifts will I make based on this book?"/>
+        <label style={lbl}>Notes (optional)</label>
+        <textarea style={{...ta,minHeight:60}} value={form.notes||""} onChange={e=>setForm(p=>({...p,notes:e.target.value}))} placeholder="Favourite quotes, context, who recommended it..."/>
+        <div style={{ display:"flex",gap:10,marginTop:22,justifyContent:"flex-end" }}>
+          <button style={{ padding:"10px 20px",borderRadius:10,border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:600,background:T.inputBg,color:T.textSub }} onClick={onClose}>Cancel</button>
+          <button style={{ padding:"10px 24px",borderRadius:10,border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:700,background:"#7B61FF",color:"#fff" }} onClick={onSave}>{isEdit?"Save Changes":"Log Book"}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── BudgetApp ─────────────────────────────────────────────────────────────────
 
 
@@ -1848,20 +1651,46 @@ function DebtForm({ data, setData, onSave, onClose, T, mode }) {
           ))}
         </div>
 
-        <label style={lbl}>Current Balance ($)</label>
+        {/* Loan-specific: original amount */}
+        {["car_loan","student_loan","personal","mortgage","medical","other"].includes(data.type)&&(
+          <>
+            <label style={lbl}>Original Loan Amount ($)</label>
+            <input style={inp} type="number" min="0" step="0.01" value={data.originalAmount||""} onChange={e=>setData(p=>({...p,originalAmount:e.target.value}))} placeholder="e.g. 7000 (the full amount before down payment)"/>
+          </>
+        )}
+
+        <label style={lbl}>Current Balance / Amount Owed ($)</label>
         <input style={inp} type="number" min="0" step="0.01" value={data.balance||""} onChange={e=>setData(p=>({...p,balance:e.target.value}))} placeholder="0.00"/>
 
-        <label style={lbl}>Credit Limit ($) — if applicable</label>
-        <input style={inp} type="number" min="0" step="1" value={data.limit||""} onChange={e=>setData(p=>({...p,limit:e.target.value}))} placeholder="Leave blank if not a credit card"/>
+        {data.type==="credit_card"&&(
+          <>
+            <label style={lbl}>Credit Limit ($)</label>
+            <input style={inp} type="number" min="0" step="1" value={data.limit||""} onChange={e=>setData(p=>({...p,limit:e.target.value}))} placeholder="Leave blank if not a credit card"/>
+          </>
+        )}
 
         <label style={lbl}>APR / Interest Rate (%)</label>
-        <input style={inp} type="number" min="0" step="0.01" value={data.apr||""} onChange={e=>setData(p=>({...p,apr:e.target.value}))} placeholder="e.g. 19.99"/>
+        <input style={inp} type="number" min="0" step="0.01" value={data.apr||""} onChange={e=>setData(p=>({...p,apr:e.target.value}))} placeholder="e.g. 19.99 — enter 0 if none"/>
 
-        <label style={lbl}>Minimum Monthly Payment ($)</label>
+        <label style={lbl}>Payment Frequency</label>
+        <div style={{ display:"flex",gap:8,marginBottom:4 }}>
+          {[["monthly","Monthly"],["weekly","Weekly (every 7 days)"]].map(([v,l])=>(
+            <button key={v} onClick={()=>setData(p=>({...p,paymentFrequency:v}))}
+              style={{ flex:1,padding:"8px 10px",borderRadius:9,border:`1px solid ${(data.paymentFrequency||"monthly")===v?"#E84E8A":T.border}`,background:(data.paymentFrequency||"monthly")===v?"#E84E8A18":"transparent",color:(data.paymentFrequency||"monthly")===v?"#E84E8A":T.text,fontFamily:"'DM Sans',sans-serif",fontSize:13,cursor:"pointer",fontWeight:(data.paymentFrequency||"monthly")===v?700:400 }}>
+              {l}
+            </button>
+          ))}
+        </div>
+
+        <label style={lbl}>{(data.paymentFrequency||"monthly")==="weekly"?"Weekly":"Minimum Monthly"} Payment ($)</label>
         <input style={inp} type="number" min="0" step="0.01" value={data.minPayment||""} onChange={e=>setData(p=>({...p,minPayment:e.target.value}))} placeholder="0.00"/>
 
-        <label style={lbl}>Payment Due Day (1–31)</label>
-        <input style={inp} type="number" min="1" max="31" value={data.dueDay||""} onChange={e=>setData(p=>({...p,dueDay:e.target.value}))} placeholder="e.g. 15"/>
+        {data.type==="credit_card"&&(
+          <>
+            <label style={lbl}>Payment Due Day (1–31)</label>
+            <input style={inp} type="number" min="1" max="31" value={data.dueDay||""} onChange={e=>setData(p=>({...p,dueDay:e.target.value}))} placeholder="e.g. 15"/>
+          </>
+        )}
 
         <label style={lbl}>Notes (optional)</label>
         <input style={inp} value={data.notes||""} onChange={e=>setData(p=>({...p,notes:e.target.value}))} placeholder="Lender, account number last 4, etc."/>
@@ -1891,18 +1720,35 @@ function DebtCard({ debt, T, fmt, onEdit, onDelete, onPayment }) {
   const info = DEBT_TYPE_INFO[debt.type]||DEBT_TYPE_INFO.other;
   const utilization = debt.limit>0 ? Math.round((debt.balance/debt.limit)*100) : null;
   const highUtil = utilization!==null && utilization>30;
-  // Monthly interest cost
+  const isWeekly = debt.paymentFrequency==="weekly";
   const monthlyInterest = debt.apr>0 ? Math.round((debt.balance*(debt.apr/100/12))*100)/100 : 0;
-  // Months to payoff at min payment
-  const payoffMonths = (()=>{
+  const isLoan = ["car_loan","student_loan","personal","mortgage","medical","other"].includes(debt.type);
+  // Payoff calculation — handle weekly vs monthly
+  const payoffPeriods = (()=>{
     if (!debt.minPayment||debt.minPayment<=0||!debt.balance) return null;
+    if (isWeekly) {
+      const rWeekly = debt.apr>0 ? debt.apr/100/52 : 0;
+      if (rWeekly<=0) return Math.ceil(debt.balance/debt.minPayment);
+      if (debt.minPayment<=debt.balance*rWeekly) return null;
+      return Math.ceil(Math.log(debt.minPayment/(debt.minPayment-debt.balance*rWeekly))/Math.log(1+rWeekly));
+    }
     if (debt.apr<=0) return Math.ceil(debt.balance/debt.minPayment);
     const r = debt.apr/100/12;
-    if (debt.minPayment<=debt.balance*r) return null; // never pays off
+    if (debt.minPayment<=debt.balance*r) return null;
     return Math.ceil(Math.log(debt.minPayment/(debt.minPayment-debt.balance*r))/Math.log(1+r));
   })();
+  const payoffDate = (()=>{
+    if (!payoffPeriods) return null;
+    const d=new Date();
+    if (isWeekly) d.setDate(d.getDate()+payoffPeriods*7);
+    else d.setMonth(d.getMonth()+payoffPeriods);
+    return d.toLocaleDateString("en-US",{month:"short",year:"numeric"});
+  })();
+  const payoffLabel = payoffPeriods ? (isWeekly?`~${payoffPeriods} wks`:`~${payoffPeriods} mo`) : "∞";
   const totalPayments = (debt.payments||[]);
   const totalPaid = totalPayments.reduce((s,p)=>s+p.amount,0);
+  const origAmt = debt.originalAmount||0;
+  const loanPct = origAmt>0 ? Math.round(((origAmt-debt.balance)/origAmt)*100) : null;
 
   return (
     <div style={{ background:"var(--surface,#181B23)",border:`1px solid var(--border,rgba(255,255,255,0.07))`,borderRadius:16,overflow:"hidden",boxShadow:"0 2px 12px rgba(0,0,0,0.1)" }}>
@@ -1943,13 +1789,30 @@ function DebtCard({ debt, T, fmt, onEdit, onDelete, onPayment }) {
           </div>
         )}
 
+        {/* Loan payoff progress bar */}
+        {isLoan&&loanPct!==null&&(
+          <div style={{ marginBottom:14 }}>
+            <div style={{ display:"flex",justifyContent:"space-between",fontSize:11,color:"var(--textSub,#888D9B)",marginBottom:4 }}>
+              <span>Paid off</span>
+              <span style={{ fontWeight:700,color:info.color }}>{loanPct}%</span>
+            </div>
+            <div style={{ height:8,background:"var(--inputBg,rgba(255,255,255,0.05))",borderRadius:8,overflow:"hidden" }}>
+              <div style={{ height:"100%",width:`${Math.min(100,loanPct)}%`,background:loanPct>=75?"#3DBF8A":loanPct>=40?info.color:"#E8A838",borderRadius:8,transition:"width 0.5s" }}/>
+            </div>
+            <div style={{ display:"flex",justifyContent:"space-between",fontSize:10,color:"var(--textMuted,#3E424E)",marginTop:3 }}>
+              <span>{fmt(origAmt-debt.balance)} paid</span>
+              <span>{fmt(debt.balance)} remaining</span>
+            </div>
+          </div>
+        )}
+
         {/* Stats grid */}
         <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:14 }}>
           {[
-            { l:"Min Payment",    v:debt.minPayment>0?fmt(debt.minPayment):"—",        c:"#E8A838" },
-            { l:"Monthly Interest",v:monthlyInterest>0?fmt(monthlyInterest):"$0.00",   c:"#E84E8A" },
-            { l:"Total Paid",     v:totalPaid>0?fmt(totalPaid):"$0.00",               c:"#3DBF8A" },
-            { l:"Payoff Est.",    v:payoffMonths?`~${payoffMonths} mo`:"∞",            c:payoffMonths&&payoffMonths<36?"#3DBF8A":"#E8704A" },
+            { l:isWeekly?"Weekly Payment":"Min Payment",  v:debt.minPayment>0?fmt(debt.minPayment):"—",  c:"#E8A838" },
+            { l:"Interest/mo",v:monthlyInterest>0?fmt(monthlyInterest):"$0.00",                          c:"#E84E8A" },
+            { l:"Total Paid", v:totalPaid>0?fmt(totalPaid):"$0.00",                                      c:"#3DBF8A" },
+            { l:"Payoff Est.",v:payoffLabel,                                                               c:payoffPeriods&&payoffPeriods<(isWeekly?52:36)?"#3DBF8A":"#E8704A" },
           ].map(s=>(
             <div key={s.l} style={{ background:"var(--inputBg,rgba(255,255,255,0.05))",borderRadius:9,padding:"8px 10px" }}>
               <div style={{ fontSize:14,fontWeight:700,color:s.c }}>{s.v}</div>
@@ -1958,7 +1821,8 @@ function DebtCard({ debt, T, fmt, onEdit, onDelete, onPayment }) {
           ))}
         </div>
 
-        {debt.dueDay&&<div style={{ fontSize:12,color:"#E8A838",marginBottom:12,fontWeight:600 }}>📅 Due on the {debt.dueDay}{["st","nd","rd"][((debt.dueDay%100)-11)%10<3?(debt.dueDay%10)-1:-1]||"th"} each month</div>}
+        {payoffDate&&<div style={{ fontSize:12,color:info.color,marginBottom:8,fontWeight:600 }}>🎯 Estimated payoff: <strong>{payoffDate}</strong>{isWeekly?" (at $"+debt.minPayment+"/wk)":""}</div>}
+        {debt.dueDay&&!isWeekly&&<div style={{ fontSize:12,color:"#E8A838",marginBottom:12,fontWeight:600 }}>📅 Due on the {debt.dueDay}{["st","nd","rd"][((debt.dueDay%100)-11)%10<3?(debt.dueDay%10)-1:-1]||"th"} each month</div>}
         {debt.notes&&<div style={{ fontSize:12,color:"var(--textSub,#888D9B)",fontStyle:"italic",marginBottom:12 }}>{debt.notes}</div>}
 
         {/* Payment history (last 3) */}
@@ -2626,6 +2490,84 @@ function BudgetBulkImport({ onClose, onImport, T, mode, focus }) {
   );
 }
 
+// ── Help Modal ────────────────────────────────────────────────────────────────
+const HELP_CONTENT = {
+  tasks: { title:"Task Manager", icon:"⊞", color:"#E8A838", tips:[
+    "Tap + to create a task. Set a due date and priority level.",
+    "Drag cards between columns to update their status.",
+    "Use the Today view to see only tasks due today.",
+    "Add a task to a Section to keep your board organized.",
+    "Long-press on mobile or right-click on desktop to see quick actions.",
+  ]},
+  budget: { title:"Budget Tracker", icon:"💰", color:"#20B2AA", tips:[
+    "Start in Budget tab — create categories (Rent, Food, etc.) with monthly limits.",
+    "Log every income and expense with + Add Transaction.",
+    "Debts tab: track credit cards, car loans, student loans with payoff dates.",
+    "Net Worth = Assets − Liabilities − Outstanding Debts.",
+    "Report tab gives you a monthly scorecard and written summary.",
+    "Use Goals tab to track savings targets like an emergency fund.",
+  ]},
+  debt: { title:"Debt Tracker", icon:"💳", color:"#E84E8A", tips:[
+    "Select 'Car Loan' type and enter the original amount ($7,000) and current balance ($6,000).",
+    "Set payment frequency to Weekly if you pay $300/week.",
+    "The payoff date updates automatically based on your payment amount.",
+    "Log each payment with the 'Log a Payment' button to track your progress bar.",
+    "Debt Avalanche: always put extra money toward the highest APR debt first.",
+  ]},
+  books: { title:"Book Library", icon:"📚", color:"#7B61FF", tips:[
+    "Tap '+ Log Book' to add a book you've read.",
+    "Fill in Key Learnings — what ideas changed the way you think?",
+    "Fill in How I'll Apply It — be specific: what will you actually do differently?",
+    "Rate the book 1–5 stars so you can remember your best reads.",
+    "Filter by genre to browse your library by category.",
+  ]},
+  summer: { title:"Summer OS", icon:"☀️", color:"#E8A838", tips:[
+    "Switch between Amen and Gloria profiles using the buttons at the top.",
+    "Schedule shows your time-blocked day — tap a block for full details.",
+    "Tracker tab: log your weight, workouts, meals, and DoorDash deliveries.",
+    "DoorDash analytics shows your hourly rate, orders, and monthly progress toward $3,000.",
+    "Fitness, Thesis, and Side Gig pillars each track streaks and weekly goals.",
+  ]},
+};
+
+function HelpModal({ section, onClose, T, mode }) {
+  const content = HELP_CONTENT[section] || HELP_CONTENT.tasks;
+  return (
+    <div style={{ position:"fixed",inset:0,zIndex:60,background:"rgba(0,0,0,0.65)",backdropFilter:"blur(6px)",display:"flex",alignItems:"flex-end",justifyContent:"center" }}
+      onClick={e=>e.target===e.currentTarget&&onClose()}>
+      <div style={{ background:T.surface,border:`1px solid ${T.border}`,borderRadius:"20px 20px 0 0",width:"100%",maxWidth:520,maxHeight:"80vh",overflowY:"auto",padding:"24px 20px 40px",boxShadow:"0 -8px 40px rgba(0,0,0,0.3)" }}>
+        <div style={{ width:40,height:4,borderRadius:2,background:T.textMuted,margin:"0 auto 20px",opacity:0.4 }}/>
+        <div style={{ display:"flex",alignItems:"center",gap:10,marginBottom:16 }}>
+          <div style={{ width:44,height:44,borderRadius:12,background:content.color+"20",border:`2px solid ${content.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0 }}>{content.icon}</div>
+          <div>
+            <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:20,color:T.text }}>How to use</div>
+            <div style={{ fontSize:13,color:content.color,fontWeight:700 }}>{content.title}</div>
+          </div>
+        </div>
+        <div style={{ display:"flex",flexDirection:"column",gap:10 }}>
+          {content.tips.map((tip,i)=>(
+            <div key={i} style={{ display:"flex",gap:12,alignItems:"flex-start",background:T.inputBg,borderRadius:10,padding:"12px 14px" }}>
+              <div style={{ width:22,height:22,borderRadius:"50%",background:content.color+"22",border:`1px solid ${content.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:800,color:content.color,flexShrink:0 }}>{i+1}</div>
+              <div style={{ fontSize:13,color:T.text,lineHeight:1.6 }}>{tip}</div>
+            </div>
+          ))}
+        </div>
+        <button onClick={onClose} style={{ width:"100%",marginTop:20,padding:"12px",borderRadius:12,border:"none",background:content.color,color:"#fff",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:700,cursor:"pointer" }}>Got it ✓</button>
+      </div>
+    </div>
+  );
+}
+
+function HelpBtn({ section, T }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <button onClick={()=>setOpen(true)} title="Help" style={{ width:28,height:28,borderRadius:"50%",border:`1px solid ${T.border}`,background:"transparent",color:T.textSub,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0 }}>?</button>
+      {open&&<HelpModal section={section} onClose={()=>setOpen(false)} T={T} mode="dark"/>}
+    </>
+  );
+}
+
 // ── Budget Tour ───────────────────────────────────────────────────────────────
 function BudgetTour({ step, setStep, onClose, T, mode }) {
   const steps = [
@@ -2727,7 +2669,7 @@ function BudgetApp({ names, mode, T, activeUser, onBack }) {
   const [newGoal,  setNewGoal]  = useState({ name:"",target:"",saved:"",deadline:"",emoji:"💰",owner:"A" });
   const [newAsset, setNewAsset] = useState({ name:"",category:"cash",value:"",notes:"",owner:"A" });
   const [newLiab,  setNewLiab]  = useState({ name:"",category:"loan",value:"",notes:"",owner:"A" });
-  const [newDebt,  setNewDebt]  = useState({ name:"",type:"credit_card",balance:"",limit:"",apr:"",minPayment:"",dueDay:"",notes:"",owner:"A" });
+  const [newDebt,  setNewDebt]  = useState({ name:"",type:"credit_card",balance:"",originalAmount:"",limit:"",apr:"",minPayment:"",paymentFrequency:"monthly",dueDay:"",notes:"",owner:"A" });
 
   function finishTour(){ try{ localStorage.setItem("budget_toured3","1"); }catch{} setShowTour(false); }
   function gid(){ return "b"+Date.now().toString(36)+Math.random().toString(36).slice(2,5); }
@@ -2775,8 +2717,8 @@ function BudgetApp({ names, mode, T, activeUser, onBack }) {
   function addLiab(){ if(!newLiab.name?.trim()) return; saveLi([...(liabs||[]),{...newLiab,id:gid(),value:parseFloat(newLiab.value||0),owner:focus}]); setNewLiab({name:"",category:"loan",value:"",notes:"",owner:focus}); setShowLiab(false); }
   function saveEditLiab(){ saveLi((liabs||[]).map(l=>l.id===editLiab.id?{...editLiab,value:parseFloat(editLiab.value||0)}:l)); setEditLiab(null); }
   function delLiab(id){ saveLi((liabs||[]).filter(l=>l.id!==id)); }
-  function addDebt(){ if(!newDebt.name?.trim()) return; saveD([...(debts||[]),{...newDebt,id:gid(),balance:parseFloat(newDebt.balance||0),limit:parseFloat(newDebt.limit||0),apr:parseFloat(newDebt.apr||0),minPayment:parseFloat(newDebt.minPayment||0),owner:focus,payments:[]}]); setNewDebt({name:"",type:"credit_card",balance:"",limit:"",apr:"",minPayment:"",dueDay:"",notes:"",owner:focus}); setShowDebt(false); }
-  function saveEditDebt(){ saveD((debts||[]).map(d=>d.id===editDebt.id?{...editDebt,balance:parseFloat(editDebt.balance||0),limit:parseFloat(editDebt.limit||0),apr:parseFloat(editDebt.apr||0),minPayment:parseFloat(editDebt.minPayment||0)}:d)); setEditDebt(null); }
+  function addDebt(){ if(!newDebt.name?.trim()) return; const bal=parseFloat(newDebt.balance||0); saveD([...(debts||[]),{...newDebt,id:gid(),balance:bal,originalAmount:parseFloat(newDebt.originalAmount||0)||bal,limit:parseFloat(newDebt.limit||0),apr:parseFloat(newDebt.apr||0),minPayment:parseFloat(newDebt.minPayment||0),paymentFrequency:newDebt.paymentFrequency||"monthly",owner:focus,payments:[]}]); setNewDebt({name:"",type:"credit_card",balance:"",originalAmount:"",limit:"",apr:"",minPayment:"",paymentFrequency:"monthly",dueDay:"",notes:"",owner:focus}); setShowDebt(false); }
+  function saveEditDebt(){ saveD((debts||[]).map(d=>d.id===editDebt.id?{...editDebt,balance:parseFloat(editDebt.balance||0),originalAmount:parseFloat(editDebt.originalAmount||0)||parseFloat(editDebt.balance||0),limit:parseFloat(editDebt.limit||0),apr:parseFloat(editDebt.apr||0),minPayment:parseFloat(editDebt.minPayment||0),paymentFrequency:editDebt.paymentFrequency||"monthly"}:d)); setEditDebt(null); }
   function delDebt(id){ saveD((debts||[]).filter(d=>d.id!==id)); }
   function makeDebtPayment(id,amt){ saveD((debts||[]).map(d=>{ if(d.id!==id) return d; const payment={id:gid(),amount:parseFloat(amt),date:new Date().toISOString().slice(0,10)}; return {...d,balance:Math.max(0,Math.round((d.balance-parseFloat(amt))*100)/100),payments:[...(d.payments||[]),payment]}; })); }
   function bulkImportCats(items){ saveCats([...(cats||[]),...items.map(i=>({...i,id:gid(),limit:parseFloat(i.allocated||i.limit||0),owner:focus}))]); }
@@ -7069,8 +7011,8 @@ export default function TogetherApp() {
   if (appMode === "budget") {
     return <BudgetApp names={names} mode={mode} T={T} activeUser={activeUser} onBack={()=>switchApp("tasks")}/>;
   }
-  if (appMode === "comp") {
-    return <ComprehensiveApp names={names} mode={mode} T={T} activeUser={activeUser} onBack={()=>switchApp("tasks")}/>;
+  if (appMode === "books") {
+    return <BookApp names={names} mode={mode} T={T} activeUser={activeUser} onBack={()=>switchApp("tasks")}/>;
   }
   if (appMode === "summer") {
     return <SummerApp mode={mode} T={T} onBack={()=>switchApp("tasks")}/>;
@@ -7098,12 +7040,13 @@ export default function TogetherApp() {
               <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:19,color:T.text,marginBottom:4 }}>Budget Tracker</div>
               <div style={{ fontSize:13,color:T.textSub,lineHeight:1.5 }}>Track income, expenses, savings goals — per person and shared.</div>
             </button>
-            <button onClick={()=>switchApp("comp")} style={{ padding:"22px 20px",borderRadius:16,border:"1px solid #7B61FF44",background:T.surface,cursor:"pointer",textAlign:"left",boxShadow:"0 2px 12px rgba(0,0,0,0.1)",transition:"transform 0.15s" }}
+            <button onClick={()=>switchApp("books")} style={{ padding:"22px 20px",borderRadius:16,border:"1px solid #7B61FF44",background:T.surface,cursor:"pointer",textAlign:"left",boxShadow:"0 2px 12px rgba(0,0,0,0.1)",transition:"transform 0.15s" }}
               onMouseEnter={e=>e.currentTarget.style.transform="translateY(-2px)"}
               onMouseLeave={e=>e.currentTarget.style.transform="none"}>
               <div style={{ fontSize:28,marginBottom:8 }}>📚</div>
-              <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:19,color:T.text,marginBottom:4 }}>Exam Prep</div>
-              <div style={{ fontSize:13,color:T.textSub,lineHeight:1.5 }}>Active recall sessions for comprehensive exams — Amen's 4 courses + Gloria's cards.</div>
+
+              <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:19,color:T.text,marginBottom:4 }}>Book Library</div>
+              <div style={{ fontSize:13,color:T.textSub,lineHeight:1.5 }}>Log books you read, capture key learnings and how you will apply them to your life.</div>
             </button>
             <button onClick={()=>switchApp("summer")} style={{ padding:"22px 20px",borderRadius:16,border:"1px solid #E8A83844",background:T.surface,cursor:"pointer",textAlign:"left",boxShadow:"0 2px 12px rgba(0,0,0,0.1)",transition:"transform 0.15s" }}
               onMouseEnter={e=>e.currentTarget.style.transform="translateY(-2px)"}
@@ -7857,7 +7800,7 @@ export default function TogetherApp() {
               <div style={{display:"flex",gap:8}}>
                 <button onClick={()=>{setShowSett(false);switchApp("tasks");}} style={{flex:1,padding:"10px",borderRadius:10,border:`1px solid ${appMode==="tasks"?T.accent:T.border}`,background:appMode==="tasks"?T.accent+"15":T.inputBg,color:appMode==="tasks"?T.accent:T.text,fontFamily:"'DM Sans',sans-serif",fontSize:13,cursor:"pointer",fontWeight:appMode==="tasks"?700:400}}>⊞ Tasks</button>
                 <button onClick={()=>{setShowSett(false);switchApp("budget");}} style={{flex:1,padding:"10px",borderRadius:10,border:`1px solid ${appMode==="budget"?"#20B2AA":T.border}`,background:appMode==="budget"?"#20B2AA15":T.inputBg,color:appMode==="budget"?"#20B2AA":T.text,fontFamily:"'DM Sans',sans-serif",fontSize:13,cursor:"pointer",fontWeight:appMode==="budget"?700:400}}>💰 Budget</button>
-                <button onClick={()=>{setShowSett(false);switchApp("comp");}} style={{flex:1,padding:"10px",borderRadius:10,border:`1px solid ${appMode==="comp"?"#7B61FF":T.border}`,background:appMode==="comp"?"#7B61FF15":T.inputBg,color:appMode==="comp"?"#7B61FF":T.text,fontFamily:"'DM Sans',sans-serif",fontSize:13,cursor:"pointer",fontWeight:appMode==="comp"?700:400}}>📚 Exam</button>
+                <button onClick={()=>{setShowSett(false);switchApp("books");}} style={{flex:1,padding:"10px",borderRadius:10,border:`1px solid ${appMode==="books"?"#7B61FF":T.border}`,background:appMode==="books"?"#7B61FF15":T.inputBg,color:appMode==="books"?"#7B61FF":T.text,fontFamily:"'DM Sans',sans-serif",fontSize:13,cursor:"pointer",fontWeight:appMode==="books"?700:400}}>📚 Books</button>
                 <button onClick={()=>{setShowSett(false);switchApp("summer");}} style={{flex:1,padding:"10px",borderRadius:10,border:`1px solid ${appMode==="summer"?"#E8A838":T.border}`,background:appMode==="summer"?"#E8A83815":T.inputBg,color:appMode==="summer"?"#E8A838":T.text,fontFamily:"'DM Sans',sans-serif",fontSize:13,cursor:"pointer",fontWeight:appMode==="summer"?700:400}}>{"☀️ Summer"}</button>
               </div>
               <div style={{display:"flex",gap:8,marginTop:8}}>
@@ -7914,3 +7857,4 @@ export default function TogetherApp() {
     </div>
   );
 }
+
