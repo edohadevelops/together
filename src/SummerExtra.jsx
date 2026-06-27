@@ -449,15 +449,30 @@ export function GymView({ T, data, save, today, isMobile }) {
 }
 
 // ── SchoolCard ────────────────────────────────────────────────────────────────
-function SchoolCard({ school, T, STATUS_COLORS, onEdit, onDelete, onAddProgress, onStatusChange }) {
+function SchoolCard({ school, T, STATUS_COLORS, onEdit, onDelete, onAddProgress, onStatusChange, onAddEmail, onUpdateField, today }) {
   const [note, setNote] = useState("");
-  const [showLog, setShowLog] = useState(false);
+  const [emailInput, setEmailInput] = useState({ type:"cold", to:"", subject:"", notes:"" });
+  const [activeTab, setActiveTab] = useState("progress");
   const c = STATUS_COLORS[school.status]||"#888";
   const cs = (ex={}) => ({ background:T.surface,border:`1px solid ${T.border}`,borderRadius:14,...ex });
+  const DOCS = ["CV / Resume","Statement of Purpose","Transcripts","Reference Letters","Writing Sample","GRE / GMAT","Application Form","Application Fee"];
+  const docs = school.docs||{};
+  const docsDone = DOCS.filter(d=>docs[d]).length;
+
+  const claudeResearchUrl = encodeURIComponent(
+    `I'm applying to ${school.name} for a ${school.degree} program. Please help me:
+1. Find potential professors whose research aligns with machine learning / AI / data science
+2. Draft a cold email introduction to a professor for potential supervision
+3. Summarize what makes this school's program strong and what I should highlight in my SOP
+4. List the typical application requirements
+
+School notes: ${school.notes||"N/A"}`
+  );
 
   return (
     <div style={{ ...cs(),overflow:"hidden",borderTop:`4px solid ${c}` }}>
       <div style={{ padding:"14px 16px" }}>
+        {/* Header */}
         <div style={{ display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:8,marginBottom:10 }}>
           <div style={{ flex:1,minWidth:0 }}>
             <div style={{ fontSize:14,fontWeight:700,color:T.text,lineHeight:1.3 }}>{school.name}</div>
@@ -465,15 +480,22 @@ function SchoolCard({ school, T, STATUS_COLORS, onEdit, onDelete, onAddProgress,
               <span style={{ fontSize:11,color:c,fontWeight:700,background:c+"15",padding:"2px 8px",borderRadius:8 }}>{school.status}</span>
               <span style={{ fontSize:11,color:"#3B9EDB",fontWeight:600,background:"#3B9EDB15",padding:"2px 8px",borderRadius:8 }}>{school.degree}</span>
               <span style={{ fontSize:11,color:T.textMuted }}>{school.country==="canada"?"🇨🇦":"🇺🇸"}</span>
+              {school.feePaid&&<span style={{ fontSize:11,color:"#3DBF8A",fontWeight:700 }}>✓ Fee Paid</span>}
             </div>
           </div>
-          <div style={{ display:"flex",gap:4 }}>
+          <div style={{ display:"flex",gap:3 }}>
+            <a href={`https://claude.ai/new?q=${claudeResearchUrl}`} target="_blank" rel="noreferrer"
+              title="Research this school with Claude AI"
+              style={{ background:"rgba(123,97,255,0.15)",border:"1px solid rgba(123,97,255,0.3)",color:"#7B61FF",cursor:"pointer",fontSize:11,padding:"4px 8px",borderRadius:7,textDecoration:"none",fontFamily:"'DM Sans',sans-serif",fontWeight:700,whiteSpace:"nowrap" }}>
+              🤖 Ask Claude
+            </a>
             <button onClick={onEdit} style={{ background:"none",border:"none",color:T.textMuted,cursor:"pointer",fontSize:13,padding:"3px" }}>✎</button>
             <button onClick={onDelete} style={{ background:"none",border:"none",color:T.textMuted,cursor:"pointer",fontSize:13,padding:"3px" }}>✕</button>
           </div>
         </div>
 
         {school.deadline&&<div style={{ fontSize:12,color:"#E8A838",fontWeight:600,marginBottom:8 }}>📅 Deadline: {school.deadline}</div>}
+        {school.feeAmount&&<div style={{ fontSize:12,color:school.feePaid?"#3DBF8A":"#E8704A",fontWeight:600,marginBottom:8 }}>💳 App Fee: ${school.feeAmount} {school.feePaid?"(Paid)":"(Unpaid)"}</div>}
 
         {/* Status toggle */}
         <div style={{ display:"flex",gap:4,flexWrap:"wrap",marginBottom:10 }}>
@@ -485,26 +507,88 @@ function SchoolCard({ school, T, STATUS_COLORS, onEdit, onDelete, onAddProgress,
           ))}
         </div>
 
-        {/* Progress log */}
-        {(school.progress||[]).length>0&&(
-          <div style={{ marginBottom:10 }}>
-            <button onClick={()=>setShowLog(p=>!p)} style={{ background:"none",border:"none",color:"#7B61FF",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:600,padding:0 }}>
-              {showLog?"▲":"▼"} {(school.progress||[]).length} progress note{(school.progress||[]).length!==1?"s":""}
-            </button>
-            {showLog&&[...(school.progress||[])].reverse().slice(0,5).map(p=>(
-              <div key={p.id} style={{ display:"flex",gap:8,fontSize:12,padding:"4px 0",borderBottom:`1px solid ${T.border}` }}>
-                <span style={{ color:T.textMuted,flexShrink:0 }}>{p.date}</span>
-                <span style={{ color:T.text }}>{p.note}</span>
+        {/* Inner tabs */}
+        <div style={{ display:"flex",gap:5,marginBottom:10 }}>
+          {[["progress","Progress"],["docs","Docs"],["emails","Emails"]].map(([v,l])=>(
+            <button key={v} onClick={()=>setActiveTab(v)} style={{ padding:"3px 10px",borderRadius:8,border:`1px solid ${activeTab===v?"#7B61FF":T.border}`,background:activeTab===v?"#7B61FF15":"transparent",color:activeTab===v?"#7B61FF":T.textMuted,fontFamily:"'DM Sans',sans-serif",fontSize:10,fontWeight:activeTab===v?700:400,cursor:"pointer" }}>{l}</button>
+          ))}
+        </div>
+
+        {/* Progress tab */}
+        {activeTab==="progress"&&(
+          <div>
+            {(school.progress||[]).length>0&&(
+              <div style={{ maxHeight:120,overflowY:"auto",marginBottom:8 }}>
+                {[...(school.progress||[])].reverse().slice(0,8).map(p=>(
+                  <div key={p.id} style={{ display:"flex",gap:8,fontSize:12,padding:"4px 0",borderBottom:`1px solid ${T.border}` }}>
+                    <span style={{ color:T.textMuted,flexShrink:0,fontSize:11 }}>{p.date}</span>
+                    <span style={{ color:T.text }}>{p.note}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div style={{ display:"flex",gap:6 }}>
+              <input value={note} onChange={e=>setNote(e.target.value)} placeholder="Log progress, contact made, update..." onKeyDown={e=>{ if(e.key==="Enter"&&note){onAddProgress(school.id,note);setNote("");} }}
+                style={{ flex:1,background:T.inputBg,border:`1px solid ${T.border}`,borderRadius:8,padding:"7px 10px",color:T.text,fontFamily:"'DM Sans',sans-serif",fontSize:12,outline:"none" }}/>
+              <button onClick={()=>{ if(note){onAddProgress(school.id,note);setNote("");} }} style={{ padding:"7px 12px",borderRadius:8,border:"none",background:"#7B61FF",color:"#fff",fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:700,cursor:"pointer" }}>+</button>
+            </div>
+          </div>
+        )}
+
+        {/* Docs checklist tab */}
+        {activeTab==="docs"&&(
+          <div>
+            <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8 }}>
+              <span style={{ fontSize:12,color:T.textSub }}>{docsDone}/{DOCS.length} documents ready</span>
+              <div style={{ height:5,width:80,background:T.inputBg,borderRadius:4,overflow:"hidden" }}><div style={{ height:"100%",width:`${Math.round(docsDone/DOCS.length*100)}%`,background:"#7B61FF",borderRadius:4 }}/></div>
+            </div>
+            {DOCS.map(d=>(
+              <div key={d} onClick={()=>onUpdateField(school.id,"docs",{...docs,[d]:!docs[d]})}
+                style={{ display:"flex",alignItems:"center",gap:8,padding:"6px 0",cursor:"pointer",borderBottom:`1px solid ${T.border}` }}>
+                <div style={{ width:16,height:16,borderRadius:4,border:`2px solid ${docs[d]?"#7B61FF":T.border}`,background:docs[d]?"#7B61FF":"transparent",display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,color:"#fff",flexShrink:0 }}>{docs[d]?"✓":""}</div>
+                <span style={{ fontSize:12,color:docs[d]?T.text:T.textSub,textDecoration:docs[d]?"none":"none" }}>{d}</span>
               </div>
             ))}
           </div>
         )}
 
-        <div style={{ display:"flex",gap:6 }}>
-          <input value={note} onChange={e=>setNote(e.target.value)} placeholder="Log progress..." onKeyDown={e=>{ if(e.key==="Enter"&&note){onAddProgress(school.id,note);setNote("");} }}
-            style={{ flex:1,background:T.inputBg,border:`1px solid ${T.border}`,borderRadius:8,padding:"7px 10px",color:T.text,fontFamily:"'DM Sans',sans-serif",fontSize:12,outline:"none" }}/>
-          <button onClick={()=>{ if(note){onAddProgress(school.id,note);setNote("");} }} style={{ padding:"7px 12px",borderRadius:8,border:"none",background:"#7B61FF",color:"#fff",fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:700,cursor:"pointer" }}>+</button>
-        </div>
+        {/* Emails tab */}
+        {activeTab==="emails"&&(
+          <div>
+            {(school.emails||[]).length>0&&(
+              <div style={{ maxHeight:130,overflowY:"auto",marginBottom:10 }}>
+                {[...(school.emails||[])].reverse().map(e=>(
+                  <div key={e.id} style={{ fontSize:12,padding:"6px 0",borderBottom:`1px solid ${T.border}` }}>
+                    <div style={{ display:"flex",gap:6,alignItems:"center",marginBottom:2 }}>
+                      <span style={{ fontSize:10,fontWeight:700,color:"#7B61FF",background:"#7B61FF15",padding:"1px 6px",borderRadius:5,textTransform:"uppercase" }}>{e.type}</span>
+                      <span style={{ color:T.textMuted,fontSize:10 }}>{e.date}</span>
+                    </div>
+                    {e.to&&<div style={{ color:T.textSub,fontSize:11 }}>To: {e.to}</div>}
+                    <div style={{ color:T.text }}>{e.subject}</div>
+                    {e.notes&&<div style={{ color:T.textMuted,fontStyle:"italic",fontSize:11 }}>{e.notes}</div>}
+                  </div>
+                ))}
+              </div>
+            )}
+            <div style={{ fontSize:11,color:T.textMuted,marginBottom:6,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.06em" }}>Log Email / Contact</div>
+            <div style={{ display:"flex",gap:5,marginBottom:6 }}>
+              {["cold","follow-up","reply","funding","SOP feedback"].map(t=>(
+                <button key={t} onClick={()=>setEmailInput(p=>({...p,type:t}))} style={{ padding:"3px 8px",borderRadius:6,border:`1px solid ${emailInput.type===t?"#7B61FF":T.border}`,background:emailInput.type===t?"#7B61FF15":"transparent",color:emailInput.type===t?"#7B61FF":T.textMuted,fontFamily:"'DM Sans',sans-serif",fontSize:10,fontWeight:emailInput.type===t?700:400,cursor:"pointer" }}>{t}</button>
+              ))}
+            </div>
+            <input value={emailInput.to||""} onChange={e=>setEmailInput(p=>({...p,to:e.target.value}))} placeholder="To (professor / admissions office)"
+              style={{ width:"100%",background:T.inputBg,border:`1px solid ${T.border}`,borderRadius:7,padding:"6px 10px",color:T.text,fontFamily:"'DM Sans',sans-serif",fontSize:12,outline:"none",boxSizing:"border-box",marginBottom:5 }}/>
+            <input value={emailInput.subject||""} onChange={e=>setEmailInput(p=>({...p,subject:e.target.value}))} placeholder="Subject / what it was about"
+              style={{ width:"100%",background:T.inputBg,border:`1px solid ${T.border}`,borderRadius:7,padding:"6px 10px",color:T.text,fontFamily:"'DM Sans',sans-serif",fontSize:12,outline:"none",boxSizing:"border-box",marginBottom:5 }}/>
+            <input value={emailInput.notes||""} onChange={e=>setEmailInput(p=>({...p,notes:e.target.value}))} placeholder="Notes / outcome"
+              style={{ width:"100%",background:T.inputBg,border:`1px solid ${T.border}`,borderRadius:7,padding:"6px 10px",color:T.text,fontFamily:"'DM Sans',sans-serif",fontSize:12,outline:"none",boxSizing:"border-box",marginBottom:8 }}/>
+            <button onClick={()=>{
+              if(!emailInput.subject?.trim()) return;
+              onAddEmail(school.id,{...emailInput,id:"em"+Date.now().toString(36),date:today});
+              setEmailInput({type:"cold",to:"",subject:"",notes:""});
+            }} style={{ width:"100%",padding:"8px",borderRadius:8,border:"none",background:"#7B61FF",color:"#fff",fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:700,cursor:"pointer" }}>Log Email</button>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -515,7 +599,7 @@ export function SchoolsView({ T, data, save, today, isMobile }) {
   const [tab, setTab] = useState("all");
   const [showForm, setShowForm] = useState(false);
   const [editItem, setEditItem] = useState(null);
-  const [sf, setSf] = useState({ name:"",degree:"PhD",country:"usa",status:"researching",deadline:"",notes:"" });
+  const [sf, setSf] = useState({ name:"",degree:"PhD",country:"usa",status:"researching",deadline:"",feeAmount:"",feePaid:false,notes:"" });
 
   const STATUS_COLORS = { researching:"#888D9B",preparing:"#E8A838",applied:"#3B9EDB",interview:"#9B6EE8",offer:"#3DBF8A",rejected:"#E84E8A",withdrawn:"#E8704A" };
   const schools = data.schools||[];
@@ -526,9 +610,9 @@ export function SchoolsView({ T, data, save, today, isMobile }) {
   function saveSchool() {
     if (!sf.name?.trim()) return;
     if (editItem) { save(p=>({...p,schools:(p.schools||[]).map(s=>s.id===editItem.id?{...sf,id:editItem.id}:s)})); }
-    else { save(p=>({...p,schools:[...(p.schools||[]),{...sf,id:"sc"+Date.now().toString(36),progress:[]}]})); }
+    else { save(p=>({...p,schools:[...(p.schools||[]),{...sf,id:"sc"+Date.now().toString(36),progress:[],emails:[],docs:{}}]})); }
     setShowForm(false); setEditItem(null);
-    setSf({name:"",degree:"PhD",country:"usa",status:"researching",deadline:"",notes:""});
+    setSf({name:"",degree:"PhD",country:"usa",status:"researching",deadline:"",feeAmount:"",feePaid:false,notes:""});
   }
 
   const visible = schools.filter(s=>tab==="all"||s.country===tab);
@@ -538,9 +622,9 @@ export function SchoolsView({ T, data, save, today, isMobile }) {
       <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16,flexWrap:"wrap",gap:8 }}>
         <div>
           <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:isMobile?20:26,color:"#7B61FF",marginBottom:2 }}>🎓 School Applications</div>
-          <div style={{ fontSize:12,color:T.textSub }}>PhD &amp; Masters · Canada &amp; USA</div>
+          <div style={{ fontSize:12,color:T.textSub }}>PhD &amp; Masters · Canada &amp; USA · Claude AI research built-in</div>
         </div>
-        <button onClick={()=>{ setSf({name:"",degree:"PhD",country:"usa",status:"researching",deadline:"",notes:""}); setEditItem(null); setShowForm(true); }}
+        <button onClick={()=>{ setSf({name:"",degree:"PhD",country:"usa",status:"researching",deadline:"",feeAmount:"",feePaid:false,notes:""}); setEditItem(null); setShowForm(true); }}
           style={{ padding:"8px 16px",borderRadius:9,border:"none",background:"#7B61FF",color:"#fff",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,cursor:"pointer" }}>
           + Add School
         </button>
@@ -548,7 +632,7 @@ export function SchoolsView({ T, data, save, today, isMobile }) {
 
       {schools.length>0&&(
         <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(min(100%,110px),1fr))",gap:8,marginBottom:14 }}>
-          {[{l:"Total",v:schools.length,c:"#7B61FF"},{l:"Canada",v:schools.filter(s=>s.country==="canada").length,c:"#E84E8A"},{l:"USA",v:schools.filter(s=>s.country==="usa").length,c:"#3B9EDB"},{l:"Offers",v:schools.filter(s=>s.status==="offer").length,c:"#3DBF8A"}].map(s=>(
+          {[{l:"Total",v:schools.length,c:"#7B61FF"},{l:"Canada",v:schools.filter(s=>s.country==="canada").length,c:"#E84E8A"},{l:"USA",v:schools.filter(s=>s.country==="usa").length,c:"#3B9EDB"},{l:"Offers",v:schools.filter(s=>s.status==="offer").length,c:"#3DBF8A"},{l:"Applied",v:schools.filter(s=>["applied","interview"].includes(s.status)).length,c:"#E8A838"}].map(s=>(
             <div key={s.l} style={{ ...cs({padding:"12px 14px"}),borderLeft:`3px solid ${s.c}` }}>
               <div style={{ fontSize:20,fontWeight:800,color:T.text }}>{s.v}</div>
               <div style={{ fontSize:10,color:T.textSub,textTransform:"uppercase",letterSpacing:"0.07em" }}>{s.l}</div>
@@ -567,15 +651,18 @@ export function SchoolsView({ T, data, save, today, isMobile }) {
         <div style={{ ...cs({padding:"40px 20px"}),textAlign:"center" }}>
           <div style={{ fontSize:40,marginBottom:10 }}>🎓</div>
           <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:18,color:T.text,marginBottom:6 }}>No schools yet</div>
+          <div style={{ fontSize:13,color:T.textSub,marginBottom:14,lineHeight:1.6 }}>Add a school and use the <strong style={{ color:"#7B61FF" }}>🤖 Ask Claude</strong> button on each card to research professors, draft cold emails, and get SOP tips.</div>
           <button onClick={()=>setShowForm(true)} style={{ padding:"10px 20px",borderRadius:10,border:"none",background:"#7B61FF",color:"#fff",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,cursor:"pointer" }}>+ Add First School</button>
         </div>
       ):(
         <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(min(100%,300px),1fr))",gap:12 }}>
           {visible.map(s=>(
-            <SchoolCard key={s.id} school={s} T={T} STATUS_COLORS={STATUS_COLORS}
+            <SchoolCard key={s.id} school={s} T={T} STATUS_COLORS={STATUS_COLORS} today={today}
               onEdit={()=>{ setSf({...s}); setEditItem(s); setShowForm(true); }}
               onDelete={()=>save(p=>({...p,schools:(p.schools||[]).filter(x=>x.id!==s.id)}))}
               onAddProgress={(id,note)=>save(p=>({...p,schools:(p.schools||[]).map(x=>x.id===id?{...x,progress:[...(x.progress||[]),{date:today,note,id:"p"+Date.now().toString(36)}]}:x)}))}
+              onAddEmail={(id,em)=>save(p=>({...p,schools:(p.schools||[]).map(x=>x.id===id?{...x,emails:[...(x.emails||[]),em]}:x)}))}
+              onUpdateField={(id,field,val)=>save(p=>({...p,schools:(p.schools||[]).map(x=>x.id===id?{...x,[field]:val}:x)}))}
               onStatusChange={(id,st)=>save(p=>({...p,schools:(p.schools||[]).map(x=>x.id===id?{...x,status:st}:x)}))}
             />
           ))}
@@ -603,8 +690,13 @@ export function SchoolsView({ T, data, save, today, isMobile }) {
             </div>
             <label style={lbl}>Deadline</label>
             <input type="date" style={{ ...inp,background:T.inputBg }} value={sf.deadline||""} onChange={e=>setSf(p=>({...p,deadline:e.target.value}))}/>
-            <label style={lbl}>Notes</label>
-            <input style={inp} value={sf.notes||""} onChange={e=>setSf(p=>({...p,notes:e.target.value}))} placeholder="Contact, program details, requirements..."/>
+            <label style={lbl}>Application Fee ($)</label>
+            <div style={{ display:"flex",gap:8 }}>
+              <input type="number" style={{ ...inp,flex:1 }} value={sf.feeAmount||""} onChange={e=>setSf(p=>({...p,feeAmount:e.target.value}))} placeholder="e.g. 100"/>
+              <button onClick={()=>setSf(p=>({...p,feePaid:!p.feePaid}))} style={{ padding:"9px 14px",borderRadius:9,border:`1px solid ${sf.feePaid?"#3DBF8A":T.border}`,background:sf.feePaid?"#3DBF8A18":"transparent",color:sf.feePaid?"#3DBF8A":T.textSub,fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,cursor:"pointer",whiteSpace:"nowrap" }}>{sf.feePaid?"✓ Paid":"Unpaid"}</button>
+            </div>
+            <label style={lbl}>Notes / Research Areas / Requirements</label>
+            <input style={inp} value={sf.notes||""} onChange={e=>setSf(p=>({...p,notes:e.target.value}))} placeholder="Program details, professors of interest, requirements..."/>
             <div style={{ display:"flex",gap:8,marginTop:16 }}>
               <button onClick={()=>setShowForm(false)} style={{ flex:1,padding:"11px",borderRadius:10,border:`1px solid ${T.border}`,background:"transparent",color:T.textSub,fontFamily:"'DM Sans',sans-serif",fontSize:13,cursor:"pointer" }}>Cancel</button>
               <button onClick={saveSchool} style={{ flex:2,padding:"11px",borderRadius:10,border:"none",background:"#7B61FF",color:"#fff",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:700,cursor:"pointer" }}>Save</button>

@@ -451,11 +451,13 @@ export default function SummerApp({mode,T,onBack}) {
   const [expf,setExpf]=useState({amount:"",category:"food",note:""});
   const [mealf,setMealf]=useState({meal:"breakfast",foods:"",protein:true,noSugar:true});
   const [ddf,setDdf]=useState({startTime:"",endTime:"",orders:0,earnings:"",tips:"",miles:"",note:""});
+  const [thesisTaskForm,setThesisTaskForm]=useState(null);
+  const [ttf,setTtf]=useState({title:"",category:"writing",dueDate:"",notes:""});
 
   useEffect(()=>{
     (async()=>{
       const stored=await sGet("summer_amen");
-      setDataState(stored??{checklist:{},devotion:[],thesis:[],reading:[],fitness:[],gloria:[],sidegig:[],intentions:{},nutrition:[],weight:[],spending:[],meals:[],doordash:[],gymWeekly:[],schools:[],helpers:[],family:[]});
+      setDataState(stored??{checklist:{},devotion:[],thesis:[],thesisTasks:[],reading:[],fitness:[],gloria:[],sidegig:[],intentions:{},nutrition:[],weight:[],spending:[],meals:[],doordash:[],gymWeekly:[],schools:[],helpers:[],family:[]});
     })();
   },[]);
 
@@ -1384,6 +1386,93 @@ export default function SummerApp({mode,T,onBack}) {
         <SCard T={T} label="Sessions" value={data.thesis.length} sub="Total logged" color="#3DBF8A"/>
       </div>
 
+      {/* ── Thesis Task Tracker ── */}
+      {(()=>{
+        const CATS=[{id:"literature",label:"Literature Review",color:"#3B9EDB"},{id:"writing",label:"Writing",color:"#9B6EE8"},{id:"data",label:"Data Collection",color:"#E8A838"},{id:"analysis",label:"Analysis",color:"#3DBF8A"},{id:"supervision",label:"Supervision",color:"#E8704A"},{id:"formatting",label:"Formatting/Admin",color:"#E84E8A"}];
+        const tasks=data.thesisTasks||[];
+        function addTask(){
+          if(!ttf.title?.trim()) return;
+          save(p=>({...p,thesisTasks:[...(p.thesisTasks||[]),{...ttf,id:"tt"+Date.now().toString(36),done:false,createdAt:today}]}));
+          setThesisTaskForm(null); setTtf({title:"",category:"writing",dueDate:"",notes:""});
+        }
+        function toggleTask(id){ save(p=>({...p,thesisTasks:(p.thesisTasks||[]).map(t=>t.id===id?{...t,done:!t.done}:t)})); }
+        function deleteTask(id){ save(p=>({...p,thesisTasks:(p.thesisTasks||[]).filter(t=>t.id!==id)})); }
+        const totalDone=tasks.filter(t=>t.done).length;
+        const inp2={background:T.inputBg,border:`1px solid ${T.border}`,borderRadius:8,padding:"8px 11px",color:T.text,fontFamily:"'DM Sans',sans-serif",fontSize:13,outline:"none",width:"100%",boxSizing:"border-box"};
+        return (
+          <div style={{marginBottom:20}}>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
+              <div>
+                <div style={{fontSize:14,fontWeight:700,color:T.text}}>Thesis Tasks</div>
+                <div style={{fontSize:11,color:T.textSub,marginTop:2}}>{totalDone}/{tasks.length} done{tasks.length>0?` · ${Math.round(totalDone/tasks.length*100)}% complete`:""}</div>
+              </div>
+              <button onClick={()=>setThesisTaskForm(true)} style={{padding:"7px 14px",borderRadius:8,border:"none",background:P.thesis,color:"#fff",fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:700,cursor:"pointer"}}>+ Task</button>
+            </div>
+            {tasks.length>0&&(
+              <div style={{height:6,background:T.inputBg,borderRadius:4,overflow:"hidden",marginBottom:14}}>
+                <div style={{height:"100%",width:`${tasks.length?Math.round(totalDone/tasks.length*100):0}%`,background:P.thesis,borderRadius:4,transition:"width 0.4s"}}/>
+              </div>
+            )}
+            {/* By category */}
+            {CATS.filter(cat=>tasks.some(t=>t.category===cat.id)).map(cat=>{
+              const catTasks=tasks.filter(t=>t.category===cat.id);
+              const catDone=catTasks.filter(t=>t.done).length;
+              return (
+                <div key={cat.id} style={{...cs({padding:"12px 14px",marginBottom:10}),borderLeft:`3px solid ${cat.color}`}}>
+                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
+                    <div style={{fontSize:12,fontWeight:700,color:cat.color}}>{cat.label}</div>
+                    <div style={{fontSize:11,color:T.textMuted}}>{catDone}/{catTasks.length}</div>
+                  </div>
+                  {catTasks.map(t=>(
+                    <div key={t.id} style={{display:"flex",alignItems:"flex-start",gap:8,padding:"5px 0",borderBottom:`1px solid ${T.border}`}}>
+                      <div onClick={()=>toggleTask(t.id)} style={{width:18,height:18,borderRadius:5,border:`2px solid ${t.done?cat.color:T.border}`,background:t.done?cat.color:"transparent",display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,color:"#fff",cursor:"pointer",flexShrink:0,marginTop:1}}>
+                        {t.done?"✓":""}
+                      </div>
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{fontSize:13,color:T.text,textDecoration:t.done?"line-through":"none",opacity:t.done?0.55:1,lineHeight:1.4}}>{t.title}</div>
+                        {t.dueDate&&<div style={{fontSize:10,color:"#E8A838",marginTop:1}}>Due: {t.dueDate}</div>}
+                        {t.notes&&<div style={{fontSize:11,color:T.textSub,fontStyle:"italic",marginTop:1}}>{t.notes}</div>}
+                      </div>
+                      <button onClick={()=>deleteTask(t.id)} style={{background:"none",border:"none",color:T.textMuted,cursor:"pointer",fontSize:12,padding:"2px",flexShrink:0}}>✕</button>
+                    </div>
+                  ))}
+                </div>
+              );
+            })}
+            {tasks.length===0&&(
+              <div style={{...cs({padding:"20px",textAlign:"center"})}}>
+                <div style={{fontSize:12,color:T.textSub,lineHeight:1.6}}>Break your thesis into tasks — literature review, writing chapters, data collection, supervision meetings. Check them off as you go.</div>
+              </div>
+            )}
+            {thesisTaskForm&&(
+              <div style={{position:"fixed",inset:0,zIndex:50,background:"rgba(0,0,0,0.65)",backdropFilter:"blur(6px)",display:"flex",alignItems:"flex-end",justifyContent:"center"}} onClick={e=>e.target===e.currentTarget&&setThesisTaskForm(null)}>
+                <div style={{background:T.surface,border:`1px solid ${T.border}`,borderRadius:"20px 20px 0 0",width:"100%",maxWidth:480,padding:"24px 20px 40px"}}>
+                  <div style={{width:40,height:4,borderRadius:2,background:T.textMuted,margin:"0 auto 18px",opacity:0.4}}/>
+                  <div style={{fontFamily:"'DM Serif Display',serif",fontSize:19,color:P.thesis,marginBottom:14}}>Add Thesis Task</div>
+                  <div style={{fontSize:11,fontWeight:600,color:T.textMuted,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:5}}>Task Title *</div>
+                  <input style={inp2} value={ttf.title} onChange={e=>setTtf(p=>({...p,title:e.target.value}))} placeholder="e.g. Read 5 papers on transformer models"/>
+                  <div style={{fontSize:11,fontWeight:600,color:T.textMuted,textTransform:"uppercase",letterSpacing:"0.07em",marginTop:10,marginBottom:5}}>Category</div>
+                  <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:4}}>
+                    {CATS.map(cat=>(
+                      <button key={cat.id} onClick={()=>setTtf(p=>({...p,category:cat.id}))} style={{padding:"4px 10px",borderRadius:8,border:`1px solid ${ttf.category===cat.id?cat.color:T.border}`,background:ttf.category===cat.id?cat.color+"18":"transparent",color:ttf.category===cat.id?cat.color:T.textSub,fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:ttf.category===cat.id?700:400,cursor:"pointer"}}>{cat.label}</button>
+                    ))}
+                  </div>
+                  <div style={{fontSize:11,fontWeight:600,color:T.textMuted,textTransform:"uppercase",letterSpacing:"0.07em",marginTop:10,marginBottom:5}}>Due Date</div>
+                  <input type="date" style={{...inp2,marginBottom:6}} value={ttf.dueDate} onChange={e=>setTtf(p=>({...p,dueDate:e.target.value}))}/>
+                  <div style={{fontSize:11,fontWeight:600,color:T.textMuted,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:5}}>Notes</div>
+                  <input style={inp2} value={ttf.notes} onChange={e=>setTtf(p=>({...p,notes:e.target.value}))} placeholder="Any extra details"/>
+                  <div style={{display:"flex",gap:8,marginTop:16}}>
+                    <button onClick={()=>setThesisTaskForm(null)} style={{flex:1,padding:"11px",borderRadius:10,border:`1px solid ${T.border}`,background:"transparent",color:T.textSub,fontFamily:"'DM Sans',sans-serif",fontSize:13,cursor:"pointer"}}>Cancel</button>
+                    <button onClick={addTask} style={{flex:2,padding:"11px",borderRadius:10,border:"none",background:P.thesis,color:"#fff",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:700,cursor:"pointer"}}>Add Task</button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })()}
+
+      <Section title="Session Log" color={P.thesis}>
       <div style={{display:"flex",flexDirection:"column",gap:10}}>
         {[...data.thesis].reverse().slice(0,15).map((s,i)=>(
           <div key={i} style={{...cs({padding:"14px 16px",borderLeft:`3px solid ${P.thesis}`})}}>
@@ -1400,6 +1489,7 @@ export default function SummerApp({mode,T,onBack}) {
           <div style={{fontSize:13,color:T.textSub,marginTop:6}}>{"Log your first 80-min deep work block."}</div>
         </div>}
       </div>
+      </Section>
     </div>
   );
 

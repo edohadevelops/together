@@ -2670,6 +2670,10 @@ function BudgetApp({ names, mode, T, activeUser, onBack }) {
   const [newAsset, setNewAsset] = useState({ name:"",category:"cash",value:"",notes:"",owner:"A" });
   const [newLiab,  setNewLiab]  = useState({ name:"",category:"loan",value:"",notes:"",owner:"A" });
   const [newDebt,  setNewDebt]  = useState({ name:"",type:"credit_card",balance:"",originalAmount:"",limit:"",apr:"",minPayment:"",paymentFrequency:"monthly",dueDay:"",notes:"",owner:"A" });
+  const [cards,    setCardsState]  = useState(null);
+  const [showCard, setShowCard]    = useState(false);
+  const [editCard, setEditCard]    = useState(null);
+  const [newCard,  setNewCard]     = useState({ name:"",last4:"",type:"debit",bank:"",purpose:"",balance:"",limit:"",color:"#3B9EDB",owner:"A" });
 
   function finishTour(){ try{ localStorage.setItem("budget_toured3","1"); }catch{} setShowTour(false); }
   function gid(){ return "b"+Date.now().toString(36)+Math.random().toString(36).slice(2,5); }
@@ -2678,9 +2682,9 @@ function BudgetApp({ names, mode, T, activeUser, onBack }) {
   useEffect(()=>{
     (async()=>{
       const u = activeUser||"A";
-      const [ca,tx,g,a,li,d,con,sp] = await Promise.all([dbGet(`budget_cats_${u}`),dbGet(`budget_txs_${u}`),dbGet(`budget_goals_${u}`),dbGet(`budget_assets_${u}`),dbGet(`budget_liabs_${u}`),dbGet(`budget_debts_${u}`),dbGet(`budget_consecration_${u}`),dbGet(`budget_splitplan_${u}`)]);
+      const [ca,tx,g,a,li,d,con,sp,cr] = await Promise.all([dbGet(`budget_cats_${u}`),dbGet(`budget_txs_${u}`),dbGet(`budget_goals_${u}`),dbGet(`budget_assets_${u}`),dbGet(`budget_liabs_${u}`),dbGet(`budget_debts_${u}`),dbGet(`budget_consecration_${u}`),dbGet(`budget_splitplan_${u}`),dbGet(`budget_cards_${u}`)]);
       const loadedCats = ca??[]; const loadedTxs = tx??[];
-      setCatsState(loadedCats); setTxsState(loadedTxs); setGoalsState(g??[]); setAssetsState(a??[]); setLiabsState(li??[]); setDebtsState(d??[]);
+      setCatsState(loadedCats); setTxsState(loadedTxs); setGoalsState(g??[]); setAssetsState(a??[]); setLiabsState(li??[]); setDebtsState(d??[]); setCardsState(cr??[]);
       setConsecrationState(con ?? { mum:0, dad:0, offering:25, giving:20, mumPct:5, dadPct:5, mumMode:"pct", dadMode:"pct" });
       setSplitPlanState(sp ?? { needs:50, wants:30, savings:20 });
       // Show reset banner if there are old-style transactions (no catId) mixed with budget cats
@@ -2696,6 +2700,7 @@ function BudgetApp({ names, mode, T, activeUser, onBack }) {
   const saveA    = list => { setAssetsState(list);dbSet(`budget_assets_${_u}`,list);};
   const saveLi   = list => { setLiabsState(list); dbSet(`budget_liabs_${_u}`,list);};
   const saveD    = list => { setDebtsState(list); dbSet(`budget_debts_${_u}`,list);};
+  const saveCrds = list => { setCardsState(list); dbSet(`budget_cards_${_u}`,list); };
 
   // Budget category limits (the plan: Rent $850, Groceries $400 etc)
   function addCat(data){ if(!data.name?.trim()) return; saveCats([...(cats||[]),{...data,id:gid(),limit:parseFloat(data.limit||0),owner:focus}]); setShowCat(false); }
@@ -2782,7 +2787,7 @@ function BudgetApp({ names, mode, T, activeUser, onBack }) {
   const focusName  = focus==="shared"?"Shared":names[focus]||focus;
 
   const card = (ex={}) => ({ background:T.surface,border:`1px solid ${T.border}`,borderRadius:16,boxShadow:"0 2px 12px rgba(0,0,0,0.07)",...ex });
-  const navViews=[["budget","📋 Budget"],["consecration","🕊 Consecration"],["goals","🎯 Goals"],["debt","💳 Debts"],["networth","💎 Net Worth"],["analytics","📈 Analytics"],["report","📄 Report"]];
+  const navViews=[["budget","📋 Budget"],["consecration","🕊 Consecration"],["goals","🎯 Goals"],["debt","💳 Debts"],["cards","💳 Cards"],["networth","💎 Net Worth"],["analytics","📈 Analytics"],["report","📄 Report"]];
 
   return (
     <div style={{ position:"fixed",inset:0,background:T.bg,color:T.text,fontFamily:"'DM Sans',sans-serif",display:"flex",flexDirection:"column",overflow:"hidden" }}>
@@ -3671,6 +3676,114 @@ function BudgetApp({ names, mode, T, activeUser, onBack }) {
             onEdit={(d)=>setEditDebt({...d,balance:String(d.balance),limit:String(d.limit),apr:String(d.apr),minPayment:String(d.minPayment)})}
             onDelete={delDebt} onPayment={makeDebtPayment}/>
         )}
+
+        {/* ════ CARDS ════ */}
+        {view==="cards"&&(()=>{
+          const myCards = (cards||[]).filter(c=>c.owner===(focus||"A"));
+          const blankCard = { name:"",last4:"",type:"debit",bank:"",purpose:"",balance:"",limit:"",color:"#3B9EDB",owner:focus||"A" };
+          const CARD_COLORS = ["#3B9EDB","#9B6EE8","#E8704A","#3DBF8A","#E84E8A","#E8A838","#20B2AA","#E8C050"];
+          function addCard(){ if(!newCard.name?.trim()) return; saveCrds([...(cards||[]),{...newCard,id:gid(),balance:parseFloat(newCard.balance)||0,limit:parseFloat(newCard.limit)||0}]); setShowCard(false); setNewCard({...blankCard}); }
+          function delCard(id){ saveCrds((cards||[]).filter(c=>c.id!==id)); }
+          function updateCard(upd){ saveCrds((cards||[]).map(c=>c.id===upd.id?{...upd,balance:parseFloat(upd.balance)||0,limit:parseFloat(upd.limit)||0}:c)); setEditCard(null); }
+          const cardInp = { width:"100%",background:T.inputBg,border:`1px solid ${T.border}`,borderRadius:9,padding:"9px 12px",color:T.text,fontFamily:"'DM Sans',sans-serif",fontSize:13,outline:"none",boxSizing:"border-box" };
+          const cardLbl = { fontSize:11,fontWeight:600,letterSpacing:"0.08em",textTransform:"uppercase",color:T.textSub,display:"block",marginBottom:4,marginTop:10,fontFamily:"'DM Sans',sans-serif" };
+          const CardForm = ({data,setData,onSave,onClose})=>(
+            <div style={{ position:"fixed",inset:0,zIndex:60,background:"rgba(0,0,0,0.65)",backdropFilter:"blur(6px)",display:"flex",alignItems:"flex-end",justifyContent:"center" }} onClick={e=>e.target===e.currentTarget&&onClose()}>
+              <div style={{ background:T.surface,border:`1px solid ${T.border}`,borderRadius:"20px 20px 0 0",width:"100%",maxWidth:500,maxHeight:"90vh",overflowY:"auto",padding:"24px 20px 40px" }}>
+                <div style={{ width:40,height:4,borderRadius:2,background:T.textMuted,margin:"0 auto 18px",opacity:0.4 }}/>
+                <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:20,color:data.color||"#3B9EDB",marginBottom:14 }}>💳 {data.id?"Edit":"Add"} Card</div>
+                <label style={cardLbl}>Card Name *</label>
+                <input style={cardInp} value={data.name||""} onChange={e=>setData(p=>({...p,name:e.target.value}))} placeholder="e.g. School Fees Card"/>
+                <label style={cardLbl}>Bank / Provider</label>
+                <input style={cardInp} value={data.bank||""} onChange={e=>setData(p=>({...p,bank:e.target.value}))} placeholder="e.g. TD, RBC, Scotiabank"/>
+                <label style={cardLbl}>Last 4 Digits</label>
+                <input style={cardInp} value={data.last4||""} onChange={e=>setData(p=>({...p,last4:e.target.value.slice(0,4)}))} placeholder="1234" maxLength={4}/>
+                <label style={cardLbl}>Card Type</label>
+                <div style={{ display:"flex",gap:6,marginBottom:4 }}>
+                  {[["debit","Debit"],["credit","Credit"],["prepaid","Prepaid"],["investment","Investment"]].map(([v,l])=>(
+                    <button key={v} onClick={()=>setData(p=>({...p,type:v}))} style={{ flex:1,padding:"8px",borderRadius:8,border:`1px solid ${data.type===v?(data.color||"#3B9EDB"):T.border}`,background:data.type===v?(data.color||"#3B9EDB")+"22":"transparent",color:data.type===v?(data.color||"#3B9EDB"):T.text,fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:data.type===v?700:400,cursor:"pointer" }}>{l}</button>
+                  ))}
+                </div>
+                <label style={cardLbl}>Purpose / What It's For</label>
+                <input style={cardInp} value={data.purpose||""} onChange={e=>setData(p=>({...p,purpose:e.target.value}))} placeholder="e.g. School fees, groceries, emergency fund"/>
+                <label style={cardLbl}>Current Balance ($)</label>
+                <input type="number" style={cardInp} value={data.balance||""} onChange={e=>setData(p=>({...p,balance:e.target.value}))} placeholder="0.00"/>
+                {data.type==="credit"&&<><label style={cardLbl}>Credit Limit ($)</label><input type="number" style={cardInp} value={data.limit||""} onChange={e=>setData(p=>({...p,limit:e.target.value}))} placeholder="5000"/></>}
+                <label style={cardLbl}>Card Color</label>
+                <div style={{ display:"flex",gap:6,marginTop:2,flexWrap:"wrap" }}>
+                  {CARD_COLORS.map(col=><button key={col} onClick={()=>setData(p=>({...p,color:col}))} style={{ width:28,height:28,borderRadius:7,background:col,border:data.color===col?"3px solid white":"2px solid transparent",cursor:"pointer" }}/>)}
+                </div>
+                <div style={{ display:"flex",gap:8,marginTop:18 }}>
+                  <button onClick={onClose} style={{ flex:1,padding:"11px",borderRadius:10,border:`1px solid ${T.border}`,background:"transparent",color:T.textSub,fontFamily:"'DM Sans',sans-serif",fontSize:13,cursor:"pointer" }}>Cancel</button>
+                  <button onClick={onSave} style={{ flex:2,padding:"11px",borderRadius:10,border:"none",background:data.color||"#3B9EDB",color:"#fff",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:700,cursor:"pointer" }}>Save Card</button>
+                </div>
+              </div>
+            </div>
+          );
+          return (
+            <div>
+              <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20,flexWrap:"wrap",gap:10 }}>
+                <div>
+                  <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:24,color:T.text }}>My Cards 💳</div>
+                  <div style={{ fontSize:13,color:T.textSub,marginTop:2 }}>Credit, debit &amp; prepaid cards — per person</div>
+                </div>
+                <button onClick={()=>{ setNewCard({...blankCard}); setShowCard(true); }} style={{ padding:"9px 18px",borderRadius:9,border:"none",background:"#3B9EDB",color:"#fff",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,cursor:"pointer" }}>+ Add Card</button>
+              </div>
+              {myCards.length===0?(
+                <div style={{ ...card(),padding:"50px 20px",textAlign:"center" }}>
+                  <div style={{ fontSize:40,marginBottom:10 }}>💳</div>
+                  <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:20,color:T.text,marginBottom:6 }}>No cards yet</div>
+                  <div style={{ fontSize:13,color:T.textSub,marginBottom:18,lineHeight:1.6 }}>Track all your credit, debit, and prepaid cards — what each is for and how much is on it.</div>
+                  <button onClick={()=>{ setNewCard({...blankCard}); setShowCard(true); }} style={{ padding:"10px 22px",borderRadius:10,border:"none",background:"#3B9EDB",color:"#fff",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:700,cursor:"pointer" }}>+ Add First Card</button>
+                </div>
+              ):(
+                <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(min(100%,280px),1fr))",gap:16 }}>
+                  {myCards.map(c=>{
+                    const usedPct = c.type==="credit"&&c.limit>0 ? Math.min(100,Math.round((c.balance/c.limit)*100)) : null;
+                    return (
+                      <div key={c.id} style={{ borderRadius:18,overflow:"hidden",boxShadow:"0 4px 20px rgba(0,0,0,0.18)" }}>
+                        {/* Card face */}
+                        <div style={{ background:`linear-gradient(135deg,${c.color},${c.color}aa)`,padding:"22px 20px",position:"relative",minHeight:120 }}>
+                          <div style={{ display:"flex",justifyContent:"space-between",alignItems:"flex-start" }}>
+                            <div style={{ fontSize:11,fontWeight:700,color:"rgba(255,255,255,0.7)",textTransform:"uppercase",letterSpacing:"0.1em" }}>{c.bank||"Card"}</div>
+                            <div style={{ fontSize:10,fontWeight:600,color:"rgba(255,255,255,0.7)",background:"rgba(255,255,255,0.15)",padding:"3px 8px",borderRadius:6,textTransform:"uppercase" }}>{c.type}</div>
+                          </div>
+                          <div style={{ fontSize:20,fontWeight:800,color:"#fff",marginTop:16,letterSpacing:"0.05em" }}>•••• •••• •••• {c.last4||"••••"}</div>
+                          <div style={{ fontSize:14,fontWeight:600,color:"rgba(255,255,255,0.85)",marginTop:8 }}>{c.name}</div>
+                        </div>
+                        {/* Card info */}
+                        <div style={{ background:T.surface,border:`1px solid ${T.border}`,borderTop:"none",padding:"14px 16px" }}>
+                          {c.purpose&&<div style={{ fontSize:12,color:T.textSub,marginBottom:10,fontStyle:"italic" }}>{c.purpose}</div>}
+                          <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:usedPct!==null?8:0 }}>
+                            <div>
+                              <div style={{ fontSize:11,color:T.textMuted,textTransform:"uppercase",letterSpacing:"0.07em" }}>{c.type==="credit"?"Balance Owed":"Available"}</div>
+                              <div style={{ fontSize:20,fontWeight:800,color:T.text }}>{fmt(c.balance)}</div>
+                            </div>
+                            {c.type==="credit"&&c.limit>0&&<div style={{ textAlign:"right" }}><div style={{ fontSize:11,color:T.textMuted }}>Limit</div><div style={{ fontSize:14,fontWeight:700,color:T.text }}>{fmt(c.limit)}</div></div>}
+                          </div>
+                          {usedPct!==null&&(
+                            <div style={{ marginBottom:8 }}>
+                              <div style={{ height:6,background:T.inputBg,borderRadius:4,overflow:"hidden" }}>
+                                <div style={{ height:"100%",width:`${usedPct}%`,background:usedPct>80?"#E84E8A":usedPct>50?"#E8A838":c.color,borderRadius:4,transition:"width 0.4s" }}/>
+                              </div>
+                              <div style={{ fontSize:11,color:T.textMuted,marginTop:3 }}>{usedPct}% utilization</div>
+                            </div>
+                          )}
+                          <div style={{ display:"flex",gap:6,justifyContent:"flex-end" }}>
+                            <button onClick={()=>setEditCard({...c,balance:String(c.balance),limit:String(c.limit||"")})} style={{ background:"none",border:`1px solid ${T.border}`,color:T.textMuted,cursor:"pointer",fontSize:12,padding:"5px 10px",borderRadius:7,fontFamily:"'DM Sans',sans-serif" }}>✎ Edit</button>
+                            <button onClick={()=>delCard(c.id)} style={{ background:"none",border:`1px solid rgba(232,78,138,0.3)`,color:"#E84E8A",cursor:"pointer",fontSize:12,padding:"5px 10px",borderRadius:7,fontFamily:"'DM Sans',sans-serif" }}>✕</button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+              {showCard&&<CardForm data={newCard} setData={setNewCard} onSave={addCard} onClose={()=>setShowCard(false)}/>}
+              {editCard&&<CardForm data={editCard} setData={setEditCard} onSave={()=>updateCard(editCard)} onClose={()=>setEditCard(null)}/>}
+            </div>
+          );
+        })()}
 
         {/* ════ REPORT ════ */}
         {view==="report"&&(
