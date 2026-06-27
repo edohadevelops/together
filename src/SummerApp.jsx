@@ -457,7 +457,7 @@ export default function SummerApp({mode,T,onBack}) {
   useEffect(()=>{
     (async()=>{
       const stored=await sGet("summer_amen");
-      setDataState(stored??{checklist:{},devotion:[],thesis:[],thesisTasks:[],reading:[],fitness:[],gloria:[],sidegig:[],intentions:{},nutrition:[],weight:[],spending:[],meals:[],doordash:[],gymWeekly:[],schools:[],helpers:[],family:[]});
+      setDataState(stored??{checklist:{},devotion:[],thesis:[],thesisTasks:[],reading:[],fitness:[],gloria:[],sidegig:[],intentions:{},nutrition:[],weight:[],spending:[],meals:[],doordash:[],gymWeekly:[],schools:[],helpers:[],family:[],siblings:[]});
     })();
   },[]);
 
@@ -1708,7 +1708,7 @@ export default function SummerApp({mode,T,onBack}) {
   // ── Extra views (Gym, Schools, Life) ────────────────────────────────────
   const viewGym = <GymView T={T} data={data} save={save} today={today} isMobile={isMobile}/>;
   const viewSchools = <SchoolsView T={T} data={data} save={save} today={today} isMobile={isMobile}/>;
-  const viewLife = <LifeView T={T} data={data} save={save} isMobile={isMobile}/>;
+  const viewLife = <LifeView T={T} data={data} save={save} today={today} isMobile={isMobile}/>;
 
   // ── Gloria views ────────────────────────────────────────────────────────
   const gloriaChecks=data.checklist?.gloria||{};

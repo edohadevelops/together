@@ -708,37 +708,369 @@ export function SchoolsView({ T, data, save, today, isMobile }) {
   );
 }
 
+// ── SiblingSchoolCard ─────────────────────────────────────────────────────────
+function SiblingSchoolCard({ school, T, siblingId, save, today }) {
+  const [note, setNote] = useState("");
+  const STATUS = { shortlisted:"#888D9B", researching:"#E8A838", preparing:"#9B6EE8", applied:"#3B9EDB", offer:"#3DBF8A", enrolled:"#20B2AA", rejected:"#E84E8A", "not pursuing":"#888" };
+  const c = STATUS[school.status]||"#888";
+  const claudeUrl = encodeURIComponent(`Help me do a school application for ${school.name} (${school.degree||"undergraduate/graduate"}, ${school.country==="canada"?"Canada":"USA"}). The applicant is my sibling. Please: 1) Research the program requirements 2) Draft a personal statement outline 3) List required documents 4) Suggest professors or contacts if applicable. Notes: ${school.notes||"N/A"}`);
+  function setStatus(st){ save(p=>({...p,siblings:(p.siblings||[]).map(sib=>sib.id===siblingId?{...sib,schools:(sib.schools||[]).map(sc=>sc.id===school.id?{...sc,status:st}:sc)}:sib)})); }
+  function addNote(){ if(!note.trim()) return; save(p=>({...p,siblings:(p.siblings||[]).map(sib=>sib.id===siblingId?{...sib,schools:(sib.schools||[]).map(sc=>sc.id===school.id?{...sc,progress:[...(sc.progress||[]),{date:today,note,id:"sp"+Date.now().toString(36)}]}:sc)}:sib)})); setNote(""); }
+  function del(){ save(p=>({...p,siblings:(p.siblings||[]).map(sib=>sib.id===siblingId?{...sib,schools:(sib.schools||[]).filter(sc=>sc.id!==school.id)}:sib)})); }
+
+  return (
+    <div style={{ background:T.surface,border:`1px solid ${T.border}`,borderRadius:12,overflow:"hidden",borderLeft:`4px solid ${c}` }}>
+      <div style={{ padding:"12px 14px" }}>
+        <div style={{ display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:8,marginBottom:8 }}>
+          <div style={{ flex:1,minWidth:0 }}>
+            <div style={{ fontSize:13,fontWeight:700,color:T.text,lineHeight:1.3 }}>{school.name}</div>
+            <div style={{ display:"flex",gap:5,marginTop:4,flexWrap:"wrap" }}>
+              {school.degree&&<span style={{ fontSize:10,color:"#3B9EDB",fontWeight:600,background:"#3B9EDB15",padding:"2px 7px",borderRadius:6 }}>{school.degree}</span>}
+              <span style={{ fontSize:10,color:T.textMuted }}>{school.country==="canada"?"🇨🇦":"🇺🇸"}</span>
+              <span style={{ fontSize:10,color:c,fontWeight:700,background:c+"15",padding:"2px 7px",borderRadius:6 }}>{school.status||"shortlisted"}</span>
+              {school.feePaid&&<span style={{ fontSize:10,color:"#3DBF8A",fontWeight:700 }}>✓ Fee</span>}
+            </div>
+          </div>
+          <div style={{ display:"flex",gap:3,flexShrink:0 }}>
+            <a href={`https://claude.ai/new?q=${claudeUrl}`} target="_blank" rel="noreferrer"
+              style={{ fontSize:10,fontWeight:700,color:"#7B61FF",background:"#7B61FF12",border:"1px solid #7B61FF30",padding:"3px 7px",borderRadius:6,textDecoration:"none",fontFamily:"'DM Sans',sans-serif" }}>
+              🤖
+            </a>
+            <button onClick={del} style={{ background:"none",border:"none",color:T.textMuted,cursor:"pointer",fontSize:12,padding:"2px 4px" }}>✕</button>
+          </div>
+        </div>
+
+        {school.deadline&&<div style={{ fontSize:11,color:"#E8A838",fontWeight:600,marginBottom:6 }}>📅 {school.deadline}</div>}
+
+        <div style={{ display:"flex",gap:3,flexWrap:"wrap",marginBottom:8 }}>
+          {Object.keys(STATUS).map(st=>(
+            <button key={st} onClick={()=>setStatus(st)}
+              style={{ padding:"2px 7px",borderRadius:6,border:`1px solid ${school.status===st?(STATUS[st]||"#888"):T.border}`,background:school.status===st?(STATUS[st]||"#888")+"20":"transparent",color:school.status===st?(STATUS[st]||"#888"):T.textMuted,fontFamily:"'DM Sans',sans-serif",fontSize:9,fontWeight:school.status===st?700:400,cursor:"pointer" }}>
+              {st}
+            </button>
+          ))}
+        </div>
+
+        {(school.progress||[]).length>0&&(
+          <div style={{ maxHeight:80,overflowY:"auto",marginBottom:6 }}>
+            {[...(school.progress||[])].reverse().slice(0,4).map(p=>(
+              <div key={p.id} style={{ display:"flex",gap:6,fontSize:11,padding:"3px 0",borderBottom:`1px solid ${T.border}` }}>
+                <span style={{ color:T.textMuted,flexShrink:0,fontSize:10 }}>{p.date}</span>
+                <span style={{ color:T.text }}>{p.note}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div style={{ display:"flex",gap:5 }}>
+          <input value={note} onChange={e=>setNote(e.target.value)} placeholder="Log update..." onKeyDown={e=>e.key==="Enter"&&addNote()}
+            style={{ flex:1,background:T.inputBg,border:`1px solid ${T.border}`,borderRadius:7,padding:"5px 9px",color:T.text,fontFamily:"'DM Sans',sans-serif",fontSize:11,outline:"none" }}/>
+          <button onClick={addNote} style={{ padding:"5px 10px",borderRadius:7,border:"none",background:"#7B61FF",color:"#fff",fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:700,cursor:"pointer" }}>+</button>
+        </div>
+        {school.notes&&<div style={{ fontSize:11,color:T.textSub,fontStyle:"italic",marginTop:5 }}>{school.notes}</div>}
+      </div>
+    </div>
+  );
+}
+
+// ── SiblingCard ───────────────────────────────────────────────────────────────
+function SiblingCard({ sibling, T, save, today, isMobile }) {
+  const [expanded, setExpanded] = useState(false);
+  const [showSchoolForm, setShowSchoolForm] = useState(false);
+  const [sf, setSf] = useState({ name:"",degree:"Undergraduate",country:"canada",status:"shortlisted",deadline:"",feeAmount:"",feePaid:false,notes:"" });
+  const inp = { width:"100%",background:T.inputBg,border:`1px solid ${T.border}`,borderRadius:9,padding:"9px 12px",color:T.text,fontFamily:"'DM Sans',sans-serif",fontSize:13,outline:"none",boxSizing:"border-box" };
+  const lbl = { fontSize:11,fontWeight:600,letterSpacing:"0.07em",textTransform:"uppercase",color:T.textMuted,display:"block",marginBottom:4,marginTop:10,fontFamily:"'DM Sans',sans-serif" };
+
+  const schools = sibling.schools||[];
+  const applied = schools.filter(s=>["applied","offer","enrolled"].includes(s.status)).length;
+  const offers  = schools.filter(s=>s.status==="offer"||s.status==="enrolled").length;
+  const SIBLING_COLORS = ["#E84E8A","#9B6EE8","#3B9EDB","#3DBF8A","#E8A838"];
+  const color = sibling.color || SIBLING_COLORS[0];
+
+  function addSchool(){
+    if(!sf.name?.trim()) return;
+    save(p=>({...p,siblings:(p.siblings||[]).map(sib=>sib.id===sibling.id?{...sib,schools:[...(sib.schools||[]),{...sf,id:"ss"+Date.now().toString(36),progress:[]}]}:sib)}));
+    setShowSchoolForm(false);
+    setSf({name:"",degree:"Undergraduate",country:"canada",status:"shortlisted",deadline:"",feeAmount:"",feePaid:false,notes:""});
+  }
+
+  return (
+    <div style={{ background:T.surface,border:`1px solid ${T.border}`,borderRadius:16,overflow:"hidden",marginBottom:14 }}>
+      {/* Header */}
+      <div style={{ padding:"16px 18px",borderBottom:expanded?`1px solid ${T.border}`:"none",display:"flex",alignItems:"center",gap:12,cursor:"pointer" }} onClick={()=>setExpanded(p=>!p)}>
+        <div style={{ width:44,height:44,borderRadius:12,background:color+"22",border:`2px solid ${color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'DM Serif Display',serif",fontSize:18,color:color,flexShrink:0 }}>
+          {sibling.name[0]}
+        </div>
+        <div style={{ flex:1,minWidth:0 }}>
+          <div style={{ fontSize:16,fontWeight:700,color:T.text }}>{sibling.name}</div>
+          <div style={{ fontSize:12,color:T.textSub,marginTop:2 }}>{sibling.relation||"Sibling"} · {schools.length} school{schools.length!==1?"s":""} shortlisted{applied>0?` · ${applied} applied`:""}
+          {offers>0&&<span style={{ color:"#3DBF8A",fontWeight:700 }}> · {offers} offer{offers!==1?"s":""} 🎉</span>}
+          </div>
+        </div>
+        <div style={{ display:"flex",gap:6,alignItems:"center" }}>
+          <button onClick={e=>{ e.stopPropagation(); setShowSchoolForm(true); }}
+            style={{ padding:"6px 12px",borderRadius:8,border:"none",background:color,color:"#fff",fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:700,cursor:"pointer",whiteSpace:"nowrap" }}>
+            + School
+          </button>
+          <span style={{ color:T.textMuted,fontSize:16,transform:expanded?"rotate(180deg)":"none",transition:"transform 0.2s",display:"inline-block" }}>▾</span>
+        </div>
+      </div>
+
+      {/* Expanded body */}
+      {expanded&&(
+        <div style={{ padding:"14px 16px" }}>
+          {/* Stats row */}
+          {schools.length>0&&(
+            <div style={{ display:"flex",gap:8,marginBottom:14,flexWrap:"wrap" }}>
+              {[{l:"Shortlisted",v:schools.length,c:color},{l:"Applied",v:applied,c:"#3B9EDB"},{l:"Offers",v:offers,c:"#3DBF8A"}].map(s=>(
+                <div key={s.l} style={{ flex:1,minWidth:70,background:s.c+"12",border:`1px solid ${s.c}30`,borderRadius:10,padding:"8px 10px",textAlign:"center" }}>
+                  <div style={{ fontSize:20,fontWeight:800,color:s.c }}>{s.v}</div>
+                  <div style={{ fontSize:10,color:T.textSub,textTransform:"uppercase",letterSpacing:"0.06em" }}>{s.l}</div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {schools.length===0?(
+            <div style={{ textAlign:"center",padding:"24px 16px",background:T.inputBg,borderRadius:12,marginBottom:10 }}>
+              <div style={{ fontSize:28,marginBottom:8 }}>🎓</div>
+              <div style={{ fontSize:13,color:T.textSub,lineHeight:1.6,marginBottom:12 }}>No schools shortlisted yet for {sibling.name}. Start researching programs in Canada 🇨🇦 and USA 🇺🇸.</div>
+              <button onClick={()=>setShowSchoolForm(true)} style={{ padding:"8px 18px",borderRadius:9,border:"none",background:color,color:"#fff",fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:700,cursor:"pointer" }}>+ Add First School</button>
+            </div>
+          ):(
+            <div style={{ display:"grid",gridTemplateColumns:isMobile?"1fr":"repeat(auto-fill,minmax(260px,1fr))",gap:10 }}>
+              {schools.map(sc=>(
+                <SiblingSchoolCard key={sc.id} school={sc} T={T} siblingId={sibling.id} save={save} today={today}/>
+              ))}
+            </div>
+          )}
+
+          {sibling.notes&&<div style={{ fontSize:12,color:T.textSub,fontStyle:"italic",marginTop:10,padding:"8px 10px",background:T.inputBg,borderRadius:8 }}>{sibling.notes}</div>}
+        </div>
+      )}
+
+      {/* Add School Modal */}
+      {showSchoolForm&&(
+        <div style={{ position:"fixed",inset:0,zIndex:60,background:"rgba(0,0,0,0.65)",backdropFilter:"blur(6px)",display:"flex",alignItems:"flex-end",justifyContent:"center" }} onClick={e=>e.target===e.currentTarget&&setShowSchoolForm(false)}>
+          <div style={{ background:T.surface,border:`1px solid ${T.border}`,borderRadius:"20px 20px 0 0",width:"100%",maxWidth:500,maxHeight:"90vh",overflowY:"auto",padding:"24px 20px 40px" }}>
+            <div style={{ width:40,height:4,borderRadius:2,background:T.textMuted,margin:"0 auto 18px",opacity:0.4 }}/>
+            <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:19,color,marginBottom:14 }}>Add School for {sibling.name}</div>
+            <label style={lbl}>School Name *</label>
+            <input style={inp} value={sf.name} onChange={e=>setSf(p=>({...p,name:e.target.value}))} placeholder="e.g. University of British Columbia"/>
+            <label style={lbl}>Level</label>
+            <div style={{ display:"flex",gap:5,flexWrap:"wrap",marginBottom:4 }}>
+              {["Undergraduate","Masters","PhD","College/Community","Bootcamp","Other"].map(d=>(
+                <button key={d} onClick={()=>setSf(p=>({...p,degree:d}))} style={{ padding:"6px 10px",borderRadius:7,border:`1px solid ${sf.degree===d?color:T.border}`,background:sf.degree===d?color+"18":"transparent",color:sf.degree===d?color:T.text,fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:sf.degree===d?700:400,cursor:"pointer" }}>{d}</button>
+              ))}
+            </div>
+            <label style={lbl}>Country</label>
+            <div style={{ display:"flex",gap:6,marginBottom:4 }}>
+              {[["canada","🇨🇦 Canada"],["usa","🇺🇸 USA"],["uk","🇬🇧 UK"],["other","Other"]].map(([v,l])=>(
+                <button key={v} onClick={()=>setSf(p=>({...p,country:v}))} style={{ flex:1,padding:"7px",borderRadius:8,border:`1px solid ${sf.country===v?color:T.border}`,background:sf.country===v?color+"18":"transparent",color:sf.country===v?color:T.text,fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:sf.country===v?700:400,cursor:"pointer" }}>{l}</button>
+              ))}
+            </div>
+            <label style={lbl}>Application Deadline</label>
+            <input type="date" style={{ ...inp,marginBottom:4 }} value={sf.deadline} onChange={e=>setSf(p=>({...p,deadline:e.target.value}))}/>
+            <label style={lbl}>Application Fee ($)</label>
+            <div style={{ display:"flex",gap:8,marginBottom:4 }}>
+              <input type="number" style={{ ...inp,flex:1 }} value={sf.feeAmount} onChange={e=>setSf(p=>({...p,feeAmount:e.target.value}))} placeholder="e.g. 80"/>
+              <button onClick={()=>setSf(p=>({...p,feePaid:!p.feePaid}))} style={{ padding:"9px 12px",borderRadius:9,border:`1px solid ${sf.feePaid?"#3DBF8A":T.border}`,background:sf.feePaid?"#3DBF8A18":"transparent",color:sf.feePaid?"#3DBF8A":T.textSub,fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:700,cursor:"pointer",whiteSpace:"nowrap" }}>{sf.feePaid?"✓ Paid":"Unpaid"}</button>
+            </div>
+            <label style={lbl}>Notes / Requirements</label>
+            <input style={inp} value={sf.notes} onChange={e=>setSf(p=>({...p,notes:e.target.value}))} placeholder="Entry requirements, contact, English test, etc."/>
+            <div style={{ display:"flex",gap:8,marginTop:16 }}>
+              <button onClick={()=>setShowSchoolForm(false)} style={{ flex:1,padding:"11px",borderRadius:10,border:`1px solid ${T.border}`,background:"transparent",color:T.textSub,fontFamily:"'DM Sans',sans-serif",fontSize:13,cursor:"pointer" }}>Cancel</button>
+              <button onClick={addSchool} style={{ flex:2,padding:"11px",borderRadius:10,border:"none",background:color,color:"#fff",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:700,cursor:"pointer" }}>Add School</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── LifeView ──────────────────────────────────────────────────────────────────
-export function LifeView({ T, data, save, isMobile }) {
-  const [tab, setTab] = useState("helpers");
+export function LifeView({ T, data, save, today, isMobile }) {
+  const [tab, setTab] = useState("siblings");
   const [showHelperForm, setShowHelperForm] = useState(false);
   const [showFamilyForm, setShowFamilyForm] = useState(false);
+  const [showSiblingForm, setShowSiblingForm] = useState(false);
   const [hf, setHf] = useState({ name:"",how:"",giveBack:"",notes:"" });
   const [ff, setFf] = useState({ name:"",relation:"",goals:"",timeline:"",notes:"" });
+  const [sibf, setSibf] = useState({ name:"",relation:"Sibling",notes:"",color:"#E84E8A" });
 
   const helpers = data.helpers||[];
-  const family = data.family||[];
+  const family  = data.family||[];
+  const siblings= data.siblings||[];
   const inp = { width:"100%",background:T.inputBg,border:`1px solid ${T.border}`,borderRadius:9,padding:"9px 12px",color:T.text,fontFamily:"'DM Sans',sans-serif",fontSize:14,outline:"none",boxSizing:"border-box" };
   const lbl = { fontSize:11,fontWeight:600,letterSpacing:"0.08em",textTransform:"uppercase",color:T.textMuted,display:"block",marginBottom:4,marginTop:10,fontFamily:"'DM Sans',sans-serif" };
   const cs = (ex={}) => ({ background:T.surface,border:`1px solid ${T.border}`,borderRadius:14,...ex });
+
+  const QUICK_SIBLINGS = [
+    { name:"Peace",  relation:"Sister", color:"#E84E8A" },
+    { name:"Favour", relation:"Sister", color:"#9B6EE8" },
+    { name:"Gentle", relation:"Brother", color:"#3B9EDB" },
+  ];
+
+  function addSibling(s){ save(p=>({...p,siblings:[...(p.siblings||[]),{...s,id:"sib"+Date.now().toString(36),schools:[]}]})); }
+  function quickAddSibling(qs){ if(siblings.some(s=>s.name===qs.name)) return; addSibling(qs); }
 
   return (
     <div>
       <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16,flexWrap:"wrap",gap:8 }}>
         <div>
           <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:isMobile?20:26,color:"#E84E8A",marginBottom:2 }}>❤ Life & Legacy</div>
-          <div style={{ fontSize:12,color:T.textSub }}>People who helped you · Family goals</div>
+          <div style={{ fontSize:12,color:T.textSub }}>Family · Siblings' Applications · People Who Helped</div>
         </div>
       </div>
 
-      <div style={{ display:"flex",gap:6,marginBottom:16 }}>
-        {["helpers","family"].map(t=>(
-          <button key={t} onClick={()=>setTab(t)} style={{ padding:"7px 16px",borderRadius:20,border:`1px solid ${tab===t?"#E84E8A":T.border}`,background:tab===t?"#E84E8A20":"transparent",color:tab===t?"#E84E8A":T.textSub,fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:tab===t?700:400,cursor:"pointer" }}>
-            {t==="helpers"?"🤝 People Who Helped":"👨‍👩‍👧 Family Goals"}
-          </button>
+      <div style={{ display:"flex",gap:5,marginBottom:16,overflowX:"auto",paddingBottom:2,scrollbarWidth:"none" }}>
+        {[["siblings","🎓 Siblings"],["family","👨‍👩‍👧 Family"],["helpers","🤝 Helpers"]].map(([v,l])=>(
+          <button key={v} onClick={()=>setTab(v)} style={{ flexShrink:0,padding:"7px 16px",borderRadius:20,border:`1px solid ${tab===v?"#E84E8A":T.border}`,background:tab===v?"#E84E8A20":"transparent",color:tab===v?"#E84E8A":T.textSub,fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:tab===v?700:400,cursor:"pointer" }}>{l}</button>
         ))}
       </div>
 
+      {/* ── SIBLINGS TAB ── */}
+      {tab==="siblings"&&(
+        <div>
+          <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12,flexWrap:"wrap",gap:8 }}>
+            <div style={{ fontSize:13,color:T.textSub,lineHeight:1.5 }}>Track school shortlists and applications for each sibling. Tap a card to expand.</div>
+            <button onClick={()=>setShowSiblingForm(true)} style={{ padding:"7px 14px",borderRadius:9,border:"1px dashed #E84E8A",background:"#E84E8A08",color:"#E84E8A",fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:600,cursor:"pointer",whiteSpace:"nowrap" }}>+ Add Sibling</button>
+          </div>
+
+          {/* Quick-add Peace, Favour, Gentle if not already added */}
+          {QUICK_SIBLINGS.some(qs=>!siblings.some(s=>s.name===qs.name))&&(
+            <div style={{ ...cs({padding:"14px 16px"}),marginBottom:14 }}>
+              <div style={{ fontSize:11,fontWeight:700,color:T.textSub,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:10 }}>Quick Add</div>
+              <div style={{ display:"flex",gap:8,flexWrap:"wrap" }}>
+                {QUICK_SIBLINGS.filter(qs=>!siblings.some(s=>s.name===qs.name)).map(qs=>(
+                  <button key={qs.name} onClick={()=>quickAddSibling(qs)}
+                    style={{ padding:"8px 16px",borderRadius:10,border:`2px dashed ${qs.color}`,background:qs.color+"10",color:qs.color,fontFamily:"'DM Serif Display',serif",fontSize:14,fontWeight:700,cursor:"pointer" }}>
+                    + {qs.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Overall stats */}
+          {siblings.length>0&&(()=>{
+            const allSchools = siblings.flatMap(s=>s.schools||[]);
+            const totalApplied = allSchools.filter(s=>["applied","offer","enrolled"].includes(s.status)).length;
+            const totalOffers = allSchools.filter(s=>["offer","enrolled"].includes(s.status)).length;
+            return allSchools.length>0?(
+              <div style={{ display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:14 }}>
+                {[{l:"Schools",v:allSchools.length,c:"#7B61FF"},{l:"Applied",v:totalApplied,c:"#3B9EDB"},{l:"Offers",v:totalOffers,c:"#3DBF8A"}].map(s=>(
+                  <div key={s.l} style={{ ...cs({padding:"10px 12px"}),borderLeft:`3px solid ${s.c}` }}>
+                    <div style={{ fontSize:22,fontWeight:800,color:T.text }}>{s.v}</div>
+                    <div style={{ fontSize:10,color:T.textSub,textTransform:"uppercase",letterSpacing:"0.06em" }}>{s.l}</div>
+                  </div>
+                ))}
+              </div>
+            ):null;
+          })()}
+
+          {siblings.length===0?(
+            <div style={{ ...cs({padding:"40px 20px"}),textAlign:"center" }}>
+              <div style={{ fontSize:36,marginBottom:10 }}>🎓</div>
+              <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:17,color:T.text,marginBottom:6 }}>No siblings added yet</div>
+              <div style={{ fontSize:13,color:T.textSub,marginBottom:14,lineHeight:1.6 }}>Add Peace, Favour, and Gentle to start tracking their school applications.</div>
+              <div style={{ display:"flex",gap:8,justifyContent:"center",flexWrap:"wrap" }}>
+                {QUICK_SIBLINGS.map(qs=>(
+                  <button key={qs.name} onClick={()=>quickAddSibling(qs)} style={{ padding:"9px 18px",borderRadius:10,border:"none",background:qs.color,color:"#fff",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,cursor:"pointer" }}>+ {qs.name}</button>
+                ))}
+              </div>
+            </div>
+          ):(
+            siblings.map(sib=>(
+              <SiblingCard key={sib.id} sibling={sib} T={T} save={save} today={today} isMobile={isMobile}/>
+            ))
+          )}
+
+          {/* Remove sibling */}
+          {siblings.length>0&&(
+            <div style={{ display:"flex",gap:6,flexWrap:"wrap",marginTop:8 }}>
+              {siblings.map(sib=>(
+                <button key={sib.id} onClick={()=>{ if(window.confirm(`Remove ${sib.name} and all their schools?`)) save(p=>({...p,siblings:(p.siblings||[]).filter(s=>s.id!==sib.id)})); }}
+                  style={{ fontSize:11,color:T.textMuted,background:"none",border:`1px solid ${T.border}`,padding:"3px 8px",borderRadius:6,cursor:"pointer",fontFamily:"'DM Sans',sans-serif" }}>
+                  Remove {sib.name}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {showSiblingForm&&(
+            <div style={{ position:"fixed",inset:0,zIndex:60,background:"rgba(0,0,0,0.65)",backdropFilter:"blur(6px)",display:"flex",alignItems:"flex-end",justifyContent:"center" }} onClick={e=>e.target===e.currentTarget&&setShowSiblingForm(false)}>
+              <div style={{ background:T.surface,border:`1px solid ${T.border}`,borderRadius:"20px 20px 0 0",width:"100%",maxWidth:480,padding:"24px 20px 40px" }}>
+                <div style={{ width:40,height:4,borderRadius:2,background:T.textMuted,margin:"0 auto 18px",opacity:0.4 }}/>
+                <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:19,color:"#E84E8A",marginBottom:14 }}>Add Sibling</div>
+                <label style={lbl}>Name *</label>
+                <input style={inp} value={sibf.name} onChange={e=>setSibf(p=>({...p,name:e.target.value}))} placeholder="e.g. Peace"/>
+                <label style={lbl}>Relation</label>
+                <div style={{ display:"flex",gap:6,marginBottom:4 }}>
+                  {["Brother","Sister"].map(r=>(
+                    <button key={r} onClick={()=>setSibf(p=>({...p,relation:r}))} style={{ flex:1,padding:"8px",borderRadius:8,border:`1px solid ${sibf.relation===r?"#E84E8A":T.border}`,background:sibf.relation===r?"#E84E8A18":"transparent",color:sibf.relation===r?"#E84E8A":T.text,fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:sibf.relation===r?700:400,cursor:"pointer" }}>{r}</button>
+                  ))}
+                </div>
+                <label style={lbl}>Notes</label>
+                <input style={inp} value={sibf.notes} onChange={e=>setSibf(p=>({...p,notes:e.target.value}))} placeholder="Current school, grade, interests..."/>
+                <div style={{ display:"flex",gap:8,marginTop:16 }}>
+                  <button onClick={()=>setShowSiblingForm(false)} style={{ flex:1,padding:"11px",borderRadius:10,border:`1px solid ${T.border}`,background:"transparent",color:T.textSub,fontFamily:"'DM Sans',sans-serif",fontSize:13,cursor:"pointer" }}>Cancel</button>
+                  <button onClick={()=>{ if(!sibf.name?.trim()) return; addSibling(sibf); setSibf({name:"",relation:"Sibling",notes:"",color:"#E84E8A"}); setShowSiblingForm(false); }} style={{ flex:2,padding:"11px",borderRadius:10,border:"none",background:"#E84E8A",color:"#fff",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:700,cursor:"pointer" }}>Add</button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── FAMILY TAB ── */}
+      {tab==="family"&&(
+        <div>
+          <button onClick={()=>setShowFamilyForm(true)} style={{ width:"100%",padding:"11px",borderRadius:10,border:"1px dashed #E8A838",background:"#E8A83808",color:"#E8A838",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:600,cursor:"pointer",marginBottom:14 }}>+ Add Family Member & Goal</button>
+          {family.length===0&&(
+            <div style={{ ...cs({padding:"40px 20px"}),textAlign:"center" }}>
+              <div style={{ fontSize:36,marginBottom:10 }}>👨‍👩‍👧</div>
+              <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:17,color:T.text,marginBottom:6 }}>Document family goals</div>
+              <div style={{ fontSize:13,color:T.textSub,lineHeight:1.6 }}>Write what you want to do for your siblings, parents — make it concrete and dated.</div>
+            </div>
+          )}
+          {family.map(f=>(
+            <div key={f.id} style={{ ...cs({padding:"16px 18px"}),marginBottom:10,borderLeft:"4px solid #E8A838" }}>
+              <div style={{ display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8 }}>
+                <div>
+                  <div style={{ fontSize:15,fontWeight:700,color:T.text }}>👤 {f.name}</div>
+                  {f.relation&&<div style={{ fontSize:12,color:"#E8A838",fontWeight:600,marginTop:2 }}>{f.relation}</div>}
+                </div>
+                <button onClick={()=>save(p=>({...p,family:(p.family||[]).filter(x=>x.id!==f.id)}))} style={{ background:"none",border:"none",color:T.textMuted,cursor:"pointer",fontSize:14 }}>✕</button>
+              </div>
+              {f.goals&&<div style={{ fontSize:13,color:T.text,lineHeight:1.7,background:T.inputBg,borderRadius:8,padding:"10px 12px",marginBottom:6 }}>{f.goals}</div>}
+              {f.timeline&&<div style={{ fontSize:12,color:"#3DBF8A",fontWeight:600 }}>🗓 Timeline: {f.timeline}</div>}
+              {f.notes&&<div style={{ fontSize:12,color:T.textSub,fontStyle:"italic",marginTop:4 }}>{f.notes}</div>}
+            </div>
+          ))}
+          {showFamilyForm&&(
+            <div style={{ position:"fixed",inset:0,zIndex:50,background:"rgba(0,0,0,0.65)",backdropFilter:"blur(6px)",display:"flex",alignItems:"flex-end",justifyContent:"center" }} onClick={e=>e.target===e.currentTarget&&setShowFamilyForm(false)}>
+              <div style={{ background:T.surface,border:`1px solid ${T.border}`,borderRadius:"20px 20px 0 0",width:"100%",maxWidth:500,maxHeight:"90vh",overflowY:"auto",padding:"24px 20px 40px" }}>
+                <div style={{ width:40,height:4,borderRadius:2,background:T.textMuted,margin:"0 auto 20px",opacity:0.4 }}/>
+                <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:20,color:"#E8A838",marginBottom:14 }}>Add Family Goal</div>
+                {[{l:"Name",k:"name",ph:"e.g. Mum, Dad"},{l:"Relation",k:"relation",ph:"e.g. Mother, Father"},{l:"What I Want To Do For Them",k:"goals",ph:"Get them to the US/Canada, settle with a house, car..."},{l:"Timeline",k:"timeline",ph:"e.g. Within 5 years, by 2027"},{l:"Notes",k:"notes",ph:"Any other context..."}].map(fl=>(
+                  <div key={fl.k} style={{ marginBottom:10 }}>
+                    <label style={lbl}>{fl.l}</label>
+                    <input style={inp} value={ff[fl.k]||""} onChange={e=>setFf(p=>({...p,[fl.k]:e.target.value}))} placeholder={fl.ph}/>
+                  </div>
+                ))}
+                <div style={{ display:"flex",gap:8,marginTop:16 }}>
+                  <button onClick={()=>setShowFamilyForm(false)} style={{ flex:1,padding:"11px",borderRadius:10,border:`1px solid ${T.border}`,background:"transparent",color:T.textSub,fontFamily:"'DM Sans',sans-serif",fontSize:13,cursor:"pointer" }}>Cancel</button>
+                  <button onClick={()=>{ if(!ff.name?.trim()) return; save(p=>({...p,family:[...(p.family||[]),{...ff,id:"fm"+Date.now().toString(36)}]})); setFf({name:"",relation:"",goals:"",timeline:"",notes:""}); setShowFamilyForm(false); }} style={{ flex:2,padding:"11px",borderRadius:10,border:"none",background:"#E8A838",color:"#fff",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:700,cursor:"pointer" }}>Save</button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── HELPERS TAB ── */}
       {tab==="helpers"&&(
         <div>
           <button onClick={()=>setShowHelperForm(true)} style={{ width:"100%",padding:"11px",borderRadius:10,border:"1px dashed #E84E8A",background:"#E84E8A08",color:"#E84E8A",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:600,cursor:"pointer",marginBottom:14 }}>+ Add Person Who Helped</button>
@@ -774,51 +1106,6 @@ export function LifeView({ T, data, save, isMobile }) {
                 <div style={{ display:"flex",gap:8,marginTop:16 }}>
                   <button onClick={()=>setShowHelperForm(false)} style={{ flex:1,padding:"11px",borderRadius:10,border:`1px solid ${T.border}`,background:"transparent",color:T.textSub,fontFamily:"'DM Sans',sans-serif",fontSize:13,cursor:"pointer" }}>Cancel</button>
                   <button onClick={()=>{ if(!hf.name?.trim()) return; save(p=>({...p,helpers:[...(p.helpers||[]),{...hf,id:"h"+Date.now().toString(36)}]})); setHf({name:"",how:"",giveBack:"",notes:""}); setShowHelperForm(false); }} style={{ flex:2,padding:"11px",borderRadius:10,border:"none",background:"#E84E8A",color:"#fff",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:700,cursor:"pointer" }}>Save</button>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {tab==="family"&&(
-        <div>
-          <button onClick={()=>setShowFamilyForm(true)} style={{ width:"100%",padding:"11px",borderRadius:10,border:"1px dashed #E8A838",background:"#E8A83808",color:"#E8A838",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:600,cursor:"pointer",marginBottom:14 }}>+ Add Family Member & Goal</button>
-          {family.length===0&&(
-            <div style={{ ...cs({padding:"40px 20px"}),textAlign:"center" }}>
-              <div style={{ fontSize:36,marginBottom:10 }}>👨‍👩‍👧</div>
-              <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:17,color:T.text,marginBottom:6 }}>Document family goals</div>
-              <div style={{ fontSize:13,color:T.textSub,lineHeight:1.6 }}>Write what you want to do for your siblings, parents — make it concrete and dated.</div>
-            </div>
-          )}
-          {family.map(f=>(
-            <div key={f.id} style={{ ...cs({padding:"16px 18px"}),marginBottom:10,borderLeft:"4px solid #E8A838" }}>
-              <div style={{ display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8 }}>
-                <div>
-                  <div style={{ fontSize:15,fontWeight:700,color:T.text }}>👤 {f.name}</div>
-                  {f.relation&&<div style={{ fontSize:12,color:"#E8A838",fontWeight:600,marginTop:2 }}>{f.relation}</div>}
-                </div>
-                <button onClick={()=>save(p=>({...p,family:(p.family||[]).filter(x=>x.id!==f.id)}))} style={{ background:"none",border:"none",color:T.textMuted,cursor:"pointer",fontSize:14 }}>✕</button>
-              </div>
-              {f.goals&&<div style={{ fontSize:13,color:T.text,lineHeight:1.7,background:T.inputBg,borderRadius:8,padding:"10px 12px",marginBottom:6 }}>{f.goals}</div>}
-              {f.timeline&&<div style={{ fontSize:12,color:"#3DBF8A",fontWeight:600 }}>🗓 Timeline: {f.timeline}</div>}
-              {f.notes&&<div style={{ fontSize:12,color:T.textSub,fontStyle:"italic",marginTop:4 }}>{f.notes}</div>}
-            </div>
-          ))}
-          {showFamilyForm&&(
-            <div style={{ position:"fixed",inset:0,zIndex:50,background:"rgba(0,0,0,0.65)",backdropFilter:"blur(6px)",display:"flex",alignItems:"flex-end",justifyContent:"center" }} onClick={e=>e.target===e.currentTarget&&setShowFamilyForm(false)}>
-              <div style={{ background:T.surface,border:`1px solid ${T.border}`,borderRadius:"20px 20px 0 0",width:"100%",maxWidth:500,maxHeight:"90vh",overflowY:"auto",padding:"24px 20px 40px" }}>
-                <div style={{ width:40,height:4,borderRadius:2,background:T.textMuted,margin:"0 auto 20px",opacity:0.4 }}/>
-                <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:20,color:"#E8A838",marginBottom:14 }}>Add Family Goal</div>
-                {[{l:"Name",k:"name",ph:"e.g. Mum, Dad, Sister"},{l:"Relation",k:"relation",ph:"e.g. Mother, Brother"},{l:"What I Want To Do For Them",k:"goals",ph:"Get them to the US/Canada, settle with a house, car..."},{l:"Timeline",k:"timeline",ph:"e.g. Within 5 years, by 2027"},{l:"Notes",k:"notes",ph:"Any other context..."}].map(fl=>(
-                  <div key={fl.k} style={{ marginBottom:10 }}>
-                    <label style={lbl}>{fl.l}</label>
-                    <input style={inp} value={ff[fl.k]||""} onChange={e=>setFf(p=>({...p,[fl.k]:e.target.value}))} placeholder={fl.ph}/>
-                  </div>
-                ))}
-                <div style={{ display:"flex",gap:8,marginTop:16 }}>
-                  <button onClick={()=>setShowFamilyForm(false)} style={{ flex:1,padding:"11px",borderRadius:10,border:`1px solid ${T.border}`,background:"transparent",color:T.textSub,fontFamily:"'DM Sans',sans-serif",fontSize:13,cursor:"pointer" }}>Cancel</button>
-                  <button onClick={()=>{ if(!ff.name?.trim()) return; save(p=>({...p,family:[...(p.family||[]),{...ff,id:"fm"+Date.now().toString(36)}]})); setFf({name:"",relation:"",goals:"",timeline:"",notes:""}); setShowFamilyForm(false); }} style={{ flex:2,padding:"11px",borderRadius:10,border:"none",background:"#E8A838",color:"#fff",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:700,cursor:"pointer" }}>Save</button>
                 </div>
               </div>
             </div>
