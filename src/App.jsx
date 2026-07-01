@@ -2682,9 +2682,9 @@ function BudgetApp({ names, mode, T, activeUser, onBack }) {
   useEffect(()=>{
     (async()=>{
       const u = activeUser||"A";
-      const [ca,tx,g,a,li,d,con,sp,cr] = await Promise.all([dbGet(`budget_cats_${u}`),dbGet(`budget_txs_${u}`),dbGet(`budget_goals_${u}`),dbGet(`budget_assets_${u}`),dbGet(`budget_liabs_${u}`),dbGet(`budget_debts_${u}`),dbGet(`budget_consecration_${u}`),dbGet(`budget_splitplan_${u}`),dbGet(`budget_cards_${u}`)]);
+      const [ca,tx,g,a,li,d,con,sp,cr,bl] = await Promise.all([dbGet(`budget_cats_${u}`),dbGet(`budget_txs_${u}`),dbGet(`budget_goals_${u}`),dbGet(`budget_assets_${u}`),dbGet(`budget_liabs_${u}`),dbGet(`budget_debts_${u}`),dbGet(`budget_consecration_${u}`),dbGet(`budget_splitplan_${u}`),dbGet(`budget_cards_${u}`),dbGet(`budget_bills_shared`)]);
       const loadedCats = ca??[]; const loadedTxs = tx??[];
-      setCatsState(loadedCats); setTxsState(loadedTxs); setGoalsState(g??[]); setAssetsState(a??[]); setLiabsState(li??[]); setDebtsState(d??[]); setCardsState(cr??[]);
+      setCatsState(loadedCats); setTxsState(loadedTxs); setGoalsState(g??[]); setAssetsState(a??[]); setLiabsState(li??[]); setDebtsState(d??[]); setCardsState(cr??[]); setBillsState(bl??[]);
       setConsecrationState(con ?? { mum:0, dad:0, offering:25, giving:20, mumPct:5, dadPct:5, mumMode:"pct", dadMode:"pct" });
       setSplitPlanState(sp ?? { needs:50, wants:30, savings:20 });
       // Show reset banner if there are old-style transactions (no catId) mixed with budget cats
@@ -2701,6 +2701,14 @@ function BudgetApp({ names, mode, T, activeUser, onBack }) {
   const saveLi   = list => { setLiabsState(list); dbSet(`budget_liabs_${_u}`,list);};
   const saveD    = list => { setDebtsState(list); dbSet(`budget_debts_${_u}`,list);};
   const saveCrds = list => { setCardsState(list); dbSet(`budget_cards_${_u}`,list); };
+
+  const [bills, setBillsState] = useState(null);
+  const saveBills = list => { setBillsState(list); dbSet(`budget_bills_shared`, list); };
+
+  const blankA = { name:"",category:"cash",value:"",notes:"" };
+  const blankL = { name:"",category:"loan",value:"",notes:"" };
+  const blankG = { name:"",target:"",saved:"",deadline:"",emoji:"💰" };
+  const blankD = { name:"",type:"credit_card",balance:"",originalAmount:"",limit:"",apr:"",minPayment:"",paymentFrequency:"monthly",dueDay:"",notes:"" };
 
   // Budget category limits (the plan: Rent $850, Groceries $400 etc)
   function addCat(data){ if(!data.name?.trim()) return; saveCats([...(cats||[]),{...data,id:gid(),limit:parseFloat(data.limit||0),owner:focus}]); setShowCat(false); }
@@ -2765,7 +2773,7 @@ function BudgetApp({ names, mode, T, activeUser, onBack }) {
   const myGoals = (goals||[]).filter(g=> focus==="shared"?g.owner==="shared":g.owner===focus||g.owner==="shared");
 
   // ── Early return while data loads ───────────────────────────────────────────
-  if (!cats||!txs||!goals||!assets||!liabs||!debts||!consecration||!splitPlan) return (
+  if (!cats||!txs||!goals||!assets||!liabs||!debts||!consecration||!splitPlan||!bills) return (
     <div style={{ minHeight:"100vh",background:T.bg,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'DM Sans',sans-serif" }}>
       <div style={{ textAlign:"center",color:T.textSub }}><div style={{ fontSize:40,marginBottom:12,animation:"pulse 1.5s infinite" }}>💰</div><div style={{ fontSize:14 }}>Loading your budget...</div></div>
     </div>
@@ -2787,7 +2795,7 @@ function BudgetApp({ names, mode, T, activeUser, onBack }) {
   const focusName  = focus==="shared"?"Shared":names[focus]||focus;
 
   const card = (ex={}) => ({ background:T.surface,border:`1px solid ${T.border}`,borderRadius:16,boxShadow:"0 2px 12px rgba(0,0,0,0.07)",...ex });
-  const navViews=[["budget","📋 Budget"],["consecration","🕊 Consecration"],["goals","🎯 Goals"],["debt","💳 Debts"],["cards","💳 Cards"],["networth","💎 Net Worth"],["analytics","📈 Analytics"],["report","📄 Report"]];
+  const navViews=[["budget","📋 Budget"],["bills","🏠 Bills"],["consecration","🕊 Consecration"],["goals","🎯 Goals"],["debt","💳 Debts"],["cards","💳 Cards"],["networth","💎 Net Worth"],["analytics","📈 Analytics"],["report","📄 Report"]];
 
   return (
     <div style={{ position:"fixed",inset:0,background:T.bg,color:T.text,fontFamily:"'DM Sans',sans-serif",display:"flex",flexDirection:"column",overflow:"hidden" }}>
@@ -3783,6 +3791,167 @@ function BudgetApp({ names, mode, T, activeUser, onBack }) {
               {editCard&&<CardForm data={editCard} setData={setEditCard} onSave={()=>updateCard(editCard)} onClose={()=>setEditCard(null)}/>}
             </div>
           );
+        })()}
+
+        {/* ════ BILLS ════ */}
+        {view==="bills"&&(()=>{
+          const BILL_CATS = ["Rent/Mortgage","Groceries","Phone","Internet","Utilities","Transport","Subscriptions","Insurance","Childcare","Debt Payment","Medical","Other"];
+          const PERIODS = ["monthly","weekly","biweekly","yearly"];
+          const toMonthly = (amt,period) => { if(period==="weekly") return amt*52/12; if(period==="biweekly") return amt*26/12; if(period==="yearly") return amt/12; return amt; };
+          const COLORS = { A:"#E8A838", B:"#E84E8A", shared:"#9B6EE8" };
+          const UNAME = { A:names?.A||"Amen", B:names?.B||"Gloria", shared:"Shared" };
+          const [bTab,setBTab] = [useState("all")[0],useState("all")[1]];
+
+          // Use IIFE with local state
+          return (()=>{
+            const [billTab,setBillTab] = (() => { const [s,ss]=useState("all"); return [s,ss]; })();
+            const [showBillForm,setShowBillForm] = (() => { const [s,ss]=useState(false); return [s,ss]; })();
+            const [editBill,setEditBill] = (() => { const [s,ss]=useState(null); return [s,ss]; })();
+            const [bf,setBf] = (() => { const [s,ss]=useState({name:"",category:"Rent/Mortgage",amount:"",period:"monthly",owner:focus||"A",notes:""}); return [s,ss]; })();
+
+            const allBills = bills||[];
+            const myBills  = billTab==="all" ? allBills : allBills.filter(b=>b.owner===billTab);
+            const aBills   = allBills.filter(b=>b.owner==="A"||b.owner==="shared");
+            const bBills   = allBills.filter(b=>b.owner==="B"||b.owner==="shared");
+            const aTotal   = aBills.reduce((s,b)=>s+toMonthly(parseFloat(b.amount)||0,b.period),0);
+            const bTotal   = bBills.reduce((s,b)=>s+toMonthly(parseFloat(b.amount)||0,b.period),0);
+            const grandTotal = allBills.filter(b=>b.owner!=="shared").reduce((s,b)=>s+toMonthly(parseFloat(b.amount)||0,b.period),0)
+                             + allBills.filter(b=>b.owner==="shared").reduce((s,b)=>s+toMonthly(parseFloat(b.amount)||0,b.period),0)/2*2;
+
+            function saveBill(){ if(!bf.name?.trim()||!bf.amount) return; if(editBill){ saveBills(allBills.map(b=>b.id===editBill.id?{...bf,id:editBill.id,amount:parseFloat(bf.amount)}:b)); setEditBill(null); } else { saveBills([...allBills,{...bf,id:gid(),amount:parseFloat(bf.amount)}]); } setShowBillForm(false); setBf({name:"",category:"Rent/Mortgage",amount:"",period:"monthly",owner:focus||"A",notes:""}); }
+            function delBill(id){ saveBills(allBills.filter(b=>b.id!==id)); }
+
+            const inp2 = { width:"100%",background:T.inputBg,border:`1px solid ${T.border}`,borderRadius:9,padding:"9px 12px",color:T.text,fontFamily:"'DM Sans',sans-serif",fontSize:13,outline:"none",boxSizing:"border-box" };
+            const lbl2 = { fontSize:11,fontWeight:600,letterSpacing:"0.08em",textTransform:"uppercase",color:T.textSub,display:"block",marginBottom:4,marginTop:10,fontFamily:"'DM Sans',sans-serif" };
+
+            return (
+              <div>
+                {/* Header */}
+                <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16,flexWrap:"wrap",gap:10 }}>
+                  <div>
+                    <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:24,color:T.text }}>Bills & Expenses 🏠</div>
+                    <div style={{ fontSize:13,color:T.textSub,marginTop:2 }}>Amen + Gloria — what you need to cover each month</div>
+                  </div>
+                  <button onClick={()=>{ setBf({name:"",category:"Rent/Mortgage",amount:"",period:"monthly",owner:focus||"A",notes:""}); setEditBill(null); setShowBillForm(true); }} style={{ padding:"9px 18px",borderRadius:9,border:"none",background:"#9B6EE8",color:"#fff",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,cursor:"pointer" }}>+ Add Bill</button>
+                </div>
+
+                {/* Hero cards */}
+                <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(140px,1fr))",gap:10,marginBottom:16 }}>
+                  {[{l:`${UNAME.A} Monthly`,v:aTotal,c:COLORS.A},{l:`${UNAME.B} Monthly`,v:bTotal,c:COLORS.B},{l:"Combined",v:aTotal+bTotal,c:"#9B6EE8"},{l:`${UNAME.A} Daily Need`,v:aTotal/30,c:COLORS.A},{l:`${UNAME.B} Daily Need`,v:bTotal/30,c:COLORS.B},{l:`${UNAME.A} Weekly Need`,v:aTotal*12/52,c:COLORS.A},{l:`${UNAME.B} Weekly Need`,v:bTotal*12/52,c:COLORS.B}].map(s=>(
+                    <div key={s.l} style={{ ...card(),padding:"14px",borderTop:`3px solid ${s.c}` }}>
+                      <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:18,fontWeight:800,color:s.c }}>{fmt(s.v)}</div>
+                      <div style={{ fontSize:10,color:T.textSub,textTransform:"uppercase",letterSpacing:"0.06em",marginTop:2,lineHeight:1.3 }}>{s.l}</div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Work target callout */}
+                {(aTotal>0||bTotal>0)&&(
+                  <div style={{ ...card({padding:"16px 20px",marginBottom:16,background:T.surface,borderLeft:"4px solid #9B6EE8"}) }}>
+                    <div style={{ fontSize:12,fontWeight:700,color:"#9B6EE8",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:10 }}>What You Each Need To Earn</div>
+                    <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:12 }}>
+                      {[{name:UNAME.A,total:aTotal,c:COLORS.A},{name:UNAME.B,total:bTotal,c:COLORS.B}].map(p=>(
+                        <div key={p.name} style={{ background:p.c+"10",border:`1px solid ${p.c}30`,borderRadius:12,padding:"12px 14px" }}>
+                          <div style={{ fontSize:13,fontWeight:700,color:p.c,marginBottom:8 }}>{p.name}</div>
+                          {[["Per Day",p.total/30],["Per Week",p.total*12/52],["Per Month",p.total],["Per Year",p.total*12]].map(([l,v])=>(
+                            <div key={l} style={{ display:"flex",justifyContent:"space-between",fontSize:12,padding:"3px 0",borderBottom:`1px solid ${p.c}20` }}>
+                              <span style={{ color:T.textSub }}>{l}</span>
+                              <span style={{ fontWeight:700,color:T.text }}>{fmt(v)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Filter tabs */}
+                <div style={{ display:"flex",gap:6,marginBottom:14,overflowX:"auto",scrollbarWidth:"none" }}>
+                  {[["all","All"],["A",UNAME.A],["B",UNAME.B],["shared","Shared"]].map(([v,l])=>(
+                    <button key={v} onClick={()=>setBillTab(v)} style={{ flexShrink:0,padding:"6px 14px",borderRadius:20,border:`1px solid ${billTab===v?"#9B6EE8":T.border}`,background:billTab===v?"#9B6EE820":"transparent",color:billTab===v?"#9B6EE8":T.textSub,fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:billTab===v?700:400,cursor:"pointer" }}>{l}</button>
+                  ))}
+                </div>
+
+                {/* Bill list */}
+                {myBills.length===0?(
+                  <div style={{ ...card({padding:"40px 20px",textAlign:"center"}) }}>
+                    <div style={{ fontSize:36,marginBottom:10 }}>🏠</div>
+                    <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:18,color:T.text,marginBottom:6 }}>No bills yet</div>
+                    <div style={{ fontSize:13,color:T.textSub,marginBottom:16,lineHeight:1.6 }}>Add rent, groceries, phone, subscriptions — everything you need to pay. You'll see exactly how much you each need to earn.</div>
+                    <button onClick={()=>setShowBillForm(true)} style={{ padding:"10px 22px",borderRadius:10,border:"none",background:"#9B6EE8",color:"#fff",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,cursor:"pointer" }}>+ Add First Bill</button>
+                  </div>
+                ):(
+                  <div style={{ display:"flex",flexDirection:"column",gap:8 }}>
+                    {myBills.map(b=>{
+                      const monthly = toMonthly(parseFloat(b.amount)||0,b.period);
+                      const oc = COLORS[b.owner]||"#888";
+                      return (
+                        <div key={b.id} style={{ ...card({padding:"14px 16px"}),display:"flex",alignItems:"center",gap:12,borderLeft:`4px solid ${oc}` }}>
+                          <div style={{ flex:1,minWidth:0 }}>
+                            <div style={{ display:"flex",alignItems:"center",gap:8,flexWrap:"wrap" }}>
+                              <span style={{ fontSize:14,fontWeight:700,color:T.text }}>{b.name}</span>
+                              <span style={{ fontSize:10,fontWeight:700,color:oc,background:oc+"15",padding:"2px 7px",borderRadius:6 }}>{UNAME[b.owner]||b.owner}</span>
+                              <span style={{ fontSize:10,color:T.textMuted,background:T.inputBg,padding:"2px 7px",borderRadius:6 }}>{b.category}</span>
+                            </div>
+                            <div style={{ fontSize:12,color:T.textSub,marginTop:3 }}>
+                              <span style={{ fontWeight:700,color:T.text }}>{fmt(parseFloat(b.amount)||0)}</span> {b.period}
+                              {b.period!=="monthly"&&<span style={{ color:T.textMuted }}> · {fmt(monthly)}/mo</span>}
+                            </div>
+                            {b.notes&&<div style={{ fontSize:11,color:T.textMuted,fontStyle:"italic",marginTop:2 }}>{b.notes}</div>}
+                          </div>
+                          <div style={{ display:"flex",gap:4,flexShrink:0 }}>
+                            <button onClick={()=>{ setBf({...b,amount:String(b.amount)}); setEditBill(b); setShowBillForm(true); }} style={{ background:"none",border:`1px solid ${T.border}`,color:T.textMuted,cursor:"pointer",fontSize:12,padding:"5px 8px",borderRadius:7,fontFamily:"'DM Sans',sans-serif" }}>✎</button>
+                            <button onClick={()=>delBill(b.id)} style={{ background:"none",border:"1px solid rgba(232,78,138,0.3)",color:"#E84E8A",cursor:"pointer",fontSize:12,padding:"5px 8px",borderRadius:7,fontFamily:"'DM Sans',sans-serif" }}>✕</button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {/* Monthly total for filtered view */}
+                    <div style={{ ...card({padding:"12px 16px"}),display:"flex",justifyContent:"space-between",alignItems:"center",borderTop:`2px solid ${T.border}` }}>
+                      <span style={{ fontSize:13,fontWeight:600,color:T.textSub }}>Total {billTab==="all"?"(All)":UNAME[billTab]||billTab} / month</span>
+                      <span style={{ fontSize:18,fontWeight:800,color:"#9B6EE8" }}>{fmt(myBills.reduce((s,b)=>s+toMonthly(parseFloat(b.amount)||0,b.period),0))}</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Add/Edit Bill modal */}
+                {showBillForm&&(
+                  <div style={{ position:"fixed",inset:0,zIndex:60,background:"rgba(0,0,0,0.65)",backdropFilter:"blur(6px)",display:"flex",alignItems:"flex-end",justifyContent:"center" }} onClick={e=>e.target===e.currentTarget&&setShowBillForm(false)}>
+                    <div style={{ background:T.surface,border:`1px solid ${T.border}`,borderRadius:"20px 20px 0 0",width:"100%",maxWidth:500,maxHeight:"90vh",overflowY:"auto",padding:"24px 20px 40px" }}>
+                      <div style={{ width:40,height:4,borderRadius:2,background:T.textMuted,margin:"0 auto 18px",opacity:0.4 }}/>
+                      <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:20,color:"#9B6EE8",marginBottom:14 }}>{editBill?"Edit":"Add"} Bill</div>
+                      <label style={lbl2}>Bill Name *</label>
+                      <input style={inp2} value={bf.name||""} onChange={e=>setBf(p=>({...p,name:e.target.value}))} placeholder="e.g. Rent, Netflix, Phone"/>
+                      <label style={lbl2}>Category</label>
+                      <select style={{ ...inp2,appearance:"none" }} value={bf.category||"Other"} onChange={e=>setBf(p=>({...p,category:e.target.value}))}>
+                        {BILL_CATS.map(c=><option key={c} value={c}>{c}</option>)}
+                      </select>
+                      <label style={lbl2}>Amount *</label>
+                      <input type="number" style={inp2} value={bf.amount||""} onChange={e=>setBf(p=>({...p,amount:e.target.value}))} placeholder="0.00"/>
+                      <label style={lbl2}>Frequency</label>
+                      <div style={{ display:"flex",gap:6,flexWrap:"wrap",marginBottom:4 }}>
+                        {PERIODS.map(p=>(
+                          <button key={p} onClick={()=>setBf(prev=>({...prev,period:p}))} style={{ padding:"7px 12px",borderRadius:8,border:`1px solid ${bf.period===p?"#9B6EE8":T.border}`,background:bf.period===p?"#9B6EE820":"transparent",color:bf.period===p?"#9B6EE8":T.text,fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:bf.period===p?700:400,cursor:"pointer" }}>{p}</button>
+                        ))}
+                      </div>
+                      <label style={lbl2}>Who Pays?</label>
+                      <div style={{ display:"flex",gap:6 }}>
+                        {[["A",UNAME.A],["B",UNAME.B],["shared","Shared 50/50"]].map(([v,l])=>(
+                          <button key={v} onClick={()=>setBf(p=>({...p,owner:v}))} style={{ flex:1,padding:"8px",borderRadius:8,border:`1px solid ${bf.owner===v?(COLORS[v]||"#9B6EE8"):T.border}`,background:bf.owner===v?(COLORS[v]||"#9B6EE8")+"18":"transparent",color:bf.owner===v?(COLORS[v]||"#9B6EE8"):T.text,fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:bf.owner===v?700:400,cursor:"pointer" }}>{l}</button>
+                        ))}
+                      </div>
+                      <label style={lbl2}>Notes (optional)</label>
+                      <input style={inp2} value={bf.notes||""} onChange={e=>setBf(p=>({...p,notes:e.target.value}))} placeholder="e.g. due 1st of month, auto-pay"/>
+                      <div style={{ display:"flex",gap:8,marginTop:18 }}>
+                        <button onClick={()=>{ setShowBillForm(false); setEditBill(null); }} style={{ flex:1,padding:"11px",borderRadius:10,border:`1px solid ${T.border}`,background:"transparent",color:T.textSub,fontFamily:"'DM Sans',sans-serif",fontSize:13,cursor:"pointer" }}>Cancel</button>
+                        <button onClick={saveBill} style={{ flex:2,padding:"11px",borderRadius:10,border:"none",background:"#9B6EE8",color:"#fff",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:700,cursor:"pointer" }}>Save Bill</button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })();
         })()}
 
         {/* ════ REPORT ════ */}
