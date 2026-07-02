@@ -194,17 +194,23 @@ function ActiveWorkout({ day, onExit }) {
   const [logs, setLogs] = useState({});
   const [weight, setWeight] = useState("");
   const [reps, setReps] = useState("");
+  const startRef = useRef(Date.now());
 
   const ex = allExercises[exIdx];
   const done = exIdx >= allExercises.length;
 
   function logSet() {
     const key = `${exIdx}-${setIdx}`;
-    setLogs(p => ({ ...p, [key]: { weight, reps } }));
+    setLogs(p => ({ ...p, [key]: { weight, reps, exName: ex.name } }));
     if (setIdx + 1 < ex.sets) { setSetIdx(s => s + 1); }
     else if (exIdx + 1 < allExercises.length) { setExIdx(i => i + 1); setSetIdx(0); }
     else { setExIdx(allExercises.length); }
     setWeight(""); setReps("");
+  }
+
+  function finishWorkout() {
+    const durationMins = Math.max(1, Math.round((Date.now() - startRef.current) / 60000));
+    onExit({ logs, durationMins, dayLabel: day.label, dayColor: day.color, isHiit: day.day.startsWith("HIIT") });
   }
 
   const ytUrl = ex ? `https://www.youtube.com/results?search_query=${encodeURIComponent(ex.name + " form tutorial")}` : "";
@@ -213,29 +219,27 @@ function ActiveWorkout({ day, onExit }) {
     <div style={{ padding:"40px 20px",textAlign:"center" }}>
       <div style={{ fontSize:48,marginBottom:12 }}>🏆</div>
       <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:24,color:"#3DBF8A",marginBottom:8 }}>Workout Complete!</div>
-      <div style={{ fontSize:14,color:"#888",marginBottom:24 }}>Great work today. Rest, eat, recover.</div>
-      <button onClick={onExit} style={{ padding:"12px 28px",borderRadius:12,border:"none",background:"#3DBF8A",color:"#fff",fontFamily:"'DM Sans',sans-serif",fontSize:15,fontWeight:700,cursor:"pointer" }}>Done</button>
+      <div style={{ fontSize:14,color:"#888",marginBottom:6 }}>Great work today. Rest, eat, recover.</div>
+      <div style={{ fontSize:13,color:"#555",marginBottom:24 }}>Duration: ~{Math.max(1,Math.round((Date.now()-startRef.current)/60000))} min</div>
+      <button onClick={finishWorkout} style={{ padding:"12px 28px",borderRadius:12,border:"none",background:"#3DBF8A",color:"#fff",fontFamily:"'DM Sans',sans-serif",fontSize:15,fontWeight:700,cursor:"pointer" }}>Save Session ✓</button>
     </div>
   );
 
   return (
     <div style={{ padding:"0 0 100px" }}>
-      {/* Header */}
       <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16,padding:"0 4px" }}>
         <div>
           <div style={{ fontSize:11,color:day.color,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.08em" }}>{ex.section}</div>
           <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:22,color:"#fff" }}>{ex.name}</div>
         </div>
-        <button onClick={onExit} style={{ background:"rgba(255,255,255,0.08)",border:"none",color:"#888",cursor:"pointer",fontSize:13,padding:"6px 12px",borderRadius:8,fontFamily:"'DM Sans',sans-serif" }}>✕ Exit</button>
+        <button onClick={()=>onExit(null)} style={{ background:"rgba(255,255,255,0.08)",border:"none",color:"#888",cursor:"pointer",fontSize:13,padding:"6px 12px",borderRadius:8,fontFamily:"'DM Sans',sans-serif" }}>✕ Exit</button>
       </div>
 
-      {/* Progress bar */}
       <div style={{ height:4,background:"rgba(255,255,255,0.08)",borderRadius:4,overflow:"hidden",marginBottom:16 }}>
         <div style={{ height:"100%",width:`${Math.round((exIdx/allExercises.length)*100)}%`,background:day.color,borderRadius:4,transition:"width 0.4s" }}/>
       </div>
       <div style={{ fontSize:12,color:"#555",marginBottom:20,textAlign:"center" }}>Exercise {exIdx+1} of {allExercises.length} · Set {setIdx+1} of {ex.sets}</div>
 
-      {/* Exercise card */}
       <div style={{ background:"rgba(255,255,255,0.04)",border:`1px solid ${day.color}44`,borderRadius:16,padding:"20px",marginBottom:14 }}>
         <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10,marginBottom:16 }}>
           {[{l:"Sets",v:`${setIdx+1}/${ex.sets}`},{l:"Target Reps",v:ex.reps},{l:"Target Weight",v:ex.target}].map(s=>(
@@ -247,7 +251,6 @@ function ActiveWorkout({ day, onExit }) {
         </div>
         {ex.superset && <div style={{ fontSize:12,color:"#9B6EE8",fontWeight:600,marginBottom:12 }}>⟲ Superset with: {ex.superset}</div>}
 
-        {/* Log actual weight + reps */}
         <div style={{ display:"flex",gap:8,marginBottom:12 }}>
           <div style={{ flex:1 }}>
             <div style={{ fontSize:10,color:"#555",textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:4 }}>Actual Weight</div>
@@ -267,10 +270,8 @@ function ActiveWorkout({ day, onExit }) {
         </button>
       </div>
 
-      {/* Rest Timer */}
       <RestTimer color={day.color}/>
 
-      {/* YouTube tutorial link */}
       <a href={ytUrl} target="_blank" rel="noreferrer"
         style={{ display:"flex",alignItems:"center",gap:10,background:"rgba(255,0,0,0.1)",border:"1px solid rgba(255,0,0,0.25)",borderRadius:12,padding:"12px 16px",textDecoration:"none",marginBottom:14 }}>
         <div style={{ width:32,height:32,background:"#FF0000",borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,flexShrink:0 }}>▶</div>
@@ -280,7 +281,6 @@ function ActiveWorkout({ day, onExit }) {
         </div>
       </a>
 
-      {/* Completed sets for this exercise */}
       {Object.entries(logs).filter(([k])=>k.startsWith(`${exIdx}-`)).length>0&&(
         <div style={{ background:"rgba(255,255,255,0.03)",borderRadius:12,padding:"12px 14px" }}>
           <div style={{ fontSize:11,color:"#555",textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:8 }}>Logged Sets</div>
@@ -293,7 +293,6 @@ function ActiveWorkout({ day, onExit }) {
         </div>
       )}
 
-      {/* Navigation */}
       <div style={{ display:"flex",gap:8,marginTop:14 }}>
         {exIdx>0&&<button onClick={()=>{ setExIdx(i=>i-1); setSetIdx(0); }} style={{ flex:1,padding:"10px",borderRadius:10,border:"1px solid rgba(255,255,255,0.1)",background:"transparent",color:"#888",fontFamily:"'DM Sans',sans-serif",fontSize:13,cursor:"pointer" }}>← Back</button>}
         <button onClick={()=>{ if(exIdx+1<allExercises.length){setExIdx(i=>i+1);setSetIdx(0);}else{setExIdx(allExercises.length);} }}
@@ -306,23 +305,127 @@ function ActiveWorkout({ day, onExit }) {
 }
 
 // ── GymView ───────────────────────────────────────────────────────────────────
+const WORKOUT_METS = { weights: 4.0, hiit: 10.0, cardio: 7.0, other: 3.5 };
+const INTENSITY_MULTS = { low: 0.7, medium: 1.0, high: 1.3, max: 1.6 };
+
+function calcCals(bodyWeightLbs, durationMins, workoutType, intensity) {
+  const met = WORKOUT_METS[workoutType] || 4.0;
+  const mult = INTENSITY_MULTS[intensity] || 1.0;
+  const kg = (parseFloat(bodyWeightLbs) || 185) / 2.205;
+  return Math.round(met * mult * kg * (durationMins / 60));
+}
+
 export function GymView({ T, data, save, today, isMobile }) {
   const [gymDay, setGymDay] = useState(0);
   const [gymTab, setGymTab] = useState("plan");
   const [activeWorkout, setActiveWorkout] = useState(false);
+  const [viewSession, setViewSession] = useState(null);
   const [gwf, setGwf] = useState({ weight:"", sessions:"", prs:"", nutrition:5, notes:"" });
+  const [manualForm, setManualForm] = useState(false);
+  const [mf, setMf] = useState({ date:today, type:"weights", duration:"", intensity:"high", bodyWeight:"", notes:"" });
 
   const thisMonday = (()=>{ const d=new Date(); d.setDate(d.getDate()-((d.getDay()+6)%7)); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; })();
   const gymWeekly = data.gymWeekly||[];
+  const gymSessions = [...(data.gymSessions||[])].sort((a,b)=>b.date.localeCompare(a.date));
+
+  const latestWeight = [...gymWeekly].sort((a,b)=>b.week.localeCompare(a.week))[0]?.weight || "";
+
   const cs = (ex={}) => ({ background:T.surface,border:`1px solid ${T.border}`,borderRadius:14,boxShadow:"0 2px 10px rgba(0,0,0,0.08)",...ex });
   const inp = { width:"100%",background:T.inputBg,border:`1px solid ${T.border}`,borderRadius:9,padding:"9px 12px",color:T.text,fontFamily:"'DM Sans',sans-serif",fontSize:14,outline:"none",boxSizing:"border-box" };
   const lbl = { fontSize:11,fontWeight:600,letterSpacing:"0.08em",textTransform:"uppercase",color:T.textMuted,display:"block",marginBottom:4,marginTop:10,fontFamily:"'DM Sans',sans-serif" };
 
+  function handleWorkoutDone(result) {
+    setActiveWorkout(false);
+    if (!result) return;
+    const wType = result.isHiit ? "hiit" : "weights";
+    const bw = latestWeight;
+    const cals = calcCals(bw, result.durationMins, wType, "high");
+    const session = {
+      id: "gs_" + Math.random().toString(36).slice(2,8),
+      date: today,
+      dayLabel: result.dayLabel,
+      dayColor: result.dayColor,
+      workoutType: wType,
+      duration: result.durationMins,
+      bodyWeight: bw,
+      intensity: "high",
+      calsBurned: cals,
+      logs: result.logs,
+      notes: "",
+    };
+    save(p => ({ ...p, gymSessions: [...(p.gymSessions||[]), session] }));
+    setGymTab("sessions");
+  }
+
+  function saveManualSession() {
+    if (!mf.duration) return;
+    const cals = calcCals(mf.bodyWeight||latestWeight, parseFloat(mf.duration)||0, mf.type, mf.intensity);
+    const session = {
+      id: "gs_" + Math.random().toString(36).slice(2,8),
+      date: mf.date||today,
+      dayLabel: mf.type==="hiit"?"HIIT Conditioning":mf.type==="cardio"?"Cardio":"Weight Training",
+      dayColor: mf.type==="hiit"?"#E84E8A":mf.type==="cardio"?"#3DBF8A":"#E8704A",
+      workoutType: mf.type,
+      duration: parseFloat(mf.duration)||0,
+      bodyWeight: mf.bodyWeight||latestWeight,
+      intensity: mf.intensity,
+      calsBurned: cals,
+      logs: {},
+      notes: mf.notes,
+    };
+    save(p => ({ ...p, gymSessions: [...(p.gymSessions||[]), session] }));
+    setManualForm(false);
+    setMf({ date:today, type:"weights", duration:"", intensity:"high", bodyWeight:"", notes:"" });
+  }
+
   if (activeWorkout) return (
     <div style={{ background:"#0d0f14",minHeight:"100vh",padding:"20px 16px",fontFamily:"'DM Sans',sans-serif" }}>
-      <ActiveWorkout day={GYM_PLAN[gymDay]} onExit={()=>setActiveWorkout(false)}/>
+      <ActiveWorkout day={GYM_PLAN[gymDay]} onExit={handleWorkoutDone}/>
     </div>
   );
+
+  // Session detail overlay
+  if (viewSession) {
+    const s = viewSession;
+    const logEntries = Object.entries(s.logs||{});
+    const byEx = {};
+    logEntries.forEach(([k,v])=>{ const ei=k.split("-")[0]; (byEx[ei]=byEx[ei]||[]).push({setNum:parseInt(k.split("-")[1])+1,...v}); });
+    return (
+      <div>
+        <button onClick={()=>setViewSession(null)} style={{ background:"none",border:"none",color:T.textSub,cursor:"pointer",fontSize:13,padding:"0 0 16px",fontFamily:"'DM Sans',sans-serif",display:"flex",alignItems:"center",gap:6 }}>← Back to Sessions</button>
+        <div style={{ ...cs({padding:"18px 20px",marginBottom:14,borderTop:`4px solid ${s.dayColor||"#E8704A"}` }) }}>
+          <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:20,color:s.dayColor||"#E8704A",marginBottom:4 }}>{s.dayLabel||"Workout"}</div>
+          <div style={{ fontSize:12,color:T.textSub,marginBottom:14 }}>{s.date}</div>
+          <div style={{ display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8 }}>
+            {[{l:"Duration",v:`${s.duration} min`},{l:"Calories",v:`~${s.calsBurned} kcal`},{l:"Body Weight",v:s.bodyWeight?`${s.bodyWeight} lbs`:"—"},{l:"Intensity",v:s.intensity||"—"}].map(x=>(
+              <div key={x.l} style={{ background:T.inputBg,borderRadius:10,padding:"10px",textAlign:"center" }}>
+                <div style={{ fontSize:15,fontWeight:800,color:s.dayColor||"#E8704A" }}>{x.v}</div>
+                <div style={{ fontSize:10,color:T.textMuted,textTransform:"uppercase",marginTop:2 }}>{x.l}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+        {Object.keys(byEx).length>0&&(
+          <div style={{ ...cs({padding:"16px 18px"}) }}>
+            <div style={{ fontSize:12,fontWeight:700,color:T.textSub,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:12 }}>Logged Exercises</div>
+            {Object.entries(byEx).map(([ei,sets])=>(
+              <div key={ei} style={{ marginBottom:12 }}>
+                <div style={{ fontSize:13,fontWeight:700,color:T.text,marginBottom:6 }}>{sets[0]?.exName||`Exercise ${parseInt(ei)+1}`}</div>
+                {sets.map((st,i)=>(
+                  <div key={i} style={{ display:"flex",justifyContent:"space-between",fontSize:12,color:T.textSub,padding:"3px 0",borderBottom:`1px solid ${T.border}` }}>
+                    <span>Set {st.setNum}</span>
+                    <span style={{ color:T.text,fontWeight:600 }}>{st.weight} × {st.reps}</span>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        )}
+        {s.notes&&<div style={{ ...cs({padding:"14px 16px",marginTop:10}) }}><div style={{ fontSize:12,color:T.textSub,fontStyle:"italic" }}>{s.notes}</div></div>}
+        <button onClick={()=>{ save(p=>({...p,gymSessions:(p.gymSessions||[]).filter(x=>x.id!==s.id)})); setViewSession(null); }} style={{ marginTop:14,padding:"10px 20px",borderRadius:10,border:"1px solid rgba(232,78,138,0.3)",background:"none",color:"#E84E8A",fontFamily:"'DM Sans',sans-serif",fontSize:13,cursor:"pointer" }}>Delete Session</button>
+      </div>
+    );
+  }
 
   const currentDay = GYM_PLAN[gymDay];
 
@@ -331,21 +434,21 @@ export function GymView({ T, data, save, today, isMobile }) {
       <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16,flexWrap:"wrap",gap:8 }}>
         <div>
           <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:isMobile?20:26,color:"#E8704A",marginBottom:2 }}>🏋 Gym</div>
-          <div style={{ fontSize:12,color:T.textSub }}>6-Day Split + HIIT · Active workout mode available</div>
+          <div style={{ fontSize:12,color:T.textSub }}>6-Day Split + HIIT · Session logging + calorie tracking</div>
         </div>
-        <div style={{ display:"flex",gap:6 }}>
-          {["plan","weekly"].map(t=>(
+        <div style={{ display:"flex",gap:6,flexWrap:"wrap" }}>
+          {[["plan","📋 Plan"],["sessions","📸 Sessions"],["weekly","📊 Weekly"]].map(([t,l])=>(
             <button key={t} onClick={()=>setGymTab(t)}
               style={{ padding:"6px 12px",borderRadius:20,border:`1px solid ${gymTab===t?"#E8704A":T.border}`,background:gymTab===t?"#E8704A20":"transparent",color:gymTab===t?"#E8704A":T.textSub,fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:gymTab===t?700:400,cursor:"pointer" }}>
-              {t==="plan"?"📋 Plan":"📊 Log"}
+              {l}
             </button>
           ))}
         </div>
       </div>
 
+      {/* ── Plan tab ── */}
       {gymTab==="plan"&&(
         <div>
-          {/* Day tabs */}
           <div style={{ display:"flex",gap:6,overflowX:"auto",paddingBottom:6,marginBottom:14,scrollbarWidth:"none" }}>
             {GYM_PLAN.map((d,i)=>(
               <button key={i} onClick={()=>setGymDay(i)}
@@ -355,7 +458,6 @@ export function GymView({ T, data, save, today, isMobile }) {
             ))}
           </div>
 
-          {/* Day header */}
           <div style={{ background:currentDay.color+"15",border:`1px solid ${currentDay.color}33`,borderRadius:14,padding:"14px 16px",marginBottom:14,display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,flexWrap:"wrap" }}>
             <div>
               <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:18,color:currentDay.color }}>{currentDay.icon} {currentDay.day}: {currentDay.label}</div>
@@ -367,7 +469,6 @@ export function GymView({ T, data, save, today, isMobile }) {
             </button>
           </div>
 
-          {/* Sections */}
           {currentDay.sections.map((sec,si)=>(
             <div key={si} style={{ ...cs({padding:"14px 16px"}),marginBottom:10 }}>
               <div style={{ fontSize:11,fontWeight:700,color:currentDay.color,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:10 }}>{sec.name}</div>
@@ -391,6 +492,100 @@ export function GymView({ T, data, save, today, isMobile }) {
         </div>
       )}
 
+      {/* ── Sessions tab ── */}
+      {gymTab==="sessions"&&(
+        <div>
+          <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14 }}>
+            <div style={{ fontSize:13,color:T.textSub }}>{gymSessions.length} session{gymSessions.length!==1?"s":""} logged</div>
+            <button onClick={()=>setManualForm(true)} style={{ padding:"8px 16px",borderRadius:9,border:"none",background:"#E8704A",color:"#fff",fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:700,cursor:"pointer" }}>+ Log Session</button>
+          </div>
+
+          {gymSessions.length===0?(
+            <div style={{ ...cs({padding:"40px 20px",textAlign:"center"}) }}>
+              <div style={{ fontSize:40,marginBottom:10 }}>🏋</div>
+              <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:18,color:T.text,marginBottom:8 }}>No sessions yet</div>
+              <div style={{ fontSize:13,color:T.textSub,marginBottom:16,lineHeight:1.6 }}>Start a workout from the Plan tab or log one manually. Each session tracks duration, exercises, and estimated calories burned.</div>
+              <button onClick={()=>setManualForm(true)} style={{ padding:"10px 22px",borderRadius:10,border:"none",background:"#E8704A",color:"#fff",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,cursor:"pointer" }}>Log First Session</button>
+            </div>
+          ):(
+            <div style={{ display:"flex",flexDirection:"column",gap:8 }}>
+              {gymSessions.map(s=>(
+                <button key={s.id} onClick={()=>setViewSession(s)}
+                  style={{ ...cs({padding:"14px 16px"}),display:"flex",alignItems:"center",gap:12,borderLeft:`4px solid ${s.dayColor||"#E8704A"}`,textAlign:"left",cursor:"pointer",width:"100%",background:T.surface }}>
+                  <div style={{ flex:1,minWidth:0 }}>
+                    <div style={{ display:"flex",alignItems:"center",gap:8,marginBottom:4,flexWrap:"wrap" }}>
+                      <span style={{ fontSize:14,fontWeight:700,color:T.text }}>{s.dayLabel||"Workout"}</span>
+                      <span style={{ fontSize:10,background:(s.dayColor||"#E8704A")+"20",color:s.dayColor||"#E8704A",padding:"2px 7px",borderRadius:5,fontWeight:700 }}>{s.workoutType}</span>
+                    </div>
+                    <div style={{ fontSize:12,color:T.textSub }}>{s.date} · {s.duration} min</div>
+                  </div>
+                  <div style={{ textAlign:"right",flexShrink:0 }}>
+                    <div style={{ fontSize:16,fontWeight:800,color:"#E8704A" }}>~{s.calsBurned}</div>
+                    <div style={{ fontSize:10,color:T.textMuted,textTransform:"uppercase" }}>kcal</div>
+                  </div>
+                </button>
+              ))}
+              {/* Weekly summary bar */}
+              {(()=>{
+                const weekCals = gymSessions.filter(s=>s.date>=thisMonday).reduce((sum,s)=>sum+s.calsBurned,0);
+                const weekMins = gymSessions.filter(s=>s.date>=thisMonday).reduce((sum,s)=>sum+s.duration,0);
+                return weekCals>0&&(
+                  <div style={{ ...cs({padding:"14px 16px",background:"#E8704A10",borderTop:"2px solid #E8704A30"}) }}>
+                    <div style={{ fontSize:11,fontWeight:700,color:"#E8704A",textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:6 }}>This Week</div>
+                    <div style={{ display:"flex",gap:16 }}>
+                      <div><span style={{ fontSize:18,fontWeight:800,color:"#E8704A" }}>{weekCals}</span> <span style={{ fontSize:11,color:T.textSub }}>kcal burned</span></div>
+                      <div><span style={{ fontSize:18,fontWeight:800,color:"#3DBF8A" }}>{weekMins}</span> <span style={{ fontSize:11,color:T.textSub }}>min trained</span></div>
+                      <div><span style={{ fontSize:18,fontWeight:800,color:"#9B6EE8" }}>{gymSessions.filter(s=>s.date>=thisMonday).length}</span> <span style={{ fontSize:11,color:T.textSub }}>sessions</span></div>
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+          )}
+
+          {/* Manual log form */}
+          {manualForm&&(
+            <div style={{ position:"fixed",inset:0,zIndex:60,background:"rgba(0,0,0,0.65)",backdropFilter:"blur(6px)",display:"flex",alignItems:"flex-end",justifyContent:"center" }} onClick={e=>e.target===e.currentTarget&&setManualForm(false)}>
+              <div style={{ background:T.surface,border:`1px solid ${T.border}`,borderRadius:"20px 20px 0 0",width:"100%",maxWidth:500,maxHeight:"90vh",overflowY:"auto",padding:"24px 20px 40px" }}>
+                <div style={{ width:40,height:4,borderRadius:2,background:T.textMuted,margin:"0 auto 18px",opacity:0.4 }}/>
+                <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:20,color:"#E8704A",marginBottom:14 }}>Log Session</div>
+                <label style={lbl}>Date</label>
+                <input type="date" style={inp} value={mf.date||today} onChange={e=>setMf(p=>({...p,date:e.target.value}))}/>
+                <label style={lbl}>Workout Type</label>
+                <div style={{ display:"flex",gap:6 }}>
+                  {[["weights","🏋 Weights"],["hiit","⚡ HIIT"],["cardio","🏃 Cardio"],["other","🤸 Other"]].map(([v,l])=>(
+                    <button key={v} onClick={()=>setMf(p=>({...p,type:v}))} style={{ flex:1,padding:"8px 4px",borderRadius:8,border:`1px solid ${mf.type===v?"#E8704A":T.border}`,background:mf.type===v?"#E8704A20":"transparent",color:mf.type===v?"#E8704A":T.text,fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:mf.type===v?700:400,cursor:"pointer" }}>{l}</button>
+                  ))}
+                </div>
+                <label style={lbl}>Duration (minutes) *</label>
+                <input type="number" style={inp} value={mf.duration||""} onChange={e=>setMf(p=>({...p,duration:e.target.value}))} placeholder="e.g. 75"/>
+                <label style={lbl}>Intensity</label>
+                <div style={{ display:"flex",gap:6 }}>
+                  {["low","medium","high","max"].map(v=>(
+                    <button key={v} onClick={()=>setMf(p=>({...p,intensity:v}))} style={{ flex:1,padding:"8px 4px",borderRadius:8,border:`1px solid ${mf.intensity===v?"#E8704A":T.border}`,background:mf.intensity===v?"#E8704A20":"transparent",color:mf.intensity===v?"#E8704A":T.text,fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:mf.intensity===v?700:400,cursor:"pointer" }}>{v}</button>
+                  ))}
+                </div>
+                <label style={lbl}>Body Weight (lbs)</label>
+                <input type="number" style={inp} value={mf.bodyWeight||""} onChange={e=>setMf(p=>({...p,bodyWeight:e.target.value}))} placeholder={latestWeight||"e.g. 205"}/>
+                {mf.duration&&(
+                  <div style={{ marginTop:10,padding:"10px 14px",borderRadius:10,background:"#E8704A15",border:"1px solid #E8704A30" }}>
+                    <div style={{ fontSize:12,color:"#E8704A",fontWeight:700 }}>Estimated: ~{calcCals(mf.bodyWeight||latestWeight,parseFloat(mf.duration)||0,mf.type,mf.intensity)} kcal burned</div>
+                    <div style={{ fontSize:11,color:T.textMuted,marginTop:2 }}>Based on MET values · {mf.intensity} intensity</div>
+                  </div>
+                )}
+                <label style={lbl}>Notes</label>
+                <input style={inp} value={mf.notes||""} onChange={e=>setMf(p=>({...p,notes:e.target.value}))} placeholder="How did it go? PRs, energy, etc."/>
+                <div style={{ display:"flex",gap:8,marginTop:18 }}>
+                  <button onClick={()=>setManualForm(false)} style={{ flex:1,padding:"11px",borderRadius:10,border:`1px solid ${T.border}`,background:"transparent",color:T.textSub,fontFamily:"'DM Sans',sans-serif",fontSize:13,cursor:"pointer" }}>Cancel</button>
+                  <button onClick={saveManualSession} style={{ flex:2,padding:"11px",borderRadius:10,border:"none",background:"#E8704A",color:"#fff",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:700,cursor:"pointer" }}>Save Session</button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Weekly log tab ── */}
       {gymTab==="weekly"&&(
         <div>
           <div style={{ ...cs({padding:"16px 18px"}),marginBottom:14 }}>
@@ -414,7 +609,7 @@ export function GymView({ T, data, save, today, isMobile }) {
             <input style={inp} value={gwf.notes||""} onChange={e=>setGwf(p=>({...p,notes:e.target.value}))} placeholder="Sleep quality, energy levels, injuries, wins..."/>
             <button onClick={()=>{
               if(!gwf.weight&&!gwf.sessions) return;
-              const entry={...gwf,week:thisMonday,id:"gw"+Date.now().toString(36)};
+              const entry={...gwf,week:thisMonday,id:"gw"+Math.random().toString(36).slice(2,8)};
               save(p=>({...p,gymWeekly:[...(p.gymWeekly||[]).filter(w=>w.week!==thisMonday),entry]}));
               setGwf({weight:"",sessions:"",prs:"",nutrition:5,notes:""});
             }} style={{ width:"100%",marginTop:14,padding:"12px",borderRadius:10,border:"none",background:"#E8704A",color:"#fff",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:700,cursor:"pointer" }}>

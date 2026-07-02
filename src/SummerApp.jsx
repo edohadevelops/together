@@ -457,7 +457,7 @@ export default function SummerApp({mode,T,onBack}) {
   useEffect(()=>{
     (async()=>{
       const stored=await sGet("summer_amen");
-      setDataState(stored??{checklist:{},devotion:[],thesis:[],thesisTasks:[],reading:[],fitness:[],gloria:[],sidegig:[],intentions:{},nutrition:[],weight:[],spending:[],meals:[],doordash:[],gymWeekly:[],schools:[],helpers:[],family:[],siblings:[]});
+      setDataState(stored??{checklist:{},devotion:[],thesis:[],thesisTasks:[],reading:[],fitness:[],gloria:[],sidegig:[],intentions:{},nutrition:[],weight:[],spending:[],meals:[],doordash:[],gymWeekly:[],gymSessions:[],schools:[],helpers:[],family:[],siblings:[]});
     })();
   },[]);
 
@@ -471,7 +471,7 @@ export default function SummerApp({mode,T,onBack}) {
 
   if (!data) return (
     <div style={{display:"flex",height:"100vh",alignItems:"center",justifyContent:"center",background:"#111",color:"#E8A838",fontFamily:"'DM Sans',sans-serif",fontSize:16}}>
-      Loading summer OS...
+      Loading Life OS...
     </div>
   );
 
@@ -888,7 +888,7 @@ export default function SummerApp({mode,T,onBack}) {
 
   const viewOverview=(
     <div>
-      <div style={{fontFamily:"'DM Serif Display',serif",fontSize:isMobile?24:30,color:T.text,marginBottom:4}}>{"Amen's Summer ☀️"}</div>
+      <div style={{fontFamily:"'DM Serif Display',serif",fontSize:isMobile?24:30,color:T.text,marginBottom:4}}>{"Amen's Life OS 🌟"}</div>
       <div style={{fontSize:13,color:T.textSub,marginBottom:24}}>{new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"})}</div>
 
       {Object.values(savedIntentions).some(Boolean)&&(
@@ -1718,7 +1718,7 @@ export default function SummerApp({mode,T,onBack}) {
 
   const viewGloriaOverview=(
     <div>
-      <div style={{fontFamily:"'DM Serif Display',serif",fontSize:isMobile?22:28,color:"#E84E8A",marginBottom:4}}>{"Gloria's Summer ♡"}</div>
+      <div style={{fontFamily:"'DM Serif Display',serif",fontSize:isMobile?22:28,color:"#E84E8A",marginBottom:4}}>{"Gloria's Life OS ♡"}</div>
       <div style={{fontSize:13,color:T.textSub,marginBottom:20}}>{"Your personal space — schedule, faith, growth"}</div>
       <div style={{...cs({marginBottom:20,padding:"18px 20px"})}}>
         <div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}>
