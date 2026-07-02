@@ -2708,6 +2708,10 @@ function BudgetApp({ names, mode, T, activeUser, onBack }) {
   const saveBillsA = list => { setBillsAState(list); dbSet(`budget_bills_A`, list); };
   const saveBillsB = list => { setBillsBState(list); dbSet(`budget_bills_B`, list); };
   const saveBillsShared = list => { setBillsSharedState(list); dbSet(`budget_bills_shared`, list); };
+  const [billTab, setBillTab] = useState("overview");
+  const [showBillForm, setShowBillForm] = useState(false);
+  const [editBill, setEditBill] = useState(null);
+  const [billForm, setBillForm] = useState({name:"",category:"Rent/Mortgage",amount:"",period:"monthly",notes:""});
 
   const blankA = { name:"",category:"cash",value:"",notes:"" };
   const blankL = { name:"",category:"loan",value:"",notes:"" };
@@ -3801,174 +3805,164 @@ function BudgetApp({ names, mode, T, activeUser, onBack }) {
         {view==="bills"&&(()=>{
           const BILL_CATS = ["Rent/Mortgage","Groceries","Phone","Internet","Utilities","Transport","Subscriptions","Insurance","Childcare","Debt Payment","Medical","Other"];
           const PERIODS = ["monthly","weekly","biweekly","yearly"];
-          const toMonthly = (amt,period) => { if(period==="weekly") return amt*52/12; if(period==="biweekly") return amt*26/12; if(period==="yearly") return amt/12; return amt; };
+          const toM = (amt,period) => { if(period==="weekly") return amt*52/12; if(period==="biweekly") return amt*26/12; if(period==="yearly") return amt/12; return amt; };
           const CA = "#E8A838"; const CB = "#E84E8A"; const CS = "#9B6EE8";
           const NA = names?.A||"Amen"; const NB = names?.B||"Gloria";
+          const toTotal = list => (list||[]).reduce((s,b)=>s+toM(parseFloat(b.amount)||0,b.period),0);
+          const aTotal = toTotal(billsA) + toTotal(billsShared)/2;
+          const bTotal = toTotal(billsB) + toTotal(billsShared)/2;
+          const inp2 = { width:"100%",background:T.inputBg,border:`1px solid ${T.border}`,borderRadius:9,padding:"9px 12px",color:T.text,fontFamily:"'DM Sans',sans-serif",fontSize:13,outline:"none",boxSizing:"border-box" };
+          const lbl2 = { fontSize:11,fontWeight:600,letterSpacing:"0.08em",textTransform:"uppercase",color:T.textSub,display:"block",marginBottom:4,marginTop:10,fontFamily:"'DM Sans',sans-serif" };
+          const tabColor = billTab==="B"?CB:billTab==="shared"?CS:CA;
 
-          return (()=>{
-            const [billTab,setBillTab] = (() => { const [s,ss]=useState("overview"); return [s,ss]; })();
-            const [showBillForm,setShowBillForm] = (() => { const [s,ss]=useState(false); return [s,ss]; })();
-            const [editBill,setEditBill] = (() => { const [s,ss]=useState(null); return [s,ss]; })();
-            const [bf,setBf] = (() => { const [s,ss]=useState({name:"",category:"Rent/Mortgage",amount:"",period:"monthly",notes:""}); return [s,ss]; })();
+          function doSaveBill(){
+            if(!billForm.name?.trim()||!billForm.amount) return;
+            const list = billTab==="B"?billsB:billTab==="shared"?billsShared:billsA;
+            const saveFn = billTab==="B"?saveBillsB:billTab==="shared"?saveBillsShared:saveBillsA;
+            if(editBill){ saveFn(list.map(b=>b.id===editBill.id?{...billForm,id:editBill.id,amount:parseFloat(billForm.amount)}:b)); setEditBill(null); }
+            else { saveFn([...list,{...billForm,id:gid(),amount:parseFloat(billForm.amount)}]); }
+            setShowBillForm(false); setBillForm({name:"",category:"Rent/Mortgage",amount:"",period:"monthly",notes:""});
+          }
+          function doDelBill(id,list,saveFn){ saveFn((list||[]).filter(b=>b.id!==id)); }
 
-            // Determine which list to save to based on active tab
-            const activeList = billTab==="B" ? billsB : billTab==="shared" ? billsShared : billsA;
-            const activeSave = billTab==="B" ? saveBillsB : billTab==="shared" ? saveBillsShared : saveBillsA;
-
-            const toMonthlyTotal = list => (list||[]).reduce((s,b)=>s+toMonthly(parseFloat(b.amount)||0,b.period),0);
-            const aTotal = toMonthlyTotal(billsA) + toMonthlyTotal(billsShared)/2;
-            const bTotal = toMonthlyTotal(billsB) + toMonthlyTotal(billsShared)/2;
-
-            function saveBill(){
-              if(!bf.name?.trim()||!bf.amount) return;
-              const list = billTab==="B" ? billsB : billTab==="shared" ? billsShared : billsA;
-              const save = billTab==="B" ? saveBillsB : billTab==="shared" ? saveBillsShared : saveBillsA;
-              if(editBill){ save(list.map(b=>b.id===editBill.id?{...bf,id:editBill.id,amount:parseFloat(bf.amount)}:b)); setEditBill(null); }
-              else { save([...list,{...bf,id:gid(),amount:parseFloat(bf.amount)}]); }
-              setShowBillForm(false); setBf({name:"",category:"Rent/Mortgage",amount:"",period:"monthly",notes:""});
-            }
-            function delBill(id,list,save){ save(list.filter(b=>b.id!==id)); }
-
-            const inp2 = { width:"100%",background:T.inputBg,border:`1px solid ${T.border}`,borderRadius:9,padding:"9px 12px",color:T.text,fontFamily:"'DM Sans',sans-serif",fontSize:13,outline:"none",boxSizing:"border-box" };
-            const lbl2 = { fontSize:11,fontWeight:600,letterSpacing:"0.08em",textTransform:"uppercase",color:T.textSub,display:"block",marginBottom:4,marginTop:10,fontFamily:"'DM Sans',sans-serif" };
-
-            function BillList({ list, saveFn, color, label }){
-              return list.length===0?(
-                <div style={{ padding:"30px 20px",textAlign:"center",color:T.textSub,fontSize:13 }}>No {label} bills yet. Click "+ Add Bill" above.</div>
-              ):(
-                <div style={{ display:"flex",flexDirection:"column",gap:8 }}>
-                  {list.map(b=>{
-                    const monthly = toMonthly(parseFloat(b.amount)||0,b.period);
-                    return (
-                      <div key={b.id} style={{ ...card({padding:"13px 15px"}),display:"flex",alignItems:"center",gap:10,borderLeft:`4px solid ${color}` }}>
-                        <div style={{ flex:1,minWidth:0 }}>
-                          <div style={{ display:"flex",alignItems:"center",gap:8,flexWrap:"wrap" }}>
-                            <span style={{ fontSize:14,fontWeight:700,color:T.text }}>{b.name}</span>
-                            <span style={{ fontSize:10,color:T.textMuted,background:T.inputBg,padding:"2px 7px",borderRadius:6 }}>{b.category}</span>
-                          </div>
-                          <div style={{ fontSize:12,color:T.textSub,marginTop:2 }}>
-                            <span style={{ fontWeight:700,color:T.text }}>{fmt(parseFloat(b.amount)||0)}</span> {b.period}
-                            {b.period!=="monthly"&&<span style={{ color:T.textMuted }}> · {fmt(monthly)}/mo</span>}
-                          </div>
-                          {b.notes&&<div style={{ fontSize:11,color:T.textMuted,fontStyle:"italic",marginTop:1 }}>{b.notes}</div>}
-                        </div>
-                        <div style={{ display:"flex",gap:4,flexShrink:0 }}>
-                          <button onClick={()=>{ setBf({...b,amount:String(b.amount)}); setEditBill(b); setShowBillForm(true); }} style={{ background:"none",border:`1px solid ${T.border}`,color:T.textMuted,cursor:"pointer",fontSize:12,padding:"5px 8px",borderRadius:7,fontFamily:"'DM Sans',sans-serif" }}>✎</button>
-                          <button onClick={()=>delBill(b.id,list,saveFn)} style={{ background:"none",border:"1px solid rgba(232,78,138,0.3)",color:"#E84E8A",cursor:"pointer",fontSize:12,padding:"5px 8px",borderRadius:7,fontFamily:"'DM Sans',sans-serif" }}>✕</button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                  <div style={{ ...card({padding:"11px 15px"}),display:"flex",justifyContent:"space-between",alignItems:"center" }}>
-                    <span style={{ fontSize:12,color:T.textSub }}>Total / month</span>
-                    <span style={{ fontSize:17,fontWeight:800,color }}>{fmt(toMonthlyTotal(list))}</span>
-                  </div>
-                </div>
-              );
-            }
-
+          function renderBillList(list, saveFn, color, label){
+            const l = list||[];
+            if(l.length===0) return <div style={{ padding:"30px 20px",textAlign:"center",color:T.textSub,fontSize:13 }}>No {label} bills yet. Click "+ Add Bill" above.</div>;
             return (
-              <div>
-                {/* Header */}
-                <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16,flexWrap:"wrap",gap:10 }}>
-                  <div>
-                    <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:24,color:T.text }}>Bills & Expenses 🏠</div>
-                    <div style={{ fontSize:13,color:T.textSub,marginTop:2 }}>Each person tracks their own — combined view shows the full picture</div>
+              <div style={{ display:"flex",flexDirection:"column",gap:8 }}>
+                {l.map(b=>{
+                  const monthly = toM(parseFloat(b.amount)||0,b.period);
+                  return (
+                    <div key={b.id} style={{ ...card({padding:"13px 15px"}),display:"flex",alignItems:"center",gap:10,borderLeft:`4px solid ${color}` }}>
+                      <div style={{ flex:1,minWidth:0 }}>
+                        <div style={{ display:"flex",alignItems:"center",gap:8,flexWrap:"wrap" }}>
+                          <span style={{ fontSize:14,fontWeight:700,color:T.text }}>{b.name}</span>
+                          <span style={{ fontSize:10,color:T.textMuted,background:T.inputBg,padding:"2px 7px",borderRadius:6 }}>{b.category}</span>
+                        </div>
+                        <div style={{ fontSize:12,color:T.textSub,marginTop:2 }}>
+                          <span style={{ fontWeight:700,color:T.text }}>{fmt(parseFloat(b.amount)||0)}</span> {b.period}
+                          {b.period!=="monthly"&&<span style={{ color:T.textMuted }}> · {fmt(monthly)}/mo</span>}
+                        </div>
+                        {b.notes&&<div style={{ fontSize:11,color:T.textMuted,fontStyle:"italic",marginTop:1 }}>{b.notes}</div>}
+                      </div>
+                      <div style={{ display:"flex",gap:4,flexShrink:0 }}>
+                        <button onClick={()=>{ setBillForm({...b,amount:String(b.amount)}); setEditBill(b); setShowBillForm(true); }} style={{ background:"none",border:`1px solid ${T.border}`,color:T.textMuted,cursor:"pointer",fontSize:12,padding:"5px 8px",borderRadius:7,fontFamily:"'DM Sans',sans-serif" }}>✎</button>
+                        <button onClick={()=>doDelBill(b.id,list,saveFn)} style={{ background:"none",border:"1px solid rgba(232,78,138,0.3)",color:"#E84E8A",cursor:"pointer",fontSize:12,padding:"5px 8px",borderRadius:7,fontFamily:"'DM Sans',sans-serif" }}>✕</button>
+                      </div>
+                    </div>
+                  );
+                })}
+                <div style={{ ...card({padding:"11px 15px"}),display:"flex",justifyContent:"space-between",alignItems:"center" }}>
+                  <span style={{ fontSize:12,color:T.textSub }}>Total / month</span>
+                  <span style={{ fontSize:17,fontWeight:800,color }}>{fmt(toTotal(list))}</span>
+                </div>
+              </div>
+            );
+          }
+
+          return (
+            <div>
+              {/* Header */}
+              <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16,flexWrap:"wrap",gap:10 }}>
+                <div>
+                  <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:24,color:T.text }}>Bills & Expenses 🏠</div>
+                  <div style={{ fontSize:13,color:T.textSub,marginTop:2 }}>Each person tracks their own — combined view shows the full picture</div>
+                </div>
+                {billTab!=="overview"&&(
+                  <button onClick={()=>{ setBillForm({name:"",category:"Rent/Mortgage",amount:"",period:"monthly",notes:""}); setEditBill(null); setShowBillForm(true); }}
+                    style={{ padding:"9px 18px",borderRadius:9,border:"none",background:tabColor,color:"#fff",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,cursor:"pointer" }}>
+                    + Add Bill
+                  </button>
+                )}
+              </div>
+
+              {/* Tabs */}
+              <div style={{ display:"flex",gap:6,marginBottom:16,overflowX:"auto",scrollbarWidth:"none" }}>
+                {[["overview","📊 Overview"],["A",`${NA}'s Bills`],["B",`${NB}'s Bills`],["shared","🤝 Shared"]].map(([v,l])=>{
+                  const tc = v==="A"?CA:v==="B"?CB:v==="shared"?CS:"#888";
+                  return <button key={v} onClick={()=>setBillTab(v)} style={{ flexShrink:0,padding:"7px 16px",borderRadius:20,border:`1px solid ${billTab===v?tc:T.border}`,background:billTab===v?tc+"20":"transparent",color:billTab===v?tc:T.textSub,fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:billTab===v?700:400,cursor:"pointer" }}>{l}</button>;
+                })}
+              </div>
+
+              {/* Overview */}
+              {billTab==="overview"&&(
+                <div>
+                  <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:14 }}>
+                    {[{name:NA,total:aTotal,c:CA},{name:NB,total:bTotal,c:CB}].map(p=>(
+                      <div key={p.name} style={{ ...card({padding:"16px",borderTop:`3px solid ${p.c}`}) }}>
+                        <div style={{ fontSize:11,fontWeight:700,color:p.c,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:6 }}>{p.name}</div>
+                        <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:22,fontWeight:800,color:p.c,marginBottom:4 }}>{fmt(p.total)}<span style={{ fontSize:12,fontWeight:400,color:T.textSub }}>/mo</span></div>
+                        {[["Daily",p.total/30],["Weekly",p.total*12/52],["Yearly",p.total*12]].map(([l,v])=>(
+                          <div key={l} style={{ display:"flex",justifyContent:"space-between",fontSize:12,padding:"3px 0",borderTop:`1px solid ${T.border}` }}>
+                            <span style={{ color:T.textSub }}>{l} need</span>
+                            <span style={{ fontWeight:700,color:T.text }}>{fmt(v)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    ))}
                   </div>
-                  {billTab!=="overview"&&<button onClick={()=>{ setBf({name:"",category:"Rent/Mortgage",amount:"",period:"monthly",notes:""}); setEditBill(null); setShowBillForm(true); }} style={{ padding:"9px 18px",borderRadius:9,border:"none",background:billTab==="B"?CB:billTab==="shared"?CS:CA,color:"#fff",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,cursor:"pointer" }}>+ Add Bill</button>}
-                </div>
-
-                {/* Tabs */}
-                <div style={{ display:"flex",gap:6,marginBottom:16,overflowX:"auto",scrollbarWidth:"none" }}>
-                  {[["overview","📊 Overview"],["A",`${NA}'s Bills`],["B",`${NB}'s Bills`],["shared","🤝 Shared"]].map(([v,l])=>{
-                    const tc = v==="A"?CA:v==="B"?CB:v==="shared"?CS:"#888";
-                    return <button key={v} onClick={()=>setBillTab(v)} style={{ flexShrink:0,padding:"7px 16px",borderRadius:20,border:`1px solid ${billTab===v?tc:T.border}`,background:billTab===v?tc+"20":"transparent",color:billTab===v?tc:T.textSub,fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:billTab===v?700:400,cursor:"pointer" }}>{l}</button>;
-                  })}
-                </div>
-
-                {/* Overview tab */}
-                {billTab==="overview"&&(
-                  <div>
-                    {/* Hero stats */}
-                    <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:14 }}>
-                      {[{name:NA,total:aTotal,c:CA},{name:NB,total:bTotal,c:CB}].map(p=>(
-                        <div key={p.name} style={{ ...card({padding:"16px",borderTop:`3px solid ${p.c}`}) }}>
-                          <div style={{ fontSize:11,fontWeight:700,color:p.c,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:6 }}>{p.name}</div>
-                          <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:22,fontWeight:800,color:p.c,marginBottom:4 }}>{fmt(p.total)}<span style={{ fontSize:12,fontWeight:400,color:T.textSub }}>/mo</span></div>
-                          {[["Daily",p.total/30],["Weekly",p.total*12/52],["Yearly",p.total*12]].map(([l,v])=>(
-                            <div key={l} style={{ display:"flex",justifyContent:"space-between",fontSize:12,padding:"3px 0",borderTop:`1px solid ${T.border}` }}>
-                              <span style={{ color:T.textSub }}>{l} need</span>
-                              <span style={{ fontWeight:700,color:T.text }}>{fmt(v)}</span>
-                            </div>
-                          ))}
+                  <div style={{ ...card({padding:"14px 16px",marginBottom:14,borderLeft:`4px solid ${CS}`}) }}>
+                    <div style={{ fontSize:11,fontWeight:700,color:CS,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:8 }}>Combined Monthly Total</div>
+                    <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:28,fontWeight:800,color:CS,marginBottom:2 }}>{fmt(aTotal+bTotal)}</div>
+                    <div style={{ fontSize:12,color:T.textSub }}>Together you need {fmt((aTotal+bTotal)/30)}/day · {fmt((aTotal+bTotal)*12/52)}/week</div>
+                  </div>
+                  {(billsShared||[]).length>0&&(
+                    <div style={{ ...card({padding:"14px 16px"}) }}>
+                      <div style={{ fontSize:12,fontWeight:700,color:CS,marginBottom:10 }}>🤝 Shared Bills (split 50/50)</div>
+                      {(billsShared||[]).map(b=>(
+                        <div key={b.id} style={{ display:"flex",justifyContent:"space-between",fontSize:12,padding:"5px 0",borderBottom:`1px solid ${T.border}` }}>
+                          <span style={{ color:T.text }}>{b.name}</span>
+                          <span style={{ color:T.textSub }}>{fmt(toM(parseFloat(b.amount)||0,b.period)/2)} each</span>
                         </div>
                       ))}
                     </div>
-                    {/* Combined */}
-                    <div style={{ ...card({padding:"14px 16px",marginBottom:14,borderLeft:`4px solid ${CS}`}) }}>
-                      <div style={{ fontSize:11,fontWeight:700,color:CS,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:8 }}>Combined Monthly Total</div>
-                      <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:28,fontWeight:800,color:CS,marginBottom:2 }}>{fmt(aTotal+bTotal)}</div>
-                      <div style={{ fontSize:12,color:T.textSub }}>Together you need {fmt((aTotal+bTotal)/30)}/day · {fmt((aTotal+bTotal)*12/52)}/week</div>
-                    </div>
-                    {/* Shared bills breakdown */}
-                    {(billsShared||[]).length>0&&(
-                      <div style={{ ...card({padding:"14px 16px"}) }}>
-                        <div style={{ fontSize:12,fontWeight:700,color:CS,marginBottom:10 }}>🤝 Shared Bills (split 50/50)</div>
-                        {(billsShared||[]).map(b=>(
-                          <div key={b.id} style={{ display:"flex",justifyContent:"space-between",fontSize:12,padding:"5px 0",borderBottom:`1px solid ${T.border}` }}>
-                            <span style={{ color:T.text }}>{b.name}</span>
-                            <span style={{ color:T.textSub }}>{fmt(toMonthly(parseFloat(b.amount)||0,b.period)/2)} each</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
+                  )}
+                </div>
+              )}
 
-                {billTab==="A"&&<BillList list={billsA||[]} saveFn={saveBillsA} color={CA} label={NA}/>}
-                {billTab==="B"&&<BillList list={billsB||[]} saveFn={saveBillsB} color={CB} label={NB}/>}
-                {billTab==="shared"&&(
-                  <div>
-                    <div style={{ ...card({padding:"12px 16px",marginBottom:12,background:CS+"10",borderLeft:`3px solid ${CS}`}) }}>
-                      <div style={{ fontSize:12,color:CS,fontWeight:600 }}>🤝 Shared bills are split 50/50 — each person owes half. Add things like rent, utilities, or groceries you split together.</div>
-                    </div>
-                    <BillList list={billsShared||[]} saveFn={saveBillsShared} color={CS} label="shared"/>
+              {billTab==="A"&&renderBillList(billsA, saveBillsA, CA, NA)}
+              {billTab==="B"&&renderBillList(billsB, saveBillsB, CB, NB)}
+              {billTab==="shared"&&(
+                <div>
+                  <div style={{ ...card({padding:"12px 16px",marginBottom:12,background:CS+"10",borderLeft:`3px solid ${CS}`}) }}>
+                    <div style={{ fontSize:12,color:CS,fontWeight:600 }}>🤝 Shared bills are split 50/50 — each person owes half. Add things like rent, utilities, or groceries you split together.</div>
                   </div>
-                )}
+                  {renderBillList(billsShared, saveBillsShared, CS, "shared")}
+                </div>
+              )}
 
-                {/* Add/Edit Bill modal */}
-                {showBillForm&&(
-                  <div style={{ position:"fixed",inset:0,zIndex:60,background:"rgba(0,0,0,0.65)",backdropFilter:"blur(6px)",display:"flex",alignItems:"flex-end",justifyContent:"center" }} onClick={e=>e.target===e.currentTarget&&setShowBillForm(false)}>
-                    <div style={{ background:T.surface,border:`1px solid ${T.border}`,borderRadius:"20px 20px 0 0",width:"100%",maxWidth:500,maxHeight:"90vh",overflowY:"auto",padding:"24px 20px 40px" }}>
-                      <div style={{ width:40,height:4,borderRadius:2,background:T.textMuted,margin:"0 auto 18px",opacity:0.4 }}/>
-                      <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:20,color:billTab==="B"?CB:billTab==="shared"?CS:CA,marginBottom:4 }}>{editBill?"Edit":"Add"} Bill</div>
-                      <div style={{ fontSize:12,color:T.textSub,marginBottom:14 }}>Adding to: <strong>{billTab==="B"?`${NB}'s private bills`:billTab==="shared"?"Shared (split 50/50)":`${NA}'s private bills`}</strong></div>
-                      <label style={lbl2}>Bill Name *</label>
-                      <input style={inp2} value={bf.name||""} onChange={e=>setBf(p=>({...p,name:e.target.value}))} placeholder="e.g. Rent, Netflix, Phone"/>
-                      <label style={lbl2}>Category</label>
-                      <select style={{ ...inp2,appearance:"none" }} value={bf.category||"Other"} onChange={e=>setBf(p=>({...p,category:e.target.value}))}>
-                        {BILL_CATS.map(c=><option key={c} value={c}>{c}</option>)}
-                      </select>
-                      <label style={lbl2}>Amount *</label>
-                      <input type="number" style={inp2} value={bf.amount||""} onChange={e=>setBf(p=>({...p,amount:e.target.value}))} placeholder="0.00"/>
-                      <label style={lbl2}>Frequency</label>
-                      <div style={{ display:"flex",gap:6,flexWrap:"wrap",marginBottom:4 }}>
-                        {PERIODS.map(p=>(
-                          <button key={p} onClick={()=>setBf(prev=>({...prev,period:p}))} style={{ padding:"7px 12px",borderRadius:8,border:`1px solid ${bf.period===p?"#9B6EE8":T.border}`,background:bf.period===p?"#9B6EE820":"transparent",color:bf.period===p?"#9B6EE8":T.text,fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:bf.period===p?700:400,cursor:"pointer" }}>{p}</button>
-                        ))}
-                      </div>
-                      <label style={lbl2}>Notes (optional)</label>
-                      <input style={inp2} value={bf.notes||""} onChange={e=>setBf(p=>({...p,notes:e.target.value}))} placeholder="e.g. due 1st of month, auto-pay"/>
-                      <div style={{ display:"flex",gap:8,marginTop:18 }}>
-                        <button onClick={()=>{ setShowBillForm(false); setEditBill(null); }} style={{ flex:1,padding:"11px",borderRadius:10,border:`1px solid ${T.border}`,background:"transparent",color:T.textSub,fontFamily:"'DM Sans',sans-serif",fontSize:13,cursor:"pointer" }}>Cancel</button>
-                        <button onClick={saveBill} style={{ flex:2,padding:"11px",borderRadius:10,border:"none",background:billTab==="B"?CB:billTab==="shared"?CS:CA,color:"#fff",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:700,cursor:"pointer" }}>Save Bill</button>
-                      </div>
+              {/* Add/Edit modal */}
+              {showBillForm&&(
+                <div style={{ position:"fixed",inset:0,zIndex:60,background:"rgba(0,0,0,0.65)",backdropFilter:"blur(6px)",display:"flex",alignItems:"flex-end",justifyContent:"center" }} onClick={e=>e.target===e.currentTarget&&setShowBillForm(false)}>
+                  <div style={{ background:T.surface,border:`1px solid ${T.border}`,borderRadius:"20px 20px 0 0",width:"100%",maxWidth:500,maxHeight:"90vh",overflowY:"auto",padding:"24px 20px 40px" }}>
+                    <div style={{ width:40,height:4,borderRadius:2,background:T.textMuted,margin:"0 auto 18px",opacity:0.4 }}/>
+                    <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:20,color:tabColor,marginBottom:4 }}>{editBill?"Edit":"Add"} Bill</div>
+                    <div style={{ fontSize:12,color:T.textSub,marginBottom:14 }}>Adding to: <strong>{billTab==="B"?`${NB}'s private bills`:billTab==="shared"?"Shared (split 50/50)":`${NA}'s private bills`}</strong></div>
+                    <label style={lbl2}>Bill Name *</label>
+                    <input style={inp2} value={billForm.name||""} onChange={e=>setBillForm(p=>({...p,name:e.target.value}))} placeholder="e.g. Rent, Netflix, Phone"/>
+                    <label style={lbl2}>Category</label>
+                    <select style={{ ...inp2,appearance:"none" }} value={billForm.category||"Other"} onChange={e=>setBillForm(p=>({...p,category:e.target.value}))}>
+                      {BILL_CATS.map(c=><option key={c} value={c}>{c}</option>)}
+                    </select>
+                    <label style={lbl2}>Amount *</label>
+                    <input type="number" style={inp2} value={billForm.amount||""} onChange={e=>setBillForm(p=>({...p,amount:e.target.value}))} placeholder="0.00"/>
+                    <label style={lbl2}>Frequency</label>
+                    <div style={{ display:"flex",gap:6,flexWrap:"wrap",marginBottom:4 }}>
+                      {PERIODS.map(p=>(
+                        <button key={p} onClick={()=>setBillForm(prev=>({...prev,period:p}))} style={{ padding:"7px 12px",borderRadius:8,border:`1px solid ${billForm.period===p?"#9B6EE8":T.border}`,background:billForm.period===p?"#9B6EE820":"transparent",color:billForm.period===p?"#9B6EE8":T.text,fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:billForm.period===p?700:400,cursor:"pointer" }}>{p}</button>
+                      ))}
+                    </div>
+                    <label style={lbl2}>Notes (optional)</label>
+                    <input style={inp2} value={billForm.notes||""} onChange={e=>setBillForm(p=>({...p,notes:e.target.value}))} placeholder="e.g. due 1st of month, auto-pay"/>
+                    <div style={{ display:"flex",gap:8,marginTop:18 }}>
+                      <button onClick={()=>{ setShowBillForm(false); setEditBill(null); }} style={{ flex:1,padding:"11px",borderRadius:10,border:`1px solid ${T.border}`,background:"transparent",color:T.textSub,fontFamily:"'DM Sans',sans-serif",fontSize:13,cursor:"pointer" }}>Cancel</button>
+                      <button onClick={doSaveBill} style={{ flex:2,padding:"11px",borderRadius:10,border:"none",background:tabColor,color:"#fff",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:700,cursor:"pointer" }}>Save Bill</button>
                     </div>
                   </div>
-                )}
-              </div>
-            );
-          })();
+                </div>
+              )}
+            </div>
+          );
         })()}
 
         {/* ════ REPORT ════ */}
