@@ -124,6 +124,35 @@ const GYM_PLAN = [
   ]},
 ];
 
+// ── Exercise Database ─────────────────────────────────────────────────────────
+const EXERCISE_DB = [
+  // CHEST
+  {name:"Bench Press",muscle:"Chest",equip:"Barbell"},{name:"Incline Bench Press",muscle:"Chest",equip:"Barbell"},{name:"Decline Bench Press",muscle:"Chest",equip:"Barbell"},{name:"Dumbbell Fly",muscle:"Chest",equip:"Dumbbell"},{name:"Incline Dumbbell Fly",muscle:"Chest",equip:"Dumbbell"},{name:"Cable Fly",muscle:"Chest",equip:"Cable"},{name:"Low-to-High Cable Fly",muscle:"Chest",equip:"Cable"},{name:"High-to-Low Cable Fly",muscle:"Chest",equip:"Cable"},{name:"Pec Deck",muscle:"Chest",equip:"Machine"},{name:"Push-ups",muscle:"Chest",equip:"Bodyweight"},{name:"Weighted Push-ups",muscle:"Chest",equip:"Bodyweight"},{name:"Wide Push-ups",muscle:"Chest",equip:"Bodyweight"},{name:"Diamond Push-ups",muscle:"Chest",equip:"Bodyweight"},{name:"Dips",muscle:"Chest",equip:"Bodyweight"},{name:"Chest Press Machine",muscle:"Chest",equip:"Machine"},{name:"Smith Machine Bench Press",muscle:"Chest",equip:"Machine"},{name:"Champagne Press",muscle:"Chest",equip:"Dumbbell"},{name:"Landmine Press",muscle:"Chest",equip:"Barbell"},{name:"Svend Press",muscle:"Chest",equip:"Plate"},
+  // BACK
+  {name:"Deadlift",muscle:"Back",equip:"Barbell"},{name:"Sumo Deadlift",muscle:"Back",equip:"Barbell"},{name:"Trap Bar Deadlift",muscle:"Back",equip:"Barbell"},{name:"Pull-ups",muscle:"Back",equip:"Bodyweight"},{name:"Chin-ups",muscle:"Back",equip:"Bodyweight"},{name:"Weighted Pull-ups",muscle:"Back",equip:"Bodyweight"},{name:"Lat Pulldown",muscle:"Back",equip:"Cable"},{name:"Close Grip Lat Pulldown",muscle:"Back",equip:"Cable"},{name:"Single Arm Lat Pulldown",muscle:"Back",equip:"Cable"},{name:"Bent Over Row",muscle:"Back",equip:"Barbell"},{name:"Pendlay Row",muscle:"Back",equip:"Barbell"},{name:"T-Bar Row",muscle:"Back",equip:"Machine"},{name:"Single Arm Dumbbell Row",muscle:"Back",equip:"Dumbbell"},{name:"Seated Cable Row",muscle:"Back",equip:"Cable"},{name:"Cable Pullover",muscle:"Back",equip:"Cable"},{name:"Straight Arm Pulldown",muscle:"Back",equip:"Cable"},{name:"Barbell Shrug",muscle:"Back",equip:"Barbell"},{name:"Dumbbell Shrug",muscle:"Back",equip:"Dumbbell"},{name:"Hyperextension",muscle:"Back",equip:"Machine"},{name:"Good Mornings",muscle:"Back",equip:"Barbell"},{name:"Reverse Fly",muscle:"Back",equip:"Dumbbell"},{name:"Face Pull",muscle:"Back",equip:"Cable"},{name:"Rack Pull",muscle:"Back",equip:"Barbell"},{name:"Inverted Row",muscle:"Back",equip:"Bodyweight"},
+  // SHOULDERS
+  {name:"Overhead Press",muscle:"Shoulders",equip:"Barbell"},{name:"Push Press",muscle:"Shoulders",equip:"Barbell"},{name:"Seated Dumbbell Press",muscle:"Shoulders",equip:"Dumbbell"},{name:"Arnold Press",muscle:"Shoulders",equip:"Dumbbell"},{name:"Seated Arnold Press",muscle:"Shoulders",equip:"Dumbbell"},{name:"Lateral Raise",muscle:"Shoulders",equip:"Dumbbell"},{name:"Cable Lateral Raise",muscle:"Shoulders",equip:"Cable"},{name:"Front Raise",muscle:"Shoulders",equip:"Dumbbell"},{name:"Plate Front Raise",muscle:"Shoulders",equip:"Plate"},{name:"Bent-Over Lateral Raise",muscle:"Shoulders",equip:"Dumbbell"},{name:"High Pull",muscle:"Shoulders",equip:"Barbell"},{name:"Upright Row",muscle:"Shoulders",equip:"Barbell"},{name:"Shoulder Press Machine",muscle:"Shoulders",equip:"Machine"},{name:"Smith Machine OHP",muscle:"Shoulders",equip:"Machine"},{name:"Cable Front Raise",muscle:"Shoulders",equip:"Cable"},{name:"Band Pull-Apart",muscle:"Shoulders",equip:"Band"},
+  // BICEPS
+  {name:"Barbell Curl",muscle:"Biceps",equip:"Barbell"},{name:"EZ Bar Curl",muscle:"Biceps",equip:"Barbell"},{name:"Straight Bar Curl",muscle:"Biceps",equip:"Barbell"},{name:"Dumbbell Curl",muscle:"Biceps",equip:"Dumbbell"},{name:"Hammer Curl",muscle:"Biceps",equip:"Dumbbell"},{name:"Heavy Hammer Curl",muscle:"Biceps",equip:"Dumbbell"},{name:"Incline Dumbbell Curl",muscle:"Biceps",equip:"Dumbbell"},{name:"Concentration Curl",muscle:"Biceps",equip:"Dumbbell"},{name:"Preacher Curl",muscle:"Biceps",equip:"Machine"},{name:"Cable Curl",muscle:"Biceps",equip:"Cable"},{name:"Rope Hammer Curl",muscle:"Biceps",equip:"Cable"},{name:"Spider Curl",muscle:"Biceps",equip:"Dumbbell"},{name:"Reverse Curl",muscle:"Biceps",equip:"Barbell"},{name:"Zottman Curl",muscle:"Biceps",equip:"Dumbbell"},{name:"One-Arm Strict Curl",muscle:"Biceps",equip:"Dumbbell"},{name:"21s",muscle:"Biceps",equip:"Barbell"},
+  // TRICEPS
+  {name:"Skull Crusher",muscle:"Triceps",equip:"Barbell"},{name:"Close Grip Bench Press",muscle:"Triceps",equip:"Barbell"},{name:"Tricep Rope Pushdown",muscle:"Triceps",equip:"Cable"},{name:"Tricep Bar Pushdown",muscle:"Triceps",equip:"Cable"},{name:"Overhead Tricep Extension",muscle:"Triceps",equip:"Dumbbell"},{name:"Overhead Tricep Press",muscle:"Triceps",equip:"Cable"},{name:"Tricep Kickback",muscle:"Triceps",equip:"Dumbbell"},{name:"Weighted Dips",muscle:"Triceps",equip:"Bodyweight"},{name:"Bench Dips",muscle:"Triceps",equip:"Bodyweight"},{name:"JM Press",muscle:"Triceps",equip:"Barbell"},{name:"Tate Press",muscle:"Triceps",equip:"Dumbbell"},
+  // QUADS
+  {name:"Back Squat",muscle:"Quads",equip:"Barbell"},{name:"Front Squat",muscle:"Quads",equip:"Barbell"},{name:"Goblet Squat",muscle:"Quads",equip:"Dumbbell"},{name:"Hack Squat",muscle:"Quads",equip:"Machine"},{name:"Leg Press",muscle:"Quads",equip:"Machine"},{name:"Leg Extension",muscle:"Quads",equip:"Machine"},{name:"Bulgarian Split Squat",muscle:"Quads",equip:"Dumbbell"},{name:"Walking Lunges",muscle:"Quads",equip:"Bodyweight"},{name:"Reverse Lunges",muscle:"Quads",equip:"Bodyweight"},{name:"Step-ups",muscle:"Quads",equip:"Dumbbell"},{name:"Smith Machine Squat",muscle:"Quads",equip:"Machine"},{name:"Sissy Squat",muscle:"Quads",equip:"Bodyweight"},{name:"Pistol Squat",muscle:"Quads",equip:"Bodyweight"},
+  // HAMSTRINGS / GLUTES
+  {name:"Romanian Deadlift",muscle:"Hamstrings",equip:"Barbell"},{name:"Leg Curl (Lying)",muscle:"Hamstrings",equip:"Machine"},{name:"Leg Curl (Seated)",muscle:"Hamstrings",equip:"Machine"},{name:"Nordic Hamstring Curl",muscle:"Hamstrings",equip:"Bodyweight"},{name:"Good Mornings",muscle:"Hamstrings",equip:"Barbell"},{name:"Hip Thrust",muscle:"Glutes",equip:"Barbell"},{name:"Glute Bridge",muscle:"Glutes",equip:"Bodyweight"},{name:"Cable Kickback",muscle:"Glutes",equip:"Cable"},{name:"Sumo Squat",muscle:"Glutes",equip:"Dumbbell"},{name:"Abductor Machine",muscle:"Glutes",equip:"Machine"},{name:"Adductor Machine",muscle:"Glutes",equip:"Machine"},
+  // CALVES
+  {name:"Standing Calf Raise",muscle:"Calves",equip:"Machine"},{name:"Seated Calf Raise",muscle:"Calves",equip:"Machine"},{name:"Leg Press Calf Raise",muscle:"Calves",equip:"Machine"},{name:"Donkey Calf Raise",muscle:"Calves",equip:"Bodyweight"},{name:"Single-leg Calf Raise",muscle:"Calves",equip:"Bodyweight"},{name:"Calf Raises",muscle:"Calves",equip:"Bodyweight"},
+  // CORE / ABS
+  {name:"Plank",muscle:"Core",equip:"Bodyweight"},{name:"Side Plank",muscle:"Core",equip:"Bodyweight"},{name:"Hanging Leg Raise",muscle:"Core",equip:"Bodyweight"},{name:"Hanging Knee Raise",muscle:"Core",equip:"Bodyweight"},{name:"Ab Wheel Rollout",muscle:"Core",equip:"Bodyweight"},{name:"Cable Crunch",muscle:"Core",equip:"Cable"},{name:"Russian Twist",muscle:"Core",equip:"Bodyweight"},{name:"Decline Sit-up",muscle:"Core",equip:"Bodyweight"},{name:"V-up",muscle:"Core",equip:"Bodyweight"},{name:"L-sit",muscle:"Core",equip:"Bodyweight"},{name:"Dragon Flag",muscle:"Core",equip:"Bodyweight"},{name:"Windshield Wiper",muscle:"Core",equip:"Bodyweight"},{name:"Pallof Press",muscle:"Core",equip:"Cable"},{name:"Landmine Rotation",muscle:"Core",equip:"Barbell"},{name:"Bicycle Crunch",muscle:"Core",equip:"Bodyweight"},{name:"Dead Bug",muscle:"Core",equip:"Bodyweight"},{name:"Hollow Body Hold",muscle:"Core",equip:"Bodyweight"},{name:"Toes to Bar",muscle:"Core",equip:"Bodyweight"},
+  // CARDIO / HIIT
+  {name:"Treadmill Sprint",muscle:"Cardio",equip:"Machine"},{name:"Rowing Machine",muscle:"Cardio",equip:"Machine"},{name:"Assault Bike",muscle:"Cardio",equip:"Machine"},{name:"Stationary Bike",muscle:"Cardio",equip:"Machine"},{name:"Stair Climber",muscle:"Cardio",equip:"Machine"},{name:"Jump Rope",muscle:"Cardio",equip:"Bodyweight"},{name:"Box Jumps",muscle:"Cardio",equip:"Bodyweight"},{name:"Burpees",muscle:"Cardio",equip:"Bodyweight"},{name:"Battle Ropes",muscle:"Cardio",equip:"Machine"},{name:"Mountain Climbers",muscle:"Cardio",equip:"Bodyweight"},{name:"Jump Squats",muscle:"Cardio",equip:"Bodyweight"},{name:"Kettlebell Swings",muscle:"Cardio",equip:"Kettlebell"},{name:"Sled Push",muscle:"Cardio",equip:"Machine"},{name:"Bear Crawl",muscle:"Cardio",equip:"Bodyweight"},{name:"Tuck Jumps",muscle:"Cardio",equip:"Bodyweight"},{name:"Sprint",muscle:"Cardio",equip:"Bodyweight"},
+  // FULL BODY
+  {name:"Thruster",muscle:"Full Body",equip:"Barbell"},{name:"Clean and Press",muscle:"Full Body",equip:"Barbell"},{name:"Power Clean",muscle:"Full Body",equip:"Barbell"},{name:"Snatch",muscle:"Full Body",equip:"Barbell"},{name:"Turkish Get-up",muscle:"Full Body",equip:"Kettlebell"},{name:"Farmers Walk",muscle:"Full Body",equip:"Dumbbell"},{name:"Tire Flip",muscle:"Full Body",equip:"Bodyweight"},{name:"Sandbag Carry",muscle:"Full Body",equip:"Bodyweight"},{name:"Kettlebell Clean and Press",muscle:"Full Body",equip:"Kettlebell"},{name:"Man Makers",muscle:"Full Body",equip:"Dumbbell"},
+];
+
+const MUSCLE_GROUPS = ["All",...[...new Set(EXERCISE_DB.map(e=>e.muscle))]];
+const MUSCLE_COLORS = {Chest:"#E8704A",Back:"#3B9EDB",Shoulders:"#E8A838",Biceps:"#3DBF8A",Triceps:"#9B6EE8",Quads:"#E84E8A",Hamstrings:"#20B2AA",Glutes:"#E8704A",Calves:"#7B61FF",Core:"#E8A838",Cardio:"#E84E8A","Full Body":"#888"};
+
 // ── Rest Timer ────────────────────────────────────────────────────────────────
 function RestTimer({ color }) {
   const [secs, setSecs] = useState(90);
@@ -187,8 +216,11 @@ function RestTimer({ color }) {
 }
 
 // ── Active Workout Mode ───────────────────────────────────────────────────────
-function ActiveWorkout({ day, onExit }) {
-  const allExercises = day.sections.flatMap(s => s.exercises.map(e => ({ ...e, section: s.name })));
+function ActiveWorkout({ day, customExercises, onExit }) {
+  const allExercises = [
+    ...day.sections.flatMap(s => s.exercises.map(e => ({ ...e, section: s.name }))),
+    ...(customExercises||[]).map(e => ({ ...e, section:"CUSTOM ✦" })),
+  ];
   const [exIdx, setExIdx] = useState(0);
   const [setIdx, setSetIdx] = useState(0);
   const [logs, setLogs] = useState({});
@@ -323,6 +355,11 @@ export function GymView({ T, data, save, today, isMobile }) {
   const [gwf, setGwf] = useState({ weight:"", sessions:"", prs:"", nutrition:5, notes:"" });
   const [manualForm, setManualForm] = useState(false);
   const [mf, setMf] = useState({ date:today, type:"weights", duration:"", intensity:"high", bodyWeight:"", notes:"" });
+  const [showAddEx, setShowAddEx] = useState(false);
+  const [exSearch, setExSearch] = useState("");
+  const [exMuscle, setExMuscle] = useState("All");
+  const [exPicked, setExPicked] = useState(null);
+  const [exForm, setExForm] = useState({ sets:"3", reps:"10", target:"", notes:"" });
 
   const thisMonday = (()=>{ const d=new Date(); d.setDate(d.getDate()-((d.getDay()+6)%7)); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; })();
   const gymWeekly = data.gymWeekly||[];
@@ -378,9 +415,19 @@ export function GymView({ T, data, save, today, isMobile }) {
     setMf({ date:today, type:"weights", duration:"", intensity:"high", bodyWeight:"", notes:"" });
   }
 
+  function saveCustomEx() {
+    if (!exPicked) return;
+    const entry = { ...exPicked, ...exForm, id:"cx_"+Math.random().toString(36).slice(2,8), sets:parseInt(exForm.sets)||3 };
+    save(p => ({ ...p, gymCustom: { ...(p.gymCustom||{}), [gymDay]: [...(p.gymCustom?.[gymDay]||[]), entry] } }));
+    setShowAddEx(false); setExPicked(null); setExSearch(""); setExMuscle("All"); setExForm({ sets:"3", reps:"10", target:"", notes:"" });
+  }
+  function delCustomEx(id) {
+    save(p => ({ ...p, gymCustom: { ...(p.gymCustom||{}), [gymDay]: (p.gymCustom?.[gymDay]||[]).filter(e=>e.id!==id) } }));
+  }
+
   if (activeWorkout) return (
     <div style={{ background:"#0d0f14",minHeight:"100vh",padding:"20px 16px",fontFamily:"'DM Sans',sans-serif" }}>
-      <ActiveWorkout day={GYM_PLAN[gymDay]} onExit={handleWorkoutDone}/>
+      <ActiveWorkout day={GYM_PLAN[gymDay]} customExercises={data.gymCustom?.[gymDay]||[]} onExit={handleWorkoutDone}/>
     </div>
   );
 
@@ -489,6 +536,159 @@ export function GymView({ T, data, save, today, isMobile }) {
               ))}
             </div>
           ))}
+
+          {/* ── Custom exercises for this day ── */}
+          {(()=>{
+            const custom = data.gymCustom?.[gymDay]||[];
+            const mc = MUSCLE_COLORS[custom[0]?.muscle]||currentDay.color;
+            return (
+              <div>
+                {custom.length>0&&(
+                  <div style={{ ...cs({padding:"14px 16px"}),marginBottom:10,borderLeft:`3px solid #9B6EE8` }}>
+                    <div style={{ fontSize:11,fontWeight:700,color:"#9B6EE8",textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:10 }}>CUSTOM ✦</div>
+                    {custom.map((ex,ei)=>(
+                      <div key={ex.id} style={{ borderBottom:ei<custom.length-1?`1px solid ${T.border}`:"none",paddingBottom:10,marginBottom:10 }}>
+                        <div style={{ display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:8 }}>
+                          <div style={{ flex:1 }}>
+                            <div style={{ display:"flex",alignItems:"center",gap:6,flexWrap:"wrap" }}>
+                              <span style={{ fontSize:14,fontWeight:600,color:T.text }}>{ex.name}</span>
+                              <span style={{ fontSize:10,background:(MUSCLE_COLORS[ex.muscle]||"#888")+"20",color:MUSCLE_COLORS[ex.muscle]||"#888",padding:"2px 6px",borderRadius:5,fontWeight:700 }}>{ex.muscle}</span>
+                              <span style={{ fontSize:10,color:T.textMuted,background:T.inputBg,padding:"2px 6px",borderRadius:5 }}>{ex.equip}</span>
+                            </div>
+                            <div style={{ fontSize:12,color:T.textSub,marginTop:2 }}>{ex.sets} sets × {ex.reps}{ex.target?` · ${ex.target}`:""}</div>
+                            {ex.notes&&<div style={{ fontSize:11,color:T.textMuted,fontStyle:"italic",marginTop:1 }}>{ex.notes}</div>}
+                          </div>
+                          <div style={{ display:"flex",gap:4,flexShrink:0 }}>
+                            <a href={`https://www.youtube.com/results?search_query=${encodeURIComponent(ex.name+" form tutorial")}`} target="_blank" rel="noreferrer"
+                              style={{ width:28,height:28,borderRadius:7,background:"rgba(255,0,0,0.12)",border:"1px solid rgba(255,0,0,0.2)",display:"flex",alignItems:"center",justifyContent:"center",textDecoration:"none",fontSize:13,color:"#FF4444",flexShrink:0 }}>
+                              ▶
+                            </a>
+                            <button onClick={()=>delCustomEx(ex.id)} style={{ width:28,height:28,borderRadius:7,background:"none",border:"1px solid rgba(232,78,138,0.3)",color:"#E84E8A",cursor:"pointer",fontSize:13,display:"flex",alignItems:"center",justifyContent:"center" }}>✕</button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Add Exercise button */}
+                <button onClick={()=>{ setShowAddEx(true); setExPicked(null); setExSearch(""); setExMuscle("All"); setExForm({sets:"3",reps:"10",target:"",notes:""}); }}
+                  style={{ width:"100%",padding:"12px",borderRadius:12,border:`2px dashed ${currentDay.color}55`,background:currentDay.color+"08",color:currentDay.color,fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,cursor:"pointer",marginBottom:4 }}>
+                  + Add Custom Exercise to {currentDay.day}
+                </button>
+              </div>
+            );
+          })()}
+
+          {/* ── Add Exercise Modal ── */}
+          {showAddEx&&(()=>{
+            const q = exSearch.toLowerCase();
+            const filtered = EXERCISE_DB.filter(e=>(exMuscle==="All"||e.muscle===exMuscle)&&(!q||e.name.toLowerCase().includes(q)||e.muscle.toLowerCase().includes(q)||e.equip.toLowerCase().includes(q)));
+            const inpM = { width:"100%",background:"rgba(255,255,255,0.07)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:9,padding:"9px 12px",color:"#fff",fontFamily:"'DM Sans',sans-serif",fontSize:13,outline:"none",boxSizing:"border-box" };
+            const lblM = { fontSize:10,fontWeight:700,letterSpacing:"0.08em",textTransform:"uppercase",color:"#555",display:"block",marginBottom:4,marginTop:10,fontFamily:"'DM Sans',sans-serif" };
+            return (
+              <div style={{ position:"fixed",inset:0,zIndex:80,background:"rgba(0,0,0,0.8)",backdropFilter:"blur(8px)",display:"flex",alignItems:"flex-end",justifyContent:"center" }} onClick={e=>e.target===e.currentTarget&&setShowAddEx(false)}>
+                <div style={{ background:"#161820",border:"1px solid rgba(255,255,255,0.1)",borderRadius:"20px 20px 0 0",width:"100%",maxWidth:520,maxHeight:"92vh",display:"flex",flexDirection:"column",padding:"0 0 env(safe-area-inset-bottom,0)" }}>
+                  {/* Handle */}
+                  <div style={{ padding:"14px 20px 0",flexShrink:0 }}>
+                    <div style={{ width:40,height:4,borderRadius:2,background:"rgba(255,255,255,0.15)",margin:"0 auto 16px" }}/>
+                    <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:20,color:currentDay.color,marginBottom:12 }}>
+                      {exPicked ? `Configure: ${exPicked.name}` : `Add Exercise — ${currentDay.day}`}
+                    </div>
+
+                    {!exPicked&&(
+                      <>
+                        {/* Search input */}
+                        <div style={{ position:"relative",marginBottom:10 }}>
+                          <span style={{ position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",fontSize:16,pointerEvents:"none" }}>🔍</span>
+                          <input
+                            autoFocus
+                            value={exSearch}
+                            onChange={e=>setExSearch(e.target.value)}
+                            placeholder="Search exercises, muscles, equipment..."
+                            style={{ ...inpM,paddingLeft:38 }}
+                          />
+                        </div>
+                        {/* Muscle group filter chips */}
+                        <div style={{ display:"flex",gap:5,overflowX:"auto",scrollbarWidth:"none",paddingBottom:6,marginBottom:8 }}>
+                          {MUSCLE_GROUPS.map(m=>{
+                            const mc2 = MUSCLE_COLORS[m]||currentDay.color;
+                            return (
+                              <button key={m} onClick={()=>setExMuscle(m)} style={{ flexShrink:0,padding:"4px 10px",borderRadius:16,border:`1px solid ${exMuscle===m?mc2:"rgba(255,255,255,0.1)"}`,background:exMuscle===m?mc2+"25":"transparent",color:exMuscle===m?mc2:"#666",fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:exMuscle===m?700:400,cursor:"pointer",whiteSpace:"nowrap" }}>
+                                {m}
+                              </button>
+                            );
+                          })}
+                        </div>
+                        <div style={{ fontSize:11,color:"#444",marginBottom:6 }}>{filtered.length} exercise{filtered.length!==1?"s":""} found</div>
+                      </>
+                    )}
+                  </div>
+
+                  {/* Scrollable body */}
+                  <div style={{ flex:1,overflowY:"auto",padding:"0 20px 20px" }}>
+                    {!exPicked ? (
+                      /* Exercise list */
+                      filtered.length===0?(
+                        <div style={{ textAlign:"center",padding:"30px 0",color:"#444",fontSize:13 }}>No exercises match your search</div>
+                      ):(
+                        <div style={{ display:"flex",flexDirection:"column",gap:6 }}>
+                          {filtered.map(ex=>{
+                            const mc2 = MUSCLE_COLORS[ex.muscle]||"#888";
+                            return (
+                              <button key={ex.name} onClick={()=>setExPicked(ex)}
+                                style={{ display:"flex",alignItems:"center",gap:10,padding:"11px 14px",borderRadius:11,border:"1px solid rgba(255,255,255,0.07)",background:"rgba(255,255,255,0.03)",cursor:"pointer",textAlign:"left",width:"100%" }}>
+                                <div style={{ width:8,height:8,borderRadius:"50%",background:mc2,flexShrink:0 }}/>
+                                <div style={{ flex:1,minWidth:0 }}>
+                                  <div style={{ fontSize:13,fontWeight:600,color:"#fff" }}>{ex.name}</div>
+                                  <div style={{ fontSize:11,color:"#555",marginTop:1 }}>{ex.muscle} · {ex.equip}</div>
+                                </div>
+                                <div style={{ fontSize:18,color:"#333",flexShrink:0 }}>›</div>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )
+                    ) : (
+                      /* Configure form */
+                      <div>
+                        <div style={{ display:"flex",alignItems:"center",gap:8,marginBottom:16,padding:"10px 12px",borderRadius:10,background:currentDay.color+"15",border:`1px solid ${currentDay.color}30` }}>
+                          <div style={{ width:10,height:10,borderRadius:"50%",background:MUSCLE_COLORS[exPicked.muscle]||currentDay.color,flexShrink:0 }}/>
+                          <div>
+                            <div style={{ fontSize:14,fontWeight:700,color:"#fff" }}>{exPicked.name}</div>
+                            <div style={{ fontSize:11,color:"#555" }}>{exPicked.muscle} · {exPicked.equip}</div>
+                          </div>
+                          <button onClick={()=>setExPicked(null)} style={{ marginLeft:"auto",background:"none",border:"none",color:"#555",cursor:"pointer",fontSize:13,padding:"4px 8px",borderRadius:6,fontFamily:"'DM Sans',sans-serif" }}>← Change</button>
+                        </div>
+
+                        <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:10 }}>
+                          <div>
+                            <label style={lblM}>Sets</label>
+                            <input type="number" style={inpM} value={exForm.sets} onChange={e=>setExForm(p=>({...p,sets:e.target.value}))} placeholder="3"/>
+                          </div>
+                          <div>
+                            <label style={lblM}>Reps / Time</label>
+                            <input style={inpM} value={exForm.reps} onChange={e=>setExForm(p=>({...p,reps:e.target.value}))} placeholder="10"/>
+                          </div>
+                        </div>
+
+                        <label style={lblM}>Target Weight / Intensity</label>
+                        <input style={inpM} value={exForm.target} onChange={e=>setExForm(p=>({...p,target:e.target.value}))} placeholder="e.g. 135 lbs, BW, Max speed"/>
+
+                        <label style={lblM}>Notes (optional)</label>
+                        <input style={inpM} value={exForm.notes} onChange={e=>setExForm(p=>({...p,notes:e.target.value}))} placeholder="e.g. pause at bottom, superset with..."/>
+
+                        <div style={{ display:"flex",gap:8,marginTop:18 }}>
+                          <button onClick={()=>setShowAddEx(false)} style={{ flex:1,padding:"11px",borderRadius:10,border:"1px solid rgba(255,255,255,0.1)",background:"transparent",color:"#555",fontFamily:"'DM Sans',sans-serif",fontSize:13,cursor:"pointer" }}>Cancel</button>
+                          <button onClick={saveCustomEx} style={{ flex:2,padding:"11px",borderRadius:10,border:"none",background:currentDay.color,color:"#fff",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:700,cursor:"pointer" }}>Add to {currentDay.day}</button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
         </div>
       )}
 
