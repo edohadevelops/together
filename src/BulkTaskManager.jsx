@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 
-export default function BulkTaskManager({ tasks, onDelete, onComplete, onClose, T, mode, names, SECTIONS, TODAY }) {
-  const [tab, setTab]           = useState("ai");       // "ai" | "manual"
+export default function BulkTaskManager({ tasks, archivedTasks, onDelete, onComplete, onArchive, onRestore, onDeleteArchived, onClose, T, mode, names, SECTIONS, TODAY }) {
+  const [tab, setTab]           = useState("ai");       // "ai" | "manual" | "archive"
   const [exportText, setExportText] = useState("");
   const [importText, setImportText] = useState("");
   const [preview, setPreview]   = useState(null);       // {delete:[...], complete:[...]}
@@ -14,7 +14,12 @@ export default function BulkTaskManager({ tasks, onDelete, onComplete, onClose, 
   const [applied, setApplied]   = useState(false);
   const importRef = useRef();
 
+  const [archSel, setArchSel] = useState(new Set());
+  const [archSearch, setArchSearch] = useState("");
+  const [archSec, setArchSec] = useState("");
+
   const allTasks = tasks || [];
+  const allArchived = archivedTasks || [];
 
   // ── Export ────────────────────────────────────────────────────────────────
   function generateExport() {
@@ -152,8 +157,8 @@ export default function BulkTaskManager({ tasks, onDelete, onComplete, onClose, 
 
         {/* Tab switcher */}
         <div style={{ display:"flex", gap:6, marginBottom:24, background:T.inputBg, borderRadius:10, padding:4 }}>
-          {[["ai","🤖 AI-Assisted"],["manual","☑ Manual Select"]].map(([id, label]) => (
-            <button key={id} onClick={() => setTab(id)} style={{ flex:1, padding:"8px 6px", borderRadius:8, border:"none", background:tab===id?T.surface:"transparent", color:tab===id?T.text:T.textSub, fontFamily:"'DM Sans',sans-serif", fontSize:13, fontWeight:tab===id?700:400, cursor:"pointer", transition:"all 0.15s", boxShadow:tab===id?T.cardShadow:"none" }}>
+          {[["ai","🤖 AI-Assisted"],["manual","☑ Manual Select"],["archive",`📦 Archive${allArchived.length>0?" ("+allArchived.length+")":""}`]].map(([id, label]) => (
+            <button key={id} onClick={() => setTab(id)} style={{ flex:1, padding:"8px 4px", borderRadius:8, border:"none", background:tab===id?T.surface:"transparent", color:tab===id?T.text:T.textSub, fontFamily:"'DM Sans',sans-serif", fontSize:12, fontWeight:tab===id?700:400, cursor:"pointer", transition:"all 0.15s", boxShadow:tab===id?T.cardShadow:"none" }}>
               {label}
             </button>
           ))}
@@ -253,6 +258,90 @@ export default function BulkTaskManager({ tasks, onDelete, onComplete, onClose, 
           </div>
         )}
 
+        {/* ── ARCHIVE TAB ── */}
+        {tab === "archive" && (()=>{
+          const filteredArch = allArchived.filter(t => {
+            if (archSec && t.section !== archSec) return false;
+            if (archSearch && !t.title.toLowerCase().includes(archSearch.toLowerCase())) return false;
+            return true;
+          });
+          function toggleArch(id) { setArchSel(prev => { const n=new Set(prev); if(n.has(id))n.delete(id);else n.add(id); return n; }); }
+          function selectAllArch() { setArchSel(new Set(filteredArch.map(t=>t.id))); }
+          function clearArchSel() { setArchSel(new Set()); }
+          return (
+            <div>
+              <div style={{ fontSize:12, color:T.textSub, marginBottom:14, lineHeight:1.6 }}>
+                Archived tasks are hidden from your board but never lost. Restore them any time or delete permanently.
+              </div>
+
+              {/* Filters */}
+              <div style={{ display:"flex", gap:8, marginBottom:10, flexWrap:"wrap" }}>
+                <input value={archSearch} onChange={e=>setArchSearch(e.target.value)} placeholder="Search archived…" style={{ ...inp, flex:"1 1 140px" }}/>
+                <select value={archSec} onChange={e=>setArchSec(e.target.value)} style={{ ...inp, flex:"1 1 130px", cursor:"pointer" }}>
+                  <option value="">All sections</option>
+                  {SECTIONS.map(s=><option key={s.id} value={s.id}>{s.emoji} {s.label}</option>)}
+                </select>
+              </div>
+
+              {/* Selection bar */}
+              {archSel.size > 0 && (
+                <div style={{ display:"flex", gap:8, marginBottom:12, alignItems:"center", padding:"10px 12px", borderRadius:10, background:T.inputBg, border:`1px solid ${T.border}`, flexWrap:"wrap" }}>
+                  <span style={{ fontSize:13, color:T.text, fontWeight:600, flex:1 }}>{archSel.size} selected</span>
+                  <button onClick={()=>{ if(onRestore) onRestore([...archSel]); clearArchSel(); }} style={{ padding:"6px 14px", borderRadius:8, border:"none", background:"#3DBF8A", color:"#fff", fontFamily:"'DM Sans',sans-serif", fontSize:12, fontWeight:700, cursor:"pointer" }}>
+                    ↩ Restore to Board
+                  </button>
+                  <button onClick={()=>{ if(window.confirm(`Permanently delete ${archSel.size} task(s)? This cannot be undone.`)){ if(onDeleteArchived) onDeleteArchived([...archSel]); clearArchSel(); } }} style={{ padding:"6px 14px", borderRadius:8, border:"none", background:"#E84E8A", color:"#fff", fontFamily:"'DM Sans',sans-serif", fontSize:12, fontWeight:700, cursor:"pointer" }}>
+                    🗑 Delete Permanently
+                  </button>
+                  <button onClick={clearArchSel} style={{ padding:"6px 10px", borderRadius:8, border:`1px solid ${T.border}`, background:"none", color:T.textSub, fontFamily:"'DM Sans',sans-serif", fontSize:12, cursor:"pointer" }}>Clear</button>
+                </div>
+              )}
+
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
+                <span style={{ fontSize:12, color:T.textMuted }}>{filteredArch.length} archived task{filteredArch.length!==1?"s":""}</span>
+                <div style={{ display:"flex", gap:10 }}>
+                  {filteredArch.length>0&&<button onClick={selectAllArch} style={{ fontSize:12, color:"#E8A838", background:"none", border:"none", cursor:"pointer", fontFamily:"'DM Sans',sans-serif" }}>Select all</button>}
+                  {archSel.size>0&&<button onClick={clearArchSel} style={{ fontSize:12, color:T.textMuted, background:"none", border:"none", cursor:"pointer", fontFamily:"'DM Sans',sans-serif" }}>Clear</button>}
+                </div>
+              </div>
+
+              {filteredArch.length === 0 ? (
+                <div style={{ textAlign:"center", padding:"40px 20px", color:T.textMuted, fontSize:13, background:T.inputBg, borderRadius:10 }}>
+                  {allArchived.length===0 ? "No archived tasks yet. Archive tasks from the Manual tab to store them here without deleting." : "No tasks match your filter."}
+                </div>
+              ) : (
+                <div style={{ maxHeight:420, overflowY:"auto", borderRadius:10, border:`1px solid ${T.border}` }}>
+                  {filteredArch.map((t,i)=>{
+                    const sec=SECTIONS.find(s=>s.id===t.section);
+                    const sel=archSel.has(t.id);
+                    return (
+                      <div key={t.id} onClick={()=>toggleArch(t.id)}
+                        style={{ display:"flex", alignItems:"flex-start", gap:11, padding:"10px 14px", background:sel?"#E8A83814":i%2===0?T.inputBg:"transparent", borderBottom:`1px solid ${T.border}`, cursor:"pointer" }}>
+                        <div style={{ width:17,height:17,borderRadius:4,border:`2px solid ${sel?"#E8A838":T.border}`,background:sel?"#E8A838":"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:2 }}>
+                          {sel&&<span style={{ color:"#fff",fontSize:10,fontWeight:700,lineHeight:1 }}>✓</span>}
+                        </div>
+                        <div style={{ flex:1, minWidth:0 }}>
+                          <div style={{ fontSize:13, color:T.textSub, fontWeight:500, lineHeight:1.4 }}>{t.title}</div>
+                          <div style={{ display:"flex", gap:6, marginTop:3, flexWrap:"wrap" }}>
+                            {sec&&<span style={{ fontSize:10, color:sec.color, fontWeight:600 }}>{sec.emoji} {sec.label}</span>}
+                            <span style={{ fontSize:10, color:T.textMuted }}>{t.type||"todo"}</span>
+                            {t.priority&&<span style={{ fontSize:10, color:t.priority==="Urgent"?"#E84E8A":t.priority==="High"?"#E8704A":T.textMuted }}>{t.priority}</span>}
+                            {t.archivedAt&&<span style={{ fontSize:10, color:T.textMuted }}>archived {t.archivedAt}</span>}
+                          </div>
+                        </div>
+                        <div style={{ display:"flex", gap:4, flexShrink:0 }}>
+                          <button onClick={e=>{e.stopPropagation();if(onRestore)onRestore([t.id]);}} style={{ padding:"4px 8px",borderRadius:6,border:"1px solid #3DBF8A44",background:"#3DBF8A12",color:"#3DBF8A",fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:600,cursor:"pointer" }}>↩</button>
+                          <button onClick={e=>{e.stopPropagation();if(window.confirm("Delete permanently?"))if(onDeleteArchived)onDeleteArchived([t.id]);}} style={{ padding:"4px 8px",borderRadius:6,border:"1px solid #E84E8A44",background:"#E84E8A12",color:"#E84E8A",fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:600,cursor:"pointer" }}>🗑</button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          );
+        })()}
+
         {/* ── MANUAL TAB ── */}
         {tab === "manual" && (
           <div>
@@ -278,6 +367,9 @@ export default function BulkTaskManager({ tasks, onDelete, onComplete, onClose, 
                 <span style={{ fontSize:13, color:T.text, fontWeight:600, flex:1 }}>{selected.size} selected</span>
                 <button onClick={bulkComplete} style={{ padding:"6px 14px", borderRadius:8, border:"none", background:"#3DBF8A", color:"#fff", fontFamily:"'DM Sans',sans-serif", fontSize:12, fontWeight:700, cursor:"pointer" }}>
                   ✓ Complete
+                </button>
+                <button onClick={()=>{ if(onArchive){onArchive([...selected]);} clearSel(); }} style={{ padding:"6px 14px", borderRadius:8, border:"none", background:"#E8A838", color:"#fff", fontFamily:"'DM Sans',sans-serif", fontSize:12, fontWeight:700, cursor:"pointer" }}>
+                  📦 Archive
                 </button>
                 <button onClick={bulkDelete} style={{ padding:"6px 14px", borderRadius:8, border:"none", background:"#E84E8A", color:"#fff", fontFamily:"'DM Sans',sans-serif", fontSize:12, fontWeight:700, cursor:"pointer" }}>
                   🗑 Delete

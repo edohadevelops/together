@@ -6598,6 +6598,7 @@ function FormModal({ data, setData, onSave, onClose, title, names, sections, tas
 
 export default function TogetherApp() {
   const [tasks,      setTasksState] = useState(null);
+  const [archivedTasks, setArchivedTasksState] = useState([]);
   const [names,      setNamesState] = useState({ A:"Amen", B:"Gloria" });
   const [mode,       setMode]       = useState("dark");
   const [view,       setView]       = useState("board");
@@ -6673,6 +6674,22 @@ export default function TogetherApp() {
     ? getGreeting(names[safeUser])
     : getGreetingLight(names[safeUser]);
 
+  // ── Archive helpers ──────────────────────────────────────────────────────
+  function archiveTasks(ids) {
+    const toArchive = (tasksRef.current || []).filter(t => ids.includes(t.id)).map(t => ({...t, archivedAt: TODAY}));
+    const remaining = (tasksRef.current || []).filter(t => !ids.includes(t.id));
+    setArchivedTasksState(prev => { const next = [...prev, ...toArchive]; dbSet("archived_tasks", next); return next; });
+    setTasksState(remaining); tasksRef.current = remaining; dbSet("tasks", remaining);
+  }
+  function restoreTasksFn(ids) {
+    setArchivedTasksState(prev => { const next = prev.filter(t => !ids.includes(t.id)); dbSet("archived_tasks", next); return next; });
+    const toRestore = archivedTasks.filter(t => ids.includes(t.id)).map(({archivedAt,...t}) => t);
+    setTasksState(prev => { const next = [...(prev||[]), ...toRestore]; tasksRef.current = next; dbSet("tasks", next); return next; });
+  }
+  function deleteArchivedFn(ids) {
+    setArchivedTasksState(prev => { const next = prev.filter(t => !ids.includes(t.id)); dbSet("archived_tasks", next); return next; });
+  }
+
   // ── setTasks write-through ───────────────────────────────────────────────
   function setTasks(fn) {
     setTasksState(prev => {
@@ -6715,7 +6732,8 @@ export default function TogetherApp() {
       try {
         const myId  = (() => { try { return localStorage.getItem("together_identity"); } catch { return null; } })();
         const soKey = myId ? `sectionOrder_${myId}` : "sectionOrder";
-        const [t, n, m, so, cl] = await Promise.all([dbGet("tasks"), dbGet("names"), dbGet("mode"), dbGet(soKey), dbGet("completedLog")]);
+        const [t, n, m, so, cl, ar] = await Promise.all([dbGet("tasks"), dbGet("names"), dbGet("mode"), dbGet(soKey), dbGet("completedLog"), dbGet("archived_tasks")]);
+        setArchivedTasksState(ar ?? []);
 
         // ── SAFE LOAD — never write sample data to Supabase ───────────────────
         // Rule: if t exists (even empty array), ALWAYS use it. Never overwrite.
@@ -8198,7 +8216,7 @@ export default function TogetherApp() {
       })()}
       {showBulk&&<BulkImportModal onClose={()=>setShowBulk(false)} onImport={(tasks)=>{tasks.forEach(t=>doAdd(t));}} T={T} mode={mode} names={names} activeUser={activeUser} SECTIONS={SECTIONS} TASK_TYPES={TASK_TYPES} PRIORITIES={PRIORITIES} TODAY={TODAY}/>}
       {showDedup&&<DedupModal onClose={()=>setShowDedup(false)} tasks={tasks} onDelete={(ids)=>{ const next=tasks.filter(t=>!ids.includes(t.id)); setTasks(next); dbSet("tasks",next); }} T={T} mode={mode}/>}
-      {showBulkMgr&&<BulkTaskManager T={T} mode={mode} names={names} SECTIONS={SECTIONS} TODAY={TODAY} tasks={tasks} onClose={()=>setShowBulkMgr(false)} onDelete={(ids)=>{ const next=tasks.filter(t=>!ids.includes(t.id)); setTasks(next); dbSet("tasks",next); }} onComplete={(ids)=>{ const next=tasks.map(t=>ids.includes(t.id)?{...t,done:true,completedAt:new Date().toISOString()}:t); setTasks(next); dbSet("tasks",next); }}/>}
+      {showBulkMgr&&<BulkTaskManager T={T} mode={mode} names={names} SECTIONS={SECTIONS} TODAY={TODAY} tasks={tasks} archivedTasks={archivedTasks} onClose={()=>setShowBulkMgr(false)} onDelete={(ids)=>{ const next=(tasks||[]).filter(t=>!ids.includes(t.id)); setTasks(next); }} onComplete={(ids)=>{ const next=(tasks||[]).map(t=>ids.includes(t.id)?{...t,done:true,completedAt:new Date().toISOString()}:t); setTasks(next); }} onArchive={archiveTasks} onRestore={restoreTasksFn} onDeleteArchived={deleteArchivedFn}/>}
       {showAdd&&<FormModal data={newTask} setData={setNew} onSave={()=>doAdd(newTask)} onClose={()=>{setShowAdd(false);setAddSec(null);}} title="New Task" names={names} sections={SECTIONS} taskTypes={TASK_TYPES} priorities={PRIORITIES} T={T} mode={mode}/>}
       {editTask&&<FormModal data={editTask} setData={setEdit} onSave={saveEdit} onClose={()=>setEdit(null)} title="Edit Task" names={names} sections={SECTIONS} taskTypes={TASK_TYPES} priorities={PRIORITIES} T={T} mode={mode}/>}
 
