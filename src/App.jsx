@@ -2709,6 +2709,9 @@ function BudgetApp({ names, mode, T, activeUser, onBack }) {
   const saveBillsB = list => { setBillsBState(list); dbSet(`budget_bills_B`, list); };
   const saveBillsShared = list => { setBillsSharedState(list); dbSet(`budget_bills_shared`, list); };
   const [billTab, setBillTab] = useState("overview");
+  const [completedPeriod, setCompletedPeriod] = useState("week");
+  const [completedSearch, setCompletedSearch] = useState("");
+  const [completedSecFil, setCompletedSecFil] = useState("");
   const [showBillForm, setShowBillForm] = useState(false);
   const [editBill, setEditBill] = useState(null);
   const [billForm, setBillForm] = useState({name:"",category:"Rent/Mortgage",amount:"",period:"monthly",notes:""});
@@ -7224,6 +7227,7 @@ export default function TogetherApp() {
   const navViews=[
     ["board","Board"],["today","Today"],["someday","Someday"],["accountability","Us"],
     ["analytics","📊 Analytics"],
+    ["completed","✓ Done"],
     ["monthly","📅 Monthly"],
     ["people","🤝 People"],
     ["reflections","💭 Reflections"],
@@ -7234,7 +7238,7 @@ export default function TogetherApp() {
     ["quarter","Next 3 Months"],["year","This Year"],["aitools","AI Tools"],
     ["myapps","📱 My Applications"],
   ];
-  const isFullScreen=["today","someday","accountability","aitools","urgent","week","month","quarter","year","prayer","analytics","reflections","monthly","people","tracker","cookbook","myapps"].includes(view);
+  const isFullScreen=["today","someday","accountability","aitools","urgent","week","month","quarter","year","prayer","analytics","reflections","monthly","people","tracker","cookbook","myapps","completed"].includes(view);
   const pad=isFullScreen?"0":"16px 16px";
 
   // ── Reusable timeline section renderer ────────────────────────────────────
@@ -7777,6 +7781,96 @@ export default function TogetherApp() {
           <AnalyticsView log={completedLog} tasks={tasks} names={names} T={T} mode={mode} SECTIONS={SECTIONS} PRI_COLOR={PRI_COLOR} TODAY={TODAY}/>
         )}
 
+        {/* ── COMPLETED TASKS ── */}
+        {view==="completed"&&(()=>{
+          const log = completedLog||[];
+          const now = new Date();
+          const wStart = new Date(now); wStart.setHours(0,0,0,0); wStart.setDate(now.getDate()-((now.getDay()+6)%7));
+          const mStart = new Date(now.getFullYear(),now.getMonth(),1);
+          const yStart = new Date(now.getFullYear(),0,1);
+          const periods = [
+            {id:"week",  label:"This Week",  start:wStart},
+            {id:"month", label:"This Month", start:mStart},
+            {id:"year",  label:"This Year",  start:yStart},
+            {id:"all",   label:"All Time",   start:new Date(0)},
+          ];
+          const cutoff = periods.find(p=>p.id===completedPeriod)?.start || new Date(0);
+          const filtered = [...log]
+            .filter(e => {
+              if (new Date(e.completedAt) < cutoff) return false;
+              if (completedSecFil && e.section !== completedSecFil) return false;
+              if (completedSearch && !e.title.toLowerCase().includes(completedSearch.toLowerCase())) return false;
+              return true;
+            })
+            .sort((a,b) => new Date(b.completedAt) - new Date(a.completedAt));
+          const byPeriod = periods.map(p => ({ ...p, count: log.filter(e => new Date(e.completedAt) >= p.start).length }));
+          const inp3 = { padding:"8px 12px", borderRadius:9, border:`1px solid ${T.border}`, background:T.inputBg, color:T.text, fontFamily:"'DM Sans',sans-serif", fontSize:13, outline:"none" };
+          const card3 = (ex={}) => ({ background:T.surface, border:`1px solid ${T.border}`, borderRadius:14, ...ex });
+          return (
+            <div style={{ padding:"20px 16px", maxWidth:700, margin:"0 auto" }}>
+              <div style={{ marginBottom:20 }}>
+                <div style={{ fontFamily:"'DM Serif Display',serif", fontSize:26, color:T.text, marginBottom:4 }}>✓ Completed Tasks</div>
+                <div style={{ fontSize:13, color:T.textSub }}>{log.length} total completions recorded</div>
+              </div>
+              <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:8, marginBottom:20 }}>
+                {byPeriod.map(p => (
+                  <button key={p.id} onClick={()=>setCompletedPeriod(p.id)}
+                    style={{ ...card3({padding:"12px 10px"}), border:`1px solid ${completedPeriod===p.id?"#3DBF8A":T.border}`, background:completedPeriod===p.id?"#3DBF8A15":T.surface, cursor:"pointer", textAlign:"center" }}>
+                    <div style={{ fontFamily:"'DM Serif Display',serif", fontSize:22, fontWeight:800, color:completedPeriod===p.id?"#3DBF8A":T.text }}>{p.count}</div>
+                    <div style={{ fontSize:10, color:completedPeriod===p.id?"#3DBF8A":T.textSub, fontWeight:600, textTransform:"uppercase", letterSpacing:"0.06em", marginTop:2 }}>{p.label}</div>
+                  </button>
+                ))}
+              </div>
+              <div style={{ display:"flex", gap:8, marginBottom:14, flexWrap:"wrap" }}>
+                <input value={completedSearch} onChange={e=>setCompletedSearch(e.target.value)} placeholder="Search…" style={{ ...inp3, flex:"1 1 140px" }}/>
+                <select value={completedSecFil} onChange={e=>setCompletedSecFil(e.target.value)} style={{ ...inp3, flex:"1 1 130px", cursor:"pointer" }}>
+                  <option value="">All sections</option>
+                  {SECTIONS.map(s=><option key={s.id} value={s.id}>{s.emoji} {s.label}</option>)}
+                </select>
+              </div>
+              {filtered.length === 0 ? (
+                <div style={{ ...card3({padding:"40px 20px"}), textAlign:"center", color:T.textSub, fontSize:13 }}>
+                  No completed tasks {completedPeriod!=="all"?`${periods.find(p=>p.id===completedPeriod)?.label.toLowerCase()} `:""}{completedSearch||completedSecFil?"matching your filter":"yet"}.
+                </div>
+              ) : (
+                <div style={{ ...card3(), overflow:"hidden" }}>
+                  <div style={{ padding:"10px 16px", borderBottom:`1px solid ${T.border}`, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                    <span style={{ fontSize:12, color:T.textSub }}>{filtered.length} task{filtered.length!==1?"s":""}</span>
+                    <span style={{ fontSize:11, color:"#3DBF8A", fontWeight:700 }}>{periods.find(p=>p.id===completedPeriod)?.label}</span>
+                  </div>
+                  <div style={{ maxHeight:"calc(100vh - 340px)", overflowY:"auto" }}>
+                    {filtered.map((e,i) => {
+                      const sec = SECTIONS.find(s=>s.id===e.section);
+                      const completedByName = names[e.completedBy] || e.completedBy;
+                      const completedByColor = e.completedBy==="A"?"#E8A838":"#E84E8A";
+                      const d = new Date(e.completedAt);
+                      const dateStr = d.toLocaleDateString("en-US",{month:"short",day:"numeric"});
+                      const timeStr = d.toLocaleTimeString("en-US",{hour:"2-digit",minute:"2-digit"});
+                      return (
+                        <div key={e.id||i} style={{ display:"flex", alignItems:"center", gap:10, padding:"10px 16px", borderBottom:i<filtered.length-1?`1px solid ${T.border}`:"none", background:i%2===0?"transparent":T.inputBg+"44" }}>
+                          <div style={{ width:20,height:20,borderRadius:"50%",background:"#3DBF8A22",border:"1px solid #3DBF8A44",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,color:"#3DBF8A",flexShrink:0 }}>✓</div>
+                          <div style={{ flex:1, minWidth:0 }}>
+                            <div style={{ fontSize:13, fontWeight:500, color:T.text, lineHeight:1.4, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{e.title}</div>
+                            <div style={{ display:"flex", gap:6, marginTop:2, flexWrap:"wrap", alignItems:"center" }}>
+                              {sec&&<span style={{ fontSize:10, color:sec.color, fontWeight:600 }}>{sec.emoji} {sec.label}</span>}
+                              {e.priority&&<span style={{ fontSize:10, color:PRI_COLOR[e.priority]||T.textMuted }}>{e.priority}</span>}
+                              <span style={{ fontSize:10, color:completedByColor, fontWeight:600 }}>by {completedByName}</span>
+                            </div>
+                          </div>
+                          <div style={{ textAlign:"right", flexShrink:0 }}>
+                            <div style={{ fontSize:11, fontWeight:600, color:T.text }}>{dateStr}</div>
+                            <div style={{ fontSize:10, color:T.textMuted }}>{timeStr}</div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })()}
+
         {/* ── MONTHLY GOALS ── */}
         {view==="monthly"&&(
           <MonthlyGoalsView activeUser={activeUser} names={names} T={T} mode={mode} TODAY={TODAY} genId={genId}/>
@@ -8099,10 +8193,10 @@ export default function TogetherApp() {
         const VALID_SECS = SECTIONS.map(s=>s.id);
         const VALID_TYPES = TASK_TYPES.map(t=>t.id);
         const VALID_PRIS = PRIORITIES;
-        const exportTasks = (tasks||[]).map(t=>({
+        const exportTasks = (tasks||[]).filter(t=>!t.done).map(t=>({
           id:t.id, title:t.title, section:t.section, type:t.type||"todo",
           assignee:t.assignee||"A", priority:t.priority||"Medium",
-          done:t.done||false, dueDate:t.dueDate||"", notes:t.notes||"",
+          dueDate:t.dueDate||"", notes:t.notes||"",
         }));
         const exportJson = JSON.stringify(exportTasks, null, 2);
         const sectionList = SECTIONS.map(s=>`${s.id} (${s.label})`).join(", ");
@@ -8162,7 +8256,7 @@ export default function TogetherApp() {
               <div style={{padding:"18px 20px 0",flexShrink:0}}>
                 <div style={{width:40,height:4,borderRadius:2,background:T.textMuted,margin:"0 auto 16px",opacity:0.4}}/>
                 <div style={{fontFamily:"'DM Serif Display',serif",fontSize:20,color:S,marginBottom:4}}>📤 Task Sync with Claude</div>
-                <div style={{fontSize:12,color:T.textSub,marginBottom:12}}>{(tasks||[]).length} tasks total · Export → discuss with Claude → paste commands back → apply</div>
+                <div style={{fontSize:12,color:T.textSub,marginBottom:12}}>{exportTasks.length} active tasks · Export → discuss with Claude → paste commands back → apply</div>
                 <div style={{display:"flex",gap:6,marginBottom:14}}>
                   {[["export","📤 Export"],["import","📥 Import Commands"]].map(([v,l])=>(
                     <button key={v} onClick={()=>{setTaskSyncMode(v);setTaskSyncPrev(null);}} style={{padding:"6px 14px",borderRadius:16,border:`1px solid ${taskSyncMode===v?S:T.border}`,background:taskSyncMode===v?S+"22":"transparent",color:taskSyncMode===v?S:T.textSub,fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:taskSyncMode===v?700:400,cursor:"pointer"}}>{l}</button>
@@ -8216,7 +8310,7 @@ export default function TogetherApp() {
       })()}
       {showBulk&&<BulkImportModal onClose={()=>setShowBulk(false)} onImport={(tasks)=>{tasks.forEach(t=>doAdd(t));}} T={T} mode={mode} names={names} activeUser={activeUser} SECTIONS={SECTIONS} TASK_TYPES={TASK_TYPES} PRIORITIES={PRIORITIES} TODAY={TODAY}/>}
       {showDedup&&<DedupModal onClose={()=>setShowDedup(false)} tasks={tasks} onDelete={(ids)=>{ const next=tasks.filter(t=>!ids.includes(t.id)); setTasks(next); dbSet("tasks",next); }} T={T} mode={mode}/>}
-      {showBulkMgr&&<BulkTaskManager T={T} mode={mode} names={names} SECTIONS={SECTIONS} TODAY={TODAY} tasks={tasks} archivedTasks={archivedTasks} onClose={()=>setShowBulkMgr(false)} onDelete={(ids)=>{ const next=(tasks||[]).filter(t=>!ids.includes(t.id)); setTasks(next); }} onComplete={(ids)=>{ const next=(tasks||[]).map(t=>ids.includes(t.id)?{...t,done:true,completedAt:new Date().toISOString()}:t); setTasks(next); }} onArchive={archiveTasks} onRestore={restoreTasksFn} onDeleteArchived={deleteArchivedFn}/>}
+      {showBulkMgr&&<BulkTaskManager T={T} mode={mode} names={names} SECTIONS={SECTIONS} TODAY={TODAY} tasks={tasks} archivedTasks={archivedTasks} onClose={()=>setShowBulkMgr(false)} onDelete={(ids)=>{ const next=(tasks||[]).filter(t=>!ids.includes(t.id)); setTasks(next); }} onComplete={(ids)=>{ const toComplete=(tasks||[]).filter(t=>ids.includes(t.id)&&!t.done); const newEntries=toComplete.map(t=>({id:genId(),taskId:t.id,title:t.title,section:t.section,type:t.type,assignee:t.assignee,priority:t.priority,createdBy:t.createdBy||activeUser,completedBy:activeUser||"A",completedAt:new Date().toISOString(),completedDate:TODAY})); const newLog=[...completedLogRef.current,...newEntries]; completedLogRef.current=newLog; setCompletedLog(newLog); dbSet("completedLog",newLog); const next=(tasks||[]).map(t=>ids.includes(t.id)?{...t,done:true,completedAt:new Date().toISOString()}:t); setTasks(next); }} onArchive={archiveTasks} onRestore={restoreTasksFn} onDeleteArchived={deleteArchivedFn}/>}
       {showAdd&&<FormModal data={newTask} setData={setNew} onSave={()=>doAdd(newTask)} onClose={()=>{setShowAdd(false);setAddSec(null);}} title="New Task" names={names} sections={SECTIONS} taskTypes={TASK_TYPES} priorities={PRIORITIES} T={T} mode={mode}/>}
       {editTask&&<FormModal data={editTask} setData={setEdit} onSave={saveEdit} onClose={()=>setEdit(null)} title="Edit Task" names={names} sections={SECTIONS} taskTypes={TASK_TYPES} priorities={PRIORITIES} T={T} mode={mode}/>}
 
