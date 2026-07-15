@@ -6633,6 +6633,10 @@ export default function TogetherApp() {
   const [showBulk,      setShowBulk]      = useState(false);
   const [showDedup,     setShowDedup]     = useState(false);
   const [showBulkMgr,   setShowBulkMgr]   = useState(false);
+  const [showTaskSync,  setShowTaskSync]  = useState(false);
+  const [taskSyncMode,  setTaskSyncMode]  = useState("export"); // "export" | "import"
+  const [taskSyncCmd,   setTaskSyncCmd]   = useState("");
+  const [taskSyncPrev,  setTaskSyncPrev]  = useState(null);
   const [taskModal,     setTaskModal]     = useState(null); // {colId,label,emoji,color,tasks}
   const [appMode,       setAppMode]       = useState(() => { try { return localStorage.getItem("together_appMode")||"tasks"; } catch { return "tasks"; } });
   function switchApp(mode) { setAppMode(mode); try { localStorage.setItem("together_appMode",mode); } catch {} }
@@ -7434,6 +7438,9 @@ export default function TogetherApp() {
           <button onClick={()=>setShowBulkMgr(true)} style={{ height:32,padding:"0 12px",borderRadius:8,border:"1px solid #9B6EE844",background:"#9B6EE810",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:600,color:"#9B6EE8",display:"flex",alignItems:"center",gap:4,flexShrink:0,whiteSpace:"nowrap" }} title="Bulk delete or complete tasks">
             ⚡ Manage
           </button>
+          <button onClick={()=>{setShowTaskSync(true);setTaskSyncMode("export");setTaskSyncCmd("");setTaskSyncPrev(null);}} style={{ height:32,padding:"0 12px",borderRadius:8,border:"1px solid #3DBF8A44",background:"#3DBF8A10",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:600,color:"#3DBF8A",display:"flex",alignItems:"center",gap:4,flexShrink:0,whiteSpace:"nowrap" }} title="Export / import tasks via Claude">
+            📤 Sync
+          </button>
         </div>
 
         {/* Mobile menu button — shown only on mobile */}
@@ -7449,6 +7456,9 @@ export default function TogetherApp() {
           </button>
           <button onClick={()=>setShowBulkMgr(true)} style={{ height:32,width:32,borderRadius:8,border:"1px solid #9B6EE844",background:"#9B6EE810",cursor:"pointer",fontSize:15,display:"flex",alignItems:"center",justifyContent:"center",color:"#9B6EE8",flexShrink:0 }} title="Bulk manage tasks">
             ⚡
+          </button>
+          <button onClick={()=>{setShowTaskSync(true);setTaskSyncMode("export");setTaskSyncCmd("");setTaskSyncPrev(null);}} style={{ height:32,width:32,borderRadius:8,border:"1px solid #3DBF8A44",background:"#3DBF8A10",cursor:"pointer",fontSize:15,display:"flex",alignItems:"center",justifyContent:"center",color:"#3DBF8A",flexShrink:0 }} title="Sync tasks with Claude">
+            📤
           </button>
           <button onClick={()=>setShowNav(true)} style={{ width:36,height:36,borderRadius:9,border:`1px solid ${T.border}`,background:T.inputBg,cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:4,flexShrink:0,padding:"9px 8px" }}>
             <span style={{ width:16,height:2,borderRadius:1,background:T.textSub,display:"block" }}/>
@@ -8067,6 +8077,125 @@ export default function TogetherApp() {
       )}
 
       {/* Modals */}
+      {showTaskSync&&(()=>{
+        const VALID_SECS = SECTIONS.map(s=>s.id);
+        const VALID_TYPES = TASK_TYPES.map(t=>t.id);
+        const VALID_PRIS = PRIORITIES;
+        const exportTasks = (tasks||[]).map(t=>({
+          id:t.id, title:t.title, section:t.section, type:t.type||"todo",
+          assignee:t.assignee||"A", priority:t.priority||"Medium",
+          done:t.done||false, dueDate:t.dueDate||"", notes:t.notes||"",
+        }));
+        const exportJson = JSON.stringify(exportTasks, null, 2);
+        const sectionList = SECTIONS.map(s=>`${s.id} (${s.label})`).join(", ");
+        const claudePrompt = `Here are my current tasks:\n\n${exportJson}\n\nPlease help me review and clean up this list. You can:\n- DELETE tasks that are done, irrelevant, redundant, or no longer needed\n- REPLACE tasks with updated fields (title, section, priority, dueDate, notes)\n- ADD tasks that are missing\n\nReturn ONLY a JSON array of commands — no extra text, just the array:\n[\n  { "action": "delete", "id": "..." },\n  { "action": "replace", "id": "...", "title": "...", "section": "faith", "type": "todo", "assignee": "A", "priority": "Medium", "dueDate": "", "notes": "" },\n  { "action": "add", "title": "...", "section": "faith", "type": "todo", "assignee": "A", "priority": "Medium", "dueDate": "", "notes": "" }\n]\nValid sections: ${sectionList}\nValid types: ${VALID_TYPES.join(", ")}\nValid priorities: ${VALID_PRIS.join(", ")}\nValid assignees: A (${names.A}), B (${names.B}), both`;
+
+        function parseCmds(txt) {
+          try {
+            const arr = JSON.parse(txt.trim());
+            if (!Array.isArray(arr)) return {ok:false,ops:[],errors:["Root must be a JSON array"]};
+            const ops=[]; const errors=[];
+            arr.forEach((cmd,i)=>{
+              const n=`#${i+1}`;
+              if (!cmd.action) { errors.push(`${n}: missing "action"`); return; }
+              if (cmd.action==="delete") {
+                if (!cmd.id) { errors.push(`${n}: delete needs "id"`); return; }
+                const found=(tasks||[]).find(t=>t.id===cmd.id);
+                if (!found) { errors.push(`${n}: id "${cmd.id}" not found — skipped`); return; }
+                ops.push({type:"delete",id:cmd.id,preview:`🗑 Delete: "${found.title}" [${found.section}]`});
+              } else if (cmd.action==="replace") {
+                if (!cmd.id) { errors.push(`${n}: replace needs "id"`); return; }
+                const found=(tasks||[]).find(t=>t.id===cmd.id);
+                if (!found) { errors.push(`${n}: id "${cmd.id}" not found — skipped`); return; }
+                const sec=VALID_SECS.includes(cmd.section)?cmd.section:found.section;
+                const pri=VALID_PRIS.includes(cmd.priority)?cmd.priority:found.priority;
+                ops.push({type:"replace",id:cmd.id,data:{...found,...cmd,id:found.id,section:sec,priority:pri},preview:`✏ Replace: "${found.title}" → "${cmd.title||found.title}" [${sec}]`});
+              } else if (cmd.action==="add") {
+                if (!cmd.title?.trim()) { errors.push(`${n}: add needs "title"`); return; }
+                const sec=VALID_SECS.includes(cmd.section)?cmd.section:"life";
+                const pri=VALID_PRIS.includes(cmd.priority)?cmd.priority:"Medium";
+                const typ=VALID_TYPES.includes(cmd.type)?cmd.type:"todo";
+                ops.push({type:"add",data:{...cmd,id:genId(),section:sec,priority:pri,type:typ,assignee:["A","B","both"].includes(cmd.assignee)?cmd.assignee:"A",done:false,streak:0,progressCount:0,recurDays:[],createdAt:TODAY,lastReset:"",createdBy:activeUser||"A"},preview:`➕ Add: "${cmd.title}" [${sec}, ${pri}]`});
+              } else {
+                errors.push(`${n}: unknown action "${cmd.action}"`);
+              }
+            });
+            return {ok:ops.length>0,ops,errors};
+          } catch(e) { return {ok:false,ops:[],errors:[`JSON parse error: ${e.message}`]}; }
+        }
+
+        function applyCmds() {
+          if (!taskSyncPrev?.ok) return;
+          let updated = [...(tasks||[])];
+          taskSyncPrev.ops.forEach(op=>{
+            if (op.type==="delete") updated=updated.filter(t=>t.id!==op.id);
+            else if (op.type==="replace") updated=updated.map(t=>t.id===op.id?op.data:t);
+            else if (op.type==="add") updated=[...updated,op.data];
+          });
+          setTasks(updated);
+          setShowTaskSync(false); setTaskSyncCmd(""); setTaskSyncPrev(null);
+        }
+
+        const S="#3DBF8A";
+        const inp3={width:"100%",background:T.inputBg,border:`1px solid ${T.border}`,borderRadius:9,padding:"10px 12px",color:T.text,fontFamily:"'DM Mono',monospace",fontSize:11,outline:"none",boxSizing:"border-box",resize:"vertical",lineHeight:1.5};
+        return (
+          <div style={{position:"fixed",inset:0,zIndex:70,background:"rgba(0,0,0,0.75)",backdropFilter:"blur(8px)",display:"flex",alignItems:"flex-end",justifyContent:"center"}} onClick={e=>e.target===e.currentTarget&&setShowTaskSync(false)}>
+            <div style={{background:T.surface,border:`1px solid ${T.border}`,borderRadius:"20px 20px 0 0",width:"100%",maxWidth:540,maxHeight:"92vh",display:"flex",flexDirection:"column"}}>
+              <div style={{padding:"18px 20px 0",flexShrink:0}}>
+                <div style={{width:40,height:4,borderRadius:2,background:T.textMuted,margin:"0 auto 16px",opacity:0.4}}/>
+                <div style={{fontFamily:"'DM Serif Display',serif",fontSize:20,color:S,marginBottom:4}}>📤 Task Sync with Claude</div>
+                <div style={{fontSize:12,color:T.textSub,marginBottom:12}}>{(tasks||[]).length} tasks total · Export → discuss with Claude → paste commands back → apply</div>
+                <div style={{display:"flex",gap:6,marginBottom:14}}>
+                  {[["export","📤 Export"],["import","📥 Import Commands"]].map(([v,l])=>(
+                    <button key={v} onClick={()=>{setTaskSyncMode(v);setTaskSyncPrev(null);}} style={{padding:"6px 14px",borderRadius:16,border:`1px solid ${taskSyncMode===v?S:T.border}`,background:taskSyncMode===v?S+"22":"transparent",color:taskSyncMode===v?S:T.textSub,fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:taskSyncMode===v?700:400,cursor:"pointer"}}>{l}</button>
+                  ))}
+                </div>
+              </div>
+              <div style={{flex:1,overflowY:"auto",padding:"0 20px 32px"}}>
+                {taskSyncMode==="export"&&(
+                  <div>
+                    <div style={{fontSize:12,color:T.textSub,marginBottom:10,lineHeight:1.6}}>Copy the prompt below and paste it into Claude. Discuss which tasks to cut, update, or add. Then ask Claude to return the command JSON and paste it into the Import tab.</div>
+                    <div style={{background:S+"0A",border:`1px solid ${S}22`,borderRadius:10,padding:"12px",marginBottom:10}}>
+                      <div style={{fontSize:10,fontWeight:700,color:S,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:6}}>Prompt + Task JSON (copy all of this)</div>
+                      <pre style={{fontSize:10,color:T.textSub,whiteSpace:"pre-wrap",wordBreak:"break-all",margin:0,lineHeight:1.5,fontFamily:"'DM Mono',monospace",maxHeight:260,overflowY:"auto"}}>{claudePrompt}</pre>
+                    </div>
+                    <button onClick={()=>navigator.clipboard?.writeText(claudePrompt)} style={{width:"100%",padding:"11px",borderRadius:9,border:`1px solid ${S}44`,background:S+"15",color:S,fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,cursor:"pointer",marginBottom:8}}>📋 Copy Prompt + All Tasks ({exportTasks.length})</button>
+                    <div style={{fontSize:11,color:T.textMuted,textAlign:"center"}}>claude.ai → discuss → ask for command JSON → paste into Import tab</div>
+                  </div>
+                )}
+                {taskSyncMode==="import"&&(
+                  <div>
+                    <div style={{fontSize:12,color:T.textSub,marginBottom:10,lineHeight:1.6}}>Paste the command JSON Claude gave you. Hit Preview to see every change, then Apply to update your tasks.</div>
+                    <textarea rows={9} style={inp3} value={taskSyncCmd} onChange={e=>{setTaskSyncCmd(e.target.value);setTaskSyncPrev(null);}}
+                      placeholder={'[\n  { "action": "delete", "id": "..." },\n  { "action": "add", "title": "...", "section": "faith", "priority": "Medium" },\n  { "action": "replace", "id": "...", "title": "...", "section": "health" }\n]'}/>
+                    <button onClick={()=>setTaskSyncPrev(parseCmds(taskSyncCmd))} style={{width:"100%",marginTop:8,padding:"10px",borderRadius:9,border:`1px solid ${T.border}`,background:T.inputBg,color:T.text,fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:600,cursor:"pointer"}}>🔍 Preview Changes</button>
+                    {taskSyncPrev&&(
+                      <div style={{marginTop:12}}>
+                        {taskSyncPrev.errors.length>0&&(
+                          <div style={{background:"rgba(232,78,138,0.08)",border:"1px solid rgba(232,78,138,0.2)",borderRadius:9,padding:"10px 12px",marginBottom:10}}>
+                            <div style={{fontSize:11,fontWeight:700,color:"#E84E8A",marginBottom:4}}>⚠ Warnings / Skipped</div>
+                            {taskSyncPrev.errors.map((e,i)=><div key={i} style={{fontSize:11,color:"#E84E8A",marginBottom:2}}>{e}</div>)}
+                          </div>
+                        )}
+                        {taskSyncPrev.ops.length>0&&(
+                          <div style={{background:S+"08",border:`1px solid ${S}22`,borderRadius:9,padding:"10px 12px",marginBottom:12}}>
+                            <div style={{fontSize:11,fontWeight:700,color:S,marginBottom:6}}>{taskSyncPrev.ops.length} change{taskSyncPrev.ops.length!==1?"s":""} to apply:</div>
+                            {taskSyncPrev.ops.map((op,i)=><div key={i} style={{fontSize:12,color:T.text,padding:"3px 0",borderBottom:`1px solid ${T.border}`}}>{op.preview}</div>)}
+                          </div>
+                        )}
+                        {!taskSyncPrev.ok&&<div style={{fontSize:12,color:"#E84E8A",textAlign:"center",marginBottom:10}}>No valid commands to apply.</div>}
+                        <button onClick={applyCmds} disabled={!taskSyncPrev.ok} style={{width:"100%",padding:"12px",borderRadius:10,border:"none",background:taskSyncPrev.ok?S:"rgba(255,255,255,0.05)",color:taskSyncPrev.ok?"#fff":T.textMuted,fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:700,cursor:taskSyncPrev.ok?"pointer":"default"}}>
+                          {taskSyncPrev.ok?`Apply ${taskSyncPrev.ops.length} Changes`:"No Changes to Apply"}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
       {showBulk&&<BulkImportModal onClose={()=>setShowBulk(false)} onImport={(tasks)=>{tasks.forEach(t=>doAdd(t));}} T={T} mode={mode} names={names} activeUser={activeUser} SECTIONS={SECTIONS} TASK_TYPES={TASK_TYPES} PRIORITIES={PRIORITIES} TODAY={TODAY}/>}
       {showDedup&&<DedupModal onClose={()=>setShowDedup(false)} tasks={tasks} onDelete={(ids)=>{ const next=tasks.filter(t=>!ids.includes(t.id)); setTasks(next); dbSet("tasks",next); }} T={T} mode={mode}/>}
       {showBulkMgr&&<BulkTaskManager T={T} mode={mode} names={names} SECTIONS={SECTIONS} TODAY={TODAY} tasks={tasks} onClose={()=>setShowBulkMgr(false)} onDelete={(ids)=>{ const next=tasks.filter(t=>!ids.includes(t.id)); setTasks(next); dbSet("tasks",next); }} onComplete={(ids)=>{ const next=tasks.map(t=>ids.includes(t.id)?{...t,done:true,completedAt:new Date().toISOString()}:t); setTasks(next); dbSet("tasks",next); }}/>}
