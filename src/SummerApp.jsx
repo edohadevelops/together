@@ -438,6 +438,9 @@ export default function SummerApp({mode,T,onBack}) {
   const [ddf,setDdf]=useState({startTime:"",endTime:"",orders:0,earnings:"",tips:"",miles:"",note:""});
   const [thesisTaskForm,setThesisTaskForm]=useState(null);
   const [ttf,setTtf]=useState({title:"",category:"writing",dueDate:"",notes:""});
+  const [taskIO,setTaskIO]=useState(null); // null | "export" | "import"
+  const [taskCmd,setTaskCmd]=useState("");
+  const [taskPreview,setTaskPreview]=useState(null); // {ok,ops:[],errors:[]} after parse
 
   useEffect(()=>{
     (async()=>{
@@ -1391,7 +1394,10 @@ export default function SummerApp({mode,T,onBack}) {
                 <div style={{fontSize:14,fontWeight:700,color:T.text}}>Thesis Tasks</div>
                 <div style={{fontSize:11,color:T.textSub,marginTop:2}}>{totalDone}/{tasks.length} done{tasks.length>0?` · ${Math.round(totalDone/tasks.length*100)}% complete`:""}</div>
               </div>
-              <button onClick={()=>setThesisTaskForm(true)} style={{padding:"7px 14px",borderRadius:8,border:"none",background:P.thesis,color:"#fff",fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:700,cursor:"pointer"}}>+ Task</button>
+              <div style={{display:"flex",gap:6}}>
+                <button onClick={()=>{setTaskIO("export");setTaskPreview(null);setTaskCmd("");}} style={{padding:"7px 11px",borderRadius:8,border:`1px solid ${P.thesis}44`,background:"transparent",color:P.thesis,fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:600,cursor:"pointer"}} title="Export / Import tasks">⚡ Sync</button>
+                <button onClick={()=>setThesisTaskForm(true)} style={{padding:"7px 14px",borderRadius:8,border:"none",background:P.thesis,color:"#fff",fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:700,cursor:"pointer"}}>+ Task</button>
+              </div>
             </div>
             {tasks.length>0&&(
               <div style={{height:6,background:T.inputBg,borderRadius:4,overflow:"hidden",marginBottom:14}}>
@@ -1453,6 +1459,121 @@ export default function SummerApp({mode,T,onBack}) {
                 </div>
               </div>
             )}
+
+            {/* ── Task Export / Import modal ── */}
+            {taskIO&&(()=>{
+              const exportJson = JSON.stringify(tasks.map(t=>({id:t.id,title:t.title,category:t.category,dueDate:t.dueDate||"",notes:t.notes||"",done:t.done})),null,2);
+              const claudePrompt = `Here are my current thesis tasks:\n\n${exportJson}\n\nPlease help me review and refine this list. You can:\n- DELETE tasks that are redundant, irrelevant, or already handled\n- REPLACE tasks with updated title, category, dueDate, or notes\n- ADD tasks I am missing\n\nReturn ONLY a JSON array of commands — no explanation, just the JSON:\n[\n  { "action": "delete", "id": "tt..." },\n  { "action": "replace", "id": "tt...", "title": "...", "category": "writing", "dueDate": "YYYY-MM-DD", "notes": "...", "done": false },\n  { "action": "add", "title": "...", "category": "writing", "dueDate": "YYYY-MM-DD", "notes": "" }\n]\nValid categories: literature, writing, data, analysis, supervision, formatting`;
+              const VALID_CATS=["literature","writing","data","analysis","supervision","formatting"];
+
+              function parseCommands(txt){
+                try {
+                  const arr=JSON.parse(txt.trim());
+                  if(!Array.isArray(arr)) return {ok:false,errors:["Root must be a JSON array"]};
+                  const ops=[]; const errors=[];
+                  arr.forEach((cmd,i)=>{
+                    if(!cmd.action) { errors.push(`#${i+1}: missing "action"`); return; }
+                    if(cmd.action==="delete"){
+                      if(!cmd.id) { errors.push(`#${i+1}: delete needs "id"`); return; }
+                      const found=tasks.find(t=>t.id===cmd.id);
+                      if(!found) { errors.push(`#${i+1}: id "${cmd.id}" not found — skipped`); return; }
+                      ops.push({type:"delete",id:cmd.id,preview:`🗑 Delete: "${found.title}"`});
+                    } else if(cmd.action==="replace"){
+                      if(!cmd.id) { errors.push(`#${i+1}: replace needs "id"`); return; }
+                      const found=tasks.find(t=>t.id===cmd.id);
+                      if(!found) { errors.push(`#${i+1}: id "${cmd.id}" not found — skipped`); return; }
+                      if(cmd.category&&!VALID_CATS.includes(cmd.category)) errors.push(`#${i+1}: unknown category "${cmd.category}" (will keep original)`);
+                      ops.push({type:"replace",id:cmd.id,data:{...found,...cmd,id:cmd.id,category:VALID_CATS.includes(cmd.category)?cmd.category:found.category},preview:`✏ Replace: "${found.title}" → "${cmd.title||found.title}"`});
+                    } else if(cmd.action==="add"){
+                      if(!cmd.title?.trim()) { errors.push(`#${i+1}: add needs "title"`); return; }
+                      const cat=VALID_CATS.includes(cmd.category)?cmd.category:"writing";
+                      ops.push({type:"add",data:{id:"tt"+Date.now().toString(36)+(Math.random()*1000|0),title:cmd.title,category:cat,dueDate:cmd.dueDate||"",notes:cmd.notes||"",done:false,createdAt:today},preview:`➕ Add: "${cmd.title}" [${cat}]`});
+                    } else {
+                      errors.push(`#${i+1}: unknown action "${cmd.action}"`);
+                    }
+                  });
+                  return {ok:ops.length>0,ops,errors};
+                } catch(e){ return {ok:false,errors:[`JSON parse error: ${e.message}`]}; }
+              }
+
+              function applyCommands(){
+                if(!taskPreview?.ok) return;
+                save(p=>{
+                  let tl=[...(p.thesisTasks||[])];
+                  taskPreview.ops.forEach(op=>{
+                    if(op.type==="delete") tl=tl.filter(t=>t.id!==op.id);
+                    else if(op.type==="replace") tl=tl.map(t=>t.id===op.id?op.data:t);
+                    else if(op.type==="add") tl=[...tl,op.data];
+                  });
+                  return {...p,thesisTasks:tl};
+                });
+                setTaskIO(null); setTaskCmd(""); setTaskPreview(null);
+              }
+
+              const inp3={width:"100%",background:"rgba(255,255,255,0.05)",border:`1px solid ${T.border}`,borderRadius:9,padding:"10px 12px",color:T.text,fontFamily:"'DM Mono',monospace",fontSize:11,outline:"none",boxSizing:"border-box",resize:"vertical",lineHeight:1.5};
+              return (
+                <div style={{position:"fixed",inset:0,zIndex:60,background:"rgba(0,0,0,0.75)",backdropFilter:"blur(8px)",display:"flex",alignItems:"flex-end",justifyContent:"center"}} onClick={e=>e.target===e.currentTarget&&setTaskIO(null)}>
+                  <div style={{background:T.surface,border:`1px solid ${T.border}`,borderRadius:"20px 20px 0 0",width:"100%",maxWidth:520,maxHeight:"92vh",display:"flex",flexDirection:"column"}}>
+                    <div style={{padding:"18px 20px 0",flexShrink:0}}>
+                      <div style={{width:40,height:4,borderRadius:2,background:T.textMuted,margin:"0 auto 16px",opacity:0.4}}/>
+                      <div style={{fontFamily:"'DM Serif Display',serif",fontSize:19,color:P.thesis,marginBottom:12}}>⚡ Task Sync with Claude</div>
+                      {/* Tabs */}
+                      <div style={{display:"flex",gap:6,marginBottom:14}}>
+                        {[["export","📤 Export"],["import","📥 Import Commands"]].map(([v,l])=>(
+                          <button key={v} onClick={()=>{setTaskIO(v);setTaskPreview(null);}} style={{padding:"6px 14px",borderRadius:16,border:`1px solid ${taskIO===v?P.thesis:T.border}`,background:taskIO===v?P.thesis+"22":"transparent",color:taskIO===v?P.thesis:T.textSub,fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:taskIO===v?700:400,cursor:"pointer"}}>{l}</button>
+                        ))}
+                      </div>
+                    </div>
+                    <div style={{flex:1,overflowY:"auto",padding:"0 20px 32px"}}>
+                      {taskIO==="export"&&(
+                        <div>
+                          <div style={{fontSize:12,color:T.textSub,marginBottom:10,lineHeight:1.6}}>Copy this block and paste it into Claude. Tell Claude to trim, reorganize, or add tasks — then ask it to return commands you can paste into the Import tab.</div>
+                          <div style={{background:"rgba(155,110,232,0.08)",border:"1px solid rgba(155,110,232,0.2)",borderRadius:10,padding:"10px 12px",marginBottom:10}}>
+                            <div style={{fontSize:10,fontWeight:700,color:P.thesis,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:6}}>Suggested Claude Prompt (copy all of this)</div>
+                            <pre style={{fontSize:10,color:T.textSub,whiteSpace:"pre-wrap",wordBreak:"break-all",margin:0,lineHeight:1.5,fontFamily:"'DM Mono',monospace"}}>{claudePrompt}</pre>
+                          </div>
+                          <button onClick={()=>navigator.clipboard?.writeText(claudePrompt)} style={{width:"100%",padding:"10px",borderRadius:9,border:`1px solid ${P.thesis}44`,background:P.thesis+"15",color:P.thesis,fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,cursor:"pointer",marginBottom:8}}>📋 Copy Prompt + Task JSON</button>
+                          <div style={{fontSize:11,color:T.textMuted,textAlign:"center"}}>Paste into claude.ai → get back command JSON → paste into Import tab</div>
+                        </div>
+                      )}
+                      {taskIO==="import"&&(
+                        <div>
+                          <div style={{fontSize:12,color:T.textSub,marginBottom:10,lineHeight:1.6}}>Paste the command JSON Claude gave you. Preview the changes, then apply.</div>
+                          <textarea
+                            rows={8}
+                            style={inp3}
+                            value={taskCmd}
+                            onChange={e=>{setTaskCmd(e.target.value);setTaskPreview(null);}}
+                            placeholder={'[\n  { "action": "delete", "id": "tt..." },\n  { "action": "add", "title": "...", "category": "writing", "dueDate": "", "notes": "" },\n  { "action": "replace", "id": "tt...", "title": "...", "category": "analysis", "dueDate": "", "notes": "", "done": false }\n]'}
+                          />
+                          <button onClick={()=>setTaskPreview(parseCommands(taskCmd))} style={{width:"100%",marginTop:8,padding:"10px",borderRadius:9,border:`1px solid ${T.border}`,background:"rgba(255,255,255,0.04)",color:T.text,fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:600,cursor:"pointer"}}>🔍 Preview Changes</button>
+                          {taskPreview&&(
+                            <div style={{marginTop:12}}>
+                              {taskPreview.errors.length>0&&(
+                                <div style={{background:"rgba(232,78,138,0.08)",border:"1px solid rgba(232,78,138,0.2)",borderRadius:9,padding:"10px 12px",marginBottom:10}}>
+                                  <div style={{fontSize:11,fontWeight:700,color:"#E84E8A",marginBottom:4}}>⚠ Warnings</div>
+                                  {taskPreview.errors.map((e,i)=><div key={i} style={{fontSize:11,color:"#E84E8A",marginBottom:2}}>{e}</div>)}
+                                </div>
+                              )}
+                              {taskPreview.ops.length>0&&(
+                                <div style={{background:"rgba(155,110,232,0.06)",border:"1px solid rgba(155,110,232,0.15)",borderRadius:9,padding:"10px 12px",marginBottom:12}}>
+                                  <div style={{fontSize:11,fontWeight:700,color:P.thesis,marginBottom:6}}>{taskPreview.ops.length} change{taskPreview.ops.length!==1?"s":""} to apply:</div>
+                                  {taskPreview.ops.map((op,i)=><div key={i} style={{fontSize:12,color:T.text,padding:"3px 0",borderBottom:`1px solid ${T.border}`}}>{op.preview}</div>)}
+                                </div>
+                              )}
+                              {!taskPreview.ok&&<div style={{fontSize:12,color:"#E84E8A",textAlign:"center",marginBottom:10}}>No valid commands to apply. Fix errors above.</div>}
+                              <button onClick={applyCommands} disabled={!taskPreview.ok} style={{width:"100%",padding:"12px",borderRadius:10,border:"none",background:taskPreview.ok?P.thesis:"rgba(255,255,255,0.05)",color:taskPreview.ok?"#fff":T.textMuted,fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:700,cursor:taskPreview.ok?"pointer":"default"}}>
+                                {taskPreview.ok?`Apply ${taskPreview.ops.length} Changes`:"No Changes to Apply"}
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         );
       })()}
