@@ -1,6 +1,7 @@
 ﻿import { useState, useEffect, useRef, useCallback } from "react";
 import SummerApp from "./SummerApp.jsx";
 import BulkTaskManager from "./BulkTaskManager.jsx";
+import BlueprintView from "./BlueprintView.jsx";
 
 // ── Google Fonts ──────────────────────────────────────────────────────────────
 const fontLink = document.createElement("link");
@@ -3807,8 +3808,15 @@ function BudgetApp({ names, mode, T, activeUser, onBack }) {
         {/* ════ BILLS ════ */}
         {view==="bills"&&(()=>{
           const BILL_CATS = ["Rent/Mortgage","Groceries","Phone","Internet","Utilities","Transport","Subscriptions","Insurance","Childcare","Debt Payment","Medical","Other"];
-          const PERIODS = ["monthly","weekly","biweekly","yearly"];
-          const toM = (amt,period) => { if(period==="weekly") return amt*52/12; if(period==="biweekly") return amt*26/12; if(period==="yearly") return amt/12; return amt; };
+          const PERIODS = ["monthly","weekly","biweekly","quarterly","yearly"];
+          // All conversions normalise to a true monthly average (using 365-day year)
+          const toM = (amt,period) => {
+            if(period==="weekly")    return amt*52/12;
+            if(period==="biweekly") return amt*26/12;
+            if(period==="quarterly")return amt*4/12;
+            if(period==="yearly")   return amt/12;
+            return amt; // monthly
+          };
           const CA = "#E8A838"; const CB = "#E84E8A"; const CS = "#9B6EE8";
           const NA = names?.A||"Amen"; const NB = names?.B||"Gloria";
           const toTotal = list => (list||[]).reduce((s,b)=>s+toM(parseFloat(b.amount)||0,b.period),0);
@@ -3895,7 +3903,7 @@ function BudgetApp({ names, mode, T, activeUser, onBack }) {
                       <div key={p.name} style={{ ...card({padding:"16px",borderTop:`3px solid ${p.c}`}) }}>
                         <div style={{ fontSize:11,fontWeight:700,color:p.c,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:6 }}>{p.name}</div>
                         <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:22,fontWeight:800,color:p.c,marginBottom:4 }}>{fmt(p.total)}<span style={{ fontSize:12,fontWeight:400,color:T.textSub }}>/mo</span></div>
-                        {[["Daily",p.total/30],["Weekly",p.total*12/52],["Yearly",p.total*12]].map(([l,v])=>(
+                        {[["Daily",p.total*12/365],["Weekly",p.total*12/52],["Quarterly",p.total*3],["Yearly",p.total*12]].map(([l,v])=>(
                           <div key={l} style={{ display:"flex",justifyContent:"space-between",fontSize:12,padding:"3px 0",borderTop:`1px solid ${T.border}` }}>
                             <span style={{ color:T.textSub }}>{l} need</span>
                             <span style={{ fontWeight:700,color:T.text }}>{fmt(v)}</span>
@@ -3907,7 +3915,7 @@ function BudgetApp({ names, mode, T, activeUser, onBack }) {
                   <div style={{ ...card({padding:"14px 16px",marginBottom:14,borderLeft:`4px solid ${CS}`}) }}>
                     <div style={{ fontSize:11,fontWeight:700,color:CS,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:8 }}>Combined Monthly Total</div>
                     <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:28,fontWeight:800,color:CS,marginBottom:2 }}>{fmt(aTotal+bTotal)}</div>
-                    <div style={{ fontSize:12,color:T.textSub }}>Together you need {fmt((aTotal+bTotal)/30)}/day · {fmt((aTotal+bTotal)*12/52)}/week</div>
+                    <div style={{ fontSize:12,color:T.textSub }}>Together you need {fmt((aTotal+bTotal)*12/365)}/day · {fmt((aTotal+bTotal)*12/52)}/week · {fmt((aTotal+bTotal)*3)}/quarter</div>
                   </div>
                   {(billsShared||[]).length>0&&(
                     <div style={{ ...card({padding:"14px 16px"}) }}>
@@ -7226,6 +7234,7 @@ export default function TogetherApp() {
 
   const navViews=[
     ["board","Board"],["today","Today"],["someday","Someday"],["accountability","Us"],
+    ["blueprint","🧭 Blueprint"],
     ["analytics","📊 Analytics"],
     ["completed","✓ Done"],
     ["monthly","📅 Monthly"],
@@ -7238,7 +7247,7 @@ export default function TogetherApp() {
     ["quarter","Next 3 Months"],["year","This Year"],["aitools","AI Tools"],
     ["myapps","📱 My Applications"],
   ];
-  const isFullScreen=["today","someday","accountability","aitools","urgent","week","month","quarter","year","prayer","analytics","reflections","monthly","people","tracker","cookbook","myapps","completed"].includes(view);
+  const isFullScreen=["today","someday","accountability","aitools","urgent","week","month","quarter","year","prayer","analytics","reflections","monthly","people","tracker","cookbook","myapps","completed","blueprint"].includes(view);
   const pad=isFullScreen?"0":"16px 16px";
 
   // ── Reusable timeline section renderer ────────────────────────────────────
@@ -7774,6 +7783,11 @@ export default function TogetherApp() {
         {/* ── PRAYER REQUESTS ── */}
         {view==="prayer"&&(
           <PrayerView tasks={tasks} setTasks={setTasks} names={names} activeUser={activeUser} T={T} mode={mode} aColor={aColor} aLabel={aLabel} TODAY={TODAY} genId={genId} toasts={toasts} setToasts={setToasts} SECTIONS={SECTIONS}/>
+        )}
+
+        {/* ── BLUEPRINT ── */}
+        {view==="blueprint"&&(
+          <BlueprintView T={T} mode={mode} activeUser={activeUser} TODAY={TODAY}/>
         )}
 
         {/* ── ANALYTICS ── */}
