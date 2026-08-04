@@ -3,7 +3,12 @@
     "allow": [
       "Bash(npx vite *)",
       "Bash(git stash *)",
-      "Bash(git checkout *)"
+      "Bash(git checkout *)",
+      "Bash(npm run *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(grep -B5 -A5 \"setNewAsset\\({...blankA\" c:/Users/User/together/src/App.jsx)"
     ]
   }
 }

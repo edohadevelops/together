@@ -1,0 +1,487 @@
+
+  // ── Gym view ──────────────────────────────────────────────────────────────
+  const GYM_PLAN = [
+    { day:"Day 1", label:"Chest & Triceps", icon:"💪", color:"#E8704A", sections:[
+      { name:"CHEST", exercises:[
+        {name:"Bench Press",sets:4,reps:"6-8",target:"225 lbs",superset:null},
+        {name:"Incline DB Press",sets:4,reps:"6-8",target:"80 lb DBs",superset:null},
+        {name:"Fly",sets:4,reps:"10",target:"45 lb DBs",superset:"Champagne Press"},
+        {name:"Weighted Dip",sets:3,reps:"10",target:"2 plates",superset:"Weighted Push-ups"},
+      ]},
+      { name:"TRICEPS", exercises:[
+        {name:"Skull Crusher",sets:4,reps:"12",target:"85 lbs",superset:null},
+        {name:"Overhead Press",sets:4,reps:"10",target:"57.5 lbs",superset:"Tricep Rope Pulldown (65 lbs)"},
+      ]},
+      { name:"FINISHER", exercises:[
+        {name:"Hanging Leg Raise",sets:3,reps:"15",target:"BW",superset:null},
+        {name:"Calf Raises",sets:3,reps:"20",target:"2 plates",superset:null},
+      ]},
+    ]},
+    { day:"Day 2", label:"Back & Biceps", icon:"🦾", color:"#3B9EDB", sections:[
+      { name:"BACK", exercises:[
+        {name:"Lat Pulldown",sets:4,reps:"6",target:"190 lbs",superset:"Pull-overs (110 lbs)"},
+        {name:"Bent Over Row",sets:4,reps:"12",target:"135 lbs",superset:"Single Arm Row (70 lbs)"},
+        {name:"Barbell Shrug",sets:3,reps:"10",target:"185 lbs",superset:"DB Shrug (80 lbs)"},
+        {name:"Reverse Fly",sets:3,reps:"15",target:"25 lb DBs",superset:"Curl-ups"},
+      ]},
+      { name:"BICEPS", exercises:[
+        {name:"Straight Bar Curl",sets:3,reps:"15",target:"85 lbs",superset:"Spider Curl (60 lbs)"},
+        {name:"Heavy Hammer Curl",sets:3,reps:"8",target:"40 lb DBs",superset:null},
+        {name:"Preacher Curl",sets:5,reps:"12",target:"80 lbs",superset:"One-Arm Strict Curl (35 lbs)"},
+      ]},
+      { name:"FINISHER", exercises:[
+        {name:"Abs",sets:3,reps:"15",target:"Choice",superset:null},
+        {name:"Dips",sets:3,reps:"12",target:"BW",superset:null},
+      ]},
+    ]},
+    { day:"Day 3", label:"Legs (Quads) & Triceps", icon:"🦵", color:"#9B6EE8", sections:[
+      { name:"LEGS", exercises:[
+        {name:"Squat",sets:4,reps:"6",target:"315 lbs",superset:null},
+        {name:"Leg Extension",sets:4,reps:"12",target:"235 lbs (Drop Set)",superset:null},
+        {name:"Goblet Squat",sets:4,reps:"12",target:"90 lb DB",superset:"Calf Raises (2 plates)"},
+      ]},
+      { name:"TRICEPS", exercises:[
+        {name:"Skull Crusher",sets:4,reps:"12",target:"85 lbs",superset:null},
+        {name:"Overhead Press",sets:4,reps:"10",target:"130 lbs",superset:"Tricep Rope Pulldown (130 lbs)"},
+      ]},
+      { name:"FINISHER", exercises:[
+        {name:"Weighted Push-ups",sets:3,reps:"10",target:"1 plate",superset:null},
+        {name:"Abs",sets:3,reps:"15",target:"Choice",superset:null},
+      ]},
+    ]},
+    { day:"Day 4", label:"Chest & Shoulders", icon:"🏋", color:"#E8A838", sections:[
+      { name:"CHEST", exercises:[
+        {name:"Bench Press",sets:4,reps:"8-10",target:"225 lbs",superset:null},
+        {name:"Incline DB Press",sets:4,reps:"8-10",target:"80 lb DBs",superset:null},
+        {name:"Fly",sets:4,reps:"15",target:"55 lb DBs",superset:"Champagne Press (55 lbs)"},
+        {name:"Weighted Dip",sets:3,reps:"10",target:"2 plates",superset:"Weighted Push-ups"},
+      ]},
+      { name:"SHOULDERS", exercises:[
+        {name:"Push Press",sets:4,reps:"10",target:"95 lbs (+10 each)",superset:"Lateral Raise (25 lbs)"},
+        {name:"Seated Arnold Press",sets:4,reps:"12",target:"55 lb DBs",superset:"Bent-Over Lateral Raise (20 lbs)"},
+        {name:"Frontal Raise",sets:3,reps:"10",target:"45 lbs",superset:null},
+        {name:"High Pull",sets:4,reps:"12",target:"Varies",superset:"Face Pull"},
+      ]},
+      { name:"FINISHER", exercises:[
+        {name:"Abs",sets:3,reps:"15",target:"Choice",superset:null},
+        {name:"Weighted Dips",sets:3,reps:"10",target:"2 plates",superset:null},
+      ]},
+    ]},
+    { day:"Day 5", label:"Biceps & Triceps", icon:"💥", color:"#3DBF8A", sections:[
+      { name:"BICEPS", exercises:[
+        {name:"Straight Bar Curl",sets:3,reps:"15",target:"85 lbs",superset:"Spider Curl (60 lbs)"},
+        {name:"Heavy Hammer Curl",sets:3,reps:"8",target:"45-55 lb DBs",superset:null},
+        {name:"Preacher Curl",sets:5,reps:"12",target:"80 lbs",superset:"One-Arm Strict Curl (35 lbs)"},
+      ]},
+      { name:"TRICEPS", exercises:[
+        {name:"Skull Crusher",sets:4,reps:"12",target:"85 lbs",superset:null},
+        {name:"Overhead Press",sets:4,reps:"10",target:"130 lbs",superset:"Tricep Rope Pulldown (130 lbs)"},
+      ]},
+      { name:"FINISHER", exercises:[
+        {name:"Abs",sets:3,reps:"15",target:"Choice",superset:null},
+        {name:"Weighted Dips + Push-ups",sets:3,reps:"10",target:"2 plates",superset:null},
+      ]},
+    ]},
+    { day:"Day 6", label:"Legs (Hamstrings)", icon:"🦿", color:"#20B2AA", sections:[
+      { name:"LEGS", exercises:[
+        {name:"Leg Press",sets:4,reps:"10",target:"8-12 plates",superset:null},
+        {name:"RDLs",sets:3,reps:"12",target:"225 lbs",superset:null},
+        {name:"Dead Lift",sets:3,reps:"5",target:"405 lbs",superset:null},
+      ]},
+      { name:"FINISHER", exercises:[
+        {name:"Abs",sets:3,reps:"15",target:"Choice x2",superset:null},
+        {name:"Weighted Push-ups + Dips",sets:3,reps:"10",target:"1 plate",superset:null},
+      ]},
+    ]},
+    { day:"HIIT A", label:"Sprint & Power HIIT", icon:"⚡", color:"#E84E8A", sections:[
+      { name:"WARM-UP", exercises:[
+        {name:"Jump Rope",sets:1,reps:"3 min",target:"BW",superset:null},
+        {name:"Dynamic Stretches",sets:1,reps:"2 min",target:"BW",superset:null},
+      ]},
+      { name:"CIRCUITS (3 rounds)", exercises:[
+        {name:"Treadmill Sprints",sets:10,reps:"30s on / 30s off",target:"Max speed",superset:null},
+        {name:"Box Jumps",sets:3,reps:"10",target:"BW",superset:null},
+        {name:"Burpees",sets:3,reps:"15",target:"BW",superset:null},
+        {name:"Battle Ropes",sets:4,reps:"30s",target:"BW",superset:null},
+        {name:"Sled Push",sets:3,reps:"30m",target:"2-4 plates",superset:null},
+      ]},
+      { name:"CORE FINISHER", exercises:[
+        {name:"Hanging Leg Raise",sets:3,reps:"15",target:"BW",superset:null},
+        {name:"Plank",sets:3,reps:"60s",target:"BW",superset:null},
+      ]},
+    ]},
+    { day:"HIIT B", label:"Tabata Conditioning", icon:"🔥", color:"#E8704A", sections:[
+      { name:"TABATA (20s on / 10s off x 8 rounds each)", exercises:[
+        {name:"Jump Squats",sets:8,reps:"20s",target:"BW",superset:null},
+        {name:"Push-up Variations",sets:8,reps:"20s",target:"BW",superset:null},
+        {name:"Mountain Climbers",sets:8,reps:"20s",target:"BW",superset:null},
+        {name:"Kettlebell Swings",sets:8,reps:"20s",target:"35-55 lbs",superset:null},
+      ]},
+      { name:"CARDIO BLAST", exercises:[
+        {name:"Bike Intervals",sets:6,reps:"1 min hard / 1 min easy",target:"BW",superset:null},
+        {name:"Rowing",sets:4,reps:"500m",target:"BW",superset:null},
+      ]},
+      { name:"COOL DOWN", exercises:[
+        {name:"Stretching",sets:1,reps:"5-10 min",target:"BW",superset:null},
+      ]},
+    ]},
+  ];
+
+  const [gymDay, setGymDay] = useState(0);
+  const [gymTab, setGymTab] = useState("plan");
+  const [gwf, setGwf] = useState({weight:"",sessions:"",prs:"",nutrition:5,notes:""});
+
+  const thisWeekMonday2 = (()=>{ const d=new Date(); d.setDate(d.getDate()-((d.getDay()+6)%7)); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })();
+  const gymWeekly = data.gymWeekly||[];
+  const thisWeekGym = gymWeekly.find(w=>w.week===thisWeekMonday2)||{};
+
+  const viewGym=(
+    <div>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16,flexWrap:"wrap",gap:8}}>
+        <div>
+          <div style={{fontFamily:"'DM Serif Display',serif",fontSize:isMobile?20:26,color:"#E8704A",marginBottom:2}}>🏋 Gym</div>
+          <div style={{fontSize:12,color:T.textSub}}>6-Day Split + HIIT · Track workouts & weekly progress</div>
+        </div>
+        <div style={{display:"flex",gap:6}}>
+          {["plan","weekly"].map(t=>(
+            <button key={t} onClick={()=>setGymTab(t)} style={{padding:"6px 14px",borderRadius:20,border:`1px solid ${gymTab===t?"#E8704A":T.border}`,background:gymTab===t?"#E8704A":"transparent",color:gymTab===t?"#fff":T.textSub,fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:gymTab===t?700:400,cursor:"pointer"}}>
+              {t==="plan"?"📋 Plan":"📊 Weekly Log"}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {gymTab==="plan"&&(
+        <div>
+          {/* Day selector */}
+          <div style={{display:"flex",gap:6,overflowX:"auto",paddingBottom:6,marginBottom:16,scrollbarWidth:"none"}}>
+            {GYM_PLAN.map((d,i)=>(
+              <button key={i} onClick={()=>setGymDay(i)}
+                style={{flexShrink:0,padding:"8px 14px",borderRadius:20,border:`1px solid ${gymDay===i?d.color:T.border}`,background:gymDay===i?d.color+"20":"transparent",color:gymDay===i?d.color:T.textSub,fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:gymDay===i?700:400,cursor:"pointer",whiteSpace:"nowrap"}}>
+                {d.icon} {d.day}
+              </button>
+            ))}
+          </div>
+          {/* Day content */}
+          {(()=>{ const day=GYM_PLAN[gymDay]; return (
+            <div>
+              <div style={{background:day.color+"15",border:`1px solid ${day.color}33`,borderRadius:14,padding:"14px 16px",marginBottom:16}}>
+                <div style={{fontFamily:"'DM Serif Display',serif",fontSize:18,color:day.color}}>{day.icon} {day.day}: {day.label}</div>
+                {day.day.startsWith("HIIT")&&<div style={{fontSize:12,color:T.textSub,marginTop:4}}>High-intensity conditioning · No heavy lifting today</div>}
+              </div>
+              {day.sections.map((sec,si)=>(
+                <div key={si} style={{...cs({padding:"14px 16px"}),marginBottom:12}}>
+                  <div style={{fontSize:11,fontWeight:700,color:day.color,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:10}}>{sec.name}</div>
+                  {sec.exercises.map((ex,ei)=>(
+                    <div key={ei} style={{borderBottom:`1px solid ${T.border}`,paddingBottom:10,marginBottom:10,lastChild:{border:"none"}}}>
+                      <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:8}}>
+                        <div style={{flex:1}}>
+                          <div style={{fontSize:14,fontWeight:600,color:T.text}}>{ex.name}</div>
+                          <div style={{fontSize:12,color:T.textSub,marginTop:2}}>{ex.sets} sets × {ex.reps} · <span style={{color:day.color,fontWeight:600}}>{ex.target}</span></div>
+                          {ex.superset&&<div style={{fontSize:11,color:"#9B6EE8",marginTop:3,fontWeight:600}}>⟲ Superset: {ex.superset}</div>}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+          ); })()}
+        </div>
+      )}
+
+      {gymTab==="weekly"&&(
+        <div>
+          <div style={{...cs({padding:"16px 18px"}),marginBottom:14}}>
+            <div style={{fontSize:14,fontWeight:700,color:T.text,marginBottom:12}}>📝 Week of {thisWeekMonday2}</div>
+            {[
+              {l:"Body Weight (lbs)",k:"weight",ph:"e.g. 205"},
+              {l:"Gym Sessions This Week",k:"sessions",ph:"e.g. 5"},
+              {l:"New PRs Hit (describe them)",k:"prs",ph:"e.g. Bench 250lbs, Squat 315×5"},
+            ].map(f=>(
+              <div key={f.k} style={{marginBottom:12}}>
+                <label style={{...lbl}}>{f.l}</label>
+                <input style={{...inp}} value={gwf[f.k]||""} onChange={e=>setGwf(p=>({...p,[f.k]:e.target.value}))} placeholder={f.ph}/>
+              </div>
+            ))}
+            <label style={{...lbl}}>Nutrition Compliance (1–5)</label>
+            <div style={{display:"flex",gap:8,marginBottom:12}}>
+              {[1,2,3,4,5].map(n=>(
+                <button key={n} onClick={()=>setGwf(p=>({...p,nutrition:n}))}
+                  style={{flex:1,padding:"8px",borderRadius:8,border:`2px solid ${gwf.nutrition>=n?"#3DBF8A":T.border}`,background:gwf.nutrition>=n?"#3DBF8A18":"transparent",color:gwf.nutrition>=n?"#3DBF8A":T.textSub,fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,cursor:"pointer"}}>
+                  {n}
+                </button>
+              ))}
+            </div>
+            <label style={{...lbl}}>Notes / How You Felt</label>
+            <input style={{...inp}} value={gwf.notes||""} onChange={e=>setGwf(p=>({...p,notes:e.target.value}))} placeholder="Sleep quality, energy, any setbacks..."/>
+            <button onClick={()=>{ if(!gwf.weight&&!gwf.sessions) return; const entry={...gwf,week:thisWeekMonday2,id:"gw"+Date.now().toString(36)}; save(p=>({...p,gymWeekly:[...(p.gymWeekly||[]).filter(w=>w.week!==thisWeekMonday2),entry]})); setGwf({weight:"",sessions:"",prs:"",nutrition:5,notes:""}); }}
+              style={{width:"100%",marginTop:14,padding:"11px",borderRadius:10,border:"none",background:"#E8704A",color:"#fff",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:700,cursor:"pointer"}}>
+              Save This Week
+            </button>
+          </div>
+          {gymWeekly.length>0&&(
+            <div>
+              <div style={{fontSize:13,fontWeight:700,color:T.textSub,marginBottom:10,textTransform:"uppercase",letterSpacing:"0.06em"}}>History</div>
+              {[...gymWeekly].sort((a,b)=>b.week.localeCompare(a.week)).slice(0,8).map(w=>(
+                <div key={w.id||w.week} style={{...cs({padding:"14px 16px"}),marginBottom:10}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+                    <div style={{fontSize:13,fontWeight:700,color:T.text}}>Week of {w.week}</div>
+                    <button onClick={()=>save(p=>({...p,gymWeekly:(p.gymWeekly||[]).filter(x=>(x.id||x.week)!==(w.id||w.week))}))} style={{background:"none",border:"none",color:T.textMuted,cursor:"pointer",fontSize:14}}>✕</button>
+                  </div>
+                  <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(min(100%,120px),1fr))",gap:8}}>
+                    {w.weight&&<div style={{background:T.inputBg,borderRadius:8,padding:"8px 10px"}}><div style={{fontSize:16,fontWeight:800,color:"#E8704A"}}>{w.weight} lbs</div><div style={{fontSize:10,color:T.textMuted,textTransform:"uppercase"}}>Weight</div></div>}
+                    {w.sessions&&<div style={{background:T.inputBg,borderRadius:8,padding:"8px 10px"}}><div style={{fontSize:16,fontWeight:800,color:"#3DBF8A"}}>{w.sessions} days</div><div style={{fontSize:10,color:T.textMuted,textTransform:"uppercase"}}>Sessions</div></div>}
+                    {w.nutrition&&<div style={{background:T.inputBg,borderRadius:8,padding:"8px 10px"}}><div style={{fontSize:16,fontWeight:800,color:"#E8A838"}}>{w.nutrition}/5</div><div style={{fontSize:10,color:T.textMuted,textTransform:"uppercase"}}>Nutrition</div></div>}
+                  </div>
+                  {w.prs&&<div style={{fontSize:12,color:"#7B61FF",marginTop:6,fontWeight:600}}>🏆 PRs: {w.prs}</div>}
+                  {w.notes&&<div style={{fontSize:12,color:T.textSub,marginTop:4,fontStyle:"italic"}}>{w.notes}</div>}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+
+  // ── Schools view ──────────────────────────────────────────────────────────
+  const [schoolTab, setSchoolTab] = useState("all");
+  const [showSchoolForm, setShowSchoolForm] = useState(false);
+  const [editSchool, setEditSchool] = useState(null);
+  const [sf2, setSf2] = useState({name:"",degree:"PhD",country:"usa",status:"researching",deadline:"",notes:"",progress:[]});
+
+  const schools = data.schools||[];
+  const STATUS_COLORS = {researching:"#888D9B",preparing:"#E8A838",applied:"#3B9EDB",interview:"#9B6EE8",offer:"#3DBF8A",rejected:"#E84E8A",withdrawn:"#E8704A"};
+
+  function saveSchool() {
+    if (!sf2.name?.trim()) return;
+    if (editSchool) {
+      save(p=>({...p,schools:(p.schools||[]).map(s=>s.id===editSchool.id?{...sf2,id:editSchool.id}:s)}));
+    } else {
+      save(p=>({...p,schools:[...(p.schools||[]),{...sf2,id:"sc"+Date.now().toString(36),progress:[]}]}));
+    }
+    setShowSchoolForm(false); setEditSchool(null);
+    setSf2({name:"",degree:"PhD",country:"usa",status:"researching",deadline:"",notes:"",progress:[]});
+  }
+  function addProgress(id, note) {
+    if (!note?.trim()) return;
+    save(p=>({...p,schools:(p.schools||[]).map(s=>s.id===id?{...s,progress:[...(s.progress||[]),{date:today,note,id:"p"+Date.now().toString(36)}]}:s)}));
+  }
+
+  const viewSchools=(
+    <div>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16,flexWrap:"wrap",gap:8}}>
+        <div>
+          <div style={{fontFamily:"'DM Serif Display',serif",fontSize:isMobile?20:26,color:"#7B61FF",marginBottom:2}}>🎓 School Applications</div>
+          <div style={{fontSize:12,color:T.textSub}}>PhD &amp; Masters · Canada &amp; USA · Track every step</div>
+        </div>
+        <button onClick={()=>{ setSf2({name:"",degree:"PhD",country:"usa",status:"researching",deadline:"",notes:"",progress:[]}); setEditSchool(null); setShowSchoolForm(true); }}
+          style={{padding:"8px 16px",borderRadius:9,border:"none",background:"#7B61FF",color:"#fff",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,cursor:"pointer"}}>
+          + Add School
+        </button>
+      </div>
+
+      {/* Summary stats */}
+      {schools.length>0&&(
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(min(100%,110px),1fr))",gap:8,marginBottom:16}}>
+          {[
+            {l:"Total",v:schools.length,c:"#7B61FF"},
+            {l:"Canada",v:schools.filter(s=>s.country==="canada").length,c:"#E84E8A"},
+            {l:"USA",v:schools.filter(s=>s.country==="usa").length,c:"#3B9EDB"},
+            {l:"Applied",v:schools.filter(s=>["applied","interview","offer"].includes(s.status)).length,c:"#3DBF8A"},
+          ].map(s=>(
+            <div key={s.l} style={{...cs({padding:"12px 14px"}),borderLeft:`3px solid ${s.c}`}}>
+              <div style={{fontSize:20,fontWeight:800,color:T.text}}>{s.v}</div>
+              <div style={{fontSize:10,color:T.textSub,textTransform:"uppercase",letterSpacing:"0.07em"}}>{s.l}</div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Country filter tabs */}
+      <div style={{display:"flex",gap:6,marginBottom:14}}>
+        {[["all","All"],["usa","🇺🇸 USA"],["canada","🇨🇦 Canada"]].map(([v,l])=>(
+          <button key={v} onClick={()=>setSchoolTab(v)}
+            style={{padding:"6px 14px",borderRadius:20,border:`1px solid ${schoolTab===v?"#7B61FF":T.border}`,background:schoolTab===v?"#7B61FF20":"transparent",color:schoolTab===v?"#7B61FF":T.textSub,fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:schoolTab===v?700:400,cursor:"pointer"}}>
+            {l}
+          </button>
+        ))}
+      </div>
+
+      {schools.length===0?(
+        <div style={{...cs({padding:"40px 20px"}),textAlign:"center"}}>
+          <div style={{fontSize:40,marginBottom:10}}>🎓</div>
+          <div style={{fontFamily:"'DM Serif Display',serif",fontSize:18,color:T.text,marginBottom:6}}>No applications yet</div>
+          <div style={{fontSize:13,color:T.textSub,marginBottom:16}}>Add your target schools and track every step of the application journey.</div>
+          <button onClick={()=>setShowSchoolForm(true)} style={{padding:"10px 20px",borderRadius:10,border:"none",background:"#7B61FF",color:"#fff",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:700,cursor:"pointer"}}>+ Add First School</button>
+        </div>
+      ):(
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(min(100%,300px),1fr))",gap:12}}>
+          {schools.filter(s=>schoolTab==="all"||s.country===schoolTab).map(s=>(
+            <SchoolCard key={s.id} school={s} T={T} STATUS_COLORS={STATUS_COLORS} lbl={lbl} inp={inp}
+              onEdit={()=>{ setSf2({...s}); setEditSchool(s); setShowSchoolForm(true); }}
+              onDelete={()=>save(p=>({...p,schools:(p.schools||[]).filter(x=>x.id!==s.id)}))}
+              onAddProgress={addProgress}
+              onStatusChange={(id,st)=>save(p=>({...p,schools:(p.schools||[]).map(x=>x.id===id?{...x,status:st}:x)}))}
+            />
+          ))}
+        </div>
+      )}
+
+      {showSchoolForm&&(
+        <div style={{position:"fixed",inset:0,zIndex:50,background:"rgba(0,0,0,0.65)",backdropFilter:"blur(6px)",display:"flex",alignItems:"flex-end",justifyContent:"center"}} onClick={e=>e.target===e.currentTarget&&setShowSchoolForm(false)}>
+          <div style={{background:T.surface,border:`1px solid ${T.border}`,borderRadius:"20px 20px 0 0",width:"100%",maxWidth:500,maxHeight:"90vh",overflowY:"auto",padding:"24px 20px 40px"}}>
+            <div style={{width:40,height:4,borderRadius:2,background:T.textMuted,margin:"0 auto 20px",opacity:0.4}}/>
+            <div style={{fontFamily:"'DM Serif Display',serif",fontSize:20,color:"#7B61FF",marginBottom:14}}>{editSchool?"Edit":"Add"} School</div>
+            {[{l:"School Name",k:"name",ph:"e.g. University of Toronto"},{l:"Deadline",k:"deadline",ph:"",type:"date"},{l:"Notes",k:"notes",ph:"Contact, requirements, etc."}].map(f=>(
+              <div key={f.k} style={{marginBottom:10}}>
+                <label style={{...lbl}}>{f.l}</label>
+                <input type={f.type||"text"} style={{...inp}} value={sf2[f.k]||""} onChange={e=>setSf2(p=>({...p,[f.k]:e.target.value}))} placeholder={f.ph||""}/>
+              </div>
+            ))}
+            <label style={{...lbl}}>Degree</label>
+            <div style={{display:"flex",gap:6,marginBottom:10}}>
+              {["PhD","Masters","Both"].map(d=>(
+                <button key={d} onClick={()=>setSf2(p=>({...p,degree:d}))} style={{flex:1,padding:"8px",borderRadius:8,border:`1px solid ${sf2.degree===d?"#7B61FF":T.border}`,background:sf2.degree===d?"#7B61FF18":"transparent",color:sf2.degree===d?"#7B61FF":T.text,fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:sf2.degree===d?700:400,cursor:"pointer"}}>{d}</button>
+              ))}
+            </div>
+            <label style={{...lbl}}>Country</label>
+            <div style={{display:"flex",gap:6,marginBottom:10}}>
+              {[["usa","🇺🇸 USA"],["canada","🇨🇦 Canada"],["both","Both"]].map(([v,l])=>(
+                <button key={v} onClick={()=>setSf2(p=>({...p,country:v}))} style={{flex:1,padding:"8px",borderRadius:8,border:`1px solid ${sf2.country===v?"#7B61FF":T.border}`,background:sf2.country===v?"#7B61FF18":"transparent",color:sf2.country===v?"#7B61FF":T.text,fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:sf2.country===v?700:400,cursor:"pointer"}}>{l}</button>
+              ))}
+            </div>
+            <div style={{display:"flex",gap:8,marginTop:16}}>
+              <button onClick={()=>setShowSchoolForm(false)} style={{flex:1,padding:"11px",borderRadius:10,border:`1px solid ${T.border}`,background:"transparent",color:T.textSub,fontFamily:"'DM Sans',sans-serif",fontSize:13,cursor:"pointer"}}>Cancel</button>
+              <button onClick={saveSchool} style={{flex:2,padding:"11px",borderRadius:10,border:"none",background:"#7B61FF",color:"#fff",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:700,cursor:"pointer"}}>Save</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
+  // ── Life view ─────────────────────────────────────────────────────────────
+  const [lifeTab, setLifeTab] = useState("helpers");
+  const [showHelperForm, setShowHelperForm] = useState(false);
+  const [hf, setHf] = useState({name:"",how:"",giveBack:"",notes:""});
+  const [showFamilyForm, setShowFamilyForm] = useState(false);
+  const [ff2, setFf2] = useState({name:"",relation:"",goals:"",timeline:"",notes:""});
+
+  const helpers = data.helpers||[];
+  const family = data.family||[];
+
+  function saveHelper() {
+    if (!hf.name?.trim()) return;
+    save(p=>({...p,helpers:[...(p.helpers||[]),{...hf,id:"h"+Date.now().toString(36)}]}));
+    setHf({name:"",how:"",giveBack:"",notes:""}); setShowHelperForm(false);
+  }
+  function saveFamily() {
+    if (!ff2.name?.trim()) return;
+    save(p=>({...p,family:[...(p.family||[]),{...ff2,id:"fm"+Date.now().toString(36)}]}));
+    setFf2({name:"",relation:"",goals:"",timeline:"",notes:""}); setShowFamilyForm(false);
+  }
+
+  const viewLife=(
+    <div>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16,flexWrap:"wrap",gap:8}}>
+        <div>
+          <div style={{fontFamily:"'DM Serif Display',serif",fontSize:isMobile?20:26,color:"#E84E8A",marginBottom:2}}>❤ Life &amp; Legacy</div>
+          <div style={{fontSize:12,color:T.textSub}}>People who helped you · Family goals · Giving back</div>
+        </div>
+        <div style={{display:"flex",gap:6}}>
+          {["helpers","family"].map(t=>(
+            <button key={t} onClick={()=>setLifeTab(t)}
+              style={{padding:"6px 14px",borderRadius:20,border:`1px solid ${lifeTab===t?"#E84E8A":T.border}`,background:lifeTab===t?"#E84E8A20":"transparent",color:lifeTab===t?"#E84E8A":T.textSub,fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:lifeTab===t?700:400,cursor:"pointer"}}>
+              {t==="helpers"?"🤝 People Who Helped":"👨‍👩‍👧 Family Goals"}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {lifeTab==="helpers"&&(
+        <div>
+          <button onClick={()=>setShowHelperForm(true)} style={{width:"100%",padding:"11px",borderRadius:10,border:`1px dashed ${"#E84E8A"}`,background:"#E84E8A08",color:"#E84E8A",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:600,cursor:"pointer",marginBottom:16}}>+ Add Person Who Helped</button>
+          {helpers.length===0&&<div style={{...cs({padding:"40px 20px"}),textAlign:"center"}}>
+            <div style={{fontSize:36,marginBottom:10}}>🤝</div>
+            <div style={{fontFamily:"'DM Serif Display',serif",fontSize:17,color:T.text,marginBottom:6}}>Document your helpers</div>
+            <div style={{fontSize:13,color:T.textSub,lineHeight:1.6}}>Record everyone who poured into your life — mentors, friends, strangers. Track how you plan to give back.</div>
+          </div>}
+          {helpers.map(h=>(
+            <div key={h.id} style={{...cs({padding:"16px 18px"}),marginBottom:10,borderLeft:"4px solid #E84E8A"}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}}>
+                <div style={{fontSize:15,fontWeight:700,color:T.text}}>🤝 {h.name}</div>
+                <button onClick={()=>save(p=>({...p,helpers:(p.helpers||[]).filter(x=>x.id!==h.id)}))} style={{background:"none",border:"none",color:T.textMuted,cursor:"pointer",fontSize:14}}>✕</button>
+              </div>
+              {h.how&&<div style={{fontSize:13,color:T.text,lineHeight:1.6,marginBottom:6}}><span style={{color:T.textSub,fontWeight:600}}>How they helped: </span>{h.how}</div>}
+              {h.giveBack&&<div style={{fontSize:13,color:"#3DBF8A",lineHeight:1.6,marginBottom:4}}><span style={{fontWeight:600}}>How I will give back: </span>{h.giveBack}</div>}
+              {h.notes&&<div style={{fontSize:12,color:T.textSub,fontStyle:"italic"}}>{h.notes}</div>}
+            </div>
+          ))}
+          {showHelperForm&&(
+            <div style={{position:"fixed",inset:0,zIndex:50,background:"rgba(0,0,0,0.65)",backdropFilter:"blur(6px)",display:"flex",alignItems:"flex-end",justifyContent:"center"}} onClick={e=>e.target===e.currentTarget&&setShowHelperForm(false)}>
+              <div style={{background:T.surface,border:`1px solid ${T.border}`,borderRadius:"20px 20px 0 0",width:"100%",maxWidth:500,maxHeight:"90vh",overflowY:"auto",padding:"24px 20px 40px"}}>
+                <div style={{width:40,height:4,borderRadius:2,background:T.textMuted,margin:"0 auto 20px",opacity:0.4}}/>
+                <div style={{fontFamily:"'DM Serif Display',serif",fontSize:20,color:"#E84E8A",marginBottom:14}}>Add Person Who Helped</div>
+                {[{l:"Their Name",k:"name",ph:"e.g. Dr. Adeyemi"},{l:"How They Helped",k:"how",ph:"What did they do for you?"},{l:"How I Will Give Back",k:"giveBack",ph:"What will you do to honour what they gave?"},{l:"Notes",k:"notes",ph:"Any other context..."}].map(f=>(
+                  <div key={f.k} style={{marginBottom:10}}>
+                    <label style={{...lbl}}>{f.l}</label>
+                    <input style={{...inp}} value={hf[f.k]||""} onChange={e=>setHf(p=>({...p,[f.k]:e.target.value}))} placeholder={f.ph}/>
+                  </div>
+                ))}
+                <div style={{display:"flex",gap:8,marginTop:16}}>
+                  <button onClick={()=>setShowHelperForm(false)} style={{flex:1,padding:"11px",borderRadius:10,border:`1px solid ${T.border}`,background:"transparent",color:T.textSub,fontFamily:"'DM Sans',sans-serif",fontSize:13,cursor:"pointer"}}>Cancel</button>
+                  <button onClick={saveHelper} style={{flex:2,padding:"11px",borderRadius:10,border:"none",background:"#E84E8A",color:"#fff",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:700,cursor:"pointer"}}>Save</button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {lifeTab==="family"&&(
+        <div>
+          <button onClick={()=>setShowFamilyForm(true)} style={{width:"100%",padding:"11px",borderRadius:10,border:`1px dashed ${"#E84E8A"}`,background:"#E84E8A08",color:"#E84E8A",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:600,cursor:"pointer",marginBottom:16}}>+ Add Family Member &amp; Goal</button>
+          {family.length===0&&<div style={{...cs({padding:"40px 20px"}),textAlign:"center"}}>
+            <div style={{fontSize:36,marginBottom:10}}>👨‍👩‍👧</div>
+            <div style={{fontFamily:"'DM Serif Display',serif",fontSize:17,color:T.text,marginBottom:6}}>Document your family goals</div>
+            <div style={{fontSize:13,color:T.textSub,lineHeight:1.6}}>Write down what you want to do for each family member — your siblings, your parents. Make it concrete.</div>
+          </div>}
+          {family.map(f=>(
+            <div key={f.id} style={{...cs({padding:"16px 18px"}),marginBottom:10,borderLeft:"4px solid #E8A838"}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}}>
+                <div>
+                  <div style={{fontSize:15,fontWeight:700,color:T.text}}>👤 {f.name}</div>
+                  {f.relation&&<div style={{fontSize:12,color:"#E8A838",fontWeight:600,marginTop:2}}>{f.relation}</div>}
+                </div>
+                <button onClick={()=>save(p=>({...p,family:(p.family||[]).filter(x=>x.id!==f.id)}))} style={{background:"none",border:"none",color:T.textMuted,cursor:"pointer",fontSize:14}}>✕</button>
+              </div>
+              {f.goals&&<div style={{fontSize:13,color:T.text,lineHeight:1.7,marginBottom:6,background:T.inputBg,borderRadius:8,padding:"10px 12px"}}>{f.goals}</div>}
+              {f.timeline&&<div style={{fontSize:12,color:"#3DBF8A",fontWeight:600}}>🗓 Timeline: {f.timeline}</div>}
+              {f.notes&&<div style={{fontSize:12,color:T.textSub,fontStyle:"italic",marginTop:4}}>{f.notes}</div>}
+            </div>
+          ))}
+          {showFamilyForm&&(
+            <div style={{position:"fixed",inset:0,zIndex:50,background:"rgba(0,0,0,0.65)",backdropFilter:"blur(6px)",display:"flex",alignItems:"flex-end",justifyContent:"center"}} onClick={e=>e.target===e.currentTarget&&setShowFamilyForm(false)}>
+              <div style={{background:T.surface,border:`1px solid ${T.border}`,borderRadius:"20px 20px 0 0",width:"100%",maxWidth:500,maxHeight:"90vh",overflowY:"auto",padding:"24px 20px 40px"}}>
+                <div style={{width:40,height:4,borderRadius:2,background:T.textMuted,margin:"0 auto 20px",opacity:0.4}}/>
+                <div style={{fontFamily:"'DM Serif Display',serif",fontSize:20,color:"#E8A838",marginBottom:14}}>Add Family Goal</div>
+                {[{l:"Name",k:"name",ph:"e.g. Mum, Dad, Sister..."},{l:"Relation",k:"relation",ph:"e.g. Mother, Brother, Sister"},{l:"What I Want To Do For Them",k:"goals",ph:"Get them to the US/Canada, settle them with a house, car, support their business..."},{l:"Timeline",k:"timeline",ph:"e.g. Within 5 years, by 2027..."},{l:"Notes",k:"notes",ph:"Any other context..."}].map(fl=>(
+                  <div key={fl.k} style={{marginBottom:10}}>
+                    <label style={{...lbl}}>{fl.l}</label>
+                    <input style={{...inp}} value={ff2[fl.k]||""} onChange={e=>setFf2(p=>({...p,[fl.k]:e.target.value}))} placeholder={fl.ph}/>
+                  </div>
+                ))}
+                <div style={{display:"flex",gap:8,marginTop:16}}>
+                  <button onClick={()=>setShowFamilyForm(false)} style={{flex:1,padding:"11px",borderRadius:10,border:`1px solid ${T.border}`,background:"transparent",color:T.textSub,fontFamily:"'DM Sans',sans-serif",fontSize:13,cursor:"pointer"}}>Cancel</button>
+                  <button onClick={saveFamily} style={{flex:2,padding:"11px",borderRadius:10,border:"none",background:"#E8A838",color:"#fff",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:700,cursor:"pointer"}}>Save</button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+
