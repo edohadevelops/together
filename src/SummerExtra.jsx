@@ -1,127 +1,138 @@
 import { useState, useEffect, useRef } from "react";
 
-// ── Workout plan data ─────────────────────────────────────────────────────────
+// ── Minnis Week 1 Training Plan — 3 Days/Week Full Body ──────────────────────
+// From: Amen's Week 1 Training Plan (Coach Minnis)
+// Targets: 2,400 kcal | 180g Protein | 60g Fat | 230g Carbs
+// RPE 7 = ~3 reps left in tank. Write down weight used — it's your Week 2 baseline.
 const GYM_PLAN = [
-  { day:"Day 1", label:"Chest & Triceps", icon:"💪", color:"#E8704A", sections:[
-    { name:"CHEST", exercises:[
-      {name:"Bench Press",sets:4,reps:"6-8",target:"225 lbs",superset:null},
-      {name:"Incline DB Press",sets:4,reps:"6-8",target:"80 lb DBs",superset:null},
-      {name:"Fly",sets:4,reps:"10",target:"45 lb DBs",superset:"Champagne Press"},
-      {name:"Weighted Dip",sets:3,reps:"10",target:"2 plates",superset:"Weighted Push-ups"},
+  {
+    day: "Day A", label: "Squat Focus", icon: "🏋️", color: "#E8704A",
+    schedule: "Monday",
+    warmup: "5-10 min light cardio + dynamic stretching. Do 2-3 ramp-up sets on Back Squat before working sets.",
+    notes: "Rest 2-3 min on compound lifts, 60-90 sec on everything else.",
+    sections: [
+      { name: "FULL BODY — SQUAT FOCUS", exercises: [
+        { name:"Back Squat (or Leg Press)",      sets:3, reps:"8",       target:"RPE 7", superset:null,           rpeTarget:7 },
+        { name:"Flat Barbell/DB Bench Press",    sets:3, reps:"8",       target:"RPE 7", superset:null,           rpeTarget:7 },
+        { name:"Romanian Deadlift",              sets:3, reps:"10",      target:"RPE 7", superset:null,           rpeTarget:7 },
+        { name:"Seated Cable Row",               sets:3, reps:"10",      target:"RPE 7", superset:null,           rpeTarget:7 },
+        { name:"DB Lateral Raise",               sets:3, reps:"12",      target:"RPE 7", superset:null,           rpeTarget:7 },
+        { name:"Plank",                          sets:3, reps:"30-45s",  target:"BW",    superset:null,           rpeTarget:null },
+      ]},
+    ],
+  },
+  {
+    day: "Day B", label: "Deadlift Focus", icon: "🦾", color: "#3B9EDB",
+    schedule: "Wednesday",
+    warmup: "5-10 min light cardio + dynamic stretching. Ramp-up sets on Conventional Deadlift.",
+    notes: "Rest 2-3 min on compound lifts, 60-90 sec on everything else.",
+    sections: [
+      { name: "FULL BODY — DEADLIFT FOCUS", exercises: [
+        { name:"Conventional Deadlift",          sets:3, reps:"6",       target:"RPE 7", superset:null,           rpeTarget:7 },
+        { name:"Incline DB Press",               sets:3, reps:"10",      target:"RPE 7", superset:null,           rpeTarget:7 },
+        { name:"Lat Pulldown",                   sets:3, reps:"10",      target:"RPE 7", superset:null,           rpeTarget:7 },
+        { name:"Walking Lunge",                  sets:3, reps:"12/leg",  target:"RPE 7", superset:null,           rpeTarget:7 },
+        { name:"Face Pull",                      sets:3, reps:"15",      target:"RPE 7", superset:null,           rpeTarget:7 },
+        { name:"Hanging Knee Raise",             sets:3, reps:"12",      target:"BW",    superset:null,           rpeTarget:null },
+      ]},
+    ],
+  },
+  {
+    day: "Day C", label: "Full Body / Press Focus", icon: "💪", color: "#9B6EE8",
+    schedule: "Friday",
+    warmup: "5-10 min light cardio + dynamic stretching. Ramp-up sets on Leg Press or Front Squat.",
+    notes: "Rest 2-3 min on compound lifts, 60-90 sec on everything else.",
+    sections: [
+      { name: "FULL BODY — PRESS FOCUS", exercises: [
+        { name:"Leg Press (or Front Squat)",     sets:3, reps:"10",      target:"RPE 7", superset:null,           rpeTarget:7 },
+        { name:"Standing Overhead Press",        sets:3, reps:"8",       target:"RPE 7", superset:null,           rpeTarget:7 },
+        { name:"Bent-Over Row (BB or DB)",       sets:3, reps:"10",      target:"RPE 7", superset:null,           rpeTarget:7 },
+        { name:"Hip Thrust",                     sets:3, reps:"10",      target:"RPE 7", superset:null,           rpeTarget:7 },
+        { name:"Bicep Curl",                     sets:3, reps:"12",      target:"RPE 7", superset:null,           rpeTarget:7 },
+        { name:"Triceps Pushdown",               sets:3, reps:"12",      target:"RPE 7", superset:null,           rpeTarget:7 },
+      ]},
+    ],
+  },
+];
+
+// ── Minnis Nutrition Plan — Week 1 ────────────────────────────────────────────
+const NUTRITION_PLAN = {
+  targets: { kcal:2400, protein:180, fat:60, carbs:230 },
+  daily_note: "Same structure daily — breakfast, lunch, dinner, top-up. Weigh everything on a scale.",
+  days: ["Monday","Tuesday","Wednesday","Thursday","Sunday"],
+  saturday_note: "Same as daily plan — swap ground beef for 170g cooked chicken breast at lunch and dinner.",
+  meals: [
+    { time:"8:30am", label:"Breakfast", items:[
+      { food:"Whole eggs",           amount:"4 large (~200g)" },
+      { food:"Oats (dry)",           amount:"40g" },
+      { food:"Banana",               amount:"1 medium (~120g)" },
+      { food:"Peanut butter",        amount:"16g" },
     ]},
-    { name:"TRICEPS", exercises:[
-      {name:"Skull Crusher",sets:4,reps:"12",target:"85 lbs",superset:null},
-      {name:"Overhead Tricep Press",sets:4,reps:"10",target:"57.5 lbs",superset:"Tricep Rope Pulldown"},
+    { time:"1:00pm", label:"Lunch (1pm break)", items:[
+      { food:"White rice (cooked)",        amount:"280g" },
+      { food:"Ground beef 93/7 (cooked)",  amount:"170g" },
+      { food:"Broccoli/carrot/cucumber",   amount:"200g" },
+      { food:"Olive oil",                  amount:"5g" },
     ]},
-    { name:"FINISHER", exercises:[
-      {name:"Hanging Leg Raise",sets:3,reps:"15",target:"BW",superset:null},
-      {name:"Calf Raises",sets:3,reps:"20",target:"2 plates",superset:null},
+    { time:"8:00pm", label:"Dinner", items:[
+      { food:"White rice (cooked)",        amount:"280g" },
+      { food:"Ground beef 93/7 (cooked)",  amount:"170g" },
+      { food:"Broccoli/carrot/cucumber",   amount:"200g" },
     ]},
+    { time:"Afternoon", label:"Top-Up", items:[
+      { food:"Whey protein",    amount:"60g (2 scoops)" },
+      { food:"Rice cakes",      amount:"2 pieces (~18g)" },
+    ]},
+  ],
+  friday_dinner: {
+    label:"Friday — Pasta Night (swap dinner only)",
+    items:[
+      { food:"Pasta (cooked)",                          amount:"210g" },
+      { food:"Marinara sauce",                          amount:"125g" },
+      { food:"Lean beef or turkey meatballs (cooked)",  amount:"170g (~5-6 meatballs)" },
+      { food:"Broccoli/carrot/cucumber",                amount:"130g" },
+    ],
+  },
+  totals: "~2,390 kcal · 191g protein · 66g fat · 233g carbs",
+  drinks_note: "Zero-sugar sodas (Coke Zero, Diet Coke) are fine 2-3x per week — won't affect calories or macros.",
+  prep_tip: "Weigh lunch and dinner into containers at prep time. Once portioned, just grab and eat. Solves measuring while driving.",
+};
+
+// ── Grocery List — Week 1 ─────────────────────────────────────────────────────
+const GROCERY_LIST = [
+  { cat:"Protein", color:"#E8704A", items:[
+    { name:"Eggs",                          amount:"3 dozen" },
+    { name:"Ground beef (93/7 lean)",       amount:"4.5 lbs" },
+    { name:"Chicken breast",                amount:"1 lb" },
+    { name:"Whey protein",                  amount:"1 tub" },
+    { name:"Lean beef/turkey meatballs",    amount:"1 lb bag (frozen)" },
   ]},
-  { day:"Day 2", label:"Back & Biceps", icon:"🦾", color:"#3B9EDB", sections:[
-    { name:"BACK", exercises:[
-      {name:"Lat Pulldown",sets:4,reps:"6",target:"190 lbs",superset:"Pull-overs 110 lbs"},
-      {name:"Bent Over Row",sets:4,reps:"12",target:"135 lbs",superset:"Single Arm Row"},
-      {name:"Barbell Shrug",sets:3,reps:"10",target:"185 lbs",superset:"DB Shrug 80 lbs"},
-      {name:"Reverse Fly",sets:3,reps:"15",target:"25 lb DBs",superset:"Curl-ups"},
-    ]},
-    { name:"BICEPS", exercises:[
-      {name:"Straight Bar Curl",sets:3,reps:"15",target:"85 lbs",superset:"Spider Curl"},
-      {name:"Heavy Hammer Curl",sets:3,reps:"8",target:"40-50 lb DBs",superset:null},
-      {name:"Preacher Curl",sets:5,reps:"12",target:"80 lbs",superset:"One-Arm Strict Curl"},
-    ]},
-    { name:"FINISHER", exercises:[
-      {name:"Abs of choice",sets:3,reps:"15",target:"BW",superset:null},
-      {name:"Dips",sets:3,reps:"12",target:"BW",superset:null},
-    ]},
+  { cat:"Carbs", color:"#3B9EDB", items:[
+    { name:"White rice",                    amount:"5 lb bag" },
+    { name:"Oats (old-fashioned)",          amount:"1 large container" },
+    { name:"Bananas",                       amount:"7" },
+    { name:"Rice cakes",                    amount:"1-2 packs" },
+    { name:"Pasta",                         amount:"1 box" },
   ]},
-  { day:"Day 3", label:"Legs (Quads) & Triceps", icon:"🦵", color:"#9B6EE8", sections:[
-    { name:"LEGS", exercises:[
-      {name:"Squat",sets:4,reps:"6",target:"315 lbs",superset:null},
-      {name:"Leg Extension",sets:4,reps:"12",target:"235 lbs Drop Set",superset:null},
-      {name:"Goblet Squat",sets:4,reps:"12",target:"90 lb DB",superset:"Calf Raises"},
-    ]},
-    { name:"TRICEPS", exercises:[
-      {name:"Skull Crusher",sets:4,reps:"12",target:"85 lbs",superset:null},
-      {name:"Overhead Tricep Press",sets:4,reps:"10",target:"130 lbs",superset:"Tricep Rope Pulldown"},
-    ]},
-    { name:"FINISHER", exercises:[
-      {name:"Weighted Push-ups",sets:3,reps:"10",target:"1 plate",superset:null},
-      {name:"Abs of choice",sets:3,reps:"15",target:"BW",superset:null},
-    ]},
+  { cat:"Fats / Extras", color:"#E8A838", items:[
+    { name:"Peanut butter",   amount:"1 jar" },
+    { name:"Olive oil",       amount:"1 small bottle" },
+    { name:"Marinara sauce",  amount:"1 jar" },
   ]},
-  { day:"Day 4", label:"Chest & Shoulders", icon:"🏋", color:"#E8A838", sections:[
-    { name:"CHEST", exercises:[
-      {name:"Bench Press",sets:4,reps:"8-10",target:"225 lbs",superset:null},
-      {name:"Incline DB Press",sets:4,reps:"8-10",target:"80 lb DBs",superset:null},
-      {name:"Fly",sets:4,reps:"15",target:"55 lb DBs",superset:"Champagne Press"},
-      {name:"Weighted Dip",sets:3,reps:"10",target:"2 plates",superset:"Weighted Push-ups"},
-    ]},
-    { name:"SHOULDERS", exercises:[
-      {name:"Push Press",sets:4,reps:"10",target:"95+ lbs",superset:"Lateral Raise"},
-      {name:"Seated Arnold Press",sets:4,reps:"12",target:"55 lb DBs",superset:"Bent-Over Lateral Raise"},
-      {name:"Frontal Raise",sets:3,reps:"10",target:"45 lbs",superset:null},
-      {name:"High Pull",sets:4,reps:"12",target:"Varies",superset:"Face Pull"},
-    ]},
-    { name:"FINISHER", exercises:[
-      {name:"Abs of choice",sets:3,reps:"15",target:"BW",superset:null},
-      {name:"Weighted Dips",sets:3,reps:"10",target:"2 plates",superset:null},
-    ]},
+  { cat:"Produce", color:"#3DBF8A", items:[
+    { name:"Broccoli",  amount:"2 heads" },
+    { name:"Carrots",   amount:"1 bag (baby carrots)" },
+    { name:"Cucumbers", amount:"3-4" },
   ]},
-  { day:"Day 5", label:"Biceps & Triceps", icon:"💥", color:"#3DBF8A", sections:[
-    { name:"BICEPS", exercises:[
-      {name:"Straight Bar Curl",sets:3,reps:"15",target:"85 lbs",superset:"Spider Curl"},
-      {name:"Heavy Hammer Curl",sets:3,reps:"8",target:"45-55 lb DBs",superset:null},
-      {name:"Preacher Curl",sets:5,reps:"12",target:"80 lbs",superset:"One-Arm Strict Curl"},
-    ]},
-    { name:"TRICEPS", exercises:[
-      {name:"Skull Crusher",sets:4,reps:"12",target:"85 lbs",superset:null},
-      {name:"Overhead Tricep Press",sets:4,reps:"10",target:"130 lbs",superset:"Tricep Rope Pulldown"},
-    ]},
-    { name:"FINISHER", exercises:[
-      {name:"Abs of choice",sets:3,reps:"15",target:"BW",superset:null},
-      {name:"Weighted Dips",sets:3,reps:"10",target:"2 plates",superset:null},
-    ]},
-  ]},
-  { day:"Day 6", label:"Legs (Hamstrings)", icon:"🦿", color:"#20B2AA", sections:[
-    { name:"LEGS", exercises:[
-      {name:"Leg Press",sets:4,reps:"10",target:"8-12 plates",superset:null},
-      {name:"RDLs",sets:3,reps:"12",target:"225 lbs",superset:null},
-      {name:"Deadlift",sets:3,reps:"5",target:"405 lbs",superset:null},
-    ]},
-    { name:"FINISHER", exercises:[
-      {name:"Abs x2",sets:4,reps:"15",target:"BW",superset:null},
-      {name:"Weighted Push-ups + Dips",sets:3,reps:"10",target:"1 plate",superset:null},
-    ]},
-  ]},
-  { day:"HIIT A", label:"Sprint & Power", icon:"⚡", color:"#E84E8A", sections:[
-    { name:"WARM-UP", exercises:[
-      {name:"Jump Rope",sets:1,reps:"3 min",target:"BW",superset:null},
-      {name:"Dynamic Stretches",sets:1,reps:"2 min",target:"BW",superset:null},
-    ]},
-    { name:"CIRCUITS (3 rounds)", exercises:[
-      {name:"Treadmill Sprints",sets:10,reps:"30s on / 30s off",target:"Max speed",superset:null},
-      {name:"Box Jumps",sets:3,reps:"10",target:"BW",superset:null},
-      {name:"Burpees",sets:3,reps:"15",target:"BW",superset:null},
-      {name:"Battle Ropes",sets:4,reps:"30s",target:"BW",superset:null},
-    ]},
-    { name:"CORE", exercises:[
-      {name:"Hanging Leg Raise",sets:3,reps:"15",target:"BW",superset:null},
-      {name:"Plank",sets:3,reps:"60s",target:"BW",superset:null},
-    ]},
-  ]},
-  { day:"HIIT B", label:"Tabata Conditioning", icon:"🔥", color:"#E8704A", sections:[
-    { name:"TABATA (20s on / 10s off × 8 rounds)", exercises:[
-      {name:"Jump Squats",sets:8,reps:"20s",target:"BW",superset:null},
-      {name:"Push-up Variations",sets:8,reps:"20s",target:"BW",superset:null},
-      {name:"Mountain Climbers",sets:8,reps:"20s",target:"BW",superset:null},
-      {name:"Kettlebell Swings",sets:8,reps:"20s",target:"35-55 lbs",superset:null},
-    ]},
-    { name:"CARDIO", exercises:[
-      {name:"Bike Intervals",sets:6,reps:"1 min hard / 1 min easy",target:"BW",superset:null},
-      {name:"Rowing",sets:4,reps:"500m",target:"BW",superset:null},
-    ]},
-  ]},
+];
+
+// ── Progression Rules ─────────────────────────────────────────────────────────
+const PROGRESSION = [
+  { condition:"Hit all sets/reps at RPE 7 or easier", action:"Add 2.5-5 lbs on upper body lifts, 5-10 lbs on lower body lifts next week" },
+  { condition:"Hit reps but felt RPE 8-9 (very hard)", action:"Keep same weight next week. Focus on better form and control." },
+  { condition:"Missed reps", action:"Drop weight 5-10% next session and rebuild from there." },
+  { condition:"Alternative method", action:"Once you hit the top of the rep range on all 3 sets, add weight and drop to bottom of range. Example: hit 3×10 → add weight → back to 3×8, build to 10 again." },
+  { condition:"Every 4-6 weeks", action:"Deload week — lighter weights, same movements. Then start next mesocycle with adjusted numbers." },
 ];
 
 // ── Exercise Database ─────────────────────────────────────────────────────────
@@ -348,6 +359,7 @@ function calcCals(bodyWeightLbs, durationMins, workoutType, intensity) {
 }
 
 export function GymView({ T, data, save, today, isMobile }) {
+  const [gymTab2, setGymTab2] = useState("plan"); // plan | nutrition | grocery | report
   const [gymDay, setGymDay] = useState(0);
   const [gymTab, setGymTab] = useState("plan");
   const [activeWorkout, setActiveWorkout] = useState(false);
@@ -484,7 +496,7 @@ export function GymView({ T, data, save, today, isMobile }) {
           <div style={{ fontSize:12,color:T.textSub }}>6-Day Split + HIIT · Session logging + calorie tracking</div>
         </div>
         <div style={{ display:"flex",gap:6,flexWrap:"wrap" }}>
-          {[["plan","📋 Plan"],["sessions","📸 Sessions"],["weekly","📊 Weekly"]].map(([t,l])=>(
+          {[["plan","📋 Plan"],["nutrition","🥗 Nutrition"],["grocery","🛒 Grocery"],["sessions","📸 Sessions"],["weekly","📊 Weekly"],["report","📄 Report"]].map(([t,l])=>(
             <button key={t} onClick={()=>setGymTab(t)}
               style={{ padding:"6px 12px",borderRadius:20,border:`1px solid ${gymTab===t?"#E8704A":T.border}`,background:gymTab===t?"#E8704A20":"transparent",color:gymTab===t?"#E8704A":T.textSub,fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:gymTab===t?700:400,cursor:"pointer" }}>
               {l}
@@ -839,6 +851,240 @@ export function GymView({ T, data, save, today, isMobile }) {
           )}
         </div>
       )}
+
+      {/* ── Nutrition tab ── */}
+      {gymTab==="nutrition"&&(
+        <div>
+          <div style={{ ...cs({padding:"16px 18px",borderTop:"4px solid #3DBF8A",marginBottom:14}) }}>
+            <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:18,color:"#3DBF8A",marginBottom:10 }}>Daily Targets</div>
+            <div style={{ display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8,marginBottom:10 }}>
+              {[["2,400","kcal","#3DBF8A"],["180g","Protein","#9B6EE8"],["60g","Fat","#E8A838"],["230g","Carbs","#3B9EDB"]].map(([v,l,col])=>(
+                <div key={l} style={{ background:T.inputBg,borderRadius:10,padding:"10px",textAlign:"center" }}>
+                  <div style={{ fontSize:18,fontWeight:800,color:col }}>{v}</div>
+                  <div style={{ fontSize:10,fontWeight:700,color:T.textMuted,textTransform:"uppercase" }}>{l}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{ fontSize:12,color:T.textSub,fontStyle:"italic",lineHeight:1.6 }}>{NUTRITION_PLAN.daily_note}</div>
+          </div>
+
+          {NUTRITION_PLAN.meals.map((meal,i)=>(
+            <div key={i} style={{ ...cs({marginBottom:10}),padding:"14px 16px" }}>
+              <div style={{ display:"flex",alignItems:"center",gap:8,marginBottom:8 }}>
+                <span style={{ fontSize:11,padding:"2px 8px",borderRadius:20,background:"#3DBF8A22",color:"#3DBF8A",fontWeight:700 }}>{meal.time}</span>
+                <span style={{ fontSize:14,fontWeight:700,color:T.text }}>{meal.label}</span>
+              </div>
+              {meal.items.map((item,j)=>(
+                <div key={j} style={{ display:"flex",justifyContent:"space-between",padding:"5px 0",borderBottom:j<meal.items.length-1?`1px solid ${T.border}`:"none",fontSize:13 }}>
+                  <span style={{ color:T.text }}>{item.food}</span>
+                  <span style={{ color:"#9B6EE8",fontWeight:600,marginLeft:8 }}>{item.amount}</span>
+                </div>
+              ))}
+            </div>
+          ))}
+
+          <div style={{ ...cs({borderLeft:"4px solid #E8704A",marginBottom:10}),padding:"12px 16px",fontSize:12,color:T.text,lineHeight:1.7 }}>
+            <strong style={{ color:"#E8704A" }}>🍝 Friday Pasta Night — swap dinner only</strong><br/>
+            {NUTRITION_PLAN.friday_dinner.items.map(i=>i.food+" ("+i.amount+")").join(" · ")}
+          </div>
+          <div style={{ ...cs({borderLeft:"4px solid #3B9EDB",marginBottom:10}),padding:"12px 16px",fontSize:12,color:T.text,lineHeight:1.7 }}>
+            <strong style={{ color:"#3B9EDB" }}>🐔 Saturday — swap ground beef for chicken breast</strong><br/>
+            {NUTRITION_PLAN.saturday_note}
+          </div>
+          <div style={{ ...cs({borderLeft:"4px solid #888",marginBottom:14}),padding:"12px 16px",fontSize:12,color:T.textSub,lineHeight:1.7 }}>
+            💡 <strong style={{ color:T.text }}>Prep tip:</strong> {NUTRITION_PLAN.prep_tip}
+          </div>
+
+          {/* Daily compliance */}
+          <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:18,color:T.text,marginBottom:10 }}>Daily Compliance</div>
+          {["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"].map((day,i)=>{
+            const nd = (data.nutriLog||{})[`day${i}`]||{};
+            return (
+              <div key={day} style={{ ...cs({marginBottom:8}),padding:"12px 14px",display:"flex",alignItems:"center",gap:10 }}>
+                <div style={{ width:80,fontSize:13,fontWeight:600,color:T.text,flexShrink:0 }}>{day}</div>
+                <button onClick={()=>save(p=>({...p,nutriLog:{...(p.nutriLog||{}),["day"+i]:{...(p.nutriLog?.["day"+i]||{}),hit:!nd.hit}}}))}
+                  style={{ padding:"4px 12px",borderRadius:20,border:"none",background:nd.hit?"#3DBF8A":"transparent",color:nd.hit?"#fff":T.textSub,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:700,outline:nd.hit?"none":`1px solid ${T.border}`,flexShrink:0 }}>
+                  {nd.hit?"✓ Hit":"—"}
+                </button>
+                <input style={{ background:T.inputBg,border:`1px solid ${T.border}`,borderRadius:8,padding:"5px 8px",color:T.text,fontFamily:"'DM Sans',sans-serif",fontSize:12,outline:"none",width:60,boxSizing:"border-box" }}
+                  placeholder="kcal" value={nd.calories||""} onChange={e=>save(p=>({...p,nutriLog:{...(p.nutriLog||{}),["day"+i]:{...(p.nutriLog?.["day"+i]||{}),calories:e.target.value}}}))}/>
+                <input style={{ background:T.inputBg,border:`1px solid ${T.border}`,borderRadius:8,padding:"5px 8px",color:T.text,fontFamily:"'DM Sans',sans-serif",fontSize:12,outline:"none",width:55,boxSizing:"border-box" }}
+                  placeholder="prot(g)" value={nd.protein||""} onChange={e=>save(p=>({...p,nutriLog:{...(p.nutriLog||{}),["day"+i]:{...(p.nutriLog?.["day"+i]||{}),protein:e.target.value}}}))}/>
+                <input style={{ background:T.inputBg,border:`1px solid ${T.border}`,borderRadius:8,padding:"5px 8px",color:T.text,fontFamily:"'DM Sans',sans-serif",fontSize:12,outline:"none",flex:1 }}
+                  placeholder="notes..." value={nd.notes||""} onChange={e=>save(p=>({...p,nutriLog:{...(p.nutriLog||{}),["day"+i]:{...(p.nutriLog?.["day"+i]||{}),notes:e.target.value}}}))}/>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* ── Grocery tab ── */}
+      {gymTab==="grocery"&&(
+        <div>
+          <div style={{ ...cs({padding:"12px 16px",marginBottom:14,borderLeft:"4px solid #3DBF8A"}),fontSize:12,color:T.text,lineHeight:1.7 }}>
+            🧾 Tick items off as you shop. Rice, oats, peanut butter, olive oil, pasta, and marinara will last past this week.
+          </div>
+          {GROCERY_LIST.map((cat,ci)=>(
+            <div key={ci} style={{ marginBottom:18 }}>
+              <div style={{ fontSize:12,fontWeight:700,color:cat.color,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:8 }}>{cat.cat}</div>
+              {cat.items.map((item,ii)=>{
+                const key = `grocery_${ci}_${ii}`;
+                const checked = (data.groceryChecked||{})[key];
+                return (
+                  <div key={ii} onClick={()=>save(p=>({...p,groceryChecked:{...(p.groceryChecked||{}),[key]:!checked}}))}
+                    style={{ ...cs({marginBottom:6}),padding:"10px 14px",display:"flex",alignItems:"center",gap:10,cursor:"pointer",opacity:checked?0.5:1 }}>
+                    <div style={{ width:18,height:18,borderRadius:5,border:`2px solid ${checked?cat.color:T.border}`,background:checked?cat.color:"transparent",display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,color:"#fff",flexShrink:0 }}>{checked?"✓":""}</div>
+                    <span style={{ fontSize:13,color:T.text,flex:1,textDecoration:checked?"line-through":"none" }}>{item.name}</span>
+                    <span style={{ fontSize:12,color:cat.color,fontWeight:600,flexShrink:0 }}>{item.amount}</span>
+                  </div>
+                );
+              })}
+            </div>
+          ))}
+          <button onClick={()=>save(p=>({...p,groceryChecked:{}}))} style={{ width:"100%",padding:"10px",borderRadius:10,border:`1px solid ${T.border}`,background:"transparent",color:T.textSub,fontFamily:"'DM Sans',sans-serif",fontSize:12,cursor:"pointer",marginTop:4 }}>
+            Reset Grocery List
+          </button>
+        </div>
+      )}
+
+      {/* ── Report tab — for Coach Minnis ── */}
+      {gymTab==="report"&&(()=>{
+        const weekSessions = gymSessions.filter(s=>s.date>=thisMonday);
+        const latestWeekly = [...gymWeekly].sort((a,b)=>b.week.localeCompare(a.week))[0];
+        const nutriDays    = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].filter((_,i)=>(data.nutriLog||{})[`day${i}`]?.hit).length;
+
+        function printReport(){
+          const html = `<!DOCTYPE html><html><head><meta charset="utf-8"/><title>Amen Week Report — Coach Minnis</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:Arial,sans-serif;font-size:11px;color:#1a1d26;padding:28px}
+h1{font-size:20px;font-weight:800;margin-bottom:3px}
+h2{font-size:13px;font-weight:700;margin:18px 0 8px;border-bottom:2px solid #E8704A;padding-bottom:4px;color:#E8704A}
+h3{font-size:11px;font-weight:700;margin:10px 0 5px;color:#555}
+.meta{font-size:11px;color:#888;margin-bottom:20px}
+table{width:100%;border-collapse:collapse;margin-bottom:14px;font-size:11px}
+th{background:#f5f5f8;text-align:left;padding:5px 8px;font-size:10px;text-transform:uppercase;letter-spacing:0.05em;color:#888}
+td{padding:5px 8px;border-bottom:1px solid #eee}
+.summary{display:flex;gap:14px;margin-bottom:18px;flex-wrap:wrap}
+.stat{background:#f5f5f8;border-radius:8px;padding:10px 14px;min-width:90px}
+.stat-val{font-size:20px;font-weight:800;color:#E8704A}
+.stat-lbl{font-size:9px;color:#888;text-transform:uppercase;letter-spacing:0.07em;margin-top:2px}
+.green{color:#3DBF8A}.blue{color:#3B9EDB}.purple{color:#9B6EE8}
+.day-tag{display:inline-block;background:#E8704A22;color:#E8704A;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700;margin-right:6px}
+.notes{background:#f9f9fc;border-left:3px solid #E8704A;padding:9px 12px;border-radius:4px;font-size:11px;line-height:1.7;margin-top:4px}
+.prog-rule{background:#f0f4ff;border-left:3px solid #3B9EDB;padding:8px 12px;border-radius:4px;font-size:10px;line-height:1.6;margin-bottom:6px}
+@media print{body{padding:14px}}
+</style></head><body>
+<h1>💪 Weekly Training Report — Amen Edoha</h1>
+<div class="meta">Week of ${thisMonday} &nbsp;·&nbsp; Coach: Minnis &nbsp;·&nbsp; Body weight: <strong>${latestWeekly?.weight||gwf.weight||"—"} lbs</strong></div>
+
+<div class="summary">
+  <div class="stat"><div class="stat-val green">${weekSessions.length}</div><div class="stat-lbl">Sessions Done</div></div>
+  <div class="stat"><div class="stat-val blue">${weekSessions.reduce((s,x)=>s+x.duration,0)}</div><div class="stat-lbl">Total Minutes</div></div>
+  <div class="stat"><div class="stat-val purple">${nutriDays}/7</div><div class="stat-lbl">Nutrition Days</div></div>
+  <div class="stat"><div class="stat-val">${latestWeekly?.nutrition||gwf.nutrition||"—"}/5</div><div class="stat-lbl">Nutrition Score</div></div>
+</div>
+
+<h2>Training Log — Week ${thisMonday}</h2>
+${GYM_PLAN.map(day=>{
+  const daySessions = weekSessions.filter(s=>s.dayLabel===day.label);
+  const logEntries  = daySessions.flatMap(s=>Object.entries(s.logs||{}));
+  const byEx = {};
+  logEntries.forEach(([k,v])=>{ const ei=k.split("-")[0]; (byEx[ei]=byEx[ei]||[]).push({setNum:parseInt(k.split("-")[1])+1,...v}); });
+  return `
+<h3><span class="day-tag">${day.day}</span>${day.label} — ${day.schedule}</h3>
+${daySessions.length===0?"<p style='color:#aaa;font-size:11px;margin-bottom:8px'>Session not logged this week</p>":""}
+${daySessions.map(s=>`<div style='font-size:10px;color:#888;margin-bottom:4px'>Logged: ${s.date} · ${s.duration} min</div>`).join("")}
+<table>
+<thead><tr><th>Exercise</th><th>Target Sets×Reps</th><th>Target RPE</th><th>Set 1 Weight</th><th>Set 1 Reps</th><th>Set 2 Weight</th><th>Set 2 Reps</th><th>Set 3 Weight</th><th>Set 3 Reps</th><th>Actual RPE</th></tr></thead>
+<tbody>
+${day.sections[0].exercises.map((ex,eIdx)=>{
+  const sets = byEx[String(eIdx)]||[];
+  const s1=sets.find(s=>s.setNum===1)||{};
+  const s2=sets.find(s=>s.setNum===2)||{};
+  const s3=sets.find(s=>s.setNum===3)||{};
+  return `<tr>
+    <td><strong>${ex.name}</strong></td>
+    <td>${ex.sets} × ${ex.reps}</td>
+    <td>${ex.rpeTarget||"—"}</td>
+    <td>${s1.weight||"—"}</td><td>${s1.reps||"—"}</td>
+    <td>${s2.weight||"—"}</td><td>${s2.reps||"—"}</td>
+    <td>${s3.weight||"—"}</td><td>${s3.reps||"—"}</td>
+    <td>${s1.weight?"—":""}</td>
+  </tr>`;
+}).join("")}
+</tbody></table>`;
+}).join("")}
+
+<h2>Nutrition Compliance</h2>
+<table><thead><tr><th>Day</th><th>Hit Targets?</th><th>Calories</th><th>Protein (g)</th><th>Notes</th></tr></thead><tbody>
+${["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"].map((day,i)=>{
+  const nd=(data.nutriLog||{})[`day${i}`]||{};
+  return `<tr><td>${day}</td><td class="${nd.hit?"green":""}">${nd.hit?"✓ Yes":"—"}</td><td>${nd.calories||"—"}</td><td>${nd.protein||"—"}</td><td>${nd.notes||""}</td></tr>`;
+}).join("")}
+</tbody></table>
+
+${(latestWeekly?.notes||gwf.notes)?`<h2>Week Notes</h2><div class="notes">${latestWeekly?.notes||gwf.notes}</div>`:""}
+${(latestWeekly?.prs||gwf.prs)?`<h2>PRs This Week 🏆</h2><div class="notes" style="border-left-color:#9B6EE8">${latestWeekly?.prs||gwf.prs}</div>`:""}
+
+<h2>Progression Rules (for reference)</h2>
+${PROGRESSION.map(r=>`<div class="prog-rule"><strong>${r.condition}:</strong> ${r.action}</div>`).join("")}
+
+<div style="margin-top:20px;font-size:9px;color:#bbb;border-top:1px solid #eee;padding-top:10px">
+Generated ${new Date().toLocaleDateString()} · Together Summer App · Coach: Minnis
+</div>
+</body></html>`;
+          const w=window.open("","_blank");
+          w.document.write(html);
+          w.document.close();
+          w.print();
+        }
+
+        return (
+          <div>
+            <div style={{ fontFamily:"'DM Serif Display',serif",fontSize:20,color:"#E8704A",marginBottom:4 }}>📄 Weekly Report for Coach Minnis</div>
+            <div style={{ fontSize:13,color:T.textSub,marginBottom:16,lineHeight:1.6 }}>
+              Generates a printable PDF with all your logged sets, weights, nutrition compliance, and week notes.
+            </div>
+
+            {/* Week summary */}
+            <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(min(100%,130px),1fr))",gap:10,marginBottom:16 }}>
+              {[
+                { l:"Sessions this week", v:`${weekSessions.length} / 3`,    c:"#E8704A" },
+                { l:"Total time trained", v:`${weekSessions.reduce((s,x)=>s+x.duration,0)} min`, c:"#3B9EDB" },
+                { l:"Nutrition days hit", v:`${nutriDays} / 7`,               c:"#3DBF8A" },
+                { l:"Body weight",        v:latestWeekly?.weight||gwf.weight||"—", c:"#9B6EE8" },
+              ].map(s=>(
+                <div key={s.l} style={{ ...cs({padding:"12px 14px",borderLeft:`4px solid ${s.c}`}) }}>
+                  <div style={{ fontSize:20,fontWeight:800,color:T.text }}>{s.v}</div>
+                  <div style={{ fontSize:10,fontWeight:700,color:T.textMuted,marginTop:2,textTransform:"uppercase",letterSpacing:"0.07em" }}>{s.l}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Progression reminder */}
+            <div style={{ ...cs({borderTop:"4px solid #3B9EDB",marginBottom:14}),padding:"14px 16px" }}>
+              <div style={{ fontSize:12,fontWeight:700,color:"#3B9EDB",textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:8 }}>Progression Rules</div>
+              {PROGRESSION.map((r,i)=>(
+                <div key={i} style={{ marginBottom:8,fontSize:12 }}>
+                  <span style={{ color:"#3B9EDB",fontWeight:700 }}>{r.condition}: </span>
+                  <span style={{ color:T.text }}>{r.action}</span>
+                </div>
+              ))}
+            </div>
+
+            <button onClick={printReport}
+              style={{ width:"100%",padding:"14px",borderRadius:12,border:"none",background:"#E8704A",color:"#fff",fontFamily:"'DM Serif Display',serif",fontSize:16,fontWeight:700,cursor:"pointer",marginBottom:8 }}>
+              📄 Print / Export PDF for Coach Minnis
+            </button>
+            <div style={{ fontSize:12,color:T.textMuted,textAlign:"center",lineHeight:1.6 }}>
+              Opens a print dialog — save as PDF or print directly. Send to Coach Minnis after each week.
+            </div>
+          </div>
+        );
+      })()}
+
+
     </div>
   );
 }
