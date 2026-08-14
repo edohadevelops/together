@@ -1,6 +1,140 @@
 import { useState, useEffect } from "react";
 import { GymView, SchoolsView, LifeView } from "./SummerExtra";
 
+
+// ── PWA Service Worker Registration ──────────────────────────────────────────
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js")
+      .then(reg => console.log("[PWA] Service worker registered:", reg.scope))
+      .catch(err => console.warn("[PWA] SW registration failed:", err));
+  });
+}
+
+// ── Notification System ───────────────────────────────────────────────────────
+// Schedule-aware reminders. Checks every minute and fires when a block is
+// starting in the next 5 minutes. Stores permission in state.
+const NOTIF_SCHEDULE = {
+  weekday: [
+    { time:"05:00", msg:"Time to wake up 🌅 Devotion starts now",                  urgent:true  },
+    { time:"05:30", msg:"Job applications block — 1 hour, let's go 💼",             urgent:false },
+    { time:"06:30", msg:"Light breakfast then gym 🥣",                              urgent:false },
+    { time:"06:45", msg:"Gym time 💪 Strength or cardio — show up",                 urgent:true  },
+    { time:"08:30", msg:"Shower and change — class in 30 minutes 🎓",               urgent:false },
+    { time:"09:00", msg:"Class starting now 📚",                                    urgent:true  },
+    { time:"10:00", msg:"Class review — go over your notes while fresh 📝",         urgent:false },
+    { time:"11:00", msg:"Office hours starting 🏫",                                 urgent:false },
+    { time:"12:00", msg:"Heavy lunch time 🍽 Main meal of the day",                 urgent:false },
+    { time:"12:30", msg:"Nap and rest block — recharge before teaching 😴",         urgent:false },
+    { time:"03:00", msg:"Prep for teaching class — review your lesson 📖",          urgent:true  },
+    { time:"04:00", msg:"Teaching class starting — Mon/Wed 4:00pm 🏫",             urgent:true  },
+    { time:"04:30", msg:"Teaching class starting — Tue/Thu 4:30pm 🏫",             urgent:true  },
+    { time:"06:00", msg:"Spark time — hit $80+ tonight 🚗 Dinner rush is on",       urgent:true  },
+    { time:"08:30", msg:"Quick dinner break during Spark 🍱",                       urgent:false },
+    { time:"10:00", msg:"Wind down from Spark — stop driving soon 🛑",              urgent:false },
+    { time:"11:00", msg:"Gloria time 🤍 One hour — fully present",                  urgent:true  },
+    { time:"23:55", msg:"5 minutes to midnight — wrap up and sleep 😴",             urgent:true  },
+  ],
+  tuesday: [
+    { time:"05:00", msg:"Wake up 🌅 Devotion + job apps",                           urgent:true  },
+    { time:"06:00", msg:"School applications — 30 min block 🎓",                    urgent:false },
+    { time:"09:00", msg:"Thesis block starting — phone on DND 📝",                  urgent:true  },
+    { time:"12:00", msg:"Lunch break — back to thesis at 12:30 🍽",                 urgent:false },
+    { time:"12:30", msg:"Back to thesis 📝",                                        urgent:false },
+    { time:"15:00", msg:"Prep for teaching class 📖",                               urgent:true  },
+    { time:"16:30", msg:"Teaching class — Tue 4:30pm 🏫",                           urgent:true  },
+    { time:"18:00", msg:"Bible study starting 📖🙏",                                urgent:true  },
+    { time:"20:30", msg:"Personal projects — 1 hour 💻",                            urgent:false },
+    { time:"11:00", msg:"Gloria time 🤍",                                           urgent:true  },
+  ],
+  thursday: [
+    { time:"05:00", msg:"Wake up 🌅 Devotion then cardio",                          urgent:true  },
+    { time:"09:00", msg:"Thesis block — phone on DND 📝",                           urgent:true  },
+    { time:"12:00", msg:"Lunch break 🍽",                                           urgent:false },
+    { time:"14:00", msg:"Impact Fellowship setup starting ✝️",                      urgent:true  },
+    { time:"16:30", msg:"Teaching class — Thu 4:30pm 🏫",                           urgent:true  },
+    { time:"18:00", msg:"Back to Impact Fellowship ✝️",                             urgent:false },
+    { time:"11:00", msg:"Gloria time 🤍",                                           urgent:true  },
+  ],
+  friday: [
+    { time:"05:00", msg:"Wake up 🌅 Devotion + job apps",                           urgent:true  },
+    { time:"08:00", msg:"GA meeting starting 🏫",                                   urgent:true  },
+    { time:"09:00", msg:"Class starting 📚",                                        urgent:true  },
+    { time:"11:00", msg:"Grading block — 2 hours 📝",                               urgent:false },
+    { time:"13:30", msg:"Make-up quiz — 1:30pm 📝",                                 urgent:true  },
+    { time:"14:30", msg:"Finish grading — 2:30pm 📝",                               urgent:false },
+    { time:"18:00", msg:"Free hour — you earned it 🎉 Personal time",               urgent:false },
+    { time:"19:00", msg:"Personal projects — 2 hours 💻",                           urgent:false },
+    { time:"21:00", msg:"Spark if needed 🚗",                                       urgent:false },
+    { time:"11:00", msg:"Gloria time 🤍",                                           urgent:true  },
+  ],
+  saturday: [
+    { time:"10:00", msg:"Good morning 🌅 Rest morning — devotion and breakfast",    urgent:false },
+    { time:"10:30", msg:"Personal projects — 1 hour 💻",                            urgent:false },
+    { time:"11:30", msg:"Reach out to someone this week 📞",                        urgent:false },
+    { time:"12:00", msg:"Thesis block — 3 hours 📝 Phone on DND",                  urgent:true  },
+    { time:"15:00", msg:"Lunch break — back to Spark at 3:30 🍽",                   urgent:false },
+    { time:"15:30", msg:"Spark starting — big earning day 🚗 Target $140+",         urgent:true  },
+    { time:"23:00", msg:"Gloria time 🤍",                                           urgent:true  },
+    { time:"00:00", msg:"Arrange clothes for the week 👔",                          urgent:false },
+  ],
+  sunday: [
+    { time:"08:00", msg:"Good morning 🌅 Church in 1 hour — get ready",             urgent:true  },
+    { time:"09:00", msg:"Church starting 🙏",                                       urgent:true  },
+    { time:"12:00", msg:"Clean sanctuary 🧹",                                       urgent:false },
+    { time:"13:00", msg:"Rest and heavy lunch 🍽",                                  urgent:false },
+    { time:"14:00", msg:"Family meeting 👨‍👩‍👧‍👦",                                        urgent:false },
+    { time:"15:00", msg:"Meal prep — lunches for the week 🍱",                      urgent:true  },
+    { time:"16:30", msg:"Spark starting — Sunday block 🚗 Target $90+",             urgent:true  },
+    { time:"21:00", msg:"Wind down from Spark 🛑",                                  urgent:false },
+    { time:"23:00", msg:"Gloria time 🤍",                                           urgent:true  },
+    { time:"23:55", msg:"Midnight in 5 — wrap up and sleep 😴",                    urgent:true  },
+  ],
+};
+
+function useNotifications() {
+  const [permission, setPermission] = useState(Notification.permission);
+
+  async function requestPermission() {
+    const result = await Notification.requestPermission();
+    setPermission(result);
+    return result;
+  }
+
+  function fireNotif(title, body, urgent=false) {
+    if (permission !== "granted") return;
+    const n = new Notification(title, {
+      body,
+      icon: "/icon-192.png",
+      badge: "/icon-192.png",
+      requireInteraction: urgent,
+      vibrate: urgent ? [200,100,200] : [100],
+    });
+    setTimeout(() => n.close(), urgent ? 30000 : 10000);
+  }
+
+  useEffect(() => {
+    if (permission !== "granted") return;
+    const interval = setInterval(() => {
+      const now   = new Date();
+      const day   = now.getDay(); // 0=Sun,1=Mon,2=Tue,3=Wed,4=Thu,5=Fri,6=Sat
+      const hhmm  = now.getHours().toString().padStart(2,"0") + ":" + now.getMinutes().toString().padStart(2,"0");
+      const dayKey = day===2?"tuesday":day===4?"thursday":day===5?"friday":day===6?"saturday":day===0?"sunday":"weekday";
+      const slots  = [...(NOTIF_SCHEDULE[dayKey]||[]), ...(dayKey!=="weekday"?[]:(NOTIF_SCHEDULE.weekday||[]))];
+      // Fire if we are within 1 minute of the scheduled time
+      slots.forEach(slot => {
+        if (slot.time === hhmm) {
+          fireNotif("⏰ Schedule reminder", slot.msg, slot.urgent);
+        }
+      });
+    }, 60000);
+    return () => clearInterval(interval);
+  }, [permission]);
+
+  return { permission, requestPermission, fireNotif };
+}
+
+
 const SUPABASE_URL = "https://sonbphyeomzzcdyuiotl.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNvbmJwaHllb216emNkeXVpb3RsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyMzkxMjksImV4cCI6MjA4ODgxNTEyOX0.CtcZAFtqCQUOrzPBfhSfN5BZ1EQDJFVxa-FsjMX5IRg";
 const HDRS = { "Content-Type":"application/json","apikey":SUPABASE_KEY,"Authorization":`Bearer ${SUPABASE_KEY}`,"Prefer":"resolution=merge-duplicates" };
@@ -117,43 +251,57 @@ const SUN = [
 
 // ── Schedule data ─────────────────────────────────────────────────────────
 const WD_SCHEDULE = [
-  {time:"5:00am", label:"Wake up",                      detail:"No phone — straight out of bed. The discipline to not touch your phone first thing is one of the highest-leverage habits you can build. Own the first 30 minutes of your day before anything else does.",                             cat:"morning",  dur:"30 min"},
-  {time:"5:30am", label:"Personal devotion",             detail:"Bible, prayer, journal. 30 minutes before the world gets you. This is the foundation everything else sits on. Don't negotiate this time away — it's what makes the rest of the day possible.",                                       cat:"faith",    dur:"30 min"},
-  {time:"6:00am", label:"Gym — full workout",            detail:"2 hours of full training. Warm up properly, execute your plan, cool down. The gym at 6am is a different environment — quiet, focused, no distractions. This is your time.",                                                          cat:"fitness",  dur:"2 hrs"},
-  {time:"8:00am", label:"Shower and get dressed",        detail:"Clean yourself up properly. Get dressed like the day matters — because it does. How you present yourself affects how you move through the world.",                                                                                    cat:"morning",  dur:"30 min"},
-  {time:"8:30am", label:"Breakfast",                     detail:"Eat properly. High protein: 3–4 eggs + oats or whole wheat bread. Fuel the body, prep the mind. No skipping this. You're about to go earn — give your body what it needs to show up.",                                              cat:"nutrition",dur:"30 min"},
-  {time:"9:00am", label:"Start Spark driving",           detail:"On the road by 9. Audiobook or podcast from minute one. Every hour on the road is money — stay consistent, work the map strategically, and keep moving.",                                                                            cat:"work",     dur:"2 hrs"},
-  {time:"11:00am",label:"Lunch rush — peak money",       detail:"11am–1pm is peak earning. Stay active, accept everything, don't take long breaks. This window and the dinner rush are your highest-dollar hours. Protect them.",                                                                     cat:"work",     dur:"2 hrs"},
-  {time:"1:00pm", label:"Quick break",                   detail:"Pull over. Eat your packed meal — chicken, rice, whatever you prepped. Rest 15–20 min. Check earnings. Breathe. Then back to it for the afternoon push.",                                                                            cat:"nutrition",dur:"1 hr"},
-  {time:"2:00pm", label:"Afternoon driving",             detail:"Back on the road for the afternoon block. Audiobook or music. Steady pace — this isn't peak but it still counts. Every order adds to the total.",                                                                                    cat:"work",     dur:"3 hrs"},
-  {time:"5:00pm", label:"Dinner rush — peak money",      detail:"5–8pm is your second peak window. Stay on, stay focused, don't log off early. This is where the real money is. Protect this block like it's non-negotiable — because it is.",                                                       cat:"work",     dur:"3 hrs"},
-  {time:"8:00pm", label:"Hard stop — log off Spark",     detail:"8pm is the hard stop, no exceptions. Log off. You've done the work. Now you get to be a human being again. Discipline here protects your evenings and your relationship.",                                                          cat:"work",     dur:"0 min"},
-  {time:"8:00pm", label:"Shower and eat dinner",         detail:"Clean up from the day. Eat a proper dinner — high protein, real food. Sit down to eat, don't rush it. This is your transition from work mode to home mode.",                                                                         cat:"nutrition",dur:"30 min"},
-  {time:"8:30pm", label:"Wind down",                     detail:"No screens, no work talk, no stimulation. Decompress from the day. Sit, read something light, breathe. Let your nervous system come down before you connect with Gloria.",                                                           cat:"evening",  dur:"30 min"},
-  {time:"9:00pm", label:"Gloria — devotion + connect",   detail:"One full hour together. Start with devotion — a verse, prayer, short worship. Then just talk. How was the day? What's on your heart? Phones away, fully present. This is the most important hour of the evening.",                  cat:"gloria",   dur:"1 hr"},
-  {time:"10:00pm",label:"Journal or audiobook",          detail:"Reflect on the day. Journal what went well, what you're grateful for, what tomorrow needs. Or close the day with an audiobook. Either way — quiet, intentional, no doom scrolling.",                                                 cat:"evening",  dur:"30 min"},
-  {time:"10:30pm",label:"Lights out",                    detail:"In bed by 10:30pm. You're up at 5 — that's 6.5 hours of sleep. Protect it. The discipline at night is just as important as the discipline in the morning.",                                                                          cat:"morning",  dur:"6.5 hrs"},
+  {time:"5:00am",  label:"Wake up",                    detail:"No phone. Straight out of bed. Own the first 30 minutes before anything else does.",                                                                                                   cat:"morning",   dur:"5 min"},
+  {time:"5:00am",  label:"Personal devotion",           detail:"Bible, prayer, journal. 30 minutes before the world gets you. This is the foundation everything else sits on. Don't negotiate this away.",                                            cat:"faith",     dur:"30 min"},
+  {time:"5:30am",  label:"Job applications",            detail:"LinkedIn, Handshake, Indeed. 2-3 applications minimum. Mon/Wed/Fri full hour. Tue/Thu split 30 min jobs + 30 min school apps. Consistent daily action compounds.",                   cat:"work",      dur:"1 hr"},
+  {time:"6:30am",  label:"Light breakfast",             detail:"Quick and clean — oats, banana, peanut butter. Already prepped. No decisions at 6:30am. Grab and go. Fuel before gym.",                                                               cat:"nutrition", dur:"15 min"},
+  {time:"6:45am",  label:"Gym / Cardio",                detail:"Mon/Wed — strength session. Tue/Thu — 12k steps cardio. Done by 8:30am every day. Showing up 4 out of 5 weekdays is the target. Consistency over intensity.",                        cat:"fitness",   dur:"1 hr 45 min"},
+  {time:"8:30am",  label:"Shower and change",           detail:"Clean up properly. Get dressed like the day matters. How you present yourself affects how you move through the world.",                                                                cat:"morning",   dur:"15 min"},
+  {time:"9:00am",  label:"Class",                       detail:"Mon/Wed/Fri — show up sharp, take notes, be present. Your GTA position depends on your academic standing. Be the student you'd want to teach.",                                       cat:"school",    dur:"1 hr"},
+  {time:"10:00am", label:"Class review",                detail:"Go over your notes while the material is still fresh. Identify gaps, look up what you didn't understand. 1 hour now saves 4 hours before the exam.",                                  cat:"school",    dur:"1 hr"},
+  {time:"11:00am", label:"Office hours",                detail:"Mon/Wed — be present and prepared. Students come with questions. Answer them well. This is your professional reputation as a GTA.",                                                    cat:"school",    dur:"1 hr"},
+  {time:"12:00pm", label:"Heavy lunch",                 detail:"Main meal of the day. Rice, protein, vegetables — already portioned from Sunday prep. Sit down, eat properly, hydrate.",                                                              cat:"nutrition", dur:"30 min"},
+  {time:"12:30pm", label:"Nap and rest",                detail:"Mon/Wed — protect this rest block. You're up at 5am, you've already done gym, class, and office hours. A 1.5-2hr rest makes you sharp for teaching prep and Spark.",                 cat:"morning",   dur:"2 hrs"},
+  {time:"9:00am",  label:"Thesis block",                detail:"Tue/Thu — 9am to 2pm is your sacred thesis window. Phone on DND. Door closed. This is your degree. 5 hours of real work twice a week is how you finish.",                            cat:"thesis",    dur:"5 hrs"},
+  {time:"3:00pm",  label:"Teaching class prep",         detail:"Review the lesson, prep materials, know exactly what you're teaching. Show up 30 minutes early. Excellence in teaching is part of your professional identity.",                       cat:"school",    dur:"1 hr"},
+  {time:"4:00pm",  label:"Teaching class — Mon/Wed",    detail:"Mon/Wed 4:00-5:45pm. Be fully present. Teach like it matters because it does. Your students are paying attention to whether you show up prepared.",                                   cat:"school",    dur:"1 hr 45 min"},
+  {time:"4:30pm",  label:"Teaching class — Tue/Thu",    detail:"Tue/Thu 4:30-5:20pm. Same standard — prepared, present, excellent. This is 50 minutes. Make every minute count.",                                                                    cat:"school",    dur:"50 min"},
+  {time:"6:00pm",  label:"Spark — evening block",       detail:"Mon/Wed — 6pm to 10pm. Target $80+ each day. That's $20/hr average. Dinner rush 6-8pm is peak — stay active, accept everything. You need 25+ hours weekly to hit $500-600.",         cat:"work",      dur:"4 hrs"},
+  {time:"8:30pm",  label:"Light dinner",                detail:"Quick break during Spark. Eat something light — protein shake, rice cakes, fruit. Don't stop driving for long. 15-20 minutes max then back on the road.",                             cat:"nutrition", dur:"20 min"},
+  {time:"10:00pm", label:"Wind down",                   detail:"Stop Spark. Decompress. Eat if needed. Let your nervous system come down from the day before Gloria time.",                                                                           cat:"evening",   dur:"30 min"},
+  {time:"11:00pm", label:"Gloria time",                 detail:"One hour intentional — pray together at 11pm, talk, connect. Fully present. Phones away. This is the most important hour of the evening.",                                            cat:"gloria",    dur:"1 hr"},
+  {time:"12:00am", label:"Hard stop — bed",             detail:"12am is non-negotiable. You are up at 5am. That is 5 hours of sleep minimum. Protect it or everything else falls apart. The discipline at night is just as important as the morning.", cat:"morning",   dur:"5 hrs"},
 ];
+
 const SAT_SCHEDULE = [
-  {time:"5:00am", label:"Wake up",                       detail:"Same routine as the weekdays. The weekend doesn't mean sleeping in on Saturday — you've got a thesis block to protect. Wake up, get into the day.",                                                                                  cat:"morning",  dur:"30 min"},
-  {time:"5:30am", label:"Personal devotion",             detail:"Bible, prayer, journal. 30 minutes. Saturday has a lot in it — the devotion is what makes it sustainable. Don't skip the foundation on the hardest day of the week.",                                                               cat:"faith",    dur:"30 min"},
-  {time:"6:00am", label:"Light workout or walk",         detail:"Not a full gym day — give your body a break from the heavy lifting. 1 hour of a walk, light cardio, or mobility work. Get the blood moving without taxing your recovery.",                                                          cat:"fitness",  dur:"1 hr"},
-  {time:"7:00am", label:"Shower and breakfast",          detail:"Clean up properly. Then a solid breakfast — 3–4 eggs + oats. You've got a 6-hour thesis block coming. Fuel accordingly.",                                                                                                            cat:"nutrition",dur:"1 hr"},
-  {time:"8:00am", label:"Thesis — 6 hour deep work",     detail:"8am to 2pm. This is your most important academic block of the week. Phone on DND. No interruptions. Write, research, edit — whatever stage you're in. Six hours of real work on your thesis every Saturday compounds massively.",   cat:"thesis",   dur:"6 hrs"},
-  {time:"2:00pm", label:"Lunch and break",               detail:"You've earned it. Eat a proper lunch, sit down, rest. Take a full hour. You did the work — let yourself breathe before the afternoon.",                                                                                              cat:"nutrition",dur:"1 hr"},
-  {time:"3:00pm", label:"Rest of day — yours",           detail:"From 3pm it's yours. Errands, time with Gloria, family, whatever you need. No work, no pressure. You've already done more by 3pm Saturday than most people do all weekend.",                                                        cat:"morning",  dur:"6 hrs"},
-  {time:"9:00pm", label:"Devotion with Gloria",          detail:"One hour of devotion together before the night ends. A verse, prayer, worship — then real conversation. End the week in alignment with each other and with God.",                                                                    cat:"gloria",   dur:"1 hr"},
-  {time:"10:30pm",label:"Lights out",                    detail:"Rest. You've had a full day and a productive week. Sleep is the reward for showing up. Tomorrow is Sunday — a day to receive.",                                                                                                      cat:"morning",  dur:"6.5 hrs"},
+  {time:"10:00am", label:"Wake up — rest morning",      detail:"Saturday is your one morning to sleep in. 10am. Let the body recover from the week. No alarm guilt. You earned this.",                                                                cat:"morning",   dur:"30 min"},
+  {time:"10:00am", label:"Devotion and light breakfast", detail:"Slower devotion — more time with God. Then a light breakfast. Saturday morning has a different pace. Let it.",                                                                        cat:"faith",     dur:"30 min"},
+  {time:"10:30am", label:"Personal projects — 1 hour",  detail:"First 90, portfolio work, freelance, anything you are building. 1 hour of focused building on your own projects. This is your creative and professional growth time.",                cat:"work",      dur:"1 hr"},
+  {time:"11:30am", label:"Reach out — 1 person",        detail:"Call or message one person from your rotation: Peace, Favour, Gentle, Kelechi, Ellud, Simon, friends. Relationships need investment. One person per week, rotate consistently.",      cat:"social",    dur:"30 min"},
+  {time:"12:00pm", label:"Thesis block — 3 hours",      detail:"12pm to 3pm. This is your Saturday thesis block. Phone on DND. Write, research, edit. Three hours of real work here plus Tuesday and Thursday gives you 13+ hours weekly on thesis.", cat:"thesis",    dur:"3 hrs"},
+  {time:"3:00pm",  label:"Heavy lunch break",           detail:"You have been working since 10:30am. Sit down, eat properly, rest for 30 minutes. Then Spark.",                                                                                       cat:"nutrition", dur:"30 min"},
+  {time:"3:30pm",  label:"Spark — big earning day",     detail:"Saturday 3:30pm to 10pm is your biggest Spark day — 6.5 hours. Target $140+. This is where you hit your weekly target. Stay on, stay focused, protect this block.",                  cat:"work",      dur:"6 hrs 30 min"},
+  {time:"9:30pm",  label:"Light snack",                 detail:"Quick fuel during Spark wind-down. Keep it light — protein shake, fruit, rice cakes.",                                                                                                cat:"nutrition", dur:"15 min"},
+  {time:"11:00pm", label:"Gloria time",                 detail:"One intentional hour with Gloria. Pray, talk, connect. End the day well together.",                                                                                                   cat:"gloria",    dur:"1 hr"},
+  {time:"12:00am", label:"Arrange clothes for the week",detail:"Lay out your clothes for Sunday and the week ahead. 1 hour. No decisions tomorrow morning. Everything is ready.",                                                                     cat:"morning",   dur:"1 hr"},
+  {time:"1:00am",  label:"Bed",                         detail:"You earned the late night. Sleep well. Church is at 9am — set your alarm for 8am.",                                                                                                   cat:"morning",   dur:"7 hrs"},
 ];
+
 const SUN_SCHEDULE = [
-  {time:"5:30am", label:"Wake up — no alarm pressure",   detail:"You can be relaxed about waking up on Sunday. No rigid 5am. Let it be 5:30 and feel the difference — a gentler start to the one day that belongs entirely to rest and God.",                                                       cat:"morning",  dur:"30 min"},
-  {time:"6:00am", label:"Personal devotion — unhurried", detail:"Longer, slower, no agenda. An hour with God — read broadly, pray deeply, journal freely. This is the devotion that feeds the whole week. Don't rush it for anything.",                                                              cat:"faith",    dur:"1 hr"},
-  {time:"7:00am", label:"Breakfast and get ready",       detail:"Eat well. Get dressed for church. Take your time — Sunday morning should feel different from the weekday rush. Prepare yourself with intention.",                                                                                    cat:"nutrition",dur:"1 hr"},
-  {time:"8:00am", label:"Church",                        detail:"Show up. Be present. Receive the word, worship fully, connect with community. This is not an obligation — it's the source. Everything in your week flows from this.",                                                               cat:"faith",    dur:"3 hrs"},
-  {time:"12:00pm",label:"Afternoon — rest, family, Gloria",detail:"The whole afternoon is yours. Rest. Be with family. Spend time with Gloria. Prep for the week ahead if you feel led — but only if it's from rest, not anxiety. Let Sunday afternoon be genuinely light.",                       cat:"morning",  dur:"9 hrs"},
-  {time:"9:00pm", label:"Devotion with Gloria",          detail:"One hour to close the weekend together. A verse, prayer, gratitude for the week. Then real conversation — what's on your heart going into the week? Align before Monday hits.",                                                    cat:"gloria",   dur:"1 hr"},
-  {time:"10:30pm",label:"Lights out",                    detail:"End the week in peace. You rested, worshipped, and reconnected. Tomorrow starts a new cycle — go into it from a full place, not a depleted one.",                                                                                   cat:"morning",  dur:"6.5 hrs"},
+  {time:"8:00am",  label:"Wake up",                     detail:"Gentle alarm at 8. You have an hour before church. Move at a calm pace — Sunday mornings should feel different from the weekday rush.",                                               cat:"morning",   dur:"30 min"},
+  {time:"8:00am",  label:"Devotion and light breakfast", detail:"Short devotion — 20-30 minutes. Then light breakfast. Get dressed for church with intention. How you show up matters.",                                                               cat:"faith",     dur:"1 hr"},
+  {time:"9:00am",  label:"Church service",              detail:"9am to 12pm. Serve in ushering — arrive a few minutes early to set up. Be fully present. This is worship, not attendance.",                                                           cat:"faith",     dur:"3 hrs"},
+  {time:"12:00pm", label:"Clean sanctuary",             detail:"12pm to 1pm — serve with excellence. Clean the sanctuary properly. This is part of your service and your character.",                                                                 cat:"faith",     dur:"1 hr"},
+  {time:"1:00pm",  label:"Rest and heavy lunch",        detail:"Travel home, eat your heavy meal, rest. You have been up since 8 and served all morning. One hour of genuine rest before family meeting.",                                            cat:"nutrition", dur:"1 hr"},
+  {time:"2:00pm",  label:"Family meeting",              detail:"Weekly family meeting — be present and engaged. Reach out to one person from your rotation during or after this block.",                                                               cat:"social",    dur:"1 hr"},
+  {time:"3:00pm",  label:"Meal prep — lunches for week",detail:"1 hour to portion out lunches for Monday through Friday. Rice, protein, veg — already cooked, just serving into containers. This is what makes weekday eating effortless.",           cat:"nutrition", dur:"1 hr"},
+  {time:"4:00pm",  label:"GA work — leftover",          detail:"Any unfinished grading, assignment prep, admin from the week. 30-60 minutes clears the backlog so Monday starts clean.",                                                              cat:"school",    dur:"1 hr"},
+  {time:"4:30pm",  label:"Spark — Sunday block",        detail:"4:30pm to 9pm. Target $90+. Sunday evenings are decent for deliveries — dinner rush still runs. Finish the week strong.",                                                             cat:"work",      dur:"4 hrs 30 min"},
+  {time:"9:30pm",  label:"Light snack",                 detail:"Wind down from Spark. Light snack, decompress, transition to evening mode.",                                                                                                          cat:"nutrition", dur:"15 min"},
+  {time:"11:00pm", label:"Gloria time",                 detail:"Sunday night Gloria time. Pray together, talk about the week ahead. Align before Monday hits. End the weekend in peace.",                                                             cat:"gloria",    dur:"1 hr"},
+  {time:"12:00am", label:"Hard stop — bed",             detail:"12am. Monday starts at 5am. Non-negotiable. The week is about to begin — enter it from a full place.",                                                                                cat:"morning",   dur:"5 hrs"},
 ];
+
 
 // ── Workout data ──────────────────────────────────────────────────────────
 const WARMUP = [
