@@ -17,41 +17,32 @@ function drawIcon(size) {
   ctx.arc(size / 2, size / 2, size * 0.38, 0, Math.PI * 2);
   ctx.fill();
 
-  // Letter A
-  ctx.fillStyle = "#0F1117";
-  ctx.font = `bold ${size * 0.4}px Arial`;
+  // Subtle inner ring
+  ctx.strokeStyle = "#C47D1055";
+  ctx.lineWidth = size * 0.01;
+  ctx.beginPath();
+  ctx.arc(size / 2, size / 2, size * 0.33, 0, Math.PI * 2);
+  ctx.stroke();
+
+  const fontSize = size * 0.44;
+  const y = size / 2 + fontSize * 0.35;
+
+  // Use italic serif — closest to Dancing Script available in Node canvas
+  // For true Dancing Script: download .ttf from fonts.google.com and call
+  // registerFont('./DancingScript-Bold.ttf', { family: 'Dancing Script' })
+  // before createCanvas, then use font-family: 'Dancing Script'
+  const font = `bold italic ${fontSize}px "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif`;
+  ctx.font = font;
   ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  // A in dark blue, & small grey, G in pinkish red
-  const fontSize = size * 0.32;
-  ctx.font = `bold ${fontSize}px Arial`;
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
+  ctx.textBaseline = "alphabetic";
 
-  // Measure each character to position them
-  const aWidth   = ctx.measureText("A").width;
-  const ampWidth = ctx.measureText("&").width;
-  const gWidth   = ctx.measureText("G").width;
-  const total    = aWidth + ampWidth * 0.6 + gWidth;
-  let x = size / 2 - total / 2;
-  const y = size / 2 + size * 0.02;
-
-  // A — dark navy
+  // G — dark navy, slightly right
   ctx.fillStyle = "#0F1117";
-  ctx.textAlign = "left";
-  ctx.fillText("A", x, y);
-  x += aWidth;
+  ctx.fillText("G", size * 0.57, y);
 
-  // & — slightly lighter navy
-  ctx.font = `bold ${fontSize * 0.55}px Arial`;
-  ctx.fillStyle = "#1E2A3A";
-  ctx.fillText("&", x + ampWidth * 0.05, y + fontSize * 0.08);
-  x += ampWidth * 0.6;
-
-  // G — dark navy
-  ctx.font = `bold ${fontSize}px Arial`;
-  ctx.fillStyle = "#0F1117";
-  ctx.fillText("G", x, y);
+  // A — cream, slightly left, overlapping G
+  ctx.fillStyle = "#F5E6C8";
+  ctx.fillText("A", size * 0.43, y);
 
   return canvas.toBuffer("image/png");
 }
@@ -61,6 +52,14 @@ try {
   writeFileSync("public/icon-192.png", drawIcon(192));
   writeFileSync("public/icon-512.png", drawIcon(512));
   console.log("✓ Icons generated — public/icon-192.png and public/icon-512.png");
+  console.log("  Cream A + navy G on gold circle, dark background");
+  console.log("");
+  console.log("  Want true Dancing Script cursive?");
+  console.log("  1. Download: https://fonts.google.com/specimen/Dancing+Script");
+  console.log("  2. Put DancingScript-Bold.ttf in your project root");
+  console.log("  3. Add this line before createCanvas():");
+  console.log("     registerFont('./DancingScript-Bold.ttf', { family: 'Dancing Script' })");
+  console.log("  4. Change font string to: bold italic ${fontSize}px 'Dancing Script', cursive");
 } catch (e) {
   console.error("Failed:", e.message);
 }
