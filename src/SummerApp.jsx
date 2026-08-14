@@ -79,16 +79,19 @@ const NOTIF_SCHEDULE = {
     { time:"00:00", msg:"Arrange clothes for the week 👔",                          urgent:false },
   ],
   sunday: [
-    { time:"08:00", msg:"Good morning 🌅 Church in 1 hour — get ready",             urgent:true  },
-    { time:"09:00", msg:"Church starting 🙏",                                       urgent:true  },
-    { time:"12:00", msg:"Clean sanctuary 🧹",                                       urgent:false },
-    { time:"13:00", msg:"Rest and heavy lunch 🍽",                                  urgent:false },
-    { time:"14:00", msg:"Family meeting 👨‍👩‍👧‍👦",                                        urgent:false },
-    { time:"15:00", msg:"Meal prep — lunches for the week 🍱",                      urgent:true  },
-    { time:"16:30", msg:"Spark starting — Sunday block 🚗 Target $90+",             urgent:true  },
-    { time:"21:00", msg:"Wind down from Spark 🛑",                                  urgent:false },
-    { time:"23:00", msg:"Gloria time 🤍",                                           urgent:true  },
-    { time:"23:55", msg:"Midnight in 5 — wrap up and sleep 😴",                    urgent:true  },
+    { time:"08:00", msg:"Good morning 🌅 Church in 1 hour — get ready",                   urgent:true  },
+    { time:"09:00", msg:"Church starting 🙏 Ushering setup first",                        urgent:true  },
+    { time:"12:00", msg:"Clean sanctuary 🧹 Serve it to the end",                         urgent:false },
+    { time:"13:00", msg:"Rest and heavy lunch 🍽 You earned it",                          urgent:false },
+    { time:"14:00", msg:"Family meeting 👨‍👩‍👧‍👦 2pm sharp — non-negotiable",                urgent:true  },
+    { time:"15:00", msg:"Task review + Gloria planning 📅 30 min solo then 30 min with her", urgent:true },
+    { time:"16:00", msg:"Meal prep 🍱 Portion out lunches for Mon-Fri",                   urgent:true  },
+    { time:"17:00", msg:"GA leftover work 📝 Clear the backlog",                          urgent:false },
+    { time:"18:00", msg:"Spark — Sunday evening 🚗 Target $80+ dinner rush is on",        urgent:true  },
+    { time:"22:00", msg:"Wind down from Spark 🛑 Almost done",                            urgent:false },
+    { time:"22:30", msg:"Reach out — call or message someone 📞 Rotate your people",      urgent:false },
+    { time:"23:30", msg:"Prayer with Gloria 🙏 Close the week together",                  urgent:true  },
+    { time:"23:55", msg:"Midnight in 5 — wrap up and sleep 😴 Monday at 5am",            urgent:true  },
   ],
 };
 
@@ -113,18 +116,43 @@ function useNotifications() {
     setTimeout(() => n.close(), urgent ? 30000 : 10000);
   }
 
+  // Convert "HH:MM" to total minutes since midnight
+  function toMins(hhmm) {
+    const [h, m] = hhmm.split(":").map(Number);
+    return h * 60 + m;
+  }
+
+  // Add offset minutes to a "HH:MM" string, returns "HH:MM"
+  function addMins(hhmm, offset) {
+    const total = (toMins(hhmm) + offset + 1440) % 1440;
+    return String(Math.floor(total/60)).padStart(2,"0") + ":" + String(total%60).padStart(2,"0");
+  }
+
   useEffect(() => {
     if (permission !== "granted") return;
     const interval = setInterval(() => {
-      const now   = new Date();
-      const day   = now.getDay(); // 0=Sun,1=Mon,2=Tue,3=Wed,4=Thu,5=Fri,6=Sat
-      const hhmm  = now.getHours().toString().padStart(2,"0") + ":" + now.getMinutes().toString().padStart(2,"0");
+      const now    = new Date();
+      const day    = now.getDay();
+      const hhmm   = now.getHours().toString().padStart(2,"0") + ":" + now.getMinutes().toString().padStart(2,"0");
       const dayKey = day===2?"tuesday":day===4?"thursday":day===5?"friday":day===6?"saturday":day===0?"sunday":"weekday";
-      const slots  = [...(NOTIF_SCHEDULE[dayKey]||[]), ...(dayKey!=="weekday"?[]:(NOTIF_SCHEDULE.weekday||[]))];
-      // Fire if we are within 1 minute of the scheduled time
+      const slots  = [
+        ...(NOTIF_SCHEDULE[dayKey]||[]),
+        ...(dayKey!=="weekday"?[]:NOTIF_SCHEDULE.weekday||[]),
+      ];
       slots.forEach(slot => {
-        if (slot.time === hhmm) {
-          fireNotif("⏰ Schedule reminder", slot.msg, slot.urgent);
+        const at15 = addMins(slot.time, -15);
+        const at5  = addMins(slot.time, -5);
+        // 15 min warning
+        if (hhmm === at15) {
+          fireNotif("⏰ Coming up in 15 min", `${slot.msg}`, false);
+        }
+        // 5 min warning
+        if (hhmm === at5) {
+          fireNotif("🔔 Starting in 5 minutes", `${slot.msg}`, slot.urgent);
+        }
+        // Exact time — you should have already started
+        if (hhmm === slot.time) {
+          fireNotif("🚨 Starting NOW", `${slot.msg} — begin immediately`, true);
         }
       });
     }, 60000);
@@ -145,21 +173,58 @@ async function sSet(key,value) { try { await fetch(`${SUPABASE_URL}/rest/v1/toge
 const P = { faith:"#E8C050", fitness:"#3DBF8A", thesis:"#9B6EE8", reading:"#3B9EDB", gloria:"#E84E8A", sidegig:"#20B2AA", nutrition:"#F97316" };
 const CAT = { faith:"#E8C050",fitness:"#3DBF8A",reading:"#3B9EDB",thesis:"#9B6EE8",gloria:"#E84E8A",sidegig:"#20B2AA",nutrition:"#F97316",morning:"#E8704A",evening:"#9B6EE8",work:"#888",planning:"#C8B030" };
 
+
+// ── Weekly Time Breakdown Data ────────────────────────────────────────────────
+const TIME_BREAKDOWN = [
+  { cat:"Spark / Income",      hrs:25.5, target:600, color:"#E8A838", icon:"🚗",
+    detail:"Mon 4hrs + Wed 4hrs + Fri 2hrs + Sat 6.5hrs + Sun 4hrs. Target $600/week at ~$23/hr average. Protect dinner rush 5-8pm every day — that's where 60% of your money is made." },
+  { cat:"Thesis",              hrs:15,   target:null, color:"#9B6EE8", icon:"📝",
+    detail:"Tue 5hrs + Thu 4hrs + Sat 3hrs + buffer. This is your degree. Tuesday and Thursday mornings are sacred — phone on DND, no errands, no calls. These two days alone give you 9 hours weekly." },
+  { cat:"Sleep",               hrs:49,   target:null, color:"#3B9EDB", icon:"😴",
+    detail:"7hrs weekdays (5am-12am), 8-9hrs weekend. The 12am hard stop exists because of the 5am wake-up. Every hour of sleep you protect here directly improves thesis quality, Spark focus, and teaching performance." },
+  { cat:"Teaching + Prep",     hrs:11,   target:null, color:"#E8704A", icon:"🏫",
+    detail:"Mon/Wed 4-5:45pm + Tue/Thu 4:30-5:20pm + 1hr prep each day. This is your GTA stipend. Show up prepared every single day — your professional reputation is built here." },
+  { cat:"Class + Review",      hrs:8,    target:null, color:"#3DBF8A", icon:"📚",
+    detail:"MWF 9-10am class + 10-11am review each day. The review hour is what separates students who understand from students who memorize. Do not skip it." },
+  { cat:"Faith",               hrs:8,    target:null, color:"#C8B030", icon:"✦",
+    detail:"Daily 30min devotion (3.5hrs) + Tuesday Bible study 2.5hrs + Sunday church 3hrs. This is your anchor. When this shrinks everything else gets harder — not easier." },
+  { cat:"Gloria",              hrs:7,    target:null, color:"#E84E8A", icon:"🤍",
+    detail:"Nightly 11-12am + Sunday planning + prayer. Intentional not incidental. The weekly planning session on Sunday is what keeps the relationship growing even during a packed semester." },
+  { cat:"Job Applications",    hrs:5,    target:null, color:"#7B61FF", icon:"💼",
+    detail:"Mon/Wed/Fri 5:30-6:30am + Tue/Thu 5:30-6am. 30-40 applications per month. 3 school applications per month. This is how you secure a job before graduation in January." },
+  { cat:"Gym + Cardio",        hrs:6,    target:null, color:"#E8704A", icon:"💪",
+    detail:"Mon/Wed strength (1hr 45min each) + Tue/Thu cardio 12k steps. 4 sessions per week. Showing up consistently matters more than intensity. The gym at 6:45am is done before the day can steal it." },
+  { cat:"Impact Fellowship",   hrs:6,    target:null, color:"#C8B030", icon:"✝️",
+    detail:"Thursday full block — 2pm setup through 10pm. This is your ministry. Give it everything you have on Thursdays." },
+  { cat:"Personal Projects",   hrs:4,    target:null, color:"#20B2AA", icon:"🛠",
+    detail:"Tue 1hr after Bible study + Fri 2hrs + Sat 1hr. First 90, portfolio, freelance. This is your professional differentiation — the work that makes your CV real." },
+  { cat:"GA Work",             hrs:4,    target:null, color:"#888",    icon:"📋",
+    detail:"Friday grading blocks + Sunday leftover. Keep this contained — do not let GA admin bleed into thesis time or evenings." },
+  { cat:"Office Hours",        hrs:4,    target:null, color:"#3B9EDB", icon:"🏫",
+    detail:"Mon + Wed 11-12pm. Be present, be helpful, be professional. This is part of your GTA role." },
+  { cat:"Family + Social",     hrs:3,    target:null, color:"#3DBF8A", icon:"👨‍👩‍👧",
+    detail:"Saturday reach out (1hr) + Sunday family meeting (1hr) + Sunday reach out at 10:30pm (1hr). Rotating through your people — Peace, Favour, Gentle, Kelechi, Ellud, Simon." },
+  { cat:"Meal + Body",         hrs:5,    target:null, color:"#E8A838", icon:"🍽",
+    detail:"3 meals daily + Sunday meal prep 1hr + Saturday clothes prep 1hr. These are not optional — eating properly and prepping ahead is what makes the rest of the schedule sustainable." },
+  { cat:"Free Time",           hrs:2,    target:null, color:"#555",    icon:"🌬",
+    detail:"Friday 6-7pm + scattered. This is your only truly unscheduled time. Protect it. Use it to be a human being — not to catch up on work." },
+];
+
+const TOTAL_WEEK_HRS = 168;
+
+
 const PILLARS = [
-  {id:"overview",       label:"Overview",   icon:"◉", color:"#E8A838"},
-  {id:"tracker",        label:"Tracker",    icon:"📊", color:"#3B9EDB"},
-  {id:"schedule",       label:"Schedule",   icon:"📅", color:"#C8B030"},
-  {id:"checklist",      label:"Checklist",  icon:"☐", color:"#E8704A"},
-  {id:"faith",          label:"Faith",      icon:"✦", color:P.faith},
-  {id:"fitness",        label:"Fitness",    icon:"◈", color:P.fitness},
-  {id:"nutrition",      label:"Nutrition",  icon:"🥗", color:P.nutrition},
-  {id:"thesis",         label:"Thesis",     icon:"✎", color:P.thesis},
-  {id:"reading",        label:"Reading",    icon:"◐", color:P.reading},
-  {id:"gloria",         label:"Gloria",     icon:"♡", color:P.gloria},
-  {id:"sidegig",        label:"Side Gig",   icon:"◆", color:P.sidegig},
-  {id:"gym",            label:"Gym",        icon:"🏋", color:"#E8704A"},
-  {id:"schools",        label:"Schools",    icon:"🎓", color:"#7B61FF"},
-  {id:"life",           label:"Life",       icon:"❤", color:"#E84E8A"},
+  {id:"overview",  label:"Home",     icon:"◉",  color:"#E8A838"},
+  {id:"schedule",  label:"Schedule", icon:"📅",  color:"#C8B030"},
+  {id:"tracker",   label:"Tracker",  icon:"📊",  color:"#3B9EDB"},
+  {id:"faith",     label:"Faith",    icon:"✦",  color:P.faith},
+  {id:"fitness",   label:"Fitness",  icon:"◈",  color:P.fitness},
+  {id:"thesis",    label:"Thesis",   icon:"✎",  color:P.thesis},
+  {id:"gloria",    label:"Gloria",   icon:"♡",  color:P.gloria},
+  {id:"gym",       label:"Gym",      icon:"🏋",  color:"#E8704A"},
+  {id:"schools",   label:"Schools",  icon:"🎓",  color:"#7B61FF"},
+  {id:"time",      label:"Time",     icon:"⏱",  color:"#20B2AA"},
+  {id:"life",      label:"Life",     icon:"❤",  color:"#E84E8A"},
 ];
 const GLORIA_PILLARS = [
   {id:"gloria_overview",label:"Overview",   icon:"◉", color:"#E84E8A"},
@@ -274,32 +339,35 @@ const WD_SCHEDULE = [
 ];
 
 const SAT_SCHEDULE = [
-  {time:"10:00am", label:"Wake up — rest morning",      detail:"Saturday is your one morning to sleep in. 10am. Let the body recover from the week. No alarm guilt. You earned this.",                                                                cat:"morning",   dur:"30 min"},
-  {time:"10:00am", label:"Devotion and light breakfast", detail:"Slower devotion — more time with God. Then a light breakfast. Saturday morning has a different pace. Let it.",                                                                        cat:"faith",     dur:"30 min"},
-  {time:"10:30am", label:"Personal projects — 1 hour",  detail:"First 90, portfolio work, freelance, anything you are building. 1 hour of focused building on your own projects. This is your creative and professional growth time.",                cat:"work",      dur:"1 hr"},
-  {time:"11:30am", label:"Reach out — 1 person",        detail:"Call or message one person from your rotation: Peace, Favour, Gentle, Kelechi, Ellud, Simon, friends. Relationships need investment. One person per week, rotate consistently.",      cat:"social",    dur:"30 min"},
-  {time:"12:00pm", label:"Thesis block — 3 hours",      detail:"12pm to 3pm. This is your Saturday thesis block. Phone on DND. Write, research, edit. Three hours of real work here plus Tuesday and Thursday gives you 13+ hours weekly on thesis.", cat:"thesis",    dur:"3 hrs"},
-  {time:"3:00pm",  label:"Heavy lunch break",           detail:"You have been working since 10:30am. Sit down, eat properly, rest for 30 minutes. Then Spark.",                                                                                       cat:"nutrition", dur:"30 min"},
-  {time:"3:30pm",  label:"Spark — big earning day",     detail:"Saturday 3:30pm to 10pm is your biggest Spark day — 6.5 hours. Target $140+. This is where you hit your weekly target. Stay on, stay focused, protect this block.",                  cat:"work",      dur:"6 hrs 30 min"},
-  {time:"9:30pm",  label:"Light snack",                 detail:"Quick fuel during Spark wind-down. Keep it light — protein shake, fruit, rice cakes.",                                                                                                cat:"nutrition", dur:"15 min"},
-  {time:"11:00pm", label:"Gloria time",                 detail:"One intentional hour with Gloria. Pray, talk, connect. End the day well together.",                                                                                                   cat:"gloria",    dur:"1 hr"},
-  {time:"12:00am", label:"Arrange clothes for the week",detail:"Lay out your clothes for Sunday and the week ahead. 1 hour. No decisions tomorrow morning. Everything is ready.",                                                                     cat:"morning",   dur:"1 hr"},
-  {time:"1:00am",  label:"Bed",                         detail:"You earned the late night. Sleep well. Church is at 9am — set your alarm for 8am.",                                                                                                   cat:"morning",   dur:"7 hrs"},
+  {time:"10:00am", label:"Wake up — rest morning",       detail:"Saturday is your one morning to sleep in. 10am. No alarm guilt. Let your body recover from the week. You earned this rest.",                                                         cat:"morning",   dur:"30 min"},
+  {time:"10:00am", label:"Devotion and light breakfast",  detail:"Slower, unhurried devotion. More time with God. Light breakfast. Saturday morning has a different pace — receive it.",                                                               cat:"faith",     dur:"30 min"},
+  {time:"10:30am", label:"Personal projects — 1 hour",   detail:"First 90, portfolio, freelance, whatever you are building. 1 focused hour on your own creative and professional work. This compounds over the semester.",                             cat:"work",      dur:"1 hr"},
+  {time:"11:30am", label:"Reach out — 1 person",         detail:"Call or message one person: Peace, Favour, Gentle, Kelechi, Ellud, Simon. Rotate weekly. Relationships need consistent small investment.",                                            cat:"social",    dur:"30 min"},
+  {time:"12:00pm", label:"Thesis block — 3 hours",       detail:"12pm to 3pm. Phone on DND. This is your Saturday thesis anchor — write, research, edit. These 3 hours plus Tue/Thu mornings give you 13+ hours weekly.",                            cat:"thesis",    dur:"3 hrs"},
+  {time:"3:00pm",  label:"Heavy lunch and rest",         detail:"You have been working since 10:30am. Sit down, eat your main meal properly. Rest 30-45 minutes. Then get ready for the big Spark block.",                                            cat:"nutrition", dur:"45 min"},
+  {time:"4:00pm",  label:"Spark — long Saturday block",  detail:"4pm to 10:30pm is your biggest earning block of the week — 6.5 hours. Target $150+. Dinner rush 5-8pm is peak. Stay on, stay focused. This is where you hit your weekly target.",  cat:"work",      dur:"6 hrs 30 min"},
+  {time:"8:00pm",  label:"Light snack during Spark",     detail:"Quick 15-min break. Eat something light. Check earnings — are you on pace? Then back on the road.",                                                                                  cat:"nutrition", dur:"15 min"},
+  {time:"10:30pm", label:"Stop Spark — wind down",       detail:"Hard stop at 10:30pm. You have done the work. Decompress, shower, transition to evening mode.",                                                                                      cat:"evening",   dur:"30 min"},
+  {time:"11:00pm", label:"Gloria time",                  detail:"One intentional hour with Gloria. Pray together, talk, connect. End the week's hardest working day in relationship.",                                                                 cat:"gloria",    dur:"1 hr"},
+  {time:"12:00am", label:"Arrange clothes for the week", detail:"Lay out Sunday clothes and the week ahead — 30 to 45 minutes. No decisions tomorrow morning. Everything is ready before you sleep.",                                                 cat:"morning",   dur:"45 min"},
+  {time:"1:00am",  label:"Bed",                         detail:"You earned this. Sleep well. Church is at 9am — alarm at 8am.",                                                                                                                       cat:"morning",   dur:"7 hrs"},
 ];
 
 const SUN_SCHEDULE = [
-  {time:"8:00am",  label:"Wake up",                     detail:"Gentle alarm at 8. You have an hour before church. Move at a calm pace — Sunday mornings should feel different from the weekday rush.",                                               cat:"morning",   dur:"30 min"},
-  {time:"8:00am",  label:"Devotion and light breakfast", detail:"Short devotion — 20-30 minutes. Then light breakfast. Get dressed for church with intention. How you show up matters.",                                                               cat:"faith",     dur:"1 hr"},
-  {time:"9:00am",  label:"Church service",              detail:"9am to 12pm. Serve in ushering — arrive a few minutes early to set up. Be fully present. This is worship, not attendance.",                                                           cat:"faith",     dur:"3 hrs"},
-  {time:"12:00pm", label:"Clean sanctuary",             detail:"12pm to 1pm — serve with excellence. Clean the sanctuary properly. This is part of your service and your character.",                                                                 cat:"faith",     dur:"1 hr"},
-  {time:"1:00pm",  label:"Rest and heavy lunch",        detail:"Travel home, eat your heavy meal, rest. You have been up since 8 and served all morning. One hour of genuine rest before family meeting.",                                            cat:"nutrition", dur:"1 hr"},
-  {time:"2:00pm",  label:"Family meeting",              detail:"Weekly family meeting — be present and engaged. Reach out to one person from your rotation during or after this block.",                                                               cat:"social",    dur:"1 hr"},
-  {time:"3:00pm",  label:"Meal prep — lunches for week",detail:"1 hour to portion out lunches for Monday through Friday. Rice, protein, veg — already cooked, just serving into containers. This is what makes weekday eating effortless.",           cat:"nutrition", dur:"1 hr"},
-  {time:"4:00pm",  label:"GA work — leftover",          detail:"Any unfinished grading, assignment prep, admin from the week. 30-60 minutes clears the backlog so Monday starts clean.",                                                              cat:"school",    dur:"1 hr"},
-  {time:"4:30pm",  label:"Spark — Sunday block",        detail:"4:30pm to 9pm. Target $90+. Sunday evenings are decent for deliveries — dinner rush still runs. Finish the week strong.",                                                             cat:"work",      dur:"4 hrs 30 min"},
-  {time:"9:30pm",  label:"Light snack",                 detail:"Wind down from Spark. Light snack, decompress, transition to evening mode.",                                                                                                          cat:"nutrition", dur:"15 min"},
-  {time:"11:00pm", label:"Gloria time",                 detail:"Sunday night Gloria time. Pray together, talk about the week ahead. Align before Monday hits. End the weekend in peace.",                                                             cat:"gloria",    dur:"1 hr"},
-  {time:"12:00am", label:"Hard stop — bed",             detail:"12am. Monday starts at 5am. Non-negotiable. The week is about to begin — enter it from a full place.",                                                                                cat:"morning",   dur:"5 hrs"},
+  {time:"8:00am",  label:"Wake up — gentle start",           detail:"Calm alarm at 8. Sunday mornings feel different — slower, lighter. No rushing. You have an hour before church.",                                                                  cat:"morning",   dur:"30 min"},
+  {time:"8:00am",  label:"Devotion and light breakfast",      detail:"20-30 minutes with God — unhurried. Light breakfast. Get dressed with intention. How you show up to church is how you show up to worship.",                                     cat:"faith",     dur:"1 hr"},
+  {time:"9:00am",  label:"Church service",                    detail:"9am to 12pm. Arrive early for ushering setup. Be fully present — this is worship not attendance. Let the word land.",                                                           cat:"faith",     dur:"3 hrs"},
+  {time:"12:00pm", label:"Clean sanctuary",                   detail:"12pm to 1pm — serve with excellence. This is part of your character not just a chore. Do it well.",                                                                             cat:"faith",     dur:"1 hr"},
+  {time:"1:00pm",  label:"Rest and heavy lunch",              detail:"Travel home, eat your main meal, rest. You have been up since 8 and served all morning. Genuine rest — no phone, no tasks. Just recover.",                                     cat:"nutrition", dur:"1 hr"},
+  {time:"2:00pm",  label:"Family meeting",                    detail:"2pm sharp every Sunday. Family call — be present and engaged. This is a non-negotiable anchor for the week.",                                                                   cat:"social",    dur:"1 hr"},
+  {time:"3:00pm",  label:"Personal task review + Gloria planning", detail:"1 hour — first 30 min is your solo task review. Check the Together app, set priorities for the week. Then 30 min with Gloria — align your schedules, plan intentional time, set the week's tone together.", cat:"gloria", dur:"1 hr"},
+  {time:"4:00pm",  label:"Meal prep — lunches for week",      detail:"1 hour to portion out lunches for Mon-Fri. Rice, protein, veg into containers. Already cooked — just serve and store. This is what makes weekday eating effortless.",          cat:"nutrition", dur:"1 hr"},
+  {time:"5:00pm",  label:"GA leftover work",                  detail:"Any unfinished grading, assignment prep, or admin. 30-60 minutes clears the backlog so Monday starts clean.",                                                                  cat:"school",    dur:"1 hr"},
+  {time:"6:00pm",  label:"Spark — Sunday evening",            detail:"6pm to 10pm. Target $80+. Sunday dinner rush still runs. Stay focused — this is the final earning block of the week.",                                                         cat:"work",      dur:"4 hrs"},
+  {time:"10:00pm", label:"Wind down",                         detail:"Off Spark. Light snack if needed. Decompress. Let the week go and prepare to receive tomorrow.",                                                                                cat:"evening",   dur:"30 min"},
+  {time:"10:30pm", label:"Reach out — family or friends",     detail:"1 hour to call or message people you care about. Rotate: Peace, Favour, Gentle, Kelechi, Ellud, Simon, friends. Relationships need consistent small investment.",              cat:"social",    dur:"1 hr"},
+  {time:"11:30pm", label:"Prayer with Gloria — close the week",detail:"30 minutes of prayer together. Give thanks, pray for the week ahead, align spiritually. This closes the week the right way.",                                                 cat:"gloria",    dur:"30 min"},
+  {time:"12:00am", label:"Hard stop — bed",                   detail:"12am. Monday at 5am is 5 hours away. Non-negotiable. Enter the week from a full place.",                                                                                       cat:"morning",   dur:"5 hrs"},
 ];
 
 
@@ -556,6 +624,128 @@ function Modal({title,accent,onClose,onSave,children,T}) {
 }
 
 // ── Main ──────────────────────────────────────────────────────────────────
+
+// ── TimeView — where your week actually goes ─────────────────────────────────
+function TimeView({ T }) {
+  const [selected, setSelected] = useState(null);
+  const totalTracked = TIME_BREAKDOWN.reduce((s,b)=>s+b.hrs, 0);
+  const free = TOTAL_WEEK_HRS - totalTracked;
+
+  const cs = (ex={}) => ({
+    background:T.surface, border:`1px solid ${T.border}`,
+    borderRadius:14, boxShadow:"0 2px 10px rgba(0,0,0,0.07)", ...ex
+  });
+
+  return (
+    <div style={{ padding:"16px 16px 80px", fontFamily:"'DM Sans',sans-serif" }}>
+      {/* Header */}
+      <div style={{ marginBottom:20 }}>
+        <div style={{ fontFamily:"'DM Serif Display',serif", fontSize:26, color:"#20B2AA", marginBottom:4 }}>⏱ Time Breakdown</div>
+        <div style={{ fontSize:13, color:T.textSub, lineHeight:1.6 }}>
+          Where your 168 hours go every week. Tap any category for detail.
+        </div>
+      </div>
+
+      {/* Visual bar */}
+      <div style={{ ...cs({ padding:"16px 18px", marginBottom:16 }) }}>
+        <div style={{ fontSize:12, fontWeight:700, color:T.textMuted, textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:10 }}>Weekly 168hrs — visual split</div>
+        <div style={{ display:"flex", height:28, borderRadius:10, overflow:"hidden", gap:1, marginBottom:10 }}>
+          {TIME_BREAKDOWN.map((b,i)=>(
+            <div key={i} onClick={()=>setSelected(selected?.cat===b.cat?null:b)}
+              title={b.cat}
+              style={{ flex:b.hrs, background:b.color, cursor:"pointer", opacity:selected?.cat===b.cat?1:0.75, transition:"opacity 0.15s", minWidth:2 }}/>
+          ))}
+          <div style={{ flex:free, background:"#333", minWidth:2 }} title="Unaccounted"/>
+        </div>
+        {/* Legend — top 6 */}
+        <div style={{ display:"flex", flexWrap:"wrap", gap:"6px 12px" }}>
+          {TIME_BREAKDOWN.slice(0,8).map((b,i)=>(
+            <div key={i} style={{ display:"flex", alignItems:"center", gap:5, fontSize:11, color:T.textSub }}>
+              <div style={{ width:10, height:10, borderRadius:2, background:b.color, flexShrink:0 }}/>
+              {b.cat} ({b.hrs}h)
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Selected detail card */}
+      {selected&&(
+        <div style={{ ...cs({ borderLeft:`4px solid ${selected.color}`, marginBottom:14, padding:"14px 16px" }) }}>
+          <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:6 }}>
+            <span style={{ fontSize:22 }}>{selected.icon}</span>
+            <div>
+              <div style={{ fontSize:16, fontWeight:700, color:T.text }}>{selected.cat}</div>
+              <div style={{ fontSize:13, color:selected.color, fontWeight:600 }}>{selected.hrs} hrs/week
+                {selected.target?` · Target $${selected.target}/wk`:""}
+              </div>
+            </div>
+          </div>
+          <div style={{ fontSize:13, color:T.textSub, lineHeight:1.7 }}>{selected.detail}</div>
+        </div>
+      )}
+
+      {/* Spark target callout */}
+      <div style={{ ...cs({ borderTop:"4px solid #E8A838", marginBottom:14, padding:"14px 16px" }) }}>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
+          <div style={{ fontSize:14, fontWeight:700, color:"#E8A838" }}>🚗 Spark Weekly Target</div>
+          <div style={{ fontSize:20, fontWeight:800, color:"#E8A838" }}>$600</div>
+        </div>
+        <div style={{ fontSize:12, color:T.textSub, lineHeight:1.7, marginBottom:10 }}>
+          25.5 hours @ ~$23/hr average. Protect the dinner rush 5-8pm every day — that's where the money is.
+        </div>
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(5,1fr)", gap:6 }}>
+          {[["Mon","$80","4hrs"],["Wed","$80","4hrs"],["Fri","$60","2hrs"],["Sat","$300","6.5hrs"],["Sun","$80","4hrs"]].map(([d,t,h])=>(
+            <div key={d} style={{ background:T.inputBg, borderRadius:8, padding:"8px 6px", textAlign:"center" }}>
+              <div style={{ fontSize:11, color:T.textMuted, fontWeight:700 }}>{d}</div>
+              <div style={{ fontSize:14, fontWeight:800, color:"#E8A838", margin:"3px 0" }}>{t}</div>
+              <div style={{ fontSize:10, color:T.textMuted }}>{h}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* All categories list */}
+      <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+        {TIME_BREAKDOWN.map((b,i)=>{
+          const pct = Math.round((b.hrs/TOTAL_WEEK_HRS)*100);
+          return (
+            <div key={i} onClick={()=>setSelected(selected?.cat===b.cat?null:b)}
+              style={{ ...cs({ borderLeft:`4px solid ${b.color}`, padding:"12px 14px", cursor:"pointer", background:selected?.cat===b.cat?`${b.color}11`:T.surface }) }}>
+              <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:6 }}>
+                <span style={{ fontSize:18, flexShrink:0 }}>{b.icon}</span>
+                <div style={{ flex:1, minWidth:0 }}>
+                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                    <span style={{ fontSize:13, fontWeight:700, color:T.text }}>{b.cat}</span>
+                    <div style={{ textAlign:"right", flexShrink:0, marginLeft:8 }}>
+                      <span style={{ fontSize:14, fontWeight:800, color:b.color }}>{b.hrs}h</span>
+                      <span style={{ fontSize:11, color:T.textMuted, marginLeft:4 }}>{pct}%</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              {/* Progress bar */}
+              <div style={{ height:4, background:T.inputBg, borderRadius:4, overflow:"hidden" }}>
+                <div style={{ height:"100%", width:`${pct*3}%`, maxWidth:"100%", background:b.color, borderRadius:4, transition:"width 0.3s" }}/>
+              </div>
+            </div>
+          );
+        })}
+
+        {/* Summary */}
+        <div style={{ ...cs({ padding:"14px 16px", marginTop:4, background:T.inputBg }) }}>
+          <div style={{ display:"flex", justifyContent:"space-between", fontSize:13, color:T.textSub, marginBottom:4 }}>
+            <span>Total tracked</span><span style={{ fontWeight:700, color:T.text }}>{totalTracked}h / 168h</span>
+          </div>
+          <div style={{ display:"flex", justifyContent:"space-between", fontSize:13, color:T.textSub }}>
+            <span>Unaccounted / margin</span><span style={{ fontWeight:700, color:"#20B2AA" }}>{Math.round((TOTAL_WEEK_HRS-totalTracked)*10)/10}h</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
 export default function SummerApp({mode,T,onBack}) {
   const _td2=new Date(); const today=`${_td2.getFullYear()}-${String(_td2.getMonth()+1).padStart(2,'0')}-${String(_td2.getDate()).padStart(2,'0')}`;
   const dow=new Date().getDay();
@@ -607,7 +797,7 @@ export default function SummerApp({mode,T,onBack}) {
 
   if (!data) return (
     <div style={{display:"flex",height:"100vh",alignItems:"center",justifyContent:"center",background:"#111",color:"#E8A838",fontFamily:"'DM Sans',sans-serif",fontSize:16}}>
-      Loading Life OS...
+      Loading Our Life OS...
     </div>
   );
 
@@ -1024,7 +1214,7 @@ export default function SummerApp({mode,T,onBack}) {
 
   const viewOverview=(
     <div>
-      <div style={{fontFamily:"'DM Serif Display',serif",fontSize:isMobile?24:30,color:T.text,marginBottom:4}}>{"Amen's Life OS 🌟"}</div>
+      <div style={{fontFamily:"'DM Serif Display',serif",fontSize:isMobile?24:30,color:T.text,marginBottom:4}}>{"Our Life OS 🌟"}</div>
       <div style={{fontSize:13,color:T.textSub,marginBottom:24}}>{new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"})}</div>
 
       {Object.values(savedIntentions).some(Boolean)&&(
@@ -1972,7 +2162,7 @@ export default function SummerApp({mode,T,onBack}) {
 
   const viewGloriaOverview=(
     <div>
-      <div style={{fontFamily:"'DM Serif Display',serif",fontSize:isMobile?22:28,color:"#E84E8A",marginBottom:4}}>{"Gloria's Life OS ♡"}</div>
+      <div style={{fontFamily:"'DM Serif Display',serif",fontSize:isMobile?22:28,color:"#E84E8A",marginBottom:4}}>{"Our Life OS ♡"}</div>
       <div style={{fontSize:13,color:T.textSub,marginBottom:20}}>{"Your personal space — schedule, faith, growth"}</div>
       <div style={{...cs({marginBottom:20,padding:"18px 20px"})}}>
         <div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}>
@@ -2143,17 +2333,14 @@ export default function SummerApp({mode,T,onBack}) {
         {profile==="amen"&&pillar==="tracker"   && viewTracker}
         {profile==="amen"&&pillar==="overview"  && viewOverview}
         {profile==="amen"&&pillar==="schedule"  && viewSchedule}
-        {profile==="amen"&&pillar==="checklist" && viewChecklist}
         {profile==="amen"&&pillar==="faith"     && viewFaith}
         {profile==="amen"&&pillar==="fitness"   && viewFitness}
-        {profile==="amen"&&pillar==="nutrition" && viewNutrition}
         {profile==="amen"&&pillar==="thesis"    && viewThesis}
-        {profile==="amen"&&pillar==="reading"   && viewReading}
         {profile==="amen"&&pillar==="gloria"    && viewGloria}
-        {profile==="amen"&&pillar==="sidegig"   && viewSidegig}
         {profile==="amen"&&pillar==="gym"      && viewGym}
         {profile==="amen"&&pillar==="schools"  && viewSchools}
         {profile==="amen"&&pillar==="life"     && viewLife}
+        {profile==="amen"&&pillar==="time"     && <TimeView T={T}/>}
         {/* Gloria views */}
         {profile==="gloria"&&pillar==="gloria_overview" && viewGloriaOverview}
         {profile==="gloria"&&pillar==="gloria_schedule" && viewGloriaSchedule}
@@ -2164,11 +2351,13 @@ export default function SummerApp({mode,T,onBack}) {
 
       {/* ── Mobile bottom tabs ── */}
       {isMobile&&(
-        <div style={{position:"fixed",bottom:0,left:0,right:0,zIndex:20,background:"#111418",borderTop:"1px solid rgba(255,255,255,0.07)",display:"flex",overflowX:"auto",paddingBottom:"env(safe-area-inset-bottom)"}}>
+        <div style={{position:"fixed",bottom:0,left:0,right:0,zIndex:20,background:"rgba(17,20,24,0.97)",backdropFilter:"blur(12px)",borderTop:"1px solid rgba(255,255,255,0.08)",display:"flex",overflowX:"auto",paddingBottom:"calc(env(safe-area-inset-bottom) + 8px)",paddingTop:4,paddingLeft:4,paddingRight:4,gap:2}}>
           {(profile==="amen"?PILLARS:GLORIA_PILLARS).map(p=>(
-            <button key={p.id} onClick={()=>setPillar(p.id)} style={{flex:"1 0 auto",minWidth:60,padding:"8px 4px",border:"none",background:"transparent",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:9,color:pillar===p.id?p.color:"#555",borderTop:`2px solid ${pillar===p.id?p.color:"transparent"}`,transition:"all 0.15s",display:"flex",flexDirection:"column",alignItems:"center",gap:2}}>
-              <span style={{fontSize:15}}>{p.icon}</span>
-              <span style={{whiteSpace:"nowrap"}}>{p.label}</span>
+            <button key={p.id} onClick={()=>setPillar(p.id)}
+              style={{flex:"1 0 auto",minWidth:64,minHeight:64,padding:"10px 6px 8px",border:"none",background:pillar===p.id?`${p.color}18`:"transparent",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:10,fontWeight:pillar===p.id?700:400,color:pillar===p.id?p.color:"#666",borderRadius:14,transition:"all 0.15s",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:4,position:"relative"}}>
+              {pillar===p.id&&<div style={{position:"absolute",top:0,left:"50%",transform:"translateX(-50%)",width:28,height:3,borderRadius:"0 0 3px 3px",background:p.color}}/>}
+              <span style={{fontSize:22,lineHeight:1}}>{p.icon}</span>
+              <span style={{whiteSpace:"nowrap",letterSpacing:"0.01em"}}>{p.label}</span>
             </button>
           ))}
         </div>

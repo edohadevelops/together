@@ -1,7 +1,7 @@
 {
-  "name": "Summer OS — Amen",
-  "short_name": "SummerOS",
-  "description": "Amen's personal life operating system",
+  "name": "Our Life OS — Amen & Gloria",
+  "short_name": "A&G Life OS",
+  "description": "Amen & Gloria's shared life operating system",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0F1117",
