@@ -166,6 +166,12 @@ function useNotifications() {
 const SUPABASE_URL = "https://sonbphyeomzzcdyuiotl.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNvbmJwaHllb216emNkeXVpb3RsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyMzkxMjksImV4cCI6MjA4ODgxNTEyOX0.CtcZAFtqCQUOrzPBfhSfN5BZ1EQDJFVxa-FsjMX5IRg";
 const HDRS = { "Content-Type":"application/json","apikey":SUPABASE_KEY,"Authorization":`Bearer ${SUPABASE_KEY}`,"Prefer":"resolution=merge-duplicates" };
+// ── Utility ───────────────────────────────────────────────────────────────────
+function genId() {
+  return Math.random().toString(36).slice(2,10) + Date.now().toString(36);
+}
+
+
 async function sGet(key) { try { const r=await fetch(`${SUPABASE_URL}/rest/v1/together_data?key=eq.${key}&select=value`,{headers:HDRS}); const d=await r.json(); return d.length?JSON.parse(d[0].value):null; } catch{return null;} }
 async function sSet(key,value) { try { await fetch(`${SUPABASE_URL}/rest/v1/together_data`,{method:"POST",headers:HDRS,body:JSON.stringify({key,value:JSON.stringify(value),updated_at:new Date().toISOString()})}); } catch{} }
 
@@ -920,7 +926,7 @@ function GoalsView({ T, data, save, isMobile, userKey="amen" }) {
 }
 
 // ── JobsView ──────────────────────────────────────────────────────────────────
-function JobsView({ T, data, save, genId, isMobile, userKey="amen" }) {
+function JobsView({ T, data, save, isMobile, userKey="amen" }) {
   const jKey = `jobApps_${userKey}`;
   const jobs = data[jKey] || [];
   const [showForm, setShowForm] = useState(false);
@@ -1060,7 +1066,7 @@ function JobsView({ T, data, save, genId, isMobile, userKey="amen" }) {
 }
 
 // ── WeeklyReviewView ──────────────────────────────────────────────────────────
-function WeeklyReviewView({ T, data, save, genId, TODAY, userKey="amen" }) {
+function WeeklyReviewView({ T, data, save, TODAY, userKey="amen" }) {
   const weekKey  = (() => {
     const d = new Date(); const day = d.getDay();
     const diff = d.getDate()-day+(day===0?-6:1);
@@ -1211,7 +1217,7 @@ function WeeklyReviewView({ T, data, save, genId, TODAY, userKey="amen" }) {
 }
 
 // ── ArchiveView ───────────────────────────────────────────────────────────────
-function ArchiveView({ T, data, save, genId, TODAY, userKey="amen" }) {
+function ArchiveView({ T, data, save, TODAY, userKey="amen" }) {
   const arKey     = `archivedTasks_${userKey}`;
   const acKey     = `activeTasks_${userKey}`;
   const archived  = data[arKey] || [];
@@ -1400,7 +1406,7 @@ function ArchiveView({ T, data, save, genId, TODAY, userKey="amen" }) {
 
 
 // ── ShoppingView ──────────────────────────────────────────────────────────────
-function ShoppingView({ T, data, save, genId, userKey="amen" }) {
+function ShoppingView({ T, data, save, userKey="amen" }) {
   const sKey   = `shoppingList_${userKey}`;
   const items  = data[sKey] || [];
   const [form, setForm]   = useState({ name:"", qty:"1", category:"Home", urgent:false, note:"" });
@@ -1612,6 +1618,9 @@ export default function SummerApp({mode,T,onBack}) {
 
   const [isMobile,setIsMobile]=useState(()=>window.innerWidth<700);
   useEffect(()=>{const h=()=>setIsMobile(window.innerWidth<700); window.addEventListener("resize",h); return()=>window.removeEventListener("resize",h);},[]);
+
+  const { permission, requestPermission } = useNotifications();
+  const [showMenu, setShowMenu] = useState(false);;
 
   const [profile,setProfile]=useState(()=>{try{return localStorage.getItem("summer_profile")||"amen";}catch{return"amen";}});
   const switchProfile=p=>{setProfile(p);try{localStorage.setItem("summer_profile",p);}catch{}setPillar(p==="gloria"?"gloria_overview":"overview");};
@@ -3219,10 +3228,10 @@ export default function SummerApp({mode,T,onBack}) {
         {profile==="amen"&&pillar==="tracker"   && viewTracker}
         {profile==="amen"&&pillar==="overview"  && viewOverview}
         {profile==="amen"&&pillar==="goals"    && <GoalsView T={T} data={data} save={save} isMobile={isMobile}/>}
-        {profile==="amen"&&pillar==="review"   && <WeeklyReviewView T={T} data={data} save={save} genId={genId} TODAY={today}/>}
-        {profile==="amen"&&pillar==="jobs"     && <JobsView T={T} data={data} save={save} genId={genId} isMobile={isMobile}/>}
-        {profile==="amen"&&pillar==="archive"  && <ArchiveView T={T} data={data} save={save} genId={genId} TODAY={today}/>}
-        {profile==="amen"&&pillar==="shopping" && <ShoppingView T={T} data={data} save={save} genId={genId} userKey="amen"/>}
+        {profile==="amen"&&pillar==="review"   && <WeeklyReviewView T={T} data={data} save={save} TODAY={today}/>}
+        {profile==="amen"&&pillar==="jobs"     && <JobsView T={T} data={data} save={save} isMobile={isMobile}/>}
+        {profile==="amen"&&pillar==="archive"  && <ArchiveView T={T} data={data} save={save} TODAY={today}/>}
+        {profile==="amen"&&pillar==="shopping" && <ShoppingView T={T} data={data} save={save} userKey="amen"/>}
         {profile==="amen"&&pillar==="schedule"  && viewSchedule}
         {profile==="amen"&&pillar==="faith"     && viewFaith}
         {profile==="amen"&&pillar==="fitness"   && viewFitness}
@@ -3235,10 +3244,10 @@ export default function SummerApp({mode,T,onBack}) {
         {/* Gloria views */}
         {profile==="gloria"&&pillar==="gloria_overview"  && viewGloriaOverview}
         {profile==="gloria"&&pillar==="gloria_goals"    && <GoalsView T={T} data={data} save={save} isMobile={isMobile} userKey="gloria"/>}
-        {profile==="gloria"&&pillar==="gloria_review"   && <WeeklyReviewView T={T} data={data} save={save} genId={genId} TODAY={today} userKey="gloria"/>}
-        {profile==="gloria"&&pillar==="gloria_jobs"     && <JobsView T={T} data={data} save={save} genId={genId} isMobile={isMobile} userKey="gloria"/>}
-        {profile==="gloria"&&pillar==="gloria_archive"  && <ArchiveView T={T} data={data} save={save} genId={genId} TODAY={today} userKey="gloria"/>}
-        {profile==="gloria"&&pillar==="gloria_shopping" && <ShoppingView T={T} data={data} save={save} genId={genId} userKey="gloria"/>}
+        {profile==="gloria"&&pillar==="gloria_review"   && <WeeklyReviewView T={T} data={data} save={save} TODAY={today} userKey="gloria"/>}
+        {profile==="gloria"&&pillar==="gloria_jobs"     && <JobsView T={T} data={data} save={save} isMobile={isMobile} userKey="gloria"/>}
+        {profile==="gloria"&&pillar==="gloria_archive"  && <ArchiveView T={T} data={data} save={save} TODAY={today} userKey="gloria"/>}
+        {profile==="gloria"&&pillar==="gloria_shopping" && <ShoppingView T={T} data={data} save={save} userKey="gloria"/>}
         {profile==="gloria"&&pillar==="gloria_gym"      && viewGym}
         {profile==="gloria"&&pillar==="gloria_schools"  && viewSchools}
         {profile==="gloria"&&pillar==="gloria_time"     && <TimeView T={T}/>}
