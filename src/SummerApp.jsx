@@ -215,6 +215,10 @@ const TOTAL_WEEK_HRS = 168;
 
 const PILLARS = [
   {id:"overview",  label:"Home",     icon:"◉",  color:"#E8A838"},
+  {id:"goals",     label:"Goals",    icon:"🎯",  color:"#E8A838"},
+  {id:"review",    label:"Review",   icon:"📋",  color:"#20B2AA"},
+  {id:"jobs",      label:"Jobs",     icon:"💼",  color:"#3B9EDB"},
+  {id:"archive",   label:"Archive",  icon:"📦",  color:"#888"},
   {id:"schedule",  label:"Schedule", icon:"📅",  color:"#C8B030"},
   {id:"tracker",   label:"Tracker",  icon:"📊",  color:"#3B9EDB"},
   {id:"faith",     label:"Faith",    icon:"✦",  color:P.faith},
@@ -224,14 +228,22 @@ const PILLARS = [
   {id:"gym",       label:"Gym",      icon:"🏋",  color:"#E8704A"},
   {id:"schools",   label:"Schools",  icon:"🎓",  color:"#7B61FF"},
   {id:"time",      label:"Time",     icon:"⏱",  color:"#20B2AA"},
+  {id:"shopping",  label:"Shopping", icon:"🛒",  color:"#3DBF8A"},
   {id:"life",      label:"Life",     icon:"❤",  color:"#E84E8A"},
 ];
 const GLORIA_PILLARS = [
-  {id:"gloria_overview",label:"Overview",   icon:"◉", color:"#E84E8A"},
-  {id:"gloria_schedule",label:"Schedule",   icon:"📅", color:"#C8B030"},
-  {id:"gloria_faith",   label:"Faith",      icon:"✦", color:P.faith},
-  {id:"gloria_reading", label:"Reading",    icon:"◐", color:P.reading},
-  {id:"gloria_notes",   label:"Notes",      icon:"✎", color:"#9B6EE8"},
+  {id:"gloria_overview",  label:"Home",     icon:"◉",  color:"#E84E8A"},
+  {id:"gloria_goals",     label:"Goals",    icon:"🎯",  color:"#E84E8A"},
+  {id:"gloria_review",    label:"Review",   icon:"📋",  color:"#20B2AA"},
+  {id:"gloria_jobs",      label:"Jobs",     icon:"💼",  color:"#3B9EDB"},
+  {id:"gloria_archive",   label:"Archive",  icon:"📦",  color:"#888"},
+  {id:"gloria_schedule",  label:"Schedule", icon:"📅",  color:"#C8B030"},
+  {id:"gloria_faith",     label:"Faith",    icon:"✦",  color:P.faith},
+  {id:"gloria_notes",     label:"Notes",    icon:"✎",  color:"#9B6EE8"},
+  {id:"gloria_gym",       label:"Gym",      icon:"🏋",  color:"#E8704A"},
+  {id:"gloria_schools",   label:"Schools",  icon:"🎓",  color:"#7B61FF"},
+  {id:"gloria_shopping",  label:"Shopping", icon:"🛒",  color:"#3DBF8A"},
+  {id:"gloria_time",      label:"Time",     icon:"⏱",  color:"#20B2AA"},
 ];
 
 // Gloria's schedule (she is not doing deliveries — her own daily rhythm)
@@ -745,6 +757,795 @@ function TimeView({ T }) {
   );
 }
 
+
+
+// ── DECEMBER GOALS DATA ───────────────────────────────────────────────────────
+const DEC_GOALS = [
+  { id:"graduate",    label:"Graduate from Missouri State",           cat:"Academic",  color:"#9B6EE8" },
+  { id:"gpa4",        label:"Get an A in my class — 4.0 GPA",         cat:"Academic",  color:"#9B6EE8" },
+  { id:"schools3",    label:"3 school acceptances secured",           cat:"School",    color:"#7B61FF" },
+  { id:"opt",         label:"OPT application submitted",             cat:"Career",    color:"#3B9EDB" },
+  { id:"jobs3",       label:"3 job opportunities lined up",          cat:"Career",    color:"#3B9EDB" },
+  { id:"car60",       label:"Car paid off 60%",                      cat:"Finance",   color:"#E8A838" },
+  { id:"invest300",   label:"Investment account — $300 deposited",   cat:"Finance",   color:"#E8A838" },
+  { id:"schoolfees",  label:"School fees paid off",                  cat:"Finance",   color:"#E8A838" },
+  { id:"credit700",   label:"Credit score at 700",                   cat:"Finance",   color:"#E8A838" },
+  { id:"thesis",      label:"Thesis defended",                       cat:"Academic",  color:"#9B6EE8" },
+  { id:"church30",    label:"30 active Impact Fellowship members",   cat:"Faith",     color:"#C8B030" },
+  { id:"churchsite",  label:"Church website built",                  cat:"Faith",     color:"#C8B030" },
+  { id:"purity",      label:"Sexual purity maintained with Gloria",  cat:"Relation",  color:"#E84E8A" },
+  { id:"meetparents", label:"Met Gloria's parents",                  cat:"Relation",  color:"#E84E8A" },
+  { id:"debts",       label:"All personal debts cleared",            cat:"Finance",   color:"#E8A838" },
+];
+
+const PLAN_SECTIONS = [
+  {
+    id:"vision",  label:"My Vision of Success", icon:"🌟", color:"#E8A838",
+    items:[
+      "Served God and lived righteously — never left the faith",
+      "Making it without stealing — maintaining integrity",
+      "Had a family — loved my wife and children",
+      "Settled my parents and siblings",
+      "Fellowship with God — always growing and improving",
+      "Intentional about the people around me",
+      "Love people and made an impact everywhere I go",
+      "Used my resources for God's kingdom",
+    ]
+  },
+  {
+    id:"failure", label:"What Failure Looks Like", icon:"⚠️", color:"#E8704A",
+    items:[
+      "Left the faith",
+      "Broken home or family — divorce",
+      "Failure to reach my full capacity",
+      "Made money or had everything in life without God",
+    ]
+  },
+  {
+    id:"workplace", label:"Serving God in My Workplace", icon:"🏫", color:"#3B9EDB",
+    items:[
+      "Be intentional about supporting students in class",
+      "Identify struggling students early — catch them by week 3",
+      "Start the Red List from week 3",
+      "Work on getting a pass rate of 80%",
+      "Work diligently and wholeheartedly — nothing less than my all",
+    ]
+  },
+  {
+    id:"church2", label:"Church Goals Before I Leave", icon:"✝️", color:"#C8B030",
+    items:[
+      "Work with Impact Fellowship to secure 30 active members",
+      "Work with the church to do more community-based outreaches",
+      "Finish the church website",
+      "Work on a plan to get new members and retain existing ones",
+      "Outreach once a month — dedicate one Saturday",
+      "Collaborate with other churches — events with Ghanaian church",
+    ]
+  },
+  {
+    id:"research", label:"Things I Need to Research", icon:"🔍", color:"#7B61FF",
+    items:[
+      "Certifications needed to get a teaching job with a masters in the US",
+      "Qualifications needed for a data analytics job",
+      "What I would need to get entry level / clerk jobs",
+      "How to get funding for my thesis",
+      "How to get grants for my application",
+      "OPT application process — who to email and talk to",
+    ]
+  },
+];
+
+// ── GoalsView ─────────────────────────────────────────────────────────────────
+function GoalsView({ T, data, save, isMobile, userKey="amen" }) {
+  const gKey    = `decGoals_${userKey}`;
+  const nKey    = `goalNotes_${userKey}`;
+  const goals   = data[gKey] || {};
+  const notes   = data[nKey] || {};
+  const cs = (ex={}) => ({ background:T.surface, border:`1px solid ${T.border}`, borderRadius:14, boxShadow:"0 2px 10px rgba(0,0,0,0.06)", ...ex });
+
+  const done    = DEC_GOALS.filter(g => goals[g.id]).length;
+  const total   = DEC_GOALS.length;
+  const pct     = Math.round((done/total)*100);
+
+  const cats = [...new Set(DEC_GOALS.map(g=>g.cat))];
+
+  function toggle(id) {
+    save(p=>({...p, [gKey]:{...(p[gKey]||{}), [id]:!goals[id]}}));
+  }
+  function setNote(id, val) {
+    save(p=>({...p, [nKey]:{...(p[nKey]||{}), [id]:val}}));
+  }
+
+  return (
+    <div style={{padding:"16px 16px 80px", fontFamily:"'DM Sans',sans-serif"}}>
+      {/* Header */}
+      <div style={{marginBottom:20}}>
+        <div style={{fontFamily:"'DM Serif Display',serif", fontSize:26, color:"#E8A838", marginBottom:4}}>🎯 December Goals</div>
+        <div style={{fontSize:13, color:T.textSub}}>Your targets before you graduate. Review every Sunday.</div>
+      </div>
+
+      {/* Overall progress */}
+      <div style={{...cs({padding:"16px 18px", marginBottom:16, borderTop:"4px solid #E8A838"})}}>
+        <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10}}>
+          <div style={{fontSize:14, fontWeight:700, color:T.text}}>Overall Progress</div>
+          <div style={{fontSize:24, fontWeight:800, color:"#E8A838"}}>{pct}%</div>
+        </div>
+        <div style={{height:10, background:T.inputBg, borderRadius:10, overflow:"hidden", marginBottom:8}}>
+          <div style={{height:"100%", width:`${pct}%`, background:"linear-gradient(90deg,#E8A838,#C8B030)", borderRadius:10, transition:"width 0.4s"}}/>
+        </div>
+        <div style={{fontSize:12, color:T.textMuted}}>{done} of {total} goals completed</div>
+      </div>
+
+      {/* Goals by category */}
+      {cats.map(cat=>{
+        const catGoals = DEC_GOALS.filter(g=>g.cat===cat);
+        const catDone  = catGoals.filter(g=>goals[g.id]).length;
+        const catColor = catGoals[0].color;
+        return (
+          <div key={cat} style={{marginBottom:20}}>
+            <div style={{display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:8}}>
+              <div style={{fontSize:12, fontWeight:700, color:catColor, textTransform:"uppercase", letterSpacing:"0.08em"}}>{cat}</div>
+              <div style={{fontSize:12, color:T.textMuted}}>{catDone}/{catGoals.length}</div>
+            </div>
+            <div style={{display:"flex", flexDirection:"column", gap:8}}>
+              {catGoals.map(goal=>{
+                const done = goals[goal.id];
+                return (
+                  <div key={goal.id} style={{...cs({borderLeft:`4px solid ${done?"#3DBF8A":goal.color}`, padding:"12px 14px", opacity:done?0.7:1})}}>
+                    <div style={{display:"flex", alignItems:"center", gap:10}}>
+                      <div onClick={()=>toggle(goal.id)}
+                        style={{width:22, height:22, borderRadius:6, border:`2px solid ${done?"#3DBF8A":goal.color}`, background:done?"#3DBF8A":"transparent", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", flexShrink:0, transition:"all 0.15s"}}>
+                        {done&&<span style={{color:"#fff", fontSize:12, fontWeight:700}}>✓</span>}
+                      </div>
+                      <div style={{flex:1}}>
+                        <div style={{fontSize:13, fontWeight:600, color:T.text, textDecoration:done?"line-through":"none"}}>{goal.label}</div>
+                      </div>
+                    </div>
+                    {/* Notes field */}
+                    <input
+                      style={{marginTop:8, width:"100%", background:T.inputBg, border:`1px solid ${T.border}`, borderRadius:8, padding:"5px 10px", color:T.textSub, fontFamily:"'DM Sans',sans-serif", fontSize:12, outline:"none", boxSizing:"border-box"}}
+                      placeholder="Progress note..."
+                      value={notes[goal.id]||""}
+                      onChange={e=>setNote(goal.id, e.target.value)}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ── JobsView ──────────────────────────────────────────────────────────────────
+function JobsView({ T, data, save, genId, isMobile, userKey="amen" }) {
+  const jKey = `jobApps_${userKey}`;
+  const jobs = data[jKey] || [];
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm]         = useState({ company:"", role:"", platform:"", date:"", status:"Applied", notes:"" });
+  const [filter, setFilter]     = useState("All");
+
+  const cs = (ex={}) => ({ background:T.surface, border:`1px solid ${T.border}`, borderRadius:14, ...ex });
+  const inp = { background:T.inputBg, border:`1px solid ${T.border}`, borderRadius:8, padding:"8px 10px", color:T.text, fontFamily:"'DM Sans',sans-serif", fontSize:13, outline:"none", width:"100%", boxSizing:"border-box" };
+
+  const STATUSES = ["Applied","Interview","Offer","Rejected","Following up"];
+  const STATUS_COLORS = { Applied:"#3B9EDB", Interview:"#E8A838", Offer:"#3DBF8A", Rejected:"#E8704A", "Following up":"#9B6EE8" };
+
+  function addJob() {
+    if (!form.company || !form.role) return;
+    const newJob = { ...form, id:genId(), createdAt:new Date().toISOString().slice(0,10) };
+    save(p=>({...p, [jKey]:[...(p[jKey]||[]), newJob]}));
+    setForm({ company:"", role:"", platform:"", date:"", status:"Applied", notes:"" });
+    setShowForm(false);
+  }
+  function updateStatus(id, status) {
+    save(p=>({...p, [jKey]:(p[jKey]||[]).map(j=>j.id===id?{...j,status}:j)}));
+  }
+  function deleteJob(id) {
+    save(p=>({...p, [jKey]:(p[jKey]||[]).filter(j=>j.id!==id)}));
+  }
+
+  const filtered = filter==="All" ? jobs : jobs.filter(j=>j.status===filter);
+  const counts   = STATUSES.reduce((acc,s)=>({...acc,[s]:jobs.filter(j=>j.status===s).length}), {});
+
+  return (
+    <div style={{padding:"16px 16px 80px", fontFamily:"'DM Sans',sans-serif"}}>
+      <div style={{marginBottom:16}}>
+        <div style={{fontFamily:"'DM Serif Display',serif", fontSize:26, color:"#3B9EDB", marginBottom:4}}>💼 Job Applications</div>
+        <div style={{fontSize:13, color:T.textSub}}>Track every application. Target: 3 opportunities by December.</div>
+      </div>
+
+      {/* Stats */}
+      <div style={{display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(90px,1fr))", gap:8, marginBottom:14}}>
+        {[["Total",jobs.length,"#3B9EDB"],["Interviews",counts.Interview||0,"#E8A838"],["Offers",counts.Offer||0,"#3DBF8A"],["Rejected",counts.Rejected||0,"#E8704A"]].map(([l,v,col])=>(
+          <div key={l} style={{...cs({padding:"10px 12px", textAlign:"center"})}}>
+            <div style={{fontSize:22, fontWeight:800, color:col}}>{v}</div>
+            <div style={{fontSize:10, fontWeight:700, color:T.textMuted, textTransform:"uppercase"}}>{l}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Target progress */}
+      <div style={{...cs({padding:"12px 16px", marginBottom:14, borderLeft:"4px solid #3DBF8A"})}}>
+        <div style={{display:"flex", justifyContent:"space-between", marginBottom:6}}>
+          <span style={{fontSize:13, fontWeight:600, color:T.text}}>Offers toward target (3)</span>
+          <span style={{fontSize:13, fontWeight:800, color:"#3DBF8A"}}>{Math.min(counts.Offer||0,3)}/3</span>
+        </div>
+        <div style={{height:6, background:T.inputBg, borderRadius:6}}>
+          <div style={{height:"100%", width:`${Math.min(((counts.Offer||0)/3)*100,100)}%`, background:"#3DBF8A", borderRadius:6}}/>
+        </div>
+      </div>
+
+      {/* Filter pills */}
+      <div style={{display:"flex", gap:6, flexWrap:"wrap", marginBottom:14}}>
+        {["All",...STATUSES].map(s=>(
+          <button key={s} onClick={()=>setFilter(s)}
+            style={{padding:"4px 12px", borderRadius:20, border:"none", cursor:"pointer", fontFamily:"'DM Sans',sans-serif", fontSize:12, fontWeight:filter===s?700:400, background:filter===s?(STATUS_COLORS[s]||"#3B9EDB"):"transparent", color:filter===s?"#fff":T.textSub, outline:filter===s?"none":`1px solid ${T.border}`}}>
+            {s} {s!=="All"&&counts[s]?`(${counts[s]})`:""}
+          </button>
+        ))}
+      </div>
+
+      {/* Add button */}
+      <button onClick={()=>setShowForm(!showForm)}
+        style={{width:"100%", padding:"11px", borderRadius:11, border:"none", background:"#3B9EDB", color:"#fff", cursor:"pointer", fontFamily:"'DM Serif Display',serif", fontSize:15, fontWeight:700, marginBottom:14}}>
+        {showForm?"✕ Cancel":"+ Log New Application"}
+      </button>
+
+      {/* Add form */}
+      {showForm&&(
+        <div style={{...cs({padding:"16px", marginBottom:14})}}>
+          {[["company","Company","e.g. Cerner"],["role","Role","e.g. Data Analyst"],["platform","Platform","LinkedIn / Handshake / Indeed"],["date","Date Applied",""]].map(([k,l,ph])=>(
+            <div key={k} style={{marginBottom:10}}>
+              <div style={{fontSize:11, fontWeight:700, color:T.textMuted, textTransform:"uppercase", letterSpacing:"0.07em", marginBottom:4}}>{l}</div>
+              <input type={k==="date"?"date":"text"} style={inp} placeholder={ph} value={form[k]} onChange={e=>setForm(f=>({...f,[k]:e.target.value}))}/>
+            </div>
+          ))}
+          <div style={{marginBottom:10}}>
+            <div style={{fontSize:11, fontWeight:700, color:T.textMuted, textTransform:"uppercase", letterSpacing:"0.07em", marginBottom:4}}>Status</div>
+            <div style={{display:"flex", gap:6, flexWrap:"wrap"}}>
+              {STATUSES.map(s=>(
+                <button key={s} onClick={()=>setForm(f=>({...f,status:s}))}
+                  style={{padding:"5px 12px", borderRadius:20, border:"none", cursor:"pointer", fontFamily:"'DM Sans',sans-serif", fontSize:12, background:form.status===s?STATUS_COLORS[s]:"transparent", color:form.status===s?"#fff":T.textSub, outline:form.status===s?"none":`1px solid ${T.border}`}}>
+                  {s}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div style={{marginBottom:12}}>
+            <div style={{fontSize:11, fontWeight:700, color:T.textMuted, textTransform:"uppercase", letterSpacing:"0.07em", marginBottom:4}}>Notes</div>
+            <input style={inp} placeholder="Any notes..." value={form.notes} onChange={e=>setForm(f=>({...f,notes:e.target.value}))}/>
+          </div>
+          <button onClick={addJob} style={{width:"100%", padding:"11px", borderRadius:10, border:"none", background:"#3DBF8A", color:"#fff", cursor:"pointer", fontFamily:"'DM Sans',sans-serif", fontSize:14, fontWeight:700}}>
+            Save Application
+          </button>
+        </div>
+      )}
+
+      {/* Job list */}
+      <div style={{display:"flex", flexDirection:"column", gap:8}}>
+        {filtered.length===0&&(
+          <div style={{textAlign:"center", padding:"30px", color:T.textMuted, fontSize:13}}>
+            {filter==="All"?"No applications yet — start logging!":` No ${filter} applications`}
+          </div>
+        )}
+        {filtered.map(job=>(
+          <div key={job.id} style={{...cs({padding:"13px 14px", borderLeft:`4px solid ${STATUS_COLORS[job.status]||"#888"}`})}}>
+            <div style={{display:"flex", alignItems:"flex-start", justifyContent:"space-between", gap:8}}>
+              <div style={{flex:1, minWidth:0}}>
+                <div style={{fontSize:14, fontWeight:700, color:T.text}}>{job.company}</div>
+                <div style={{fontSize:12, color:T.textSub, marginTop:1}}>{job.role}</div>
+                <div style={{display:"flex", gap:8, marginTop:6, flexWrap:"wrap"}}>
+                  <span style={{fontSize:10, padding:"2px 8px", borderRadius:10, background:STATUS_COLORS[job.status]+"22", color:STATUS_COLORS[job.status], fontWeight:700}}>{job.status}</span>
+                  {job.platform&&<span style={{fontSize:10, color:T.textMuted}}>{job.platform}</span>}
+                  {job.date&&<span style={{fontSize:10, color:T.textMuted}}>{job.date}</span>}
+                </div>
+                {job.notes&&<div style={{fontSize:12, color:T.textMuted, marginTop:5, fontStyle:"italic"}}>{job.notes}</div>}
+              </div>
+              <div style={{display:"flex", flexDirection:"column", gap:4, flexShrink:0}}>
+                <select value={job.status} onChange={e=>updateStatus(job.id,e.target.value)}
+                  style={{...inp, width:"auto", fontSize:11, padding:"4px 6px"}}>
+                  {STATUSES.map(s=><option key={s}>{s}</option>)}
+                </select>
+                <button onClick={()=>deleteJob(job.id)} style={{padding:"3px 8px", borderRadius:6, border:"none", background:"#E8704A22", color:"#E8704A", cursor:"pointer", fontSize:11}}>Remove</button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── WeeklyReviewView ──────────────────────────────────────────────────────────
+function WeeklyReviewView({ T, data, save, genId, TODAY, userKey="amen" }) {
+  const weekKey  = (() => {
+    const d = new Date(); const day = d.getDay();
+    const diff = d.getDate()-day+(day===0?-6:1);
+    return new Date(d.setDate(diff)).toISOString().slice(0,10);
+  })();
+  const rvKey  = `weeklyReviews_${userKey}`;
+  const prKey  = `personalProjects_${userKey}`;
+  const review   = (data[rvKey]||{})[weekKey] || {};
+  const projects = data[prKey] || [];
+  const [showProj, setShowProj] = useState(false);
+  const [projForm, setProjForm] = useState({ name:"", hrs:"", notes:"" });
+  const [activePlan, setActivePlan] = useState(null);
+
+  const cs = (ex={}) => ({ background:T.surface, border:`1px solid ${T.border}`, borderRadius:14, ...ex });
+  const inp = { background:T.inputBg, border:`1px solid ${T.border}`, borderRadius:8, padding:"8px 10px", color:T.text, fontFamily:"'DM Sans',sans-serif", fontSize:13, outline:"none", width:"100%", boxSizing:"border-box" };
+  const lbl = { fontSize:11, fontWeight:700, color:T.textMuted, textTransform:"uppercase", letterSpacing:"0.07em", display:"block", marginBottom:4 };
+
+  function setR(field, val) {
+    save(p=>({...p, [rvKey]:{...(p[rvKey]||{}), [weekKey]:{...review, [field]:val}}}));
+  }
+
+  function logProject() {
+    if (!projForm.name) return;
+    const entry = { ...projForm, id:genId(), date:TODAY, week:weekKey };
+    save(p=>({...p, [prKey]:[...(p[prKey]||[]), entry]}));
+    setProjForm({ name:"", hrs:"", notes:"" });
+    setShowProj(false);
+  }
+
+  const REVIEW_QUESTIONS = [
+    { key:"godThisWeek",    label:"Did I show up to God this week?",               type:"yesno"   },
+    { key:"futureThisWeek", label:"Did I move toward my future 4+ days?",          type:"yesno"   },
+    { key:"gloriaWell",     label:"Did I love Gloria well this week?",              type:"yesno"   },
+    { key:"thesisHours",    label:"How many hours did I spend on thesis?",          type:"number"  },
+    { key:"sparkEarnings",  label:"Total Spark earnings this week ($)",             type:"number"  },
+    { key:"appsSubmitted",  label:"How many job/school applications submitted?",    type:"number"  },
+    { key:"gymSessions",    label:"How many gym/cardio sessions completed?",        type:"number"  },
+    { key:"purityHeld",     label:"Did I maintain purity with Gloria this week?",   type:"yesno"   },
+    { key:"wins",           label:"What were my biggest wins this week?",           type:"text"    },
+    { key:"struggles",      label:"What did I struggle with?",                      type:"text"    },
+    { key:"nextWeekFocus",  label:"What is my #1 focus for next week?",             type:"text"    },
+    { key:"characterCheck", label:"Any character slips I need to address?",         type:"text"    },
+  ];
+
+  const yesnoScore = REVIEW_QUESTIONS.filter(q=>q.type==="yesno"&&review[q.key]==="yes").length;
+  const yesnoTotal = REVIEW_QUESTIONS.filter(q=>q.type==="yesno").length;
+
+  return (
+    <div style={{padding:"16px 16px 80px", fontFamily:"'DM Sans',sans-serif"}}>
+      <div style={{marginBottom:16}}>
+        <div style={{fontFamily:"'DM Serif Display',serif", fontSize:26, color:"#20B2AA", marginBottom:4}}>📋 Weekly Review</div>
+        <div style={{fontSize:13, color:T.textSub}}>Week of {weekKey} — complete every Sunday evening.</div>
+      </div>
+
+      {/* Week score */}
+      <div style={{...cs({padding:"14px 16px", marginBottom:14, borderTop:"4px solid #20B2AA"})}}>
+        <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8}}>
+          <div style={{fontSize:14, fontWeight:700, color:T.text}}>Week Score</div>
+          <div style={{fontSize:24, fontWeight:800, color:"#20B2AA"}}>{yesnoScore}/{yesnoTotal}</div>
+        </div>
+        <div style={{height:8, background:T.inputBg, borderRadius:8}}>
+          <div style={{height:"100%", width:`${(yesnoScore/yesnoTotal)*100}%`, background:"linear-gradient(90deg,#20B2AA,#3DBF8A)", borderRadius:8, transition:"width 0.4s"}}/>
+        </div>
+        <div style={{fontSize:11, color:T.textMuted, marginTop:4}}>
+          {yesnoScore===yesnoTotal?"🔥 Perfect week!":yesnoScore>=3?"✓ Solid week — keep going":"⚠ Needs attention — reset and go again"}
+        </div>
+      </div>
+
+      {/* Review questions */}
+      <div style={{display:"flex", flexDirection:"column", gap:10, marginBottom:20}}>
+        {REVIEW_QUESTIONS.map(q=>(
+          <div key={q.key} style={{...cs({padding:"12px 14px"})}}>
+            <label style={lbl}>{q.label}</label>
+            {q.type==="yesno"&&(
+              <div style={{display:"flex", gap:8}}>
+                {["yes","no"].map(v=>(
+                  <button key={v} onClick={()=>setR(q.key,v)}
+                    style={{flex:1, padding:"8px", borderRadius:9, border:"none", cursor:"pointer", fontFamily:"'DM Sans',sans-serif", fontSize:13, fontWeight:700, background:review[q.key]===v?(v==="yes"?"#3DBF8A":"#E8704A"):"transparent", color:review[q.key]===v?"#fff":T.textSub, outline:review[q.key]===v?"none":`1px solid ${T.border}`}}>
+                    {v==="yes"?"✓ Yes":"✗ No"}
+                  </button>
+                ))}
+              </div>
+            )}
+            {q.type==="number"&&(
+              <input type="number" style={inp} placeholder="0" value={review[q.key]||""} onChange={e=>setR(q.key,e.target.value)}/>
+            )}
+            {q.type==="text"&&(
+              <textarea style={{...inp, minHeight:60, resize:"vertical"}} placeholder="Write here..." value={review[q.key]||""} onChange={e=>setR(q.key,e.target.value)}/>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Personal projects this week */}
+      <div style={{marginBottom:20}}>
+        <div style={{fontFamily:"'DM Serif Display',serif", fontSize:18, color:T.text, marginBottom:10}}>🛠 Personal Projects This Week</div>
+        <button onClick={()=>setShowProj(!showProj)}
+          style={{width:"100%", padding:"10px", borderRadius:10, border:"none", background:"#9B6EE8", color:"#fff", cursor:"pointer", fontFamily:"'DM Sans',sans-serif", fontSize:13, fontWeight:700, marginBottom:10}}>
+          {showProj?"✕ Cancel":"+ Log Project Work"}
+        </button>
+        {showProj&&(
+          <div style={{...cs({padding:"14px", marginBottom:10})}}>
+            {[["name","Project name","e.g. Church website"],["hrs","Hours spent","e.g. 1.5"],["notes","What did you work on?",""]].map(([k,l,ph])=>(
+              <div key={k} style={{marginBottom:10}}>
+                <label style={lbl}>{l}</label>
+                <input style={inp} placeholder={ph} value={projForm[k]} onChange={e=>setProjForm(f=>({...f,[k]:e.target.value}))}/>
+              </div>
+            ))}
+            <button onClick={logProject} style={{width:"100%", padding:"10px", borderRadius:9, border:"none", background:"#3DBF8A", color:"#fff", cursor:"pointer", fontFamily:"'DM Sans',sans-serif", fontSize:14, fontWeight:700}}>Save</button>
+          </div>
+        )}
+        {projects.filter(p=>p.week===weekKey).map(p=>(
+          <div key={p.id} style={{...cs({padding:"11px 14px", marginBottom:6, borderLeft:"4px solid #9B6EE8"})}}>
+            <div style={{fontSize:13, fontWeight:700, color:T.text}}>{p.name}</div>
+            <div style={{fontSize:12, color:"#9B6EE8", marginTop:2}}>{p.hrs} hrs — {p.date}</div>
+            {p.notes&&<div style={{fontSize:12, color:T.textSub, marginTop:3}}>{p.notes}</div>}
+          </div>
+        ))}
+        {projects.filter(p=>p.week===weekKey).length===0&&<div style={{fontSize:12, color:T.textMuted, textAlign:"center", padding:"10px"}}>No project work logged this week yet</div>}
+      </div>
+
+      {/* Plan sections */}
+      <div style={{fontFamily:"'DM Serif Display',serif", fontSize:18, color:T.text, marginBottom:10}}>📄 My Plan — Review Sections</div>
+      {PLAN_SECTIONS.map(section=>(
+        <div key={section.id} style={{marginBottom:8}}>
+          <button onClick={()=>setActivePlan(activePlan===section.id?null:section.id)}
+            style={{...cs({padding:"13px 16px", width:"100%", border:"none", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"space-between", borderLeft:`4px solid ${section.color}`}), background:activePlan===section.id?`${section.color}11`:T.surface}}>
+            <div style={{display:"flex", alignItems:"center", gap:8}}>
+              <span style={{fontSize:18}}>{section.icon}</span>
+              <span style={{fontSize:13, fontWeight:700, color:T.text, fontFamily:"'DM Sans',sans-serif"}}>{section.label}</span>
+            </div>
+            <span style={{color:T.textMuted, fontSize:12}}>{activePlan===section.id?"▲":"▼"}</span>
+          </button>
+          {activePlan===section.id&&(
+            <div style={{...cs({borderLeft:`4px solid ${section.color}`, borderTop:"none", borderTopLeftRadius:0, borderTopRightRadius:0, padding:"12px 16px"})}}>
+              {section.items.map((item,i)=>(
+                <div key={i} style={{display:"flex", gap:8, padding:"6px 0", borderBottom:i<section.items.length-1?`1px solid ${T.border}`:"none"}}>
+                  <span style={{color:section.color, flexShrink:0, marginTop:1}}>→</span>
+                  <span style={{fontSize:13, color:T.text, lineHeight:1.6}}>{item}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── ArchiveView ───────────────────────────────────────────────────────────────
+function ArchiveView({ T, data, save, genId, TODAY, userKey="amen" }) {
+  const arKey     = `archivedTasks_${userKey}`;
+  const acKey     = `activeTasks_${userKey}`;
+  const archived  = data[arKey] || [];
+  const active    = data[acKey] || [];
+  const [tab,     setTab]     = useState("active");   // active | archived | add
+  const [search,  setSearch]  = useState("");
+  const [form,    setForm]    = useState({ title:"", section:"school", priority:"High", dueDate:"", notes:"", type:"todo" });
+
+  const cs  = (ex={}) => ({ background:T.surface, border:`1px solid ${T.border}`, borderRadius:14, ...ex });
+  const inp = { background:T.inputBg, border:`1px solid ${T.border}`, borderRadius:8, padding:"8px 10px", color:T.text, fontFamily:"'DM Sans',sans-serif", fontSize:13, outline:"none", width:"100%", boxSizing:"border-box" };
+  const lbl = { fontSize:11, fontWeight:700, color:T.textMuted, textTransform:"uppercase", letterSpacing:"0.07em", display:"block", marginBottom:4 };
+
+  const SECTIONS  = ["school","faith","work","finance","health","social","relation","growth","home","church"];
+  const TYPES     = ["todo","daily","weekly","monthly","goal"];
+  const PRIS      = ["Urgent","High","Medium","Low"];
+  const PRI_COLOR = { Urgent:"#E8704A", High:"#E8A838", Medium:"#3B9EDB", Low:"#888" };
+
+  function archiveTask(id) {
+    const task = active.find(t=>t.id===id);
+    if (!task) return;
+    save(p=>({
+      ...p,
+      [acKey]:  (p[acKey]||[]).filter(t=>t.id!==id),
+      [arKey]:[...(p[arKey]||[]), {...task, archivedAt:TODAY}],
+    }));
+  }
+  function restoreTask(id) {
+    const task = archived.find(t=>t.id===id);
+    if (!task) return;
+    save(p=>({
+      ...p,
+      [arKey]:(p[arKey]||[]).filter(t=>t.id!==id),
+      [acKey]:  [...(p[acKey]||[]), {...task, archivedAt:undefined}],
+    }));
+  }
+  function deleteForever(id) {
+    save(p=>({...p, [arKey]:(p[arKey]||[]).filter(t=>t.id!==id)}));
+  }
+  function addTask() {
+    if (!form.title) return;
+    const newTask = { ...form, id:genId(), createdAt:TODAY, assignee:"A" };
+    save(p=>({...p, [acKey]:[...(p[acKey]||[]), newTask]}));
+    setForm({ title:"", section:"school", priority:"High", dueDate:"", notes:"", type:"todo" });
+    setTab("active");
+  }
+
+  const filteredActive   = active.filter(t=>(t.title||"").toLowerCase().includes(search.toLowerCase()));
+  const filteredArchived = archived.filter(t=>(t.title||"").toLowerCase().includes(search.toLowerCase()));
+
+  const TaskRow = ({ task, isArchived }) => (
+    <div style={{...cs({padding:"11px 14px", marginBottom:6, borderLeft:`4px solid ${PRI_COLOR[task.priority]||"#888"}`})}}>
+      <div style={{display:"flex", alignItems:"flex-start", justifyContent:"space-between", gap:8}}>
+        <div style={{flex:1, minWidth:0}}>
+          <div style={{fontSize:13, fontWeight:600, color:T.text}}>{task.title}</div>
+          <div style={{display:"flex", gap:8, marginTop:4, flexWrap:"wrap"}}>
+            {task.priority&&<span style={{fontSize:10, padding:"1px 6px", borderRadius:8, background:PRI_COLOR[task.priority]+"22", color:PRI_COLOR[task.priority], fontWeight:700}}>{task.priority}</span>}
+            {task.section&&<span style={{fontSize:10, color:T.textMuted}}>@{task.section}</span>}
+            {task.dueDate&&<span style={{fontSize:10, color:T.textMuted}}>📅 {task.dueDate}</span>}
+            {task.type&&task.type!=="todo"&&<span style={{fontSize:10, color:"#9B6EE8"}}>↺ {task.type}</span>}
+          </div>
+          {isArchived&&task.archivedAt&&<div style={{fontSize:10, color:T.textMuted, marginTop:3}}>Archived {task.archivedAt}</div>}
+        </div>
+        <div style={{display:"flex", gap:5, flexShrink:0}}>
+          {isArchived?(
+            <>
+              <button onClick={()=>restoreTask(task.id)} style={{padding:"4px 10px", borderRadius:7, border:"none", background:"#3DBF8A22", color:"#3DBF8A", cursor:"pointer", fontSize:11, fontWeight:700}}>Restore</button>
+              <button onClick={()=>deleteForever(task.id)} style={{padding:"4px 8px", borderRadius:7, border:"none", background:"#E8704A22", color:"#E8704A", cursor:"pointer", fontSize:11}}>✕</button>
+            </>
+          ):(
+            <button onClick={()=>archiveTask(task.id)} style={{padding:"4px 10px", borderRadius:7, border:"none", background:T.inputBg, color:T.textMuted, cursor:"pointer", fontSize:11}}>Archive</button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+
+  return (
+    <div style={{padding:"16px 16px 80px", fontFamily:"'DM Sans',sans-serif"}}>
+      <div style={{marginBottom:16}}>
+        <div style={{fontFamily:"'DM Serif Display',serif", fontSize:26, color:"#888", marginBottom:4}}>📦 Task Archive</div>
+        <div style={{fontSize:13, color:T.textSub}}>Manage, archive, restore, and add tasks.</div>
+      </div>
+
+      {/* Stats */}
+      <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginBottom:14}}>
+        {[[active.length,"Active","#3DBF8A"],[archived.length,"Archived","#888"]].map(([v,l,c])=>(
+          <div key={l} style={{...cs({padding:"12px", textAlign:"center"})}}>
+            <div style={{fontSize:24, fontWeight:800, color:c}}>{v}</div>
+            <div style={{fontSize:11, fontWeight:700, color:T.textMuted, textTransform:"uppercase"}}>{l}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Tab nav */}
+      <div style={{display:"flex", gap:2, background:T.inputBg, borderRadius:10, padding:3, marginBottom:14}}>
+        {[["active","✅ Active"],["archived","📦 Archived"],["add","+ New Task"]].map(([v,l])=>(
+          <button key={v} onClick={()=>setTab(v)}
+            style={{flex:1, padding:"8px 6px", borderRadius:8, border:"none", cursor:"pointer", fontFamily:"'DM Sans',sans-serif", fontSize:12, fontWeight:tab===v?700:400, background:tab===v?"#3B9EDB":"transparent", color:tab===v?"#fff":T.textSub}}>
+            {l}
+          </button>
+        ))}
+      </div>
+
+      {/* Search */}
+      {tab!=="add"&&(
+        <input style={{...inp, marginBottom:12}} placeholder="Search tasks..." value={search} onChange={e=>setSearch(e.target.value)}/>
+      )}
+
+      {/* Active tasks */}
+      {tab==="active"&&(
+        <div>
+          {filteredActive.length===0?<div style={{textAlign:"center",padding:"20px",color:T.textMuted,fontSize:13}}>No active tasks — add some below</div>
+          :filteredActive.map(t=><TaskRow key={t.id} task={t} isArchived={false}/>)}
+        </div>
+      )}
+
+      {/* Archived tasks */}
+      {tab==="archived"&&(
+        <div>
+          {filteredArchived.length===0?<div style={{textAlign:"center",padding:"20px",color:T.textMuted,fontSize:13}}>No archived tasks</div>
+          :filteredArchived.map(t=><TaskRow key={t.id} task={t} isArchived={true}/>)}
+        </div>
+      )}
+
+      {/* Add new task */}
+      {tab==="add"&&(
+        <div style={{...cs({padding:"16px"})}}>
+          <div style={{marginBottom:12}}>
+            <label style={lbl}>Task title</label>
+            <input style={inp} placeholder="What needs to get done?" value={form.title} onChange={e=>setForm(f=>({...f,title:e.target.value}))}/>
+          </div>
+          <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:12}}>
+            <div>
+              <label style={lbl}>Section</label>
+              <select style={inp} value={form.section} onChange={e=>setForm(f=>({...f,section:e.target.value}))}>
+                {SECTIONS.map(s=><option key={s} value={s}>@{s}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={lbl}>Priority</label>
+              <select style={inp} value={form.priority} onChange={e=>setForm(f=>({...f,priority:e.target.value}))}>
+                {PRIS.map(p=><option key={p}>{p}</option>)}
+              </select>
+            </div>
+          </div>
+          <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:12}}>
+            <div>
+              <label style={lbl}>Type</label>
+              <select style={inp} value={form.type} onChange={e=>setForm(f=>({...f,type:e.target.value}))}>
+                {TYPES.map(t=><option key={t}>{t}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={lbl}>Due date</label>
+              <input type="date" style={inp} value={form.dueDate} onChange={e=>setForm(f=>({...f,dueDate:e.target.value}))}/>
+            </div>
+          </div>
+          <div style={{marginBottom:14}}>
+            <label style={lbl}>Notes</label>
+            <textarea style={{...inp, minHeight:60, resize:"vertical"}} placeholder="Any context..." value={form.notes} onChange={e=>setForm(f=>({...f,notes:e.target.value}))}/>
+          </div>
+          <button onClick={addTask} style={{width:"100%", padding:"12px", borderRadius:11, border:"none", background:"#3DBF8A", color:"#fff", cursor:"pointer", fontFamily:"'DM Serif Display',serif", fontSize:16, fontWeight:700}}>
+            Add Task
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+
+// ── ShoppingView ──────────────────────────────────────────────────────────────
+function ShoppingView({ T, data, save, genId, userKey="amen" }) {
+  const sKey   = `shoppingList_${userKey}`;
+  const items  = data[sKey] || [];
+  const [form, setForm]   = useState({ name:"", qty:"1", category:"Home", urgent:false, note:"" });
+  const [showForm, setShowForm] = useState(false);
+  const [filter, setFilter]    = useState("All");
+
+  const CATS = ["Home","Clothing","Food","Personal","Tech","Gift","Other"];
+  const CAT_ICONS = { Home:"🏠", Clothing:"👔", Food:"🍽", Personal:"🧴", Tech:"📱", Gift:"🎁", Other:"🛍" };
+  const CAT_COLOR = { Home:"#3B9EDB", Clothing:"#9B6EE8", Food:"#3DBF8A", Personal:"#E84E8A", Tech:"#E8A838", Gift:"#E8704A", Other:"#888" };
+
+  const cs  = (ex={}) => ({ background:T.surface, border:`1px solid ${T.border}`, borderRadius:14, ...ex });
+  const inp = { background:T.inputBg, border:`1px solid ${T.border}`, borderRadius:8, padding:"8px 10px", color:T.text, fontFamily:"'DM Sans',sans-serif", fontSize:13, outline:"none", width:"100%", boxSizing:"border-box" };
+  const lbl = { fontSize:11, fontWeight:700, color:T.textMuted, textTransform:"uppercase", letterSpacing:"0.07em", display:"block", marginBottom:4 };
+
+  function addItem() {
+    if (!form.name.trim()) return;
+    const item = { ...form, id:genId(), bought:false, addedAt:new Date().toISOString().slice(0,10) };
+    save(p=>({...p, [sKey]:[...(p[sKey]||[]), item]}));
+    setForm({ name:"", qty:"1", category:"Home", urgent:false, note:"" });
+    setShowForm(false);
+  }
+  function toggleBought(id) {
+    save(p=>({...p, [sKey]:(p[sKey]||[]).map(i=>i.id===id?{...i,bought:!i.bought}:i)}));
+  }
+  function deleteItem(id) {
+    save(p=>({...p, [sKey]:(p[sKey]||[]).filter(i=>i.id!==id)}));
+  }
+  function clearBought() {
+    save(p=>({...p, [sKey]:(p[sKey]||[]).filter(i=>!i.bought)}));
+  }
+
+  const cats    = ["All", ...CATS];
+  const filtered = items.filter(i => filter==="All" || i.category===filter);
+  const pending  = items.filter(i => !i.bought).length;
+  const bought   = items.filter(i =>  i.bought).length;
+
+  return (
+    <div style={{padding:"16px 16px 80px", fontFamily:"'DM Sans',sans-serif"}}>
+      {/* Header */}
+      <div style={{marginBottom:16}}>
+        <div style={{fontFamily:"'DM Serif Display',serif", fontSize:26, color:"#3DBF8A", marginBottom:4}}>🛒 Shopping List</div>
+        <div style={{fontSize:13, color:T.textSub}}>Items you need to get. Tap to mark as bought.</div>
+      </div>
+
+      {/* Stats */}
+      <div style={{display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:8, marginBottom:14}}>
+        {[[items.length,"Total","#3B9EDB"],[pending,"To Get","#E8A838"],[bought,"Bought","#3DBF8A"]].map(([v,l,col])=>(
+          <div key={l} style={{...cs({padding:"10px 12px", textAlign:"center"})}}>
+            <div style={{fontSize:22, fontWeight:800, color:col}}>{v}</div>
+            <div style={{fontSize:10, fontWeight:700, color:T.textMuted, textTransform:"uppercase"}}>{l}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Category filter */}
+      <div style={{display:"flex", gap:5, flexWrap:"wrap", marginBottom:12}}>
+        {cats.map(cat=>(
+          <button key={cat} onClick={()=>setFilter(cat)}
+            style={{padding:"4px 11px", borderRadius:20, border:"none", cursor:"pointer", fontFamily:"'DM Sans',sans-serif", fontSize:11, fontWeight:filter===cat?700:400, background:filter===cat?(CAT_COLOR[cat]||"#3B9EDB"):"transparent", color:filter===cat?"#fff":T.textSub, outline:filter===cat?"none":`1px solid ${T.border}`}}>
+            {cat!=="All"&&CAT_ICONS[cat]+" "}{cat}
+          </button>
+        ))}
+      </div>
+
+      {/* Add button */}
+      <button onClick={()=>setShowForm(!showForm)}
+        style={{width:"100%", padding:"11px", borderRadius:11, border:"none", background:"#3DBF8A", color:"#fff", cursor:"pointer", fontFamily:"'DM Serif Display',serif", fontSize:15, fontWeight:700, marginBottom:12}}>
+        {showForm?"✕ Cancel":"+ Add Item"}
+      </button>
+
+      {/* Add form */}
+      {showForm&&(
+        <div style={{...cs({padding:"16px", marginBottom:14})}}>
+          <div style={{marginBottom:10}}>
+            <label style={lbl}>Item name</label>
+            <input style={inp} placeholder="e.g. White socks" value={form.name} onChange={e=>setForm(f=>({...f,name:e.target.value}))}/>
+          </div>
+          <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:10}}>
+            <div>
+              <label style={lbl}>Quantity</label>
+              <input style={inp} placeholder="1" value={form.qty} onChange={e=>setForm(f=>({...f,qty:e.target.value}))}/>
+            </div>
+            <div>
+              <label style={lbl}>Category</label>
+              <select style={inp} value={form.category} onChange={e=>setForm(f=>({...f,category:e.target.value}))}>
+                {CATS.map(cat=><option key={cat}>{cat}</option>)}
+              </select>
+            </div>
+          </div>
+          <div style={{marginBottom:10}}>
+            <label style={lbl}>Note (optional)</label>
+            <input style={inp} placeholder="e.g. Amazon, size M..." value={form.note} onChange={e=>setForm(f=>({...f,note:e.target.value}))}/>
+          </div>
+          <div style={{display:"flex", alignItems:"center", gap:10, marginBottom:14}}>
+            <div onClick={()=>setForm(f=>({...f,urgent:!f.urgent}))}
+              style={{width:20, height:20, borderRadius:5, border:`2px solid ${form.urgent?"#E8704A":T.border}`, background:form.urgent?"#E8704A":"transparent", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0}}>
+              {form.urgent&&<span style={{color:"#fff", fontSize:11}}>!</span>}
+            </div>
+            <span style={{fontSize:13, color:T.textSub}}>Mark as urgent</span>
+          </div>
+          <button onClick={addItem} style={{width:"100%", padding:"11px", borderRadius:10, border:"none", background:"#3B9EDB", color:"#fff", cursor:"pointer", fontFamily:"'DM Sans',sans-serif", fontSize:14, fontWeight:700}}>
+            Add to List
+          </button>
+        </div>
+      )}
+
+      {/* List */}
+      <div style={{display:"flex", flexDirection:"column", gap:7}}>
+        {filtered.length===0&&(
+          <div style={{textAlign:"center", padding:"30px", color:T.textMuted, fontSize:13}}>
+            {filter==="All"?"Nothing on the list yet — add your first item":"No items in this category"}
+          </div>
+        )}
+        {/* Pending items first */}
+        {filtered.filter(i=>!i.bought).map(item=>(
+          <div key={item.id} style={{...cs({padding:"12px 14px", borderLeft:`4px solid ${item.urgent?"#E8704A":(CAT_COLOR[item.category]||"#3B9EDB")}`})}}>
+            <div style={{display:"flex", alignItems:"center", gap:10}}>
+              <div onClick={()=>toggleBought(item.id)}
+                style={{width:22, height:22, borderRadius:6, border:`2px solid ${CAT_COLOR[item.category]||"#3B9EDB"}`, background:"transparent", cursor:"pointer", flexShrink:0}}/>
+              <div style={{flex:1, minWidth:0}}>
+                <div style={{display:"flex", alignItems:"center", gap:6}}>
+                  <span style={{fontSize:13, fontWeight:600, color:T.text}}>{item.name}</span>
+                  {item.qty&&item.qty!=="1"&&<span style={{fontSize:11, color:T.textMuted}}>× {item.qty}</span>}
+                  {item.urgent&&<span style={{fontSize:10, padding:"1px 6px", borderRadius:8, background:"#E8704A22", color:"#E8704A", fontWeight:700}}>Urgent</span>}
+                </div>
+                <div style={{display:"flex", gap:8, marginTop:3, flexWrap:"wrap"}}>
+                  <span style={{fontSize:10, color:CAT_COLOR[item.category]||"#888"}}>{CAT_ICONS[item.category]} {item.category}</span>
+                  {item.note&&<span style={{fontSize:11, color:T.textMuted, fontStyle:"italic"}}>{item.note}</span>}
+                </div>
+              </div>
+              <button onClick={()=>deleteItem(item.id)} style={{padding:"4px 8px", borderRadius:6, border:"none", background:"transparent", color:T.textMuted, cursor:"pointer", fontSize:14}}>✕</button>
+            </div>
+          </div>
+        ))}
+
+        {/* Bought items */}
+        {filtered.filter(i=>i.bought).length>0&&(
+          <>
+            <div style={{display:"flex", alignItems:"center", justifyContent:"space-between", marginTop:8, marginBottom:4}}>
+              <div style={{fontSize:11, fontWeight:700, color:T.textMuted, textTransform:"uppercase", letterSpacing:"0.08em"}}>Bought ({filtered.filter(i=>i.bought).length})</div>
+              <button onClick={clearBought} style={{fontSize:11, color:"#E8704A", background:"transparent", border:"none", cursor:"pointer", fontFamily:"'DM Sans',sans-serif"}}>Clear all</button>
+            </div>
+            {filtered.filter(i=>i.bought).map(item=>(
+              <div key={item.id} style={{...cs({padding:"10px 14px", opacity:0.5, borderLeft:"4px solid #3DBF8A"})}}>
+                <div style={{display:"flex", alignItems:"center", gap:10}}>
+                  <div onClick={()=>toggleBought(item.id)}
+                    style={{width:22, height:22, borderRadius:6, border:"2px solid #3DBF8A", background:"#3DBF8A", cursor:"pointer", flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center"}}>
+                    <span style={{color:"#fff", fontSize:12, fontWeight:700}}>✓</span>
+                  </div>
+                  <span style={{fontSize:13, color:T.textSub, textDecoration:"line-through", flex:1}}>{item.name} {item.qty&&item.qty!=="1"&&`× ${item.qty}`}</span>
+                  <button onClick={()=>deleteItem(item.id)} style={{padding:"4px 8px", borderRadius:6, border:"none", background:"transparent", color:T.textMuted, cursor:"pointer", fontSize:14}}>✕</button>
+                </div>
+              </div>
+            ))}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export default function SummerApp({mode,T,onBack}) {
   const _td2=new Date(); const today=`${_td2.getFullYear()}-${String(_td2.getMonth()+1).padStart(2,'0')}-${String(_td2.getDate()).padStart(2,'0')}`;
@@ -2332,6 +3133,11 @@ export default function SummerApp({mode,T,onBack}) {
         {/* Amen views */}
         {profile==="amen"&&pillar==="tracker"   && viewTracker}
         {profile==="amen"&&pillar==="overview"  && viewOverview}
+        {profile==="amen"&&pillar==="goals"    && <GoalsView T={T} data={data} save={save} isMobile={isMobile}/>}
+        {profile==="amen"&&pillar==="review"   && <WeeklyReviewView T={T} data={data} save={save} genId={genId} TODAY={today}/>}
+        {profile==="amen"&&pillar==="jobs"     && <JobsView T={T} data={data} save={save} genId={genId} isMobile={isMobile}/>}
+        {profile==="amen"&&pillar==="archive"  && <ArchiveView T={T} data={data} save={save} genId={genId} TODAY={today}/>}
+        {profile==="amen"&&pillar==="shopping" && <ShoppingView T={T} data={data} save={save} genId={genId} userKey="amen"/>}
         {profile==="amen"&&pillar==="schedule"  && viewSchedule}
         {profile==="amen"&&pillar==="faith"     && viewFaith}
         {profile==="amen"&&pillar==="fitness"   && viewFitness}
@@ -2342,7 +3148,15 @@ export default function SummerApp({mode,T,onBack}) {
         {profile==="amen"&&pillar==="life"     && viewLife}
         {profile==="amen"&&pillar==="time"     && <TimeView T={T}/>}
         {/* Gloria views */}
-        {profile==="gloria"&&pillar==="gloria_overview" && viewGloriaOverview}
+        {profile==="gloria"&&pillar==="gloria_overview"  && viewGloriaOverview}
+        {profile==="gloria"&&pillar==="gloria_goals"    && <GoalsView T={T} data={data} save={save} isMobile={isMobile} userKey="gloria"/>}
+        {profile==="gloria"&&pillar==="gloria_review"   && <WeeklyReviewView T={T} data={data} save={save} genId={genId} TODAY={today} userKey="gloria"/>}
+        {profile==="gloria"&&pillar==="gloria_jobs"     && <JobsView T={T} data={data} save={save} genId={genId} isMobile={isMobile} userKey="gloria"/>}
+        {profile==="gloria"&&pillar==="gloria_archive"  && <ArchiveView T={T} data={data} save={save} genId={genId} TODAY={today} userKey="gloria"/>}
+        {profile==="gloria"&&pillar==="gloria_shopping" && <ShoppingView T={T} data={data} save={save} genId={genId} userKey="gloria"/>}
+        {profile==="gloria"&&pillar==="gloria_gym"      && viewGym}
+        {profile==="gloria"&&pillar==="gloria_schools"  && viewSchools}
+        {profile==="gloria"&&pillar==="gloria_time"     && <TimeView T={T}/>}
         {profile==="gloria"&&pillar==="gloria_schedule" && viewGloriaSchedule}
         {profile==="gloria"&&pillar==="gloria_faith"    && viewGloriaFaith}
         {profile==="gloria"&&pillar==="gloria_reading"  && viewGloriaReading}
