@@ -96,16 +96,18 @@ const NOTIF_SCHEDULE = {
 };
 
 function useNotifications() {
-  const [permission, setPermission] = useState(Notification.permission);
+  const supported = typeof Notification !== "undefined";
+  const [permission, setPermission] = useState(supported ? Notification.permission : "denied");
 
   async function requestPermission() {
+    if (!supported) { alert("Notifications require the app to be installed to your home screen. Tap Share → Add to Home Screen in Safari."); return; }
     const result = await Notification.requestPermission();
     setPermission(result);
     return result;
   }
 
   function fireNotif(title, body, urgent=false) {
-    if (permission !== "granted") return;
+    if (!supported || permission !== "granted") return;
     const n = new Notification(title, {
       body,
       icon: "/icon-192.png",
@@ -129,7 +131,7 @@ function useNotifications() {
   }
 
   useEffect(() => {
-    if (permission !== "granted") return;
+    if (!supported || permission !== "granted") return;
     const interval = setInterval(() => {
       const now    = new Date();
       const day    = now.getDay();
@@ -1620,7 +1622,7 @@ export default function SummerApp({mode,T,onBack}) {
   useEffect(()=>{const h=()=>setIsMobile(window.innerWidth<700); window.addEventListener("resize",h); return()=>window.removeEventListener("resize",h);},[]);
 
   const { permission, requestPermission } = useNotifications();
-  const [showMenu, setShowMenu] = useState(false);;
+  const [showMenu, setShowMenu] = useState(false);
 
   const [profile,setProfile]=useState(()=>{try{return localStorage.getItem("summer_profile")||"amen";}catch{return"amen";}});
   const switchProfile=p=>{setProfile(p);try{localStorage.setItem("summer_profile",p);}catch{}setPillar(p==="gloria"?"gloria_overview":"overview");};
