@@ -1296,14 +1296,29 @@ function ArchiveView({ T, data, save, genId, TODAY, userKey="amen" }) {
       </div>
 
       {/* Stats */}
-      <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginBottom:14}}>
-        {[[active.length,"Active","#3DBF8A"],[archived.length,"Archived","#888"]].map(([v,l,c])=>(
+      <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginBottom:10}}>
+        {[[active.length,"Active","#3DBF8A"],[archived.length,"Archived","#888"]].map(([v,l,col])=>(
           <div key={l} style={{...cs({padding:"12px", textAlign:"center"})}}>
-            <div style={{fontSize:24, fontWeight:800, color:c}}>{v}</div>
+            <div style={{fontSize:24, fontWeight:800, color:col}}>{v}</div>
             <div style={{fontSize:11, fontWeight:700, color:T.textMuted, textTransform:"uppercase"}}>{l}</div>
           </div>
         ))}
       </div>
+
+      {/* Bulk archive all active */}
+      {active.length>0&&(
+        <button onClick={()=>{
+          if (!window.confirm(`Archive all ${active.length} active tasks? They can be restored anytime.`)) return;
+          const now = new Date().toISOString().slice(0,10);
+          save(p=>({
+            ...p,
+            [arKey]:[...(p[arKey]||[]), ...(p[acKey]||[]).map(t=>({...t,archivedAt:now,archiveReason:"bulk_archive"}))],
+            [acKey]:[],
+          }));
+        }} style={{width:"100%", padding:"11px", borderRadius:11, border:"none", background:"#E8704A22", color:"#E8704A", cursor:"pointer", fontFamily:"'DM Sans',sans-serif", fontSize:13, fontWeight:700, marginBottom:10}}>
+          📦 Archive All {active.length} Active Tasks
+        </button>
+      )}
 
       {/* Tab nav */}
       <div style={{display:"flex", gap:2, background:T.inputBg, borderRadius:10, padding:3, marginBottom:14}}>
@@ -1547,6 +1562,48 @@ function ShoppingView({ T, data, save, genId, userKey="amen" }) {
   );
 }
 
+
+// ── Fall semester starter tasks (loaded if activeTasks_amen is empty) ─────────
+const FALL_STARTER_TASKS = [
+  {title:"Talk to Pastor Tessy — church goals before I leave",         section:"church",  priority:"Urgent", dueDate:"2026-09-07", type:"todo", assignee:"A"},
+  {title:"Send message to Seyi — monthly outreach strategy",           section:"church",  priority:"Urgent", dueDate:"2026-09-07", type:"todo", assignee:"A"},
+  {title:"Research OPT application process",                           section:"work",    priority:"Urgent", dueDate:"2026-09-07", type:"todo", assignee:"A"},
+  {title:"Consecrate stable income — tithe and first fruits",          section:"finance", priority:"Urgent", dueDate:"2026-09-07", type:"todo", assignee:"A"},
+  {title:"Pay Ellud $500",                                             section:"finance", priority:"Urgent", dueDate:"2026-09-07", type:"todo", assignee:"A"},
+  {title:"Call Discover — request goodwill adjustment",                section:"finance", priority:"Urgent", dueDate:"2026-09-07", type:"todo", assignee:"A"},
+  {title:"Research certifications for US teaching jobs with a masters",section:"work",    priority:"High",   dueDate:"2026-09-14", type:"todo", assignee:"A"},
+  {title:"Research qualifications for data analytics roles",           section:"work",    priority:"High",   dueDate:"2026-09-14", type:"todo", assignee:"A"},
+  {title:"Research thesis funding — NSF NIH MSU internal grants",      section:"school",  priority:"High",   dueDate:"2026-09-14", type:"todo", assignee:"A"},
+  {title:"Email International Services — begin OPT application",       section:"work",    priority:"Urgent", dueDate:"2026-09-14", type:"todo", assignee:"A"},
+  {title:"Bro Dammy finance app — begin build",                        section:"work",    priority:"High",   dueDate:"2026-09-14", type:"todo", assignee:"A"},
+  {title:"Complete U of R MSc Statistics application",                 section:"school",  priority:"Urgent", dueDate:"2026-09-15", type:"todo", assignee:"A"},
+  {title:"Identify struggling students by week 3 — start Red List",    section:"school",  priority:"Urgent", dueDate:"2026-09-21", type:"todo", assignee:"A"},
+  {title:"Ellud mechanic website — begin build",                       section:"work",    priority:"High",   dueDate:"2026-09-21", type:"todo", assignee:"A"},
+  {title:"Research entry level clerk and admin job requirements",       section:"work",    priority:"Medium", dueDate:"2026-09-21", type:"todo", assignee:"A"},
+  {title:"Pay Ellud $500",                                             section:"finance", priority:"Urgent", dueDate:"2026-09-14", type:"todo", assignee:"A"},
+  {title:"Pay Ellud $500",                                             section:"finance", priority:"Urgent", dueDate:"2026-09-21", type:"todo", assignee:"A"},
+  {title:"Pay Ellud $500",                                             section:"finance", priority:"Urgent", dueDate:"2026-09-28", type:"todo", assignee:"A"},
+  {title:"Complete U of R MSc CS application",                         section:"school",  priority:"Urgent", dueDate:"2026-09-30", type:"todo", assignee:"A"},
+  {title:"Submit OPT application",                                     section:"work",    priority:"Urgent", dueDate:"2026-11-01", type:"todo", assignee:"A"},
+  {title:"Meet Gloria's parents",                                      section:"relation",priority:"Urgent", dueDate:"2026-10-31", type:"todo", assignee:"A"},
+  {title:"Complete third Canadian school application",                 section:"school",  priority:"Urgent", dueDate:"2026-10-31", type:"todo", assignee:"A"},
+  {title:"First 90 thesis app — continue development",                 section:"work",    priority:"High",   dueDate:"2026-10-15", type:"todo", assignee:"A"},
+  {title:"Secure 30 active Impact Fellowship members",                 section:"church",  priority:"Urgent", dueDate:"2026-12-01", type:"todo", assignee:"A"},
+  {title:"Secure at least 3 job opportunities",                        section:"work",    priority:"Urgent", dueDate:"2026-12-01", type:"todo", assignee:"A"},
+  {title:"Secure at least 3 school acceptances",                       section:"school",  priority:"Urgent", dueDate:"2026-12-01", type:"todo", assignee:"A"},
+  {title:"Clear all personal debts by December",                       section:"finance", priority:"Urgent", dueDate:"2026-12-01", type:"todo", assignee:"A"},
+  {title:"Pay off car 60% by December",                                section:"finance", priority:"Urgent", dueDate:"2026-12-01", type:"todo", assignee:"A"},
+  {title:"Open investment account — deposit $300",                     section:"finance", priority:"High",   dueDate:"2026-12-01", type:"todo", assignee:"A"},
+  {title:"Pay off school fees",                                        section:"finance", priority:"Urgent", dueDate:"2026-12-01", type:"todo", assignee:"A"},
+  {title:"Build credit score to 700",                                  section:"finance", priority:"High",   dueDate:"2026-12-01", type:"todo", assignee:"A"},
+  {title:"Graduate from Missouri State",                               section:"school",  priority:"Urgent", dueDate:"2026-12-20", type:"todo", assignee:"A"},
+  {title:"Watch one marriage sermon with Gloria",                      section:"relation",priority:"High",   dueDate:"",           type:"monthly", assignee:"A"},
+  {title:"Date night with Gloria",                                     section:"relation",priority:"Urgent", dueDate:"",           type:"monthly", assignee:"A"},
+  {title:"Call mum and dad",                                           section:"social",  priority:"Urgent", dueDate:"",           type:"monthly", assignee:"A"},
+  {title:"Send money home",                                            section:"social",  priority:"High",   dueDate:"",           type:"monthly", assignee:"A"},
+];
+
+
 export default function SummerApp({mode,T,onBack}) {
   const _td2=new Date(); const today=`${_td2.getFullYear()}-${String(_td2.getMonth()+1).padStart(2,'0')}-${String(_td2.getDate()).padStart(2,'0')}`;
   const dow=new Date().getDay();
@@ -1584,7 +1641,31 @@ export default function SummerApp({mode,T,onBack}) {
   useEffect(()=>{
     (async()=>{
       const stored=await sGet("summer_amen");
-      setDataState(stored??{checklist:{},devotion:[],thesis:[],thesisTasks:[],reading:[],fitness:[],gloria:[],sidegig:[],intentions:{},nutrition:[],weight:[],spending:[],meals:[],doordash:[],gymWeekly:[],gymSessions:[],schools:[],helpers:[],family:[],siblings:[]});
+      const defaults = {
+        checklist:{}, devotion:[], thesis:[], thesisTasks:[], reading:[], fitness:[],
+        gloria:[], sidegig:[], intentions:{}, nutrition:[], weight:[], spending:[],
+        meals:[], doordash:[], gymWeekly:[], gymSessions:[], schools:[], helpers:[],
+        family:[], siblings:[],
+        // New per-user keys — Amen
+        activeTasks_amen:[], archivedTasks_amen:[],
+        decGoals_amen:{}, goalNotes_amen:{},
+        jobApps_amen:[], weeklyReviews_amen:{}, personalProjects_amen:[],
+        shoppingList_amen:[],
+        // New per-user keys — Gloria
+        activeTasks_gloria:[], archivedTasks_gloria:[],
+        decGoals_gloria:{}, goalNotes_gloria:{},
+        jobApps_gloria:[], weeklyReviews_gloria:{}, personalProjects_gloria:[],
+        shoppingList_gloria:[],
+      };
+      const merged = stored ? { ...defaults, ...stored } : defaults;
+      // Seed fall tasks if empty
+      if (!merged.activeTasks_amen || merged.activeTasks_amen.length === 0) {
+        merged.activeTasks_amen = FALL_STARTER_TASKS.map((t,i)=>({
+          ...t, id:`fall_${i}_${Date.now()}`,
+          createdAt: new Date().toISOString().slice(0,10), order: i,
+        }));
+      }
+      setDataState(merged);
     })();
   },[]);
 
@@ -3121,9 +3202,13 @@ export default function SummerApp({mode,T,onBack}) {
             <button onClick={()=>switchProfile("amen")} style={{padding:"5px 10px",borderRadius:7,border:`1px solid ${profile==="amen"?"#E8A83866":"rgba(255,255,255,0.08)"}`,background:profile==="amen"?"#E8A83820":"transparent",color:profile==="amen"?"#E8A838":"#555",fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:700,cursor:"pointer"}}>{"☀️ Amen"}</button>
             <button onClick={()=>switchProfile("gloria")} style={{padding:"5px 10px",borderRadius:7,border:`1px solid ${profile==="gloria"?"#E84E8A66":"rgba(255,255,255,0.08)"}`,background:profile==="gloria"?"#E84E8A20":"transparent",color:profile==="gloria"?"#E84E8A":"#555",fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:700,cursor:"pointer"}}>{"♡ Gloria"}</button>
           </div>
-          <div style={{display:"flex",alignItems:"center",gap:8}}>
+          <div style={{display:"flex",alignItems:"center",gap:6}}>
             <div style={{fontSize:12,fontWeight:700,color:profile==="gloria"?"#E84E8A":pct>=80?"#3DBF8A":"#E8A838"}}>{profile==="gloria"?gloriaPct:pct}{"%"}</div>
-            <button onClick={onBack} style={{fontSize:11,color:"#666",background:"none",border:"1px solid rgba(255,255,255,0.1)",borderRadius:7,padding:"5px 10px",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontWeight:600}}>{"← Back"}</button>
+            <button onClick={requestPermission}
+              style={{fontSize:11,padding:"5px 8px",borderRadius:7,border:`1px solid ${permission==="granted"?"#3DBF8A44":"#E8A83844"}`,background:permission==="granted"?"#3DBF8A11":"#E8A83811",color:permission==="granted"?"#3DBF8A":"#E8A838",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontWeight:700}}>
+              {permission==="granted"?"🔔":"🔔 On?"}
+            </button>
+            {onBack&&<button onClick={onBack} style={{fontSize:11,color:"#666",background:"none",border:"1px solid rgba(255,255,255,0.1)",borderRadius:7,padding:"5px 10px",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontWeight:600}}>{"← Back"}</button>}
           </div>
         </div>
       )}
@@ -3165,16 +3250,52 @@ export default function SummerApp({mode,T,onBack}) {
 
       {/* ── Mobile bottom tabs ── */}
       {isMobile&&(
-        <div style={{position:"fixed",bottom:0,left:0,right:0,zIndex:20,background:"rgba(17,20,24,0.97)",backdropFilter:"blur(12px)",borderTop:"1px solid rgba(255,255,255,0.08)",display:"flex",overflowX:"auto",paddingBottom:"calc(env(safe-area-inset-bottom) + 8px)",paddingTop:4,paddingLeft:4,paddingRight:4,gap:2}}>
-          {(profile==="amen"?PILLARS:GLORIA_PILLARS).map(p=>(
-            <button key={p.id} onClick={()=>setPillar(p.id)}
-              style={{flex:"1 0 auto",minWidth:64,minHeight:64,padding:"10px 6px 8px",border:"none",background:pillar===p.id?`${p.color}18`:"transparent",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:10,fontWeight:pillar===p.id?700:400,color:pillar===p.id?p.color:"#666",borderRadius:14,transition:"all 0.15s",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:4,position:"relative"}}>
-              {pillar===p.id&&<div style={{position:"absolute",top:0,left:"50%",transform:"translateX(-50%)",width:28,height:3,borderRadius:"0 0 3px 3px",background:p.color}}/>}
-              <span style={{fontSize:22,lineHeight:1}}>{p.icon}</span>
-              <span style={{whiteSpace:"nowrap",letterSpacing:"0.01em"}}>{p.label}</span>
+        <>
+        {showMenu&&(
+          <div onClick={()=>setShowMenu(false)}
+            style={{position:"fixed",inset:0,zIndex:28,background:"rgba(0,0,0,0.5)",backdropFilter:"blur(4px)"}}/>
+        )}
+        {showMenu&&(
+          <div style={{position:"fixed",bottom:"calc(env(safe-area-inset-bottom) + 76px)",left:12,right:12,zIndex:29,background:"rgba(20,23,30,0.98)",backdropFilter:"blur(20px)",borderRadius:20,border:"1px solid rgba(255,255,255,0.1)",padding:"16px 12px",boxShadow:"0 -8px 40px rgba(0,0,0,0.5)"}}>
+            <div style={{fontSize:11,fontWeight:700,color:"#555",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:10,paddingLeft:4}}>All Sections</div>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:6}}>
+              {(profile==="amen"?PILLARS:GLORIA_PILLARS).map(p=>(
+                <button key={p.id} onClick={()=>{setPillar(p.id);setShowMenu(false);}}
+                  style={{padding:"10px 6px",border:"none",background:pillar===p.id?`${p.color}22`:"rgba(255,255,255,0.04)",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:10,fontWeight:pillar===p.id?700:500,color:pillar===p.id?p.color:"#999",borderRadius:12,display:"flex",flexDirection:"column",alignItems:"center",gap:5,transition:"all 0.15s",outline:pillar===p.id?`1.5px solid ${p.color}`:"none"}}>
+                  <span style={{fontSize:20,lineHeight:1}}>{p.icon}</span>
+                  <span style={{whiteSpace:"nowrap"}}>{p.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+        <div style={{position:"fixed",bottom:0,left:0,right:0,zIndex:30,background:"rgba(15,17,23,0.98)",backdropFilter:"blur(16px)",borderTop:"1px solid rgba(255,255,255,0.07)",paddingBottom:"env(safe-area-inset-bottom)",paddingLeft:8,paddingRight:8,paddingTop:0}}>
+          <div style={{display:"flex",alignItems:"stretch",height:68}}>
+            {/* 4 pinned tabs */}
+            {(profile==="amen"
+              ?[{id:"overview",label:"Home",icon:"◉",color:"#E8A838"},{id:"goals",label:"Goals",icon:"🎯",color:"#E8A838"},{id:"review",label:"Review",icon:"📋",color:"#20B2AA"},{id:"schedule",label:"Schedule",icon:"📅",color:"#C8B030"}]
+              :[{id:"gloria_overview",label:"Home",icon:"◉",color:"#E84E8A"},{id:"gloria_goals",label:"Goals",icon:"🎯",color:"#E84E8A"},{id:"gloria_review",label:"Review",icon:"📋",color:"#20B2AA"},{id:"gloria_schedule",label:"Schedule",icon:"📅",color:"#C8B030"}]
+            ).map(p=>(
+              <button key={p.id} onClick={()=>{setPillar(p.id);setShowMenu(false);}}
+                style={{flex:1,border:"none",background:"transparent",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:10,fontWeight:pillar===p.id?700:400,color:pillar===p.id?p.color:"#555",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:3,position:"relative",padding:"0 4px"}}>
+                {pillar===p.id&&<div style={{position:"absolute",top:0,left:"50%",transform:"translateX(-50%)",width:24,height:2.5,borderRadius:"0 0 3px 3px",background:p.color}}/>}
+                <span style={{fontSize:22,lineHeight:1}}>{p.icon}</span>
+                <span style={{whiteSpace:"nowrap"}}>{p.label}</span>
+              </button>
+            ))}
+            {/* Menu button */}
+            <button onClick={()=>setShowMenu(m=>!m)}
+              style={{flex:1,border:"none",background:"transparent",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:10,fontWeight:400,color:showMenu?"#E8A838":"#555",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:3,padding:"0 4px"}}>
+              <span style={{fontSize:22,lineHeight:1,display:"flex",flexDirection:"column",gap:3,alignItems:"center"}}>
+                <span style={{display:"block",width:18,height:2,background:"currentColor",borderRadius:2}}/>
+                <span style={{display:"block",width:14,height:2,background:"currentColor",borderRadius:2}}/>
+                <span style={{display:"block",width:18,height:2,background:"currentColor",borderRadius:2}}/>
+              </span>
+              <span>More</span>
             </button>
-          ))}
+          </div>
         </div>
+        </>
       )}
 
       {/* ══ MODALS ══ */}
