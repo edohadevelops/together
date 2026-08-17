@@ -1629,7 +1629,7 @@ export default function SummerApp({mode,T,onBack}) {
   const [pillar,setPillar]=useState(()=>profile==="gloria"?"gloria_overview":"overview");
   const [data,setDataState]=useState(null);
   const [showForm,setShowForm]=useState(null);
-  const [schedTab,setSchedTab]=useState("weekday");
+  const [schedTab,setSchedTab]=useState((()=>{const d=new Date().getDay();return ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'][d];})());
 
   const [df,setDf]=useState({passage:"",insight:"",prayer:false,worship:false});
   const [tf,setTf]=useState({notes:"",duration:80});
@@ -2164,26 +2164,134 @@ export default function SummerApp({mode,T,onBack}) {
     </div>
   );
 
+  const DAY_SCHEDULES = {
+    monday: [
+      ...WD_SCHEDULE.filter(b=>!["Thesis block","Cardio — 12k steps","Bible study","Impact Fellowship","GA meeting","Grading","Make-up quiz","Finish grading","Personal projects"].some(x=>b.label.includes(x))),
+    ],
+    tuesday: [
+      ...WD_SCHEDULE.filter(b=>!["Gym — strength session","Office hours","Nap and rest","Grading","Make-up quiz","Finish grading","GA meeting"].some(x=>b.label.includes(x))),
+    ],
+    wednesday: [
+      ...WD_SCHEDULE.filter(b=>!["Thesis block","Cardio — 12k steps","Bible study","Impact Fellowship","GA meeting","Grading","Make-up quiz","Finish grading","Personal projects"].some(x=>b.label.includes(x))),
+    ],
+    thursday: [
+      ...WD_SCHEDULE.filter(b=>!["Gym — strength session","Office hours","Nap and rest","Grading","Make-up quiz","Finish grading","GA meeting","Bible study"].some(x=>b.label.includes(x))),
+    ],
+    friday: [
+      ...WD_SCHEDULE.filter(b=>!["Gym — strength session","Cardio — 12k steps","Thesis block","Bible study","Impact Fellowship","Office hours","Nap and rest","Spark — evening block"].some(x=>b.label.includes(x))),
+    ],
+    saturday: SAT_SCHEDULE,
+    sunday: SUN_SCHEDULE,
+  };
+
+  // Day-specific overrides — blocks unique to certain days
+  const MON_WED_EXTRA = [
+    {time:"9:00am",  label:"Class",                   detail:"Mon/Wed — show up sharp. 9-10am.",                            cat:"school",   dur:"1 hr"},
+    {time:"10:00am", label:"Class review",             detail:"Go over notes immediately after while fresh. 1 hour.",        cat:"school",   dur:"1 hr"},
+    {time:"11:00am", label:"Office hours",             detail:"Mon/Wed 11am-12pm. Be present and prepared.",                 cat:"school",   dur:"1 hr"},
+    {time:"12:00pm", label:"Heavy lunch",              detail:"Main meal. Already prepped from Sunday.",                     cat:"nutrition",dur:"30 min"},
+    {time:"12:30pm", label:"Nap and rest",             detail:"Recharge before teaching prep.",                              cat:"morning",  dur:"2 hrs"},
+    {time:"3:00pm",  label:"Teaching class prep",      detail:"Review lesson, prep materials. Show up 30 min early.",        cat:"school",   dur:"1 hr"},
+    {time:"4:00pm",  label:"Teaching class",           detail:"Mon/Wed 4:00–5:45pm. Teach with full presence.",             cat:"school",   dur:"1 hr 45 min"},
+    {time:"6:00pm",  label:"Spark — evening block",    detail:"6pm to 10pm. Target $80+. Protect dinner rush 6-8pm.",       cat:"work",     dur:"4 hrs"},
+  ];
+  const TUE_THU_BASE = [
+    {time:"9:00am",  label:"Thesis block",             detail:"Phone on DND. Deep work only. No errands, no calls.",        cat:"thesis",   dur:"3 hrs"},
+    {time:"12:00pm", label:"Heavy lunch",              detail:"Main meal. Break from thesis.",                               cat:"nutrition",dur:"30 min"},
+    {time:"12:30pm", label:"Thesis block continued",   detail:"Back to thesis after lunch. Protect this time.",             cat:"thesis",   dur:"2 hrs 30 min"},
+    {time:"3:00pm",  label:"Teaching class prep",      detail:"Review lesson. Arrive by 4pm.",                              cat:"school",   dur:"1 hr"},
+    {time:"4:30pm",  label:"Teaching class",           detail:"Tue/Thu 4:30–5:20pm.",                                       cat:"school",   dur:"50 min"},
+  ];
+  const TUE_EXTRA = [
+    {time:"5:20pm",  label:"Travel to Bible study",    detail:"5:20pm — head straight from teaching to Bible study.",       cat:"faith",    dur:"40 min"},
+    {time:"6:00pm",  label:"Bible study",              detail:"6:00–8:30pm every Tuesday.",                                 cat:"faith",    dur:"2 hrs 30 min"},
+    {time:"8:30pm",  label:"Personal projects",        detail:"1 hour after Bible study. First 90, portfolio, freelance.",  cat:"work",     dur:"1 hr"},
+    {time:"9:30pm",  label:"Light dinner",             detail:"Quick meal and decompress.",                                  cat:"nutrition",dur:"30 min"},
+  ];
+  const THU_EXTRA = [
+    {time:"2:00pm",  label:"Impact Fellowship — setup",detail:"Arrive early for Impact setup and early activities.",        cat:"faith",    dur:"2 hrs 30 min"},
+    {time:"5:20pm",  label:"Travel back to Impact",    detail:"After teaching class ends — head back to Impact.",           cat:"faith",    dur:"10 min"},
+    {time:"5:30pm",  label:"Impact Fellowship",        detail:"5:30pm to 10pm. Give it everything.",                       cat:"faith",    dur:"4 hrs 30 min"},
+    {time:"9:30pm",  label:"Light dinner during Impact",detail:"Quick break during Impact wind-down.",                      cat:"nutrition",dur:"15 min"},
+  ];
+  const FRI_SCHEDULE = [
+    {time:"8:00am",  label:"GA meeting",               detail:"8:00–9:00am. Be prepared.",                                  cat:"school",   dur:"1 hr"},
+    {time:"9:00am",  label:"Class",                    detail:"9:00–10:00am Friday class.",                                 cat:"school",   dur:"1 hr"},
+    {time:"10:00am", label:"Class review",             detail:"Go over notes immediately.",                                  cat:"school",   dur:"1 hr"},
+    {time:"11:00am", label:"Grading block",            detail:"2 hours of grading.",                                        cat:"school",   dur:"2 hrs"},
+    {time:"12:00pm", label:"Heavy lunch during grading",detail:"Eat while grading.",                                       cat:"nutrition",dur:"30 min"},
+    {time:"1:30pm",  label:"Make-up quiz",             detail:"1:30–2:30pm.",                                               cat:"school",   dur:"1 hr"},
+    {time:"2:30pm",  label:"Finish grading",           detail:"2:30–6pm. Clear everything before the weekend.",            cat:"school",   dur:"3 hrs 30 min"},
+    {time:"6:00pm",  label:"Go home — free hour",      detail:"Your only truly free hour of the week. Use it well.",       cat:"evening",  dur:"1 hr"},
+    {time:"7:00pm",  label:"Personal projects",        detail:"2 hours of project work.",                                   cat:"work",     dur:"2 hrs"},
+    {time:"9:00pm",  label:"Spark if needed",          detail:"Optional Spark if short on weekly target.",                  cat:"work",     dur:"2 hrs"},
+  ];
+
+  const getScheduleForDay = (day) => {
+    const base = WD_SCHEDULE.filter(b=>[
+      "Wake up","Personal devotion","Job applications","Light breakfast",
+      "Shower and change","Light dinner","Wind down","Gloria time","Hard stop"
+    ].some(x=>b.label.includes(x)));
+    if (day==="monday"||day==="wednesday") return [...base,...MON_WED_EXTRA].sort((a,b)=>a.time.localeCompare(b.time));
+    if (day==="tuesday") return [...base,...TUE_THU_BASE,...TUE_EXTRA].sort((a,b)=>a.time.localeCompare(b.time));
+    if (day==="thursday") return [...base,...TUE_THU_BASE,...THU_EXTRA].sort((a,b)=>a.time.localeCompare(b.time));
+    if (day==="friday") return [...base,...FRI_SCHEDULE].sort((a,b)=>a.time.localeCompare(b.time));
+    if (day==="saturday") return SAT_SCHEDULE;
+    if (day==="sunday") return SUN_SCHEDULE;
+    return WD_SCHEDULE;
+  };
+
+  const DAYS = [
+    {key:"monday",    label:"Mon", full:"Monday"},
+    {key:"tuesday",   label:"Tue", full:"Tuesday"},
+    {key:"wednesday", label:"Wed", full:"Wednesday"},
+    {key:"thursday",  label:"Thu", full:"Thursday"},
+    {key:"friday",    label:"Fri", full:"Friday"},
+    {key:"saturday",  label:"Sat", full:"Saturday"},
+    {key:"sunday",    label:"Sun", full:"Sunday"},
+  ];
+
+  const todayDayKey = (()=>{
+    const d = new Date().getDay();
+    return ["sunday","monday","tuesday","wednesday","thursday","friday","saturday"][d];
+  })();
+
   const viewSchedule=(
     <div>
-      <div style={{fontFamily:"'DM Serif Display',serif",fontSize:isMobile?22:28,color:T.text,marginBottom:4}}>{"📅 Full Daily Schedule"}</div>
-      <div style={{fontSize:13,color:T.textSub,marginBottom:20}}>{"Every block, every time — color-coded by pillar"}</div>
+      <div style={{fontFamily:"'DM Serif Display',serif",fontSize:isMobile?22:28,color:T.text,marginBottom:4}}>📅 Weekly Schedule</div>
+      <div style={{fontSize:13,color:T.textSub,marginBottom:16}}>Tap any day to see its full schedule</div>
 
-      <div style={{display:"flex",gap:6,marginBottom:24,background:T.inputBg,borderRadius:10,padding:4,border:`1px solid ${T.border}`}}>
-        {[["weekday","Mon–Fri"],["saturday","Saturday"],["sunday","Sunday"]].map(([k,l])=>(
-          <button key={k} onClick={()=>setSchedTab(k)} style={{flex:1,padding:"8px",borderRadius:8,border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:schedTab===k?700:400,background:schedTab===k?"#E8A838":"transparent",color:schedTab===k?"#111":T.textSub,transition:"all 0.15s"}}>{l}</button>
-        ))}
+      {/* Day tabs */}
+      <div style={{display:"flex",gap:4,marginBottom:20,overflowX:"auto",paddingBottom:4}}>
+        {DAYS.map(d=>{
+          const isToday = d.key===todayDayKey;
+          const isSelected = schedTab===d.key;
+          return (
+            <button key={d.key} onClick={()=>setSchedTab(d.key)}
+              style={{flexShrink:0,padding:"8px 14px",borderRadius:10,border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:isSelected?700:400,background:isSelected?"#E8A838":isToday?"#E8A83822":"transparent",color:isSelected?"#111":isToday?"#E8A838":T.textSub,outline:isSelected?"none":isToday?`1px solid #E8A83866`:`1px solid ${T.border}`,transition:"all 0.15s",position:"relative"}}>
+              {d.label}
+              {isToday&&!isSelected&&<div style={{position:"absolute",bottom:3,left:"50%",transform:"translateX(-50%)",width:4,height:4,borderRadius:"50%",background:"#E8A838"}}/>}
+            </button>
+          );
+        })}
       </div>
 
+      {/* Day label */}
+      <div style={{fontFamily:"'DM Serif Display',serif",fontSize:18,color:"#E8A838",marginBottom:12}}>
+        {DAYS.find(d=>d.key===schedTab)?.full||"Monday"}
+        {schedTab===todayDayKey&&<span style={{fontSize:12,color:"#3DBF8A",fontFamily:"'DM Sans',sans-serif",marginLeft:8,fontWeight:700}}>← today</span>}
+      </div>
+
+      {/* Schedule blocks */}
       <div style={{display:"flex",flexDirection:"column",gap:8}}>
-        {(schedTab==="weekday"?WD_SCHEDULE:schedTab==="saturday"?SAT_SCHEDULE:SUN_SCHEDULE).map((block,i)=>(
-          <div key={i} style={{...cs({padding:"14px 16px",borderLeft:`3px solid ${CAT[block.cat]||"#888"}`})}}>
-            <div style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap",marginBottom:6}}>
-              <span style={{fontSize:13,fontWeight:700,color:CAT[block.cat]||"#888",minWidth:52,fontFamily:"'DM Sans',sans-serif"}}>{block.time}</span>
-              <span style={{fontSize:14,fontWeight:700,color:T.text}}>{block.label}</span>
+        {getScheduleForDay(schedTab).map((block,i)=>(
+          <div key={i} style={{...cs({padding:"13px 16px",borderLeft:`3px solid ${CAT[block.cat]||"#888"}`})}}>
+            <div style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap",marginBottom:4}}>
+              <span style={{fontSize:12,fontWeight:700,color:CAT[block.cat]||"#888",minWidth:56,fontFamily:"'DM Sans',sans-serif",flexShrink:0}}>{block.time}</span>
+              <span style={{fontSize:14,fontWeight:700,color:T.text,flex:1}}>{block.label}</span>
               <Chip label={block.dur} color={CAT[block.cat]||"#888"}/>
             </div>
-            <div style={{fontSize:13,color:T.textSub,lineHeight:1.6,paddingLeft:62}}>{block.detail}</div>
+            <div style={{fontSize:12,color:T.textSub,lineHeight:1.6,paddingLeft:66}}>{block.detail}</div>
           </div>
         ))}
       </div>
