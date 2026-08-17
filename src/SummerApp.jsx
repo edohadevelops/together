@@ -2227,15 +2227,35 @@ export default function SummerApp({mode,T,onBack}) {
     {time:"9:00pm",  label:"Spark if needed",          detail:"Optional Spark if short on weekly target.",                  cat:"work",     dur:"2 hrs"},
   ];
 
+
+  function parseTime(t) {
+    // Converts "5:30am", "10:00pm", "12:00pm" to minutes since midnight
+    if (!t) return 0;
+    const s = t.toLowerCase().trim();
+    const isPM = s.includes("pm");
+    const isAM = s.includes("am");
+    const clean = s.replace(/am|pm/g,"").trim();
+    const [hStr, mStr="0"] = clean.split(":");
+    let h = parseInt(hStr);
+    const m = parseInt(mStr);
+    if (isPM && h !== 12) h += 12;
+    if (isAM && h === 12) h = 0;
+    return h * 60 + m;
+  }
+  function sortByTime(arr) {
+    return [...arr].sort((a,b) => parseTime(a.time) - parseTime(b.time));
+  }
+
   const getScheduleForDay = (day) => {
     const base = WD_SCHEDULE.filter(b=>[
       "Wake up","Personal devotion","Job applications","Light breakfast",
-      "Shower and change","Light dinner","Wind down","Gloria time","Hard stop"
+      "Shower and change","Light dinner","Wind down","Gloria time","Hard stop",
+      "In bed"
     ].some(x=>b.label.includes(x)));
-    if (day==="monday"||day==="wednesday") return [...base,...MON_WED_EXTRA].sort((a,b)=>a.time.localeCompare(b.time));
-    if (day==="tuesday") return [...base,...TUE_THU_BASE,...TUE_EXTRA].sort((a,b)=>a.time.localeCompare(b.time));
-    if (day==="thursday") return [...base,...TUE_THU_BASE,...THU_EXTRA].sort((a,b)=>a.time.localeCompare(b.time));
-    if (day==="friday") return [...base,...FRI_SCHEDULE].sort((a,b)=>a.time.localeCompare(b.time));
+    if (day==="monday"||day==="wednesday") return sortByTime([...base,...MON_WED_EXTRA]);
+    if (day==="tuesday") return sortByTime([...base,...TUE_THU_BASE,...TUE_EXTRA]);
+    if (day==="thursday") return sortByTime([...base,...TUE_THU_BASE,...THU_EXTRA]);
+    if (day==="friday") return sortByTime([...base,...FRI_SCHEDULE]);
     if (day==="saturday") return SAT_SCHEDULE;
     if (day==="sunday") return SUN_SCHEDULE;
     return WD_SCHEDULE;
