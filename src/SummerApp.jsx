@@ -223,6 +223,7 @@ const TOTAL_WEEK_HRS = 168;
 
 const PILLARS = [
   {id:"overview",  label:"Home",     icon:"◉",  color:"#E8A838"},
+  {id:"nextsteps", label:"Next",     icon:"🚀",  color:"#3DBF8A"},
   {id:"goals",     label:"Goals",    icon:"🎯",  color:"#E8A838"},
   {id:"review",    label:"Review",   icon:"📋",  color:"#20B2AA"},
   {id:"jobs",      label:"Jobs",     icon:"💼",  color:"#3B9EDB"},
@@ -1612,6 +1613,489 @@ const FALL_STARTER_TASKS = [
 ];
 
 
+
+// ── NextStepsView ─────────────────────────────────────────────────────────────
+const ROADMAP = [
+  {
+    month:"September 2026", color:"#E8A838", icon:"📚",
+    theme:"Lock in — semester starts, applications begin",
+    milestones:[
+      { cat:"Academic",  item:"Identify struggling students by week 3 — start Red List",     done:false },
+      { cat:"Academic",  item:"Get class routine locked in — GA role, office hours, grading", done:false },
+      { cat:"Career",    item:"Research OPT process — email International Services",          done:false },
+      { cat:"Career",    item:"Research certifications for teaching and data analytics roles", done:false },
+      { cat:"School",    item:"Complete U of R MSc Statistics application",                   done:false },
+      { cat:"School",    item:"Complete U of R MSc CS application",                           done:false },
+      { cat:"Finance",   item:"Call Discover — request goodwill adjustment for late marks",   done:false },
+      { cat:"Finance",   item:"Pay Ellud $500 every week — hit $2k this month",              done:false },
+      { cat:"Faith",     item:"Talk to Pastor Tessy — church goals before I leave",           done:false },
+      { cat:"Faith",     item:"Send message to Seyi — outreach and community strategy",       done:false },
+      { cat:"Relation",  item:"Be intentional with Gloria every week — date night planned",   done:false },
+    ]
+  },
+  {
+    month:"October 2026", color:"#9B6EE8", icon:"🎯",
+    theme:"Build momentum — thesis, applications, money",
+    milestones:[
+      { cat:"Academic",  item:"Thesis — Chapters 1 and 2 complete or near complete",          done:false },
+      { cat:"Academic",  item:"Submit IRB application with advisor signature",                 done:false },
+      { cat:"Career",    item:"Email International Services — begin OPT application",         done:false },
+      { cat:"Career",    item:"Apply to 10+ jobs this month — data, full stack, teaching",    done:false },
+      { cat:"School",    item:"Complete third Canadian school application",                    done:false },
+      { cat:"Finance",   item:"Pay Ellud $500 weekly — $2k more cleared this month",         done:false },
+      { cat:"Finance",   item:"Investment account opened — $300 deposited",                   done:false },
+      { cat:"Relation",  item:"Meet Gloria's parents",                                        done:false },
+      { cat:"Faith",     item:"Impact Fellowship — community outreach event this month",      done:false },
+    ]
+  },
+  {
+    month:"November 2026", color:"#E8704A", icon:"🔥",
+    theme:"Final push — thesis defense, OPT, jobs",
+    milestones:[
+      { cat:"Academic",  item:"Thesis defended",                                              done:false },
+      { cat:"Academic",  item:"Work toward 80% pass rate in my class",                       done:false },
+      { cat:"Career",    item:"OPT application submitted",                                    done:false },
+      { cat:"Career",    item:"At least 1 job offer or interview in progress",                done:false },
+      { cat:"School",    item:"Follow up with all school applications — confirm receipt",      done:false },
+      { cat:"Finance",   item:"School fees paid off",                                         done:false },
+      { cat:"Finance",   item:"Ellud debt near cleared",                                      done:false },
+      { cat:"Faith",     item:"Impact Fellowship at 20+ active members",                      done:false },
+    ]
+  },
+  {
+    month:"December 2026", color:"#3DBF8A", icon:"🎓",
+    theme:"Finish line — graduate and set up the future",
+    milestones:[
+      { cat:"Academic",  item:"Get an A in class — 4.0 GPA",                                 done:false },
+      { cat:"Academic",  item:"Graduate from Missouri State",                                 done:false },
+      { cat:"Career",    item:"3 job opportunities secured or in final stages",               done:false },
+      { cat:"Career",    item:"OPT card received or processing",                              done:false },
+      { cat:"School",    item:"3 school acceptances secured",                                 done:false },
+      { cat:"Finance",   item:"All personal debts cleared",                                   done:false },
+      { cat:"Finance",   item:"Car paid off 60%",                                             done:false },
+      { cat:"Finance",   item:"Credit score at 700",                                          done:false },
+      { cat:"Faith",     item:"Impact Fellowship at 30 active members",                       done:false },
+      { cat:"Faith",     item:"Church website built",                                         done:false },
+      { cat:"Relation",  item:"Sexual purity maintained through December",                    done:false },
+    ]
+  },
+];
+
+const SCHOOLS_DATA = [
+  // ── CANADA ───────────────────────────────────────────────────────────────────
+  { country:"Canada", region:"Saskatchewan", program:"MSc Statistics (thesis)", school:"University of Regina", deadline:"Submitted", fee:"$125", funding:"URGF $10k competitive", status:"Submitted", notes:"Already submitted. Primary Canadian target.", color:"#3B9EDB" },
+  { country:"Canada", region:"Saskatchewan", program:"MSc Biostatistics", school:"University of Saskatchewan", deadline:"Rolling — apply now", fee:"$145", funding:"Limited — supervisor grants", status:"In Progress", notes:"Rolling deadline. Apply immediately. ~$11,452/yr.", color:"#3B9EDB" },
+  { country:"Canada", region:"Manitoba", program:"MSc Mathematics", school:"Brandon University", deadline:"Check directly", fee:"~$100", funding:"Supervisor dependent", status:"Not Started", notes:"Low tuition $9-12k/yr.", color:"#3B9EDB" },
+  { country:"Canada", region:"British Columbia", program:"MSc Mathematics & Statistics", school:"University of Northern BC (UNBC)", deadline:"Check — may have Jan option", fee:"~$100", funding:"Supervisor dependent", status:"Not Started", notes:"Tuition $5,198-$7,797. Very affordable.", color:"#3B9EDB" },
+  { country:"Canada", region:"British Columbia", program:"MSc Computing Science", school:"Simon Fraser University (SFU)", deadline:"2026-12-01", fee:"$125", funding:"$24,000/yr guaranteed", status:"Not Started", notes:"Best funded Canadian option. Dec 1 deadline.", color:"#3B9EDB" },
+  { country:"Canada", region:"Alberta", program:"MSc Computer Science", school:"University of Calgary", deadline:"2026-09-15 ⚠️ URGENT", fee:"$125", funding:"$25,455/yr guaranteed", status:"Not Started", notes:"Sep 15 deadline URGENT. Fully funded.", color:"#3B9EDB" },
+
+  // ── USA PhD ───────────────────────────────────────────────────────────────────
+  { country:"USA", region:"Maryland", program:"PhD Applied Mathematics & Statistics", school:"Johns Hopkins University", deadline:"2026-09-15 ⚠️ URGENT", fee:"$75", funding:"Full — tuition + stipend + health", status:"Not Started", notes:"Most urgent deadline. Apply at engineering.jhu.edu/ams", color:"#9B6EE8" },
+  { country:"USA", region:"Texas", program:"PhD Computer Science", school:"University of Houston", deadline:"2026-10-01", fee:"$80", funding:"TA/RA funded", status:"Not Started", notes:"Confirmed spring PhD intake. uh.edu/nsm/computer-science", color:"#9B6EE8" },
+  { country:"USA", region:"Colorado", program:"PhD Computer Science", school:"UCCS", deadline:"2026-10-01", fee:"$60", funding:"GTF available", status:"Not Started", notes:"Confirmed Oct 1 international deadline for spring.", color:"#9B6EE8" },
+  { country:"USA", region:"South Carolina", program:"PhD CS & Engineering", school:"University of South Carolina", deadline:"2026-10-01", fee:"$50", funding:"Most students funded", status:"Not Started", notes:"Confirmed spring admission, Columbia SC.", color:"#9B6EE8" },
+  { country:"USA", region:"Iowa", program:"PhD Biostatistics", school:"University of Iowa", deadline:"2026-10-15", fee:"$60", funding:"TA/RA funded", status:"Not Started", notes:"Email to confirm MS Math qualifies.", color:"#9B6EE8" },
+  { country:"USA", region:"Missouri", program:"PhD Statistics", school:"University of Missouri (Mizzou)", deadline:"2026-10-15", fee:"$75", funding:"$18,026+ stipend + waiver", status:"Not Started", notes:"2.5hrs from Springfield. Natural fit.", color:"#9B6EE8" },
+  { country:"USA", region:"New Jersey", program:"PhD Computer Science", school:"NJIT", deadline:"2026-10-15", fee:"$75", funding:"Nearly all funded — TA/RA", status:"Not Started", notes:"Oct 15 for financial support consideration.", color:"#9B6EE8" },
+  { country:"USA", region:"Ohio", program:"PhD Statistics", school:"Ohio State University", deadline:"2026-10-15", fee:"$60", funding:"TA/RA funded", status:"Not Started", notes:"Strong statistics department.", color:"#9B6EE8" },
+  { country:"USA", region:"Colorado", program:"PhD Computer Science", school:"Colorado State University", deadline:"2026-11-01", fee:"$50", funding:"Competitive TA/RA", status:"Not Started", notes:"Fort Collins CO — confirmed spring.", color:"#9B6EE8" },
+  { country:"USA", region:"Georgia", program:"PhD Mathematics & Statistics", school:"Georgia State University", deadline:"Rolling", fee:"$50", funding:"TA funded", status:"Not Started", notes:"ML and Data Science concentration available.", color:"#9B6EE8" },
+  { country:"USA", region:"Rhode Island", program:"PhD CS & Statistics", school:"University of Rhode Island", deadline:"Rolling", fee:"$65", funding:"Full if faculty available", status:"Not Started", notes:"Faculty actively recruiting spring/fall.", color:"#9B6EE8" },
+  { country:"USA", region:"Texas", program:"PhD Computer Science", school:"UT San Antonio (UTSA)", deadline:"Rolling", fee:"$45", funding:"$24,000+ stipend", status:"Not Started", notes:"Rolling admissions — spring available.", color:"#9B6EE8" },
+  { country:"USA", region:"Texas", program:"PhD Computer Science", school:"UT Arlington", deadline:"Rolling", fee:"$60", funding:"TA/RA available", status:"Not Started", notes:"Large CS department, rolling admits.", color:"#9B6EE8" },
+  { country:"USA", region:"Florida", program:"PhD Computer Science", school:"University of South Florida", deadline:"Rolling", fee:"$30", funding:"TA/RA available", status:"Not Started", notes:"Actively fills TA vacancies for spring.", color:"#9B6EE8" },
+  { country:"USA", region:"Texas", program:"PhD Computer Science", school:"Baylor University", deadline:"Rolling", fee:"$50", funding:"Full — tuition + stipend + health", status:"Not Started", notes:"Nearly all doctoral students fully funded.", color:"#9B6EE8" },
+  { country:"USA", region:"Iowa", program:"PhD Computer Science", school:"Iowa State University", deadline:"2026-12-15", fee:"$60", funding:"Full — TA + tuition + health", status:"Not Started", notes:"Full funding for spring admits. December deadline.", color:"#9B6EE8" },
+  { country:"USA", region:"Missouri", program:"PhD Mathematics & Statistics", school:"Missouri S&T", deadline:"Check directly", fee:"$55", funding:"TA funded + waiver", status:"Not Started", notes:"2hrs from Springfield. Dr. Wenqing Hu — Statistical ML.", color:"#9B6EE8" },
+  { country:"USA", region:"Missouri", program:"PhD Biostatistics", school:"KUMC", deadline:"2026-12-01", fee:"$0", funding:"TA/RA funded", status:"Not Started", notes:"Top US Biostatistics target.", color:"#9B6EE8" },
+
+  // ── NORWAY (NOK 530k/yr — all $0 fee, paid PhD position) ─────────────────────
+  { country:"Norway", region:"Trondheim", program:"PhD Statistical Models for Spatio-Temporal Data", school:"NTNU", deadline:"Check jobbnorge.no", fee:"$0", funding:"NOK 530k/yr salary", status:"Not Started", notes:"Paid PhD employee. Apply at jobbnorge.no", color:"#E8704A" },
+  { country:"Norway", region:"Trondheim", program:"PhD Causal Machine Learning (Integreat Centre)", school:"NTNU", deadline:"Check jobbnorge.no", fee:"$0", funding:"NOK 530k/yr salary", status:"Not Started", notes:"Integreat Centre for Research-based Innovation.", color:"#E8704A" },
+  { country:"Norway", region:"Trondheim", program:"PhD Agentic AI, Uncertainty and Risk", school:"NTNU", deadline:"Check jobbnorge.no", fee:"$0", funding:"NOK 530k/yr salary", status:"Not Started", notes:"Cutting edge AI research.", color:"#E8704A" },
+  { country:"Norway", region:"Trondheim", program:"PhD Data-driven Mathematics (Integreat)", school:"NTNU", deadline:"Check jobbnorge.no", fee:"$0", funding:"NOK 530k/yr salary", status:"Not Started", notes:"Data-driven methods focus.", color:"#E8704A" },
+  { country:"Norway", region:"Oslo", program:"PhD Statistics and Data Science (Anomaly Detection/ML)", school:"University of Oslo", deadline:"Check uio.no/vacancies", fee:"$0", funding:"NOK 530k/yr salary", status:"Not Started", notes:"Strong ML focus.", color:"#E8704A" },
+  { country:"Norway", region:"Oslo", program:"PhD Generative AI and Statistics", school:"University of Oslo", deadline:"Check uio.no/vacancies", fee:"$0", funding:"NOK 530k/yr salary", status:"Not Started", notes:"Generative AI research position.", color:"#E8704A" },
+  { country:"Norway", region:"Oslo", program:"PhD Informatics/Energy Informatics AI", school:"University of Oslo", deadline:"Check euraxess.ec.europa.eu", fee:"$0", funding:"NOK 530k/yr salary", status:"Not Started", notes:"Via Euraxess portal.", color:"#E8704A" },
+  { country:"Norway", region:"Bergen", program:"PhD Research Fellow — Statistics", school:"University of Bergen", deadline:"Check jobbnorge.no", fee:"$0", funding:"NOK 530k/yr salary", status:"Not Started", notes:"Statistics research fellowship.", color:"#E8704A" },
+  { country:"Norway", region:"Bergen", program:"PhD Applied and Computational Mathematics", school:"University of Bergen", deadline:"Check jobbnorge.no", fee:"$0", funding:"NOK 530k/yr salary", status:"Not Started", notes:"Applied maths focus.", color:"#E8704A" },
+  { country:"Norway", region:"Tromsø", program:"PhD Statistics/Machine Learning", school:"UiT — The Arctic University", deadline:"Check uit.no/vacancies", fee:"$0", funding:"NOK 530k/yr salary", status:"Not Started", notes:"Northernmost university in world.", color:"#E8704A" },
+
+  // ── NETHERLANDS (€2,872-3,670/mo — all $0 fee) ────────────────────────────────
+  { country:"Netherlands", region:"Delft", program:"PhD Data Science and Machine Learning", school:"TU Delft", deadline:"Check tudelft.nl/vacancies", fee:"$0", funding:"€2,872-3,670/mo", status:"Not Started", notes:"Employer processes work permit. tudelft.nl/vacancies", color:"#C8B030" },
+  { country:"Netherlands", region:"Delft", program:"PhD Mathematics/Statistics (Cyber Analytics Lab)", school:"TU Delft", deadline:"Check tudelft.nl/vacancies", fee:"$0", funding:"€2,872-3,670/mo", status:"Not Started", notes:"Cyber Analytics Lab.", color:"#C8B030" },
+  { country:"Netherlands", region:"Amsterdam", program:"PhD Artificial Intelligence and Machine Learning", school:"University of Amsterdam (UvA)", deadline:"Check uva.nl/vacancies", fee:"$0", funding:"€2,872-3,670/mo", status:"Not Started", notes:"Top AI research in Europe.", color:"#C8B030" },
+  { country:"Netherlands", region:"Amsterdam", program:"PhD Statistics / Data Science", school:"University of Amsterdam (UvA)", deadline:"Check uva.nl/vacancies", fee:"$0", funding:"€2,872-3,670/mo", status:"Not Started", notes:"Second UvA position.", color:"#C8B030" },
+  { country:"Netherlands", region:"Utrecht", program:"PhD Mathematics / Statistics", school:"Utrecht University", deadline:"Check uu.nl/vacancies", fee:"$0", funding:"€2,872-3,670/mo", status:"Not Started", notes:"Strong mathematics department.", color:"#C8B030" },
+  { country:"Netherlands", region:"Utrecht", program:"PhD Data Science", school:"Utrecht University", deadline:"Check uu.nl/vacancies", fee:"$0", funding:"€2,872-3,670/mo", status:"Not Started", notes:"Data science focus.", color:"#C8B030" },
+  { country:"Netherlands", region:"Eindhoven", program:"PhD Data Science / Applied Mathematics", school:"TU/e (Eindhoven)", deadline:"Check tue.nl/vacancies", fee:"$0", funding:"€2,872-3,670/mo", status:"Not Started", notes:"Applied mathematics and AI.", color:"#C8B030" },
+  { country:"Netherlands", region:"Groningen", program:"PhD Statistics / Machine Learning", school:"University of Groningen", deadline:"Check rug.nl/vacancies", fee:"$0", funding:"€2,872-3,670/mo", status:"Not Started", notes:"Northern Netherlands.", color:"#C8B030" },
+
+  // ── GERMANY (DAAD deadline Oct 15, 2026) ─────────────────────────────────────
+  { country:"Germany", region:"Munich", program:"MSc Statistics / Data Science", school:"LMU Munich", deadline:"2026-10-15", fee:"€0", funding:"DAAD scholarship available", status:"Not Started", notes:"Apply for DAAD scholarship at daad.de. Nigeria explicitly eligible.", color:"#3DBF8A" },
+  { country:"Germany", region:"Munich", program:"MSc Data Engineering and Analytics", school:"TU Munich (TUM)", deadline:"2026-10-15", fee:"€0", funding:"DAAD scholarship available", status:"Not Started", notes:"World-class engineering. DAAD deadline Oct 15.", color:"#3DBF8A" },
+  { country:"Germany", region:"Heidelberg", program:"MSc Mathematics / Scientific Computing", school:"Heidelberg University", deadline:"2026-10-15", fee:"€0", funding:"DAAD scholarship available", status:"Not Started", notes:"Oldest university in Germany.", color:"#3DBF8A" },
+  { country:"Germany", region:"Aachen", program:"MSc Computer Science / Data Science", school:"RWTH Aachen", deadline:"2026-10-15", fee:"€0", funding:"DAAD scholarship available", status:"Not Started", notes:"Top engineering school in Germany.", color:"#3DBF8A" },
+  { country:"Germany", region:"Karlsruhe", program:"MSc Mathematics / Statistics", school:"KIT (Karlsruhe)", deadline:"2026-10-15", fee:"€0", funding:"DAAD scholarship available", status:"Not Started", notes:"Strong applied mathematics.", color:"#3DBF8A" },
+  { country:"Germany", region:"Berlin", program:"MSc Statistics / Data Science", school:"Humboldt University Berlin", deadline:"2026-10-15", fee:"€0", funding:"DAAD scholarship available", status:"Not Started", notes:"Berlin — research hub.", color:"#3DBF8A" },
+  { country:"Germany", region:"Berlin", program:"MSc Mathematics / Data Science", school:"TU Berlin", deadline:"2026-10-15", fee:"€0", funding:"DAAD scholarship available", status:"Not Started", notes:"Technical University Berlin. Second Berlin option.", color:"#3DBF8A" },
+
+  // ── SWEDEN (SEK 30-33k/mo — employed PhD) ─────────────────────────────────────
+  { country:"Sweden", region:"Stockholm", program:"PhD Statistics / Machine Learning", school:"KTH Royal Institute of Technology", deadline:"Check kth.se/vacancies", fee:"$0", funding:"SEK 30-33k/mo", status:"Not Started", notes:"Top technical university in Sweden. PR after 3yr PhD.", color:"#7B61FF" },
+  { country:"Sweden", region:"Stockholm", program:"PhD Computer Science / Data Science", school:"KTH Royal Institute of Technology", deadline:"Check kth.se/vacancies", fee:"$0", funding:"SEK 30-33k/mo", status:"Not Started", notes:"Second KTH position — CS focus.", color:"#7B61FF" },
+  { country:"Sweden", region:"Gothenburg", program:"PhD Mathematical Statistics / Machine Learning", school:"Chalmers University", deadline:"Check chalmers.se/vacancies", fee:"$0", funding:"SEK 30-33k/mo", status:"Not Started", notes:"Employed PhD — full salary.", color:"#7B61FF" },
+  { country:"Sweden", region:"Uppsala", program:"PhD Statistics", school:"Uppsala University", deadline:"Check uu.se/vacancies", fee:"$0", funding:"SEK 30-33k/mo", status:"Not Started", notes:"Oldest university in Sweden. PR after 3yr PhD.", color:"#7B61FF" },
+  { country:"Sweden", region:"Umeå", program:"PhD Statistics / Mathematical Statistics", school:"Umeå University", deadline:"Check umu.se/vacancies", fee:"$0", funding:"SEK 30-33k/mo", status:"Not Started", notes:"Strong biostatistics group.", color:"#7B61FF" },
+
+  // ── AUSTRALIA ─────────────────────────────────────────────────────────────────
+  { country:"Australia", region:"Brisbane", program:"MSc Statistics / Data Science", school:"University of Queensland", deadline:"2027-02-01 (2028 intake)", fee:"$100 AUD", funding:"Australia Awards — full tuition + living", status:"Not Started", notes:"Australia Awards Scholarship fully funded. Apply dfat.gov.au/australia-awards. 2-4yr post-study work rights.", color:"#20B2AA" },
+  { country:"Australia", region:"Adelaide", program:"MSc Statistics / Applied Mathematics", school:"University of Adelaide", deadline:"2027-02-01 (2028 intake)", fee:"$100 AUD", funding:"Australia Awards eligible", status:"Not Started", notes:"Australia Awards available. Post-study work visa 2-4yrs.", color:"#20B2AA" },
+  { country:"Australia", region:"Darwin", program:"MSc Data Science / Statistics", school:"Charles Darwin University", deadline:"2027-02-01 (2028 intake)", fee:"$100 AUD", funding:"Australia Awards eligible", status:"Not Started", notes:"Lower tuition option. Australia Awards eligible.", color:"#20B2AA" },
+];
+
+const JOBS_DATA = [
+  // ── MISSOURI — DATA SCIENCE ───────────────────────────────────────────────────
+  { state:"Missouri", field:"Data Science", title:"Entry Level Data Scientist", company:"", salary:"$125k-$155k/yr", employers:"Cerner/Oracle Health, Mastercard, Edward Jones", status:"Searching", notes:"Kansas City MO, St. Louis. Python, R, SQL, ML basics required.", color:"#E8A838" },
+  { state:"Missouri", field:"Data Analytics", title:"Data Analyst I", company:"", salary:"$55k-$75k/yr", employers:"State of Missouri, Commerce Bank, O'Reilly Auto Parts", status:"Searching", notes:"Springfield MO, Jefferson City. Excel, SQL, Python or R.", color:"#E8A838" },
+  { state:"Missouri", field:"Data Analytics", title:"Healthcare Data Analyst", company:"", salary:"$55k-$75k/yr", employers:"CoxHealth, Mercy Health, BJC HealthCare", status:"Searching", notes:"Springfield, Kansas City, St Louis. SAS, R, health data experience.", color:"#E8A838" },
+  { state:"Missouri", field:"Data Analytics", title:"Statistical Analyst", company:"", salary:"$50k-$70k/yr", employers:"Missouri Dept of Health, Missouri DOT", status:"Searching", notes:"Jefferson City, Statewide. SAS or R.", color:"#E8A838" },
+  { state:"Missouri", field:"Data Analytics", title:"Business Intelligence Analyst", company:"", salary:"$60k-$85k/yr", employers:"Stifel Financial, Centene Corporation", status:"Searching", notes:"St. Louis MO. SQL, Tableau or Power BI.", color:"#E8A838" },
+  { state:"Missouri", field:"Data Engineering", title:"Data Engineer I", company:"", salary:"$75k-$100k/yr", employers:"Mastercard, Jack Henry & Associates", status:"Searching", notes:"St. Louis MO, Springfield MO. Python, SQL, ETL pipelines, cloud.", color:"#E8A838" },
+  { state:"Missouri", field:"Research", title:"Research Analyst", company:"", salary:"$60k-$80k/yr", employers:"Federal Reserve Bank of Kansas City", status:"Searching", notes:"Kansas City MO. Strong quantitative background required.", color:"#E8A838" },
+  { state:"Missouri", field:"Research", title:"Operations Research Analyst", company:"", salary:"$65k-$90k/yr", employers:"Boeing (St. Louis), BNSF Railway, Cargill", status:"Searching", notes:"St. Louis MO, Kansas City. MS Math/OR/Statistics.", color:"#E8A838" },
+  { state:"Missouri", field:"Research", title:"AI Research Assistant", company:"", salary:"$35k-$55k/yr", employers:"Missouri S&T, Mizzou, UMKC research labs", status:"Searching", notes:"Rolla, Columbia, Kansas City. NHANES thesis qualifies.", color:"#E8A838" },
+  // ── MISSOURI — SOFTWARE ───────────────────────────────────────────────────────
+  { state:"Missouri", field:"Software Engineering", title:"Full Stack Developer", company:"", salary:"$70k-$95k/yr", employers:"VinSolutions, H&R Block, Sporting Kansas City", status:"Searching", notes:"Kansas City MO. React, Node.js, SQL — your exact stack.", color:"#E8A838" },
+  { state:"Missouri", field:"Software Engineering", title:"Junior Software Developer", company:"", salary:"$55k-$75k/yr", employers:"Springfield-based startups, CoxHealth IT", status:"Searching", notes:"Springfield MO. Any major language.", color:"#E8A838" },
+  { state:"Missouri", field:"Software Engineering", title:"DevOps Engineer I", company:"", salary:"$80k-$105k/yr", employers:"Cerner/Oracle Health, Mastercard", status:"Searching", notes:"Kansas City MO. Linux, Docker, CI/CD, Python.", color:"#E8A838" },
+  // ── MISSOURI — AI/ML ──────────────────────────────────────────────────────────
+  { state:"Missouri", field:"AI / ML", title:"Junior ML Engineer", company:"", salary:"$85k-$110k/yr", employers:"Tech firms Kansas City, St. Louis", status:"Searching", notes:"Python, TensorFlow or PyTorch, ML deployment.", color:"#E8A838" },
+  // ── MISSOURI — TEACHING ───────────────────────────────────────────────────────
+  { state:"Missouri", field:"Teaching", title:"Adjunct Math Instructor", company:"", salary:"$15k-$25k/yr", employers:"OTC, Evangel University, MSU adjunct pool", status:"Searching", notes:"No full license needed for community college adjunct.", color:"#E8A838" },
+  // ── MISSOURI — GOVERNMENT ─────────────────────────────────────────────────────
+  { state:"Missouri", field:"Government", title:"Management / Program Analyst", company:"", salary:"$50k-$75k/yr", employers:"State of Missouri agencies, federal contractors", status:"Searching", notes:"OPT acceptable. MS degree competitive.", color:"#E8A838" },
+  // ── KANSAS ────────────────────────────────────────────────────────────────────
+  { state:"Kansas", field:"Software Engineering", title:"Software Engineer I", company:"", salary:"$78k-$106k/yr", employers:"Garmin International, Cerner/Oracle Health, Jack Henry", status:"Searching", notes:"Olathe KS, Kansas City. Java, Python, or JavaScript. OPT acceptable.", color:"#C8B030" },
+  { state:"Kansas", field:"Data Science", title:"Junior Data Scientist", company:"", salary:"$130k-$160k/yr", employers:"Actalent (contract), Burns & McDonnell", status:"Searching", notes:"Kansas City MO/KS. Python, statistical modeling, data visualization.", color:"#C8B030" },
+  { state:"Kansas", field:"Finance / Quant", title:"Quantitative Analyst", company:"", salary:"$80k-$120k/yr", employers:"BNSF Railway, Cargill, Midwest finance firms", status:"Searching", notes:"Kansas City metro. MS in Math/Stats/Finance required.", color:"#C8B030" },
+  // ── TEXAS ─────────────────────────────────────────────────────────────────────
+  { state:"Texas", field:"Software Engineering", title:"Full Stack Developer", company:"", salary:"$80k-$110k/yr", employers:"Tech companies Dallas/Austin", status:"Searching", notes:"Large tech market. React/Node your exact stack.", color:"#9B6EE8" },
+  { state:"Texas", field:"Data Analytics", title:"Business Analyst", company:"", salary:"$65k-$90k/yr", employers:"Finance and tech companies Dallas/Austin", status:"Searching", notes:"Dallas/Austin. Finance and tech sector.", color:"#9B6EE8" },
+  { state:"Texas", field:"AI / ML", title:"ML Engineer", company:"", salary:"$90k-$130k/yr", employers:"Austin tech firms, Dallas analytics companies", status:"Searching", notes:"Strong AI ecosystem in Austin.", color:"#9B6EE8" },
+  // ── REMOTE ────────────────────────────────────────────────────────────────────
+  { state:"Remote", field:"Software Engineering", title:"Associate Software Engineer", company:"", salary:"$75k-$95k/yr", employers:"Veeva Systems (2025-2026 grads targeted)", status:"Searching", notes:"Remote/Kansas City. CS or SE degree. OPT acceptable.", color:"#3DBF8A" },
+  { state:"Remote", field:"Software Engineering", title:"Cloud Engineer I", company:"", salary:"$80k-$110k/yr", employers:"AWS Partner firms, Boeing", status:"Searching", notes:"St. Louis MO, remote. AWS CCP certification + CS degree, Python.", color:"#3DBF8A" },
+  { state:"Remote", field:"Biostatistics", title:"Biostatistician I", company:"", salary:"$70k-$95k/yr", employers:"IQVIA, PPD, Quintiles (contract CROs)", status:"Searching", notes:"Remote friendly. MS Biostatistics, SAS, clinical trial data.", color:"#3DBF8A" },
+  { state:"Remote", field:"Data Science", title:"Freelance Data Scientist", company:"", salary:"$40-$100/hr", employers:"Upwork, Fiverr, US-based clients", status:"Searching", notes:"OPT legal for remote US-based employers. Python or R.", color:"#3DBF8A" },
+  { state:"Remote", field:"Software Engineering", title:"React / Node.js Developer", company:"", salary:"$40-$100/hr", employers:"Upwork, Fiverr, US-based clients", status:"Searching", notes:"Your exact stack — React and Node.js. OPT-friendly freelance.", color:"#3DBF8A" },
+  // ── HEALTHCARE / BIOSTATISTICS ────────────────────────────────────────────────
+  { state:"Missouri", field:"Healthcare", title:"Healthcare Biostatistician", company:"", salary:"$65k-$85k/yr", employers:"BJC HealthCare, SSM Health, St. Louis Children's Hospital", status:"Searching", notes:"St. Louis MO. Clinical trial or health data experience preferred.", color:"#E8704A" },
+  { state:"Missouri", field:"Consulting", title:"Analytics Consultant", company:"", salary:"$70k-$90k/yr", employers:"Deloitte, Accenture, PwC (St. Louis offices)", status:"Searching", notes:"Big 4 consulting. MS degree preferred. OPT typically accepted.", color:"#E8704A" },
+];
+
+const STATUS_COLORS = {
+  "Submitted":"#3DBF8A", "In Progress":"#E8A838", "Not Started":"#888",
+  "Interview":"#9B6EE8", "Offer":"#3DBF8A", "Rejected":"#E8704A",
+  "Searching":"#3B9EDB", "Applied":"#E8A838", "Withdrawn":"#888",
+};
+
+function NextStepsView({ T, data, save, isMobile }) {
+  const [tab, setTab]           = useState("roadmap"); // roadmap | schools | jobs
+  const [schoolFilter, setSchoolFilter] = useState("All");
+  const [jobFilter, setJobFilter]       = useState("All");
+  const [expandMonth, setExpandMonth]   = useState("September 2026");
+
+  const nsKey   = "nextSteps_amen";
+  const ns      = data[nsKey] || {};
+  const roadmap = ns.roadmap || {};
+  const schools = ns.schools || SCHOOLS_DATA;
+  const jobs    = ns.jobs    || JOBS_DATA;
+
+  function saveNS(updated) {
+    save(p=>({...p, [nsKey]:{...(p[nsKey]||{}), ...updated}}));
+  }
+  function toggleMilestone(month, idx) {
+    const key   = `${month}_${idx}`;
+    const cur   = roadmap[key] || false;
+    saveNS({ roadmap:{...roadmap, [key]:!cur} });
+  }
+  function updateSchool(idx, field, val) {
+    const updated = schools.map((s,i)=>i===idx?{...s,[field]:val}:s);
+    saveNS({ schools:updated });
+  }
+  function updateJob(idx, field, val) {
+    const updated = jobs.map((j,i)=>i===idx?{...j,[field]:val}:j);
+    saveNS({ jobs:updated });
+  }
+  function addSchool() {
+    saveNS({ schools:[...schools, { country:"Canada", program:"", school:"", deadline:"", status:"Not Started", notes:"", color:"#3B9EDB" }] });
+  }
+  function addJob() {
+    saveNS({ jobs:[...jobs, { state:"Missouri", field:"", title:"", company:"", status:"Searching", notes:"", color:"#E8A838" }] });
+  }
+
+  const cs  = (ex={}) => ({ background:T.surface, border:`1px solid ${T.border}`, borderRadius:14, ...ex });
+  const inp = { background:T.inputBg, border:`1px solid ${T.border}`, borderRadius:8, padding:"6px 9px", color:T.text, fontFamily:"'DM Sans',sans-serif", fontSize:12, outline:"none", width:"100%", boxSizing:"border-box" };
+
+  const totalMilestones = ROADMAP.reduce((s,m)=>s+m.milestones.length, 0);
+  const doneMilestones  = ROADMAP.reduce((s,m)=>s+m.milestones.filter((_,i)=>roadmap[`${m.month}_${i}`]).length, 0);
+  const pct = Math.round((doneMilestones/totalMilestones)*100);
+
+  const schoolCountries = ["All","Canada","USA","Norway","Netherlands","Germany","Sweden","Australia"];
+  const jobStates       = ["All", ...new Set(JOBS_DATA.map(j=>j.state))];
+
+  return (
+    <div style={{padding:"16px 16px 80px", fontFamily:"'DM Sans',sans-serif"}}>
+      {/* Header */}
+      <div style={{marginBottom:16}}>
+        <div style={{fontFamily:"'DM Serif Display',serif", fontSize:26, color:"#3DBF8A", marginBottom:4}}>🚀 Next Steps</div>
+        <div style={{fontSize:13, color:T.textSub}}>Sep → Dec 2026 — your roadmap to graduation and beyond.</div>
+      </div>
+
+      {/* Overall progress */}
+      <div style={{...cs({padding:"14px 16px", marginBottom:14, borderTop:"4px solid #3DBF8A"})}}>
+        <div style={{display:"flex", justifyContent:"space-between", marginBottom:6}}>
+          <span style={{fontSize:13, fontWeight:700, color:T.text}}>Roadmap progress</span>
+          <span style={{fontSize:18, fontWeight:800, color:"#3DBF8A"}}>{pct}%</span>
+        </div>
+        <div style={{height:8, background:T.inputBg, borderRadius:8}}>
+          <div style={{height:"100%", width:`${pct}%`, background:"linear-gradient(90deg,#3DBF8A,#20B2AA)", borderRadius:8, transition:"width 0.4s"}}/>
+        </div>
+        <div style={{fontSize:11, color:T.textMuted, marginTop:4}}>{doneMilestones} of {totalMilestones} milestones complete</div>
+      </div>
+
+      {/* Tab nav */}
+      <div style={{display:"flex", gap:2, background:T.inputBg, borderRadius:10, padding:3, marginBottom:16}}>
+        {[["roadmap","🗺 Roadmap"],["schools","🎓 Schools"],["jobs","💼 Jobs"]].map(([v,l])=>(
+          <button key={v} onClick={()=>setTab(v)}
+            style={{flex:1, padding:"8px 4px", borderRadius:8, border:"none", cursor:"pointer", fontFamily:"'DM Sans',sans-serif", fontSize:12, fontWeight:tab===v?700:400, background:tab===v?"#3DBF8A":"transparent", color:tab===v?"#fff":T.textSub}}>
+            {l}
+          </button>
+        ))}
+      </div>
+
+      {/* ── ROADMAP TAB ── */}
+      {tab==="roadmap"&&(
+        <div>
+          {ROADMAP.map(month=>{
+            const isOpen   = expandMonth===month.month;
+            const total    = month.milestones.length;
+            const done     = month.milestones.filter((_,i)=>roadmap[`${month.month}_${i}`]).length;
+            const mpct     = Math.round((done/total)*100);
+            return (
+              <div key={month.month} style={{marginBottom:10}}>
+                <button onClick={()=>setExpandMonth(isOpen?null:month.month)}
+                  style={{...cs({padding:"14px 16px", width:"100%", border:"none", cursor:"pointer", borderLeft:`4px solid ${month.color}`, background:isOpen?`${month.color}11`:T.surface, display:"flex", alignItems:"center", justifyContent:"space-between", gap:8})}}>
+                  <div style={{display:"flex", alignItems:"center", gap:10, minWidth:0}}>
+                    <span style={{fontSize:20}}>{month.icon}</span>
+                    <div style={{textAlign:"left", minWidth:0}}>
+                      <div style={{fontSize:14, fontWeight:700, color:T.text, fontFamily:"'DM Sans',sans-serif"}}>{month.month}</div>
+                      <div style={{fontSize:11, color:T.textMuted, marginTop:1}}>{month.theme}</div>
+                    </div>
+                  </div>
+                  <div style={{display:"flex", alignItems:"center", gap:8, flexShrink:0}}>
+                    <div style={{textAlign:"right"}}>
+                      <div style={{fontSize:14, fontWeight:800, color:month.color}}>{mpct}%</div>
+                      <div style={{fontSize:10, color:T.textMuted}}>{done}/{total}</div>
+                    </div>
+                    <span style={{color:T.textMuted, fontSize:12}}>{isOpen?"▲":"▼"}</span>
+                  </div>
+                </button>
+                {isOpen&&(
+                  <div style={{...cs({borderTop:"none", borderTopLeftRadius:0, borderTopRightRadius:0, padding:"4px 0 8px"})}}>
+                    {/* Progress bar */}
+                    <div style={{height:3, background:T.inputBg, margin:"0 16px 12px"}}>
+                      <div style={{height:"100%", width:`${mpct}%`, background:month.color, borderRadius:3, transition:"width 0.3s"}}/>
+                    </div>
+                    {/* Category grouping */}
+                    {["Academic","Career","School","Finance","Faith","Relation"].map(cat=>{
+                      const catItems = month.milestones.map((m,i)=>({...m,i})).filter(m=>m.cat===cat);
+                      if (catItems.length===0) return null;
+                      return (
+                        <div key={cat} style={{marginBottom:8}}>
+                          <div style={{fontSize:10, fontWeight:700, color:T.textMuted, textTransform:"uppercase", letterSpacing:"0.08em", padding:"4px 16px 4px"}}>{cat}</div>
+                          {catItems.map(m=>{
+                            const done = roadmap[`${month.month}_${m.i}`];
+                            return (
+                              <div key={m.i} onClick={()=>toggleMilestone(month.month,m.i)}
+                                style={{display:"flex", alignItems:"center", gap:10, padding:"8px 16px", cursor:"pointer", opacity:done?0.6:1}}>
+                                <div style={{width:20, height:20, borderRadius:6, border:`2px solid ${done?"#3DBF8A":month.color}`, background:done?"#3DBF8A":"transparent", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, transition:"all 0.15s"}}>
+                                  {done&&<span style={{color:"#fff", fontSize:11, fontWeight:700}}>✓</span>}
+                                </div>
+                                <span style={{fontSize:13, color:T.text, textDecoration:done?"line-through":"none", lineHeight:1.5}}>{m.item}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* ── SCHOOLS TAB ── */}
+      {tab==="schools"&&(
+        <div>
+          {/* Stats */}
+          <div style={{display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:8, marginBottom:14}}>
+            {[
+              ["Total",    schools.length,                                              "#3B9EDB"],
+              ["Canada",   schools.filter(s=>s.country==="Canada").length,              "#3B9EDB"],
+              ["USA",      schools.filter(s=>s.country==="USA").length,                 "#9B6EE8"],
+            ].map(([l,v,col])=>(
+              <div key={l} style={{...cs({padding:"10px", textAlign:"center"})}}>
+                <div style={{fontSize:20, fontWeight:800, color:col}}>{v}</div>
+                <div style={{fontSize:10, fontWeight:700, color:T.textMuted, textTransform:"uppercase"}}>{l}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Country filter */}
+          <div style={{display:"flex", gap:6, marginBottom:14, flexWrap:"wrap"}}>
+            {schoolCountries.map(c=>(
+              <button key={c} onClick={()=>setSchoolFilter(c)}
+                style={{padding:"5px 14px", borderRadius:20, border:"none", cursor:"pointer", fontFamily:"'DM Sans',sans-serif", fontSize:12, fontWeight:schoolFilter===c?700:400, background:schoolFilter===c?"#3B9EDB":"transparent", color:schoolFilter===c?"#fff":T.textSub, outline:schoolFilter===c?"none":`1px solid ${T.border}`}}>
+                {c}
+              </button>
+            ))}
+          </div>
+
+          {/* Add button */}
+          <button onClick={addSchool} style={{width:"100%", padding:"10px", borderRadius:10, border:"none", background:"#3B9EDB22", color:"#3B9EDB", cursor:"pointer", fontFamily:"'DM Sans',sans-serif", fontSize:13, fontWeight:700, marginBottom:12}}>
+            + Add School
+          </button>
+
+          {/* Schools grouped by country then program */}
+          {["Canada","USA","Norway","Netherlands","Germany","Sweden","Australia"].filter(co=>schoolFilter==="All"||schoolFilter===co).map(co=>{
+            const countrySchools = schools.filter((s,i)=>({...s,i})).map((s,i)=>({...s,oi:i})).filter(s=>s.country===co);
+            if (countrySchools.length===0) return null;
+            const programs = [...new Set(countrySchools.map(s=>s.program))];
+            return (
+              <div key={co} style={{marginBottom:20}}>
+                <div style={{fontSize:13, fontWeight:700, color:co==="Canada"?"#3B9EDB":co==="USA"?"#9B6EE8":co==="Norway"?"#E8704A":co==="Netherlands"?"#C8B030":co==="Germany"?"#3DBF8A":co==="Sweden"?"#7B61FF":co==="Australia"?"#20B2AA":"#888", textTransform:"uppercase", letterSpacing:"0.07em", marginBottom:10}}>
+                  {co==="Canada"?"🍁 Canada":co==="USA"?"🇺🇸 United States":co==="Norway"?"🇳🇴 Norway":co==="Netherlands"?"🇳🇱 Netherlands":co==="Germany"?"🇩🇪 Germany":co==="Sweden"?"🇸🇪 Sweden":co==="Australia"?"🇦🇺 Australia":co}
+                </div>
+                {programs.map(prog=>{
+                  const progSchools = countrySchools.filter(s=>s.program===prog);
+                  return (
+                    <div key={prog} style={{marginBottom:12}}>
+                      <div style={{fontSize:11, fontWeight:700, color:T.textMuted, textTransform:"uppercase", letterSpacing:"0.06em", marginBottom:6, paddingLeft:4}}>{prog}</div>
+                      {progSchools.map(s=>(
+                        <div key={s.oi} style={{...cs({padding:"13px 14px", marginBottom:6, borderLeft:`4px solid ${STATUS_COLORS[s.status]||"#888"}`})}}>
+                          <div style={{display:"flex", alignItems:"flex-start", justifyContent:"space-between", gap:8, marginBottom:8}}>
+                            <div style={{flex:1}}>
+                              <div style={{fontSize:14, fontWeight:700, color:T.text}}>{s.school}</div>
+                              <div style={{fontSize:11, color:T.textMuted, marginTop:2}}>{s.deadline?"Deadline: "+s.deadline:""}</div>
+                            </div>
+                            <select value={s.status} onChange={e=>updateSchool(s.oi,"status",e.target.value)}
+                              style={{...inp, width:"auto", fontSize:11, padding:"4px 6px", color:STATUS_COLORS[s.status]||T.text, fontWeight:700}}>
+                              {["Not Started","In Progress","Submitted","Interview","Offer","Rejected"].map(st=><option key={st}>{st}</option>)}
+                            </select>
+                          </div>
+                          <input style={inp} placeholder="Notes..." value={s.notes} onChange={e=>updateSchool(s.oi,"notes",e.target.value)}/>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* ── JOBS TAB ── */}
+      {tab==="jobs"&&(
+        <div>
+          {/* Stats */}
+          <div style={{display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:8, marginBottom:14}}>
+            {[
+              ["Total",    jobs.length,                                            "#E8A838"],
+              ["Active",   jobs.filter(j=>!["Rejected","Withdrawn"].includes(j.status)).length, "#3DBF8A"],
+              ["Offers",   jobs.filter(j=>j.status==="Offer").length,             "#3DBF8A"],
+            ].map(([l,v,col])=>(
+              <div key={l} style={{...cs({padding:"10px", textAlign:"center"})}}>
+                <div style={{fontSize:20, fontWeight:800, color:col}}>{v}</div>
+                <div style={{fontSize:10, fontWeight:700, color:T.textMuted, textTransform:"uppercase"}}>{l}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Offer target */}
+          <div style={{...cs({padding:"11px 14px", marginBottom:14, borderLeft:"4px solid #3DBF8A"})}}>
+            <div style={{display:"flex", justifyContent:"space-between", marginBottom:5}}>
+              <span style={{fontSize:13, fontWeight:600, color:T.text}}>Offers toward target (3)</span>
+              <span style={{fontSize:14, fontWeight:800, color:"#3DBF8A"}}>{Math.min(jobs.filter(j=>j.status==="Offer").length,3)}/3</span>
+            </div>
+            <div style={{height:6, background:T.inputBg, borderRadius:6}}>
+              <div style={{height:"100%", width:`${Math.min((jobs.filter(j=>j.status==="Offer").length/3)*100,100)}%`, background:"#3DBF8A", borderRadius:6}}/>
+            </div>
+          </div>
+
+          {/* State filter */}
+          <div style={{display:"flex", gap:6, marginBottom:14, flexWrap:"wrap"}}>
+            {jobStates.map(s=>(
+              <button key={s} onClick={()=>setJobFilter(s)}
+                style={{padding:"5px 14px", borderRadius:20, border:"none", cursor:"pointer", fontFamily:"'DM Sans',sans-serif", fontSize:12, fontWeight:jobFilter===s?700:400, background:jobFilter===s?"#E8A838":"transparent", color:jobFilter===s?"#111":T.textSub, outline:jobFilter===s?"none":`1px solid ${T.border}`}}>
+                {s}
+              </button>
+            ))}
+          </div>
+
+          {/* Add button */}
+          <button onClick={addJob} style={{width:"100%", padding:"10px", borderRadius:10, border:"none", background:"#E8A83822", color:"#E8A838", cursor:"pointer", fontFamily:"'DM Sans',sans-serif", fontSize:13, fontWeight:700, marginBottom:12}}>
+            + Add Job
+          </button>
+
+          {/* Jobs grouped by state then field */}
+          {["Missouri","Kansas","Texas","Remote"].filter(st=>jobFilter==="All"||jobFilter===st).map(st=>{
+            const stateJobs = jobs.map((j,i)=>({...j,oi:i})).filter(j=>j.state===st);
+            if (stateJobs.length===0) return null;
+            const fields = [...new Set(stateJobs.map(j=>j.field))];
+            const stColors = {Missouri:"#E8A838",Kansas:"#C8B030",Texas:"#E8704A",Remote:"#3DBF8A"};
+            return (
+              <div key={st} style={{marginBottom:20}}>
+                <div style={{fontSize:13, fontWeight:700, color:stColors[st]||"#888", textTransform:"uppercase", letterSpacing:"0.07em", marginBottom:10}}>
+                  📍 {st}
+                </div>
+                {fields.map(field=>{
+                  const fieldJobs = stateJobs.filter(j=>j.field===field);
+                  return (
+                    <div key={field} style={{marginBottom:12}}>
+                      <div style={{fontSize:11, fontWeight:700, color:T.textMuted, textTransform:"uppercase", letterSpacing:"0.06em", marginBottom:6, paddingLeft:4}}>{field}</div>
+                      {fieldJobs.map(j=>(
+                        <div key={j.oi} style={{...cs({padding:"12px 14px", marginBottom:6, borderLeft:`4px solid ${STATUS_COLORS[j.status]||"#888"}`})}}>
+                          <div style={{display:"flex", alignItems:"flex-start", justifyContent:"space-between", gap:8, marginBottom:8}}>
+                            <div style={{flex:1}}>
+                              <div style={{fontSize:14, fontWeight:700, color:T.text}}>{j.title}</div>
+                              {j.company&&<div style={{fontSize:12, color:T.textSub, marginTop:1}}>{j.company}</div>}
+                            </div>
+                            <select value={j.status} onChange={e=>updateJob(j.oi,"status",e.target.value)}
+                              style={{...inp, width:"auto", fontSize:11, padding:"4px 6px", color:STATUS_COLORS[j.status]||T.text, fontWeight:700}}>
+                              {["Searching","Applied","Interview","Offer","Rejected","Withdrawn"].map(st=><option key={st}>{st}</option>)}
+                            </select>
+                          </div>
+                          <input style={{...inp, marginBottom:5}} placeholder="Company name..." value={j.company||""} onChange={e=>updateJob(j.oi,"company",e.target.value)}/>
+                          <input style={inp} placeholder="Notes..." value={j.notes} onChange={e=>updateJob(j.oi,"notes",e.target.value)}/>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function SummerApp({mode,T,onBack}) {
   const _td2=new Date(); const today=`${_td2.getFullYear()}-${String(_td2.getMonth()+1).padStart(2,'0')}-${String(_td2.getDate()).padStart(2,'0')}`;
   const dow=new Date().getDay();
@@ -1667,6 +2151,7 @@ export default function SummerApp({mode,T,onBack}) {
         decGoals_gloria:{}, goalNotes_gloria:{},
         jobApps_gloria:[], weeklyReviews_gloria:{}, personalProjects_gloria:[],
         shoppingList_gloria:[],
+        nextSteps_amen:{},
       };
       const merged = stored ? { ...defaults, ...stored } : defaults;
       // Seed fall tasks if empty
@@ -3357,6 +3842,7 @@ export default function SummerApp({mode,T,onBack}) {
         {/* Amen views */}
         {profile==="amen"&&pillar==="tracker"   && viewTracker}
         {profile==="amen"&&pillar==="overview"  && viewOverview}
+        {profile==="amen"&&pillar==="nextsteps" && <NextStepsView T={T} data={data} save={save} isMobile={isMobile}/>}
         {profile==="amen"&&pillar==="goals"    && <GoalsView T={T} data={data} save={save} isMobile={isMobile}/>}
         {profile==="amen"&&pillar==="review"   && <WeeklyReviewView T={T} data={data} save={save} TODAY={today}/>}
         {profile==="amen"&&pillar==="jobs"     && <JobsView T={T} data={data} save={save} isMobile={isMobile}/>}
