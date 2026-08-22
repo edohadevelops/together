@@ -1614,6 +1614,54 @@ const FALL_STARTER_TASKS = [
 
 
 
+
+// ── OPT Data (from document — new Sep 15 2026 USCIS rules) ───────────────────
+const OPT_TIMELINE = [
+  { date:"2026-09-01", label:"Visit MSU International Office",          status:"action",  urgent:true,  detail:"Request OPT recommendation in SEVIS. This is the earliest you can apply. Bring passport + current I-20." },
+  { date:"2026-09-15", label:"DSO enters OPT in SEVIS",                 status:"waiting", urgent:false, detail:"DSO generates updated I-20 with OPT recommendation on page 2. Takes 7-14 business days." },
+  { date:"2026-10-01", label:"File Form I-765 on myUSCIS.gov",          status:"action",  urgent:true,  detail:"File immediately after DSO recommends OPT. Must file within 30 days of DSO recommendation or application is auto-denied. Pay $410 filing fee. Select category (C)(3)(B)." },
+  { date:"2026-10-15", label:"Biometrics appointment (ASC)",            status:"waiting", urgent:false, detail:"USCIS will mail and email a Biometric Services Appointment notice. Appear in person at the Application Support Center on the scheduled date." },
+  { date:"2026-12-01", label:"Graduate from Missouri State",            status:"action",  urgent:false, detail:"Complete all degree requirements. Graduation date triggers your 30-day grace period countdown." },
+  { date:"2026-12-31", label:"30-day grace period ends",               status:"warning", urgent:true,  detail:"NEW RULE: Grace period reduced from 60 to 30 days. Must have OPT approved, be enrolled elsewhere, or leave the US by this date." },
+  { date:"2027-01-15", label:"Receive EAD card by mail",               status:"waiting", urgent:false, detail:"Standard processing 90-120 days. Do NOT start working until EAD card is physically in hand AND your start date has arrived." },
+  { date:"2027-01-15", label:"Begin working on OPT",                   status:"goal",    urgent:false, detail:"Report employer to MSU SEVIS portal within 10 days of starting. Report every employer including freelance clients." },
+  { date:"2027-09-01", label:"Apply for STEM OPT Extension (24 mo)",   status:"goal",    urgent:false, detail:"Apply 90 days before initial OPT expires (~Sep 2027). Employer must be E-Verify registered. Employer signs Form I-983 Training Plan." },
+];
+
+const OPT_DOCS = [
+  { num:1, name:"Form I-765 (Application for Employment Authorization)", detail:"Filed online at myUSCIS.gov. Select category (C)(3)(B) for post-completion OPT.", status:"Not started" },
+  { num:2, name:"OPT-recommended Form I-20", detail:"Issued by DSO at MSU International Student Office. Must be dated within 30 days. Must have DSO signature on page 2.", status:"Not started" },
+  { num:3, name:"Passport biographical page", detail:"Nigerian passport B02978406 — expires Nov 28 2028. Valid 6+ months beyond OPT start date. ✓ You are fine.", status:"Ready" },
+  { num:4, name:"Most recent F-1 visa stamp", detail:"Provide even if expired. Clear color scan required.", status:"Not started" },
+  { num:5, name:"I-94 record", detail:"Download electronic I-94 at cbp.gov/i94. Print the I-94 page (not travel history page).", status:"Not started" },
+  { num:6, name:"ALL previous I-20 forms", detail:"Every I-20 from first enrollment at Missouri State to present. Gather and scan all pages.", status:"Not started" },
+  { num:7, name:"Two passport-style photos", detail:"White background, taken within 30 days, no glasses. Write name + SEVIS ID lightly in pencil on back.", status:"Not started" },
+  { num:8, name:"Unofficial transcript", detail:"Shows enrollment and expected graduation date. USCIS may request this during processing.", status:"Not started" },
+  { num:9, name:"Previous EAD card (front + back)", detail:"Only if you had OPT at a previous degree level. Not applicable if this is your first OPT.", status:"N/A" },
+];
+
+const OPT_COSTS = [
+  { item:"Form I-765 filing fee",          amount:"$410",   note:"Confirm current fee at uscis.gov before filing. Paid by bank account, debit, or credit card." },
+  { item:"Premium Processing (optional)",  amount:"$1,780", note:"Guarantees decision within 30 business days. Optional — standard is 90-120 days." },
+  { item:"Biometrics fee",                 amount:"$0",     note:"Included in the I-765 filing fee as of 2026." },
+  { item:"STEM OPT Extension (I-765)",     amount:"$0",     note:"No fee for STEM OPT extension. Form I-765 renewal at no cost." },
+  { item:"Form I-983 (Training Plan)",     amount:"$0",     note:"Employer signs this. No filing fee. Required for STEM extension." },
+  { item:"Passport photos",               amount:"~$15",   note:"CVS, Walgreens, or FedEx. Take within 30 days of filing." },
+  { item:"Total (standard)",              amount:"$425",   note:"Minimum cost including photos. Budget $450 to be safe.", bold:true },
+  { item:"Total (premium processing)",    amount:"$2,205", note:"If you need expedited approval. Budget accordingly.", bold:true },
+];
+
+const OPT_RULES = [
+  { rule:"90-day unemployment limit", detail:"You can only be unemployed for a total of 90 days during your 12-month OPT period. If you exceed 90 days you must leave the US or change status.", urgent:true },
+  { rule:"Report employer within 10 days", detail:"Every time you start a new job — including freelance clients — you must report employer name, address, and start date to MSU SEVIS portal within 10 days.", urgent:true },
+  { rule:"E-Verify for STEM extension", detail:"Your employer must be registered with E-Verify to qualify for the 24-month STEM OPT extension. Confirm this before accepting any job offer.", urgent:false },
+  { rule:"Job must be degree-related", detail:"Your work must be directly related to your degree (Mathematics, Statistics, or Software Engineering). Unrelated work does not count toward OPT and counts as unemployment days.", urgent:true },
+  { rule:"Do NOT work before EAD arrives", detail:"Even if your start date has passed, you cannot work until the physical EAD card is in your hands. Working before EAD arrives is a visa violation.", urgent:true },
+  { rule:"Freelance counts as OPT employment", detail:"You can work as a freelancer on OPT — report each client as an employer in the SEVIS portal. Upwork, Fiverr, and direct contracts all qualify.", urgent:false },
+  { rule:"File STEM extension 90 days early", detail:"Apply 90 days before initial OPT expires (~September 2027). You can keep working while the extension is pending if you filed on time.", urgent:false },
+];
+
+
 // ── NextStepsView ─────────────────────────────────────────────────────────────
 const ROADMAP = [
   {
@@ -1866,10 +1914,10 @@ function NextStepsView({ T, data, save, isMobile }) {
       </div>
 
       {/* Tab nav */}
-      <div style={{display:"flex", gap:2, background:T.inputBg, borderRadius:10, padding:3, marginBottom:16}}>
-        {[["roadmap","🗺 Roadmap"],["schools","🎓 Schools"],["jobs","💼 Jobs"]].map(([v,l])=>(
+      <div style={{display:"flex", gap:2, background:T.inputBg, borderRadius:10, padding:3, marginBottom:16, flexWrap:"wrap"}}>
+        {[["roadmap","🗺 Roadmap"],["schools","🎓 Schools"],["jobs","💼 Jobs"],["opt","📋 OPT"]].map(([v,l])=>(
           <button key={v} onClick={()=>setTab(v)}
-            style={{flex:1, padding:"8px 4px", borderRadius:8, border:"none", cursor:"pointer", fontFamily:"'DM Sans',sans-serif", fontSize:12, fontWeight:tab===v?700:400, background:tab===v?"#3DBF8A":"transparent", color:tab===v?"#fff":T.textSub}}>
+            style={{flex:1, minWidth:70, padding:"8px 4px", borderRadius:8, border:"none", cursor:"pointer", fontFamily:"'DM Sans',sans-serif", fontSize:12, fontWeight:tab===v?700:400, background:tab===v?"#3DBF8A":"transparent", color:tab===v?"#fff":T.textSub}}>
             {l}
           </button>
         ))}
@@ -2092,6 +2140,381 @@ function NextStepsView({ T, data, save, isMobile }) {
           })}
         </div>
       )}
+
+      {/* ── OPT TAB ── */}
+      {tab==="opt"&&(()=>{
+        // ── Phase-based OPT journey ─────────────────────────────────────────
+        // Phases must be completed in order. Each phase unlocks the next.
+        // Data saved per-phase in Supabase.
+        const optData    = data.optJourney || {};
+        const activePhase= data.optActivePhase ?? 0;
+        const unemployed = data.optUnemployedDays || 0;
+        const optSaved   = data.optSavedAmount || 0;
+        const optTarget  = data.optPremium ? 2190 : 410;
+        const optPct     = Math.min(Math.round((optSaved/optTarget)*100), 100);
+
+        function saveOpt(updates) { save(p=>({...p, optJourney:{...(p.optJourney||{}), ...updates}})); }
+        function setActivePhase(n) { save(p=>({...p, optActivePhase:n})); }
+        function toggleDoc(phaseKey, docIdx) {
+          const cur = (optData[phaseKey] || []);
+          const updated = cur.includes(docIdx) ? cur.filter(i=>i!==docIdx) : [...cur, docIdx];
+          saveOpt({[phaseKey]: updated});
+        }
+        function toggleStep(phaseKey, stepIdx) {
+          const cur = (optData[`steps_${phaseKey}`] || []);
+          const updated = cur.includes(stepIdx) ? cur.filter(i=>i!==stepIdx) : [...cur, stepIdx];
+          saveOpt({[`steps_${phaseKey}`]: updated});
+        }
+        function phaseComplete(phase) {
+          const docs  = phase.docs  || [];
+          const steps = phase.steps || [];
+          const doneDocs  = (optData[phase.key]||[]).length;
+          const doneSteps = (optData[`steps_${phase.key}`]||[]).length;
+          return doneDocs >= docs.length && doneSteps >= steps.length;
+        }
+
+        const PHASES = [
+          {
+            key:"p0", num:0, label:"Understand OPT", icon:"📖", color:"#3B9EDB",
+            tagline:"Know the rules before you file — mistakes cost your status.",
+            unlock:"Always unlocked",
+            steps:[
+              { text:"Read: OPT = 12 months work authorization for F-1 graduates. STEM extension adds 24 more = 36 months total." },
+              { text:"Know the new Sep 15 2026 USCIS rules: grace period is now 30 days (was 60). File I-765 within 30 days of DSO recommendation or it is auto-denied." },
+              { text:"Know the 90-day unemployment limit: you can only be unemployed 90 days total across the entire OPT period. Exceeding this = you must leave the US." },
+              { text:"Know E-Verify: your employer must be registered with E-Verify to qualify for the STEM extension. Ask HR before accepting any offer." },
+              { text:"Know the job must be degree-related: your work must relate to Mathematics, Statistics, or Software Engineering. Unrelated work counts as unemployment days." },
+              { text:"Know you CANNOT work until your EAD card arrives physically in your hands — even if your start date has passed." },
+            ],
+            docs:[],
+            info:[
+              { label:"Standard OPT", value:"12 months" },
+              { label:"STEM extension", value:"+ 24 months" },
+              { label:"Total possible", value:"36 months" },
+              { label:"Filing fee", value:"$410" },
+              { label:"Premium processing", value:"$1,780 (optional)" },
+              { label:"Grace period after graduation", value:"30 days (NEW)" },
+              { label:"Processing time", value:"90-120 days" },
+            ]
+          },
+          {
+            key:"p1", num:1, label:"Contact MSU International Office", icon:"🏫", color:"#E8A838",
+            tagline:"Do this in September 2026 — 90 days before December graduation.",
+            unlock:"Complete Phase 0",
+            deadline:"September 2026",
+            steps:[
+              { text:"Visit MSU International Student Office in Jordan Valley Innovation Center (JVIC). Tell them: 'I am graduating in December 2026 and want to apply for post-completion OPT.'" },
+              { text:"Bring your passport and current I-20 to the appointment." },
+              { text:"Ask your DSO to enter an OPT recommendation into SEVIS. This generates an updated I-20 with OPT recommendation on page 2." },
+              { text:"Wait 7-14 business days for updated I-20 to be issued." },
+              { text:"When you receive your updated I-20 — print all 3 pages. Sign the bottom of page 1 in the Student Attestation section. Scan all 3 pages and save digitally." },
+            ],
+            docs:[],
+            warning:"You must file Form I-765 within 30 days of DSO recommendation. Do not delay after receiving your updated I-20.",
+          },
+          {
+            key:"p2", num:2, label:"Gather all documents", icon:"📄", color:"#9B6EE8",
+            tagline:"Collect everything before you file — missing docs = rejection.",
+            unlock:"Complete Phase 1",
+            deadline:"October 2026",
+            steps:[
+              { text:"Create your USCIS online account at myaccount.uscis.gov if you do not have one already." },
+            ],
+            docs:[
+              { name:"Form I-765", detail:"Do not print — filed online at myUSCIS.gov. Have your info ready." },
+              { name:"OPT-recommended Form I-20", detail:"The updated one from MSU DSO. Must be dated within 30 days. Must have DSO signature on page 2. Print all 3 pages, sign page 1, scan." },
+              { name:"Passport biographical page", detail:"Your Nigerian passport B02978406 expires Nov 28 2028 — you are fine. Color scan, all 4 corners visible." },
+              { name:"Most recent F-1 visa stamp", detail:"Provide even if expired. Clear color scan both sides." },
+              { name:"I-94 record", detail:"Download at cbp.gov/i94. Print the I-94 page (not travel history). Must show your most recent entry." },
+              { name:"ALL previous I-20 forms", detail:"Every I-20 from first enrollment at MSU to present. Gather originals, scan all pages in order." },
+              { name:"Two passport-style photos", detail:"White background. Taken within 30 days of filing. No glasses. Write name + SEVIS ID lightly in pencil on the back of each." },
+              { name:"Unofficial transcript", detail:"Download from BearPass. Must show enrollment and expected graduation date. USCIS may request this during review." },
+            ],
+          },
+          {
+            key:"p3", num:3, label:"File Form I-765 online", icon:"📨", color:"#E8704A",
+            tagline:"File immediately after receiving updated I-20 — do not wait.",
+            unlock:"Complete Phase 2",
+            deadline:"October 2026 — within 30 days of DSO recommendation",
+            steps:[
+              { text:"Log in to myaccount.uscis.gov. Click 'File a Form Online' → Select 'I-765 Application for Employment Authorization'." },
+              { text:"Select eligibility category: (C)(3)(B) — this is post-completion OPT for F-1 students." },
+              { text:"Complete all sections of the online I-765. Your SEVIS ID and A-Number are on your I-20." },
+              { text:"Upload all documents from Phase 2 in the correct order." },
+              { text:"Pay the $410 filing fee by bank account, debit, or credit card. Optional: pay $1,780 for Premium Processing (guarantees decision in 30 business days — recommended if you need your EAD by January)." },
+              { text:"Submit the application. You receive an electronic receipt notice immediately. Your receipt number begins with IOE for online filings. Save this number." },
+              { text:"Screenshot and save your receipt confirmation. This is your proof of timely filing." },
+            ],
+            docs:[],
+            info:[
+              { label:"Eligibility category", value:"(C)(3)(B)" },
+              { label:"Filing fee", value:"$410" },
+              { label:"Premium Processing", value:"$1,780 optional" },
+              { label:"Receipt number format", value:"IOE..." },
+            ]
+          },
+          {
+            key:"p4", num:4, label:"Biometrics appointment", icon:"👆", color:"#3DBF8A",
+            tagline:"Appear in person at the Application Support Center on the date given.",
+            unlock:"Complete Phase 3",
+            steps:[
+              { text:"Watch for a Biometric Services Appointment (BSA) notice in your USCIS online account AND physical mail. Check both regularly." },
+              { text:"Bring your appointment notice, your passport, and your I-20 to the ASC on the scheduled date." },
+              { text:"Fingerprints and photo will be taken. The appointment takes about 20-30 minutes." },
+              { text:"After biometrics — track your application at uscis.gov using your IOE receipt number. Standard processing is 90-120 days." },
+            ],
+            docs:[],
+          },
+          {
+            key:"p5", num:5, label:"Receive EAD card & begin work", icon:"💳", color:"#3DBF8A",
+            tagline:"Do NOT work until the physical card is in your hands.",
+            unlock:"Complete Phase 4",
+            deadline:"January-February 2027",
+            steps:[
+              { text:"EAD card arrives by USPS mail. Do NOT start working until the card is physically in your hands AND your start date printed on the card has arrived." },
+              { text:"Check that all info on the EAD is correct: name, SEVIS ID, employment authorization dates, category (C)(3)(B)." },
+              { text:"Make 2 color copies of your EAD card (front and back) and store them safely." },
+              { text:"Start your job. Within 10 days of starting — report your employer (name, address, start date) through the MSU SEVIS portal at missouristate.edu/international." },
+              { text:"If you work multiple jobs or switch employers — report each change to SEVIS within 10 days. Freelance clients count as employers too." },
+              { text:"Track your unemployment days below. You get 90 total — do not exceed this." },
+            ],
+            docs:[],
+          },
+          {
+            key:"p6", num:6, label:"STEM OPT Extension (24 months)", icon:"🔬", color:"#C8B030",
+            tagline:"Apply 90 days before your OPT expires — around September 2027.",
+            unlock:"Complete Phase 5 + be employed at E-Verify employer",
+            deadline:"~September 2027 (90 days before initial OPT expires)",
+            steps:[
+              { text:"Confirm your employer is registered with E-Verify. Ask HR: 'Is your company registered with E-Verify?' If not, you cannot get the STEM extension at this employer." },
+              { text:"Ask your employer to complete Form I-983 (Training Plan for STEM OPT Students). This form shows USCIS that your role is directly related to your STEM degree. Employer must sign it." },
+              { text:"Visit MSU International Office ~90 days before OPT expires (September 2027). Request a STEM OPT extension I-20 from your DSO." },
+              { text:"File Form I-765 online at myUSCIS.gov. Select category (C)(3)(C) for STEM OPT extension. Filing fee: $0 for the extension." },
+              { text:"You can continue working while your STEM extension is pending — as long as you filed on time (90 days before expiry) and your employer is E-Verify registered." },
+              { text:"STEM extension approved — you now have 24 additional months of work authorization. Total OPT = 36 months." },
+            ],
+            docs:[
+              { name:"Form I-765 (STEM extension)", detail:"Filed online. Category (C)(3)(C). No filing fee." },
+              { name:"Form I-983 (Training Plan)", detail:"Completed and signed by your E-Verify registered employer. Shows role is degree-related." },
+              { name:"STEM I-20", detail:"Updated I-20 from MSU DSO with STEM OPT recommendation. Must be dated within 60 days." },
+              { name:"EAD card (copy)", detail:"Copy of your current EAD card — proves you had valid OPT." },
+            ],
+          },
+        ];
+
+        const currentPhase = PHASES[activePhase] || PHASES[0];
+        const prevComplete = activePhase === 0 || phaseComplete(PHASES[activePhase-1]);
+
+        return (
+          <div>
+            {/* Header */}
+            <div style={{fontFamily:"'DM Serif Display',serif", fontSize:20, color:"#3B9EDB", marginBottom:2}}>📋 OPT Journey</div>
+            <div style={{fontSize:12, color:T.textSub, marginBottom:16, lineHeight:1.6}}>Complete each phase in order. Your progress saves automatically.</div>
+
+            {/* Overall progress bar */}
+            <div style={{...cs({padding:"12px 14px", marginBottom:14})}}>
+              <div style={{display:"flex", justifyContent:"space-between", marginBottom:6}}>
+                <span style={{fontSize:12, fontWeight:700, color:T.text}}>Overall OPT progress</span>
+                <span style={{fontSize:12, fontWeight:800, color:"#3B9EDB"}}>{PHASES.filter(p=>phaseComplete(p)).length} / {PHASES.length} phases</span>
+              </div>
+              <div style={{height:6, background:T.inputBg, borderRadius:6, overflow:"hidden"}}>
+                <div style={{height:"100%", width:`${(PHASES.filter(p=>phaseComplete(p)).length/PHASES.length)*100}%`, background:"linear-gradient(90deg,#3B9EDB,#3DBF8A)", borderRadius:6, transition:"width 0.4s"}}/>
+              </div>
+              {/* Phase dots */}
+              <div style={{display:"flex", justifyContent:"space-between", marginTop:8}}>
+                {PHASES.map((p,i)=>{
+                  const done   = phaseComplete(p);
+                  const active = i===activePhase;
+                  return (
+                    <div key={i} onClick={()=>setActivePhase(i)}
+                      style={{display:"flex", flexDirection:"column", alignItems:"center", gap:3, cursor:"pointer"}}>
+                      <div style={{width:24, height:24, borderRadius:"50%", background:done?"#3DBF8A":active?p.color:"transparent", border:`2px solid ${done?"#3DBF8A":active?p.color:T.border}`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:10, color:done||active?"#fff":T.textMuted, transition:"all 0.2s"}}>
+                        {done?"✓":i+1}
+                      </div>
+                      <span style={{fontSize:9, color:done?"#3DBF8A":active?p.color:T.textMuted, fontWeight:active||done?700:400, textAlign:"center", maxWidth:44, lineHeight:1.2}}>{p.icon}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* OPT Filing Fund tracker */}
+            <div style={{...cs({padding:"14px 16px", marginBottom:14, borderLeft:"4px solid #3DBF8A"})}}>
+              <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10}}>
+                <div>
+                  <div style={{fontSize:13, fontWeight:700, color:T.text}}>💰 OPT Filing Fund</div>
+                  <div style={{fontSize:11, color:T.textSub, marginTop:1}}>
+                    Target: {data.optPremium?"$2,190 (premium processing)":"$410 (standard filing)"}
+                  </div>
+                </div>
+                <div style={{textAlign:"right"}}>
+                  <div style={{fontSize:20, fontWeight:800, color:optPct>=100?"#3DBF8A":"#E8A838"}}>${optSaved.toLocaleString()}</div>
+                  <div style={{fontSize:10, color:T.textMuted}}>of ${optTarget.toLocaleString()}</div>
+                </div>
+              </div>
+              {/* Progress bar */}
+              <div style={{height:8, background:T.inputBg, borderRadius:8, overflow:"hidden", marginBottom:10}}>
+                <div style={{height:"100%", width:`${optPct}%`, background:optPct>=100?"#3DBF8A":optPct>=50?"#E8A838":"#3B9EDB", borderRadius:8, transition:"width 0.4s"}}/>
+              </div>
+              <div style={{fontSize:11, color:T.textMuted, marginBottom:10}}>
+                {optPct>=100
+                  ? "✅ You have enough to file! Submit your application."
+                  : `$${(optTarget-optSaved).toLocaleString()} still needed — ${Math.ceil((optTarget-optSaved)/150)} more strong Spark days`}
+              </div>
+              {/* Input row */}
+              <div style={{display:"flex", gap:8, alignItems:"center", flexWrap:"wrap"}}>
+                <div style={{display:"flex", alignItems:"center", gap:6, flex:1, minWidth:160}}>
+                  <span style={{fontSize:13, color:T.text, fontWeight:600}}>$</span>
+                  <input type="number" min="0" value={optSaved}
+                    onChange={e=>save(p=>({...p, optSavedAmount:parseFloat(e.target.value)||0}))}
+                    placeholder="0"
+                    style={{flex:1, background:T.inputBg, border:`1px solid ${T.border}`, borderRadius:8, padding:"7px 10px", color:T.text, fontFamily:"'DM Sans',sans-serif", fontSize:14, fontWeight:700, outline:"none"}}/>
+                  <span style={{fontSize:12, color:T.textMuted}}>saved</span>
+                </div>
+                {/* Toggle standard vs premium */}
+                <button onClick={()=>save(p=>({...p, optPremium:!p.optPremium}))}
+                  style={{padding:"7px 12px", borderRadius:9, border:`1px solid ${data.optPremium?"#E8A838":T.border}`, background:data.optPremium?"#E8A83822":"transparent", color:data.optPremium?"#E8A838":T.textSub, cursor:"pointer", fontFamily:"'DM Sans',sans-serif", fontSize:11, fontWeight:700, flexShrink:0}}>
+                  {data.optPremium?"⚡ Premium ($2,190)":"⚡ Upgrade to premium?"}
+                </button>
+              </div>
+              {data.optPremium&&(
+                <div style={{fontSize:11, color:"#E8A838", marginTop:8, lineHeight:1.6}}>
+                  Premium processing guarantees your EAD decision within 30 business days. File in October → EAD arrives November → you start January stress-free.
+                </div>
+              )}
+            </div>
+
+            {/* Current phase card */}
+            <div style={{...cs({borderTop:`4px solid ${currentPhase.color}`, padding:"16px 16px 20px", marginBottom:14})}}>
+              {/* Phase header */}
+              <div style={{display:"flex", alignItems:"center", gap:8, marginBottom:4}}>
+                <span style={{fontSize:22}}>{currentPhase.icon}</span>
+                <div>
+                  <div style={{fontSize:11, fontWeight:700, color:currentPhase.color, textTransform:"uppercase", letterSpacing:"0.08em"}}>Phase {currentPhase.num+1} of {PHASES.length}</div>
+                  <div style={{fontFamily:"'DM Serif Display',serif", fontSize:18, color:T.text}}>{currentPhase.label}</div>
+                </div>
+              </div>
+              <div style={{fontSize:12, color:T.textSub, lineHeight:1.6, marginBottom:currentPhase.deadline?8:14}}>{currentPhase.tagline}</div>
+              {currentPhase.deadline&&(
+                <div style={{fontSize:11, padding:"3px 10px", borderRadius:20, background:`${currentPhase.color}22`, color:currentPhase.color, fontWeight:700, display:"inline-block", marginBottom:12}}>
+                  📅 {currentPhase.deadline}
+                </div>
+              )}
+
+              {/* Warning */}
+              {currentPhase.warning&&(
+                <div style={{background:"#E8704A11", border:"1px solid #E8704A44", borderRadius:10, padding:"10px 12px", marginBottom:14, fontSize:12, color:"#E8704A", lineHeight:1.6}}>
+                  ⚠️ {currentPhase.warning}
+                </div>
+              )}
+
+              {/* Info cards for phases with key info */}
+              {currentPhase.info&&currentPhase.info.length>0&&(
+                <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:6, marginBottom:14}}>
+                  {currentPhase.info.map((inf,i)=>(
+                    <div key={i} style={{background:T.inputBg, borderRadius:8, padding:"8px 10px"}}>
+                      <div style={{fontSize:10, fontWeight:700, color:T.textMuted, textTransform:"uppercase", letterSpacing:"0.06em", marginBottom:2}}>{inf.label}</div>
+                      <div style={{fontSize:12, fontWeight:700, color:T.text}}>{inf.value}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Steps checklist */}
+              {currentPhase.steps.length>0&&(
+                <div style={{marginBottom:currentPhase.docs.length>0?16:0}}>
+                  <div style={{fontSize:11, fontWeight:700, color:T.textMuted, textTransform:"uppercase", letterSpacing:"0.07em", marginBottom:8}}>
+                    Steps — {(optData[`steps_${currentPhase.key}`]||[]).length} / {currentPhase.steps.length} done
+                  </div>
+                  {currentPhase.steps.map((step,i)=>{
+                    const done = (optData[`steps_${currentPhase.key}`]||[]).includes(i);
+                    return (
+                      <div key={i} onClick={()=>toggleStep(currentPhase.key, i)}
+                        style={{display:"flex", alignItems:"flex-start", gap:10, padding:"9px 0", borderBottom:i<currentPhase.steps.length-1?`1px solid ${T.border}`:"none", cursor:"pointer", opacity:done?0.6:1}}>
+                        <div style={{width:20, height:20, borderRadius:6, border:`2px solid ${done?"#3DBF8A":currentPhase.color}`, background:done?"#3DBF8A":"transparent", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, marginTop:1, transition:"all 0.15s"}}>
+                          {done&&<span style={{color:"#fff", fontSize:11, fontWeight:700}}>✓</span>}
+                        </div>
+                        <span style={{fontSize:13, color:T.text, lineHeight:1.6, textDecoration:done?"line-through":"none"}}>{step.text}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Documents checklist */}
+              {currentPhase.docs.length>0&&(
+                <div>
+                  <div style={{fontSize:11, fontWeight:700, color:T.textMuted, textTransform:"uppercase", letterSpacing:"0.07em", marginBottom:8, marginTop:currentPhase.steps.length>0?4:0}}>
+                    Documents needed — {(optData[currentPhase.key]||[]).length} / {currentPhase.docs.length} gathered
+                  </div>
+                  {currentPhase.docs.map((doc,i)=>{
+                    const done = (optData[currentPhase.key]||[]).includes(i);
+                    return (
+                      <div key={i} onClick={()=>toggleDoc(currentPhase.key, i)}
+                        style={{display:"flex", alignItems:"flex-start", gap:10, padding:"10px 0", borderBottom:i<currentPhase.docs.length-1?`1px solid ${T.border}`:"none", cursor:"pointer", opacity:done?0.6:1}}>
+                        <div style={{width:20, height:20, borderRadius:6, border:`2px solid ${done?"#3DBF8A":"#9B6EE8"}`, background:done?"#3DBF8A":"transparent", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, marginTop:1, transition:"all 0.15s"}}>
+                          {done&&<span style={{color:"#fff", fontSize:11, fontWeight:700}}>✓</span>}
+                        </div>
+                        <div style={{flex:1}}>
+                          <div style={{fontSize:13, fontWeight:600, color:T.text, textDecoration:done?"line-through":"none", marginBottom:2}}>{doc.name}</div>
+                          <div style={{fontSize:11, color:T.textSub, lineHeight:1.5}}>{doc.detail}</div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Unemployment tracker — Phase 5 only */}
+              {currentPhase.key==="p5"&&(
+                <div style={{background:T.inputBg, borderRadius:10, padding:"12px 14px", marginTop:16}}>
+                  <div style={{fontSize:12, fontWeight:700, color:"#E8704A", marginBottom:6}}>⏱ Unemployment day tracker</div>
+                  <div style={{fontSize:11, color:T.textSub, marginBottom:10}}>Max 90 days total. Going over ends your OPT.</div>
+                  <div style={{display:"flex", alignItems:"center", gap:10, marginBottom:8}}>
+                    <input type="number" min="0" max="90" value={unemployed}
+                      onChange={e=>save(p=>({...p, optUnemployedDays:parseInt(e.target.value)||0}))}
+                      style={{background:T.surface, border:`1px solid ${T.border}`, borderRadius:8, padding:"6px 10px", color:T.text, fontFamily:"'DM Sans',sans-serif", fontSize:16, fontWeight:800, outline:"none", width:70, textAlign:"center"}}/>
+                    <span style={{fontSize:13, color:T.textMuted}}>/ 90 days</span>
+                    <span style={{fontSize:12, color:unemployed>60?"#E8704A":unemployed>30?"#E8A838":"#3DBF8A", fontWeight:700}}>{90-unemployed} remaining</span>
+                  </div>
+                  <div style={{height:8, background:T.border, borderRadius:8, overflow:"hidden"}}>
+                    <div style={{height:"100%", width:`${Math.min((unemployed/90)*100,100)}%`, background:unemployed>60?"#E8704A":unemployed>30?"#E8A838":"#3DBF8A", borderRadius:8, transition:"width 0.3s"}}/>
+                  </div>
+                  {unemployed>60&&<div style={{fontSize:12, color:"#E8704A", marginTop:6, fontWeight:700}}>🚨 Find employment urgently — {90-unemployed} days left</div>}
+                </div>
+              )}
+            </div>
+
+            {/* Phase navigation */}
+            <div style={{display:"flex", gap:8}}>
+              {activePhase>0&&(
+                <button onClick={()=>setActivePhase(activePhase-1)}
+                  style={{flex:1, padding:"11px", borderRadius:11, border:`1px solid ${T.border}`, background:"transparent", color:T.textSub, cursor:"pointer", fontFamily:"'DM Sans',sans-serif", fontSize:13, fontWeight:600}}>
+                  ← Previous phase
+                </button>
+              )}
+              {activePhase<PHASES.length-1&&(
+                phaseComplete(currentPhase) ? (
+                  <button onClick={()=>setActivePhase(activePhase+1)}
+                    style={{flex:1, padding:"11px", borderRadius:11, border:"none", background:PHASES[activePhase+1].color, color:"#fff", cursor:"pointer", fontFamily:"'DM Serif Display',serif", fontSize:14, fontWeight:700}}>
+                    {PHASES[activePhase+1].icon} Next → {PHASES[activePhase+1].label}
+                  </button>
+                ) : (
+                  <div style={{flex:1, padding:"11px", borderRadius:11, background:T.inputBg, textAlign:"center", fontSize:12, color:T.textMuted, lineHeight:1.5}}>
+                    Complete all steps and documents above to unlock the next phase
+                  </div>
+                )
+              )}
+              {activePhase===PHASES.length-1&&phaseComplete(currentPhase)&&(
+                <div style={{flex:1, padding:"12px", borderRadius:11, background:"#3DBF8A22", textAlign:"center", fontSize:13, color:"#3DBF8A", fontWeight:700}}>
+                  🎉 OPT journey complete — 36 months secured!
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })()}
+
     </div>
   );
 }
@@ -2152,6 +2575,7 @@ export default function SummerApp({mode,T,onBack}) {
         jobApps_gloria:[], weeklyReviews_gloria:{}, personalProjects_gloria:[],
         shoppingList_gloria:[],
         nextSteps_amen:{},
+        optSavedAmount:0, optPremium:false, optUnemployedDays:0,
       };
       const merged = stored ? { ...defaults, ...stored } : defaults;
       // Seed fall tasks if empty
