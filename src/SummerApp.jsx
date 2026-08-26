@@ -2519,6 +2519,523 @@ function NextStepsView({ T, data, save, isMobile }) {
   );
 }
 
+
+// ── Shared schedule editor — used by both Amen and Gloria ────────────────────
+function parseTimeMins(t) {
+  if (!t) return 0;
+  const s = t.toLowerCase().trim();
+  const isPM = s.includes("pm");
+  const isAM = s.includes("am");
+  const clean = s.replace(/am|pm/g,"").trim();
+  const [hStr,mStr="0"] = clean.split(":");
+  let h = parseInt(hStr); const m = parseInt(mStr);
+  if (isPM && h!==12) h+=12;
+  if (isAM && h===12) h=0;
+  return h*60+m;
+}
+function minsToTime(mins) {
+  const h = Math.floor(mins/60);
+  const m = mins%60;
+  const ampm = h>=12?"pm":"am";
+  const h12 = h>12?h-12:h===0?12:h;
+  return `${h12}:${String(m).padStart(2,"0")}${ampm}`;
+}
+
+const AMEN_BASE_SCHEDULE = {
+  monday:[
+    {id:"a_m1", time:"5:00am",  label:"Wake up + Devotion",         cat:"faith",     dur:"30 min",  detail:"Non-negotiable. 5am every day."},
+    {id:"a_m2", time:"5:30am",  label:"Job applications",           cat:"work",      dur:"1 hr",    detail:"LinkedIn, Handshake, Indeed. 2-3 applications minimum."},
+    {id:"a_m3", time:"6:30am",  label:"Light breakfast",            cat:"nutrition", dur:"15 min",  detail:"Oats, banana, peanut butter. Already prepped."},
+    {id:"a_m4", time:"6:45am",  label:"Gym — strength session",     cat:"fitness",   dur:"1 hr 45", detail:"Mon/Wed strength. Done by 8:30am."},
+    {id:"a_m5", time:"8:30am",  label:"Shower and change",          cat:"morning",   dur:"15 min",  detail:"Get dressed properly."},
+    {id:"a_m6", time:"9:00am",  label:"Class — ITC 295",            cat:"school",    dur:"1 hr",    detail:"MW 9:30-10:45am Glass Hall 0467 — wait this is Gloria's. Amen's class TBD."},
+    {id:"a_m7", time:"10:00am", label:"Class review",               cat:"school",    dur:"1 hr",    detail:"Go over notes while fresh."},
+    {id:"a_m8", time:"11:00am", label:"Office hours",               cat:"school",    dur:"1 hr",    detail:"Mon/Wed 11-12pm. Be present."},
+    {id:"a_m9", time:"12:00pm", label:"Heavy lunch",                cat:"nutrition", dur:"30 min",  detail:"Main meal. Prepped Sunday."},
+    {id:"a_m10",time:"12:30pm", label:"Nap and rest",               cat:"morning",   dur:"2 hrs",   detail:"Recharge before teaching."},
+    {id:"a_m11",time:"3:00pm",  label:"Teaching class prep",        cat:"school",    dur:"1 hr",    detail:"Review lesson. Show up 30 min early."},
+    {id:"a_m12",time:"4:00pm",  label:"Teaching class MTH 101",     cat:"school",    dur:"1 hr 45", detail:"Mon/Wed 4:00-5:45pm."},
+    {id:"a_m13",time:"6:00pm",  label:"Spark — evening block",      cat:"work",      dur:"4 hrs",   detail:"6pm-10pm. Target $80+."},
+    {id:"a_m14",time:"8:30pm",  label:"Light dinner",               cat:"nutrition", dur:"20 min",  detail:"Quick break during Spark."},
+    {id:"a_m15",time:"11:00pm", label:"Gloria time",                cat:"gloria",    dur:"1 hr",    detail:"Prayer at 10:30, then 1 hour together."},
+    {id:"a_m16",time:"12:00am", label:"Hard stop — bed",            cat:"morning",   dur:"5 hrs",   detail:"12am non-negotiable."},
+  ],
+  tuesday:[
+    {id:"a_t1", time:"5:00am",  label:"Wake up + Devotion",         cat:"faith",     dur:"30 min",  detail:"Non-negotiable."},
+    {id:"a_t2", time:"5:30am",  label:"Job + school applications",  cat:"work",      dur:"1 hr",    detail:"30 min jobs, 30 min school apps."},
+    {id:"a_t3", time:"6:30am",  label:"Light breakfast",            cat:"nutrition", dur:"15 min",  detail:"Grab and go."},
+    {id:"a_t4", time:"6:45am",  label:"Cardio — 12k steps",        cat:"fitness",   dur:"1 hr 45", detail:"Tue/Thu cardio."},
+    {id:"a_t5", time:"8:30am",  label:"Shower and change",          cat:"morning",   dur:"15 min",  detail:""},
+    {id:"a_t6", time:"9:00am",  label:"Thesis block",               cat:"thesis",    dur:"3 hrs",   detail:"Phone on DND. Deep work only."},
+    {id:"a_t7", time:"12:00pm", label:"Heavy lunch",                cat:"nutrition", dur:"30 min",  detail:"Main meal."},
+    {id:"a_t8", time:"12:30pm", label:"Thesis block continued",     cat:"thesis",    dur:"2 hrs 30",detail:"Back to thesis."},
+    {id:"a_t9", time:"3:00pm",  label:"Teaching class prep",        cat:"school",    dur:"1 hr",    detail:"Review lesson."},
+    {id:"a_t10",time:"4:30pm",  label:"Teaching class MTH 101",     cat:"school",    dur:"50 min",  detail:"Tue/Thu 4:30-5:20pm."},
+    {id:"a_t11",time:"5:20pm",  label:"Travel to Bible study",      cat:"faith",     dur:"40 min",  detail:"Head straight from teaching."},
+    {id:"a_t12",time:"6:00pm",  label:"Bible study",                cat:"faith",     dur:"2 hrs 30",detail:"Every Tuesday 6-8:30pm."},
+    {id:"a_t13",time:"8:30pm",  label:"Personal projects",          cat:"work",      dur:"1 hr",    detail:"First 90, portfolio, freelance."},
+    {id:"a_t14",time:"9:30pm",  label:"Light dinner",               cat:"nutrition", dur:"30 min",  detail:"Decompress."},
+    {id:"a_t15",time:"11:00pm", label:"Gloria time",                cat:"gloria",    dur:"1 hr",    detail:"Prayer and connection."},
+    {id:"a_t16",time:"12:00am", label:"Hard stop — bed",            cat:"morning",   dur:"5 hrs",   detail:"12am."},
+  ],
+  wednesday:[
+    {id:"a_w1", time:"5:00am",  label:"Wake up + Devotion",         cat:"faith",     dur:"30 min",  detail:"Non-negotiable."},
+    {id:"a_w2", time:"5:30am",  label:"Job applications",           cat:"work",      dur:"1 hr",    detail:"2-3 applications."},
+    {id:"a_w3", time:"6:30am",  label:"Light breakfast",            cat:"nutrition", dur:"15 min",  detail:""},
+    {id:"a_w4", time:"6:45am",  label:"Gym — strength session",     cat:"fitness",   dur:"1 hr 45", detail:"Mon/Wed strength."},
+    {id:"a_w5", time:"8:30am",  label:"Shower and change",          cat:"morning",   dur:"15 min",  detail:""},
+    {id:"a_w6", time:"9:00am",  label:"Class",                      cat:"school",    dur:"1 hr",    detail:"MW 9:30-10:45am."},
+    {id:"a_w7", time:"10:00am", label:"Class review",               cat:"school",    dur:"1 hr",    detail:""},
+    {id:"a_w8", time:"11:00am", label:"Office hours",               cat:"school",    dur:"1 hr",    detail:"MW 11-12pm."},
+    {id:"a_w9", time:"12:00pm", label:"Heavy lunch",                cat:"nutrition", dur:"30 min",  detail:""},
+    {id:"a_w10",time:"12:30pm", label:"Nap and rest",               cat:"morning",   dur:"2 hrs",   detail:""},
+    {id:"a_w11",time:"3:00pm",  label:"Teaching class prep",        cat:"school",    dur:"1 hr",    detail:""},
+    {id:"a_w12",time:"4:00pm",  label:"Teaching class MTH 101",     cat:"school",    dur:"1 hr 45", detail:"Mon/Wed 4:00-5:45pm."},
+    {id:"a_w13",time:"6:00pm",  label:"Spark — evening block",      cat:"work",      dur:"4 hrs",   detail:"6pm-10pm. Target $80+."},
+    {id:"a_w14",time:"8:30pm",  label:"Light dinner",               cat:"nutrition", dur:"20 min",  detail:""},
+    {id:"a_w15",time:"11:00pm", label:"Gloria time",                cat:"gloria",    dur:"1 hr",    detail:""},
+    {id:"a_w16",time:"12:00am", label:"Hard stop — bed",            cat:"morning",   dur:"5 hrs",   detail:""},
+  ],
+  thursday:[
+    {id:"a_th1",time:"5:00am",  label:"Wake up + Devotion",         cat:"faith",     dur:"30 min",  detail:""},
+    {id:"a_th2",time:"5:30am",  label:"Job + school applications",  cat:"work",      dur:"1 hr",    detail:""},
+    {id:"a_th3",time:"6:30am",  label:"Light breakfast",            cat:"nutrition", dur:"15 min",  detail:""},
+    {id:"a_th4",time:"6:45am",  label:"Cardio — 12k steps",        cat:"fitness",   dur:"1 hr 45", detail:""},
+    {id:"a_th5",time:"8:30am",  label:"Shower and change",          cat:"morning",   dur:"15 min",  detail:""},
+    {id:"a_th6",time:"9:00am",  label:"Thesis block",               cat:"thesis",    dur:"3 hrs",   detail:"Phone on DND."},
+    {id:"a_th7",time:"12:00pm", label:"Heavy lunch",                cat:"nutrition", dur:"30 min",  detail:""},
+    {id:"a_th8",time:"12:30pm", label:"Thesis block continued",     cat:"thesis",    dur:"1 hr 30", detail:""},
+    {id:"a_th9",time:"2:00pm",  label:"Impact Fellowship — setup",  cat:"faith",     dur:"2 hrs",   detail:"Arrive early for Impact."},
+    {id:"a_th10",time:"4:30pm", label:"Teaching class MTH 101",     cat:"school",    dur:"50 min",  detail:"Thu 4:30-5:20pm."},
+    {id:"a_th11",time:"5:30pm", label:"Impact Fellowship",          cat:"faith",     dur:"4 hrs 30",detail:"5:30-10pm."},
+    {id:"a_th12",time:"9:30pm", label:"Light dinner",               cat:"nutrition", dur:"15 min",  detail:""},
+    {id:"a_th13",time:"11:00pm",label:"Gloria time",                cat:"gloria",    dur:"1 hr",    detail:""},
+    {id:"a_th14",time:"12:00am",label:"Hard stop — bed",            cat:"morning",   dur:"5 hrs",   detail:""},
+  ],
+  friday:[
+    {id:"a_f1", time:"5:00am",  label:"Wake up + Devotion",         cat:"faith",     dur:"30 min",  detail:""},
+    {id:"a_f2", time:"5:30am",  label:"Job applications",           cat:"work",      dur:"1 hr",    detail:""},
+    {id:"a_f3", time:"6:30am",  label:"Light breakfast",            cat:"nutrition", dur:"15 min",  detail:""},
+    {id:"a_f4", time:"8:00am",  label:"GA meeting",                 cat:"school",    dur:"1 hr",    detail:"8-9am every Friday."},
+    {id:"a_f5", time:"9:00am",  label:"Class",                      cat:"school",    dur:"1 hr",    detail:"Friday class."},
+    {id:"a_f6", time:"10:00am", label:"Class review",               cat:"school",    dur:"1 hr",    detail:""},
+    {id:"a_f7", time:"11:00am", label:"Grading",                    cat:"school",    dur:"2 hrs",   detail:""},
+    {id:"a_f8", time:"12:00pm", label:"Heavy lunch",                cat:"nutrition", dur:"30 min",  detail:""},
+    {id:"a_f9", time:"1:30pm",  label:"Make-up quiz",               cat:"school",    dur:"1 hr",    detail:"1:30-2:30pm."},
+    {id:"a_f10",time:"2:30pm",  label:"Finish grading",             cat:"school",    dur:"3 hrs 30",detail:"2:30-6pm."},
+    {id:"a_f11",time:"6:00pm",  label:"Free hour",                  cat:"morning",   dur:"1 hr",    detail:"Only free hour of the week."},
+    {id:"a_f12",time:"7:00pm",  label:"Personal projects",          cat:"work",      dur:"2 hrs",   detail:""},
+    {id:"a_f13",time:"9:00pm",  label:"Spark (optional)",           cat:"work",      dur:"2 hrs",   detail:"If short on weekly target."},
+    {id:"a_f14",time:"11:00pm", label:"Gloria time",                cat:"gloria",    dur:"1 hr",    detail:""},
+    {id:"a_f15",time:"12:00am", label:"Hard stop — bed",            cat:"morning",   dur:"5 hrs",   detail:""},
+  ],
+  saturday:[
+    {id:"a_s1", time:"10:00am", label:"Wake up — rest morning",     cat:"morning",   dur:"30 min",  detail:"Sleep in. You earned it."},
+    {id:"a_s2", time:"10:00am", label:"Devotion + light breakfast",  cat:"faith",     dur:"30 min",  detail:"Slower devotion Saturday."},
+    {id:"a_s3", time:"10:30am", label:"Personal projects",          cat:"work",      dur:"1 hr",    detail:"1 hour building your own work."},
+    {id:"a_s4", time:"11:30am", label:"Reach out — 1 person",       cat:"social",    dur:"30 min",  detail:"Rotate: Peace, Favour, Gentle, Kelechi, Ellud, Simon."},
+    {id:"a_s5", time:"12:00pm", label:"Thesis block",               cat:"thesis",    dur:"3 hrs",   detail:"12-3pm. Phone on DND."},
+    {id:"a_s6", time:"3:00pm",  label:"Heavy lunch",                cat:"nutrition", dur:"30 min",  detail:""},
+    {id:"a_s7", time:"4:00pm",  label:"Spark — big earning day",    cat:"work",      dur:"6 hrs 30",detail:"4pm-10:30pm. Target $150+."},
+    {id:"a_s8", time:"8:00pm",  label:"Light snack",                cat:"nutrition", dur:"15 min",  detail:""},
+    {id:"a_s9", time:"11:00pm", label:"Gloria time",                cat:"gloria",    dur:"1 hr",    detail:""},
+    {id:"a_s10",time:"12:00am", label:"Arrange clothes for week",   cat:"morning",   dur:"1 hr",    detail:""},
+    {id:"a_s11",time:"1:00am",  label:"Bed",                        cat:"morning",   dur:"7 hrs",   detail:""},
+  ],
+  sunday:[
+    {id:"a_su1",time:"8:00am",  label:"Wake up + Devotion",         cat:"faith",     dur:"1 hr",    detail:""},
+    {id:"a_su2",time:"9:00am",  label:"Church service",             cat:"faith",     dur:"3 hrs",   detail:"9am-12pm. Ushering."},
+    {id:"a_su3",time:"12:00pm", label:"Clean sanctuary",            cat:"faith",     dur:"1 hr",    detail:""},
+    {id:"a_su4",time:"1:00pm",  label:"Rest + heavy lunch",         cat:"nutrition", dur:"1 hr",    detail:""},
+    {id:"a_su5",time:"2:00pm",  label:"Family meeting",             cat:"social",    dur:"1 hr",    detail:"2pm sharp every Sunday."},
+    {id:"a_su6",time:"3:00pm",  label:"Task review + Gloria plan",  cat:"gloria",    dur:"1 hr",    detail:"30 min solo, 30 min with Gloria."},
+    {id:"a_su7",time:"4:00pm",  label:"Meal prep — week lunches",   cat:"nutrition", dur:"1 hr",    detail:"Portion Mon-Fri lunches."},
+    {id:"a_su8",time:"5:00pm",  label:"GA leftover work",           cat:"school",    dur:"1 hr",    detail:"Clear backlog."},
+    {id:"a_su9",time:"6:00pm",  label:"Spark — Sunday evening",     cat:"work",      dur:"4 hrs",   detail:"6pm-10pm. Target $80+."},
+    {id:"a_su10",time:"10:30pm",label:"Reach out — family/friends", cat:"social",    dur:"1 hr",    detail:"Rotate your people."},
+    {id:"a_su11",time:"11:30pm",label:"Prayer with Gloria",         cat:"gloria",    dur:"30 min",  detail:"Close the week together."},
+    {id:"a_su12",time:"12:00am",label:"Hard stop — bed",            cat:"morning",   dur:"5 hrs",   detail:""},
+  ],
+};
+
+const GLORIA_BASE_SCHEDULE = {
+  monday:[
+    {id:"g_m1", time:"7:00am",  label:"Wake up + Devotion",         cat:"faith",     dur:"30 min",  detail:"Morning time with God before the day starts."},
+    {id:"g_m2", time:"7:30am",  label:"Light breakfast + get ready",cat:"nutrition", dur:"30 min",  detail:""},
+    {id:"g_m3", time:"9:30am",  label:"ITC 295 — Database Mgmt",    cat:"school",    dur:"1 hr 15", detail:"MW 9:30-10:45am · Glass Hall 0467 · Prof. Zhao, Weijie"},
+    {id:"g_m4", time:"11:00am", label:"ITC 235 — Computer Hardware",cat:"school",    dur:"1 hr 15", detail:"MW 11:00am-12:15pm · Glass Hall 0388 · Prof. Liu, Zongxi"},
+    {id:"g_m5", time:"12:15pm", label:"Heavy lunch",                cat:"nutrition", dur:"45 min",  detail:"Main meal of the day."},
+    {id:"g_m6", time:"1:00pm",  label:"Study + class review",       cat:"school",    dur:"2 hrs",   detail:"Review ITC 295 and ITC 235 while fresh. Do homework."},
+    {id:"g_m7", time:"3:00pm",  label:"Online coursework",          cat:"school",    dur:"2 hrs",   detail:"ACC 211, MKT 350, or PLS 101 — async coursework block."},
+    {id:"g_m8", time:"5:00pm",  label:"Personal time + errands",    cat:"morning",   dur:"2 hrs",   detail:""},
+    {id:"g_m9", time:"7:00pm",  label:"Dinner",                     cat:"nutrition", dur:"30 min",  detail:""},
+    {id:"g_m10",time:"7:30pm",  label:"Study / assignments",        cat:"school",    dur:"2 hrs",   detail:""},
+    {id:"g_m11",time:"10:30pm", label:"Prayer with Amen",           cat:"gloria",    dur:"30 min",  detail:"Nightly prayer together."},
+    {id:"g_m12",time:"11:00pm", label:"Amen time",                  cat:"gloria",    dur:"1 hr",    detail:"1 hour intentional connection."},
+    {id:"g_m13",time:"12:00am", label:"Sleep",                      cat:"morning",   dur:"7 hrs",   detail:""},
+  ],
+  tuesday:[
+    {id:"g_t1", time:"7:00am",  label:"Wake up + Devotion",         cat:"faith",     dur:"30 min",  detail:""},
+    {id:"g_t2", time:"7:30am",  label:"Light breakfast + get ready",cat:"nutrition", dur:"30 min",  detail:""},
+    {id:"g_t3", time:"9:30am",  label:"ITC 260 — Programming Logic",cat:"school",    dur:"1 hr 15", detail:"TTh 9:30-10:45am · Glass Hall 0236 · Prof. Sexton, Randall S"},
+    {id:"g_t4", time:"11:00am", label:"Study + class review",       cat:"school",    dur:"1 hr",    detail:"Review ITC 260 while fresh."},
+    {id:"g_t5", time:"12:00pm", label:"Heavy lunch",                cat:"nutrition", dur:"45 min",  detail:""},
+    {id:"g_t6", time:"1:00pm",  label:"Online coursework",          cat:"school",    dur:"3 hrs",   detail:"ACC 211, MKT 350, PLS 101 — bigger block on Tue."},
+    {id:"g_t7", time:"4:00pm",  label:"Personal time",              cat:"morning",   dur:"2 hrs",   detail:""},
+    {id:"g_t8", time:"6:00pm",  label:"Study / assignments",        cat:"school",    dur:"2 hrs",   detail:""},
+    {id:"g_t9", time:"8:00pm",  label:"Dinner + wind down",         cat:"nutrition", dur:"1 hr",    detail:""},
+    {id:"g_t10",time:"10:30pm", label:"Prayer with Amen",           cat:"gloria",    dur:"30 min",  detail:""},
+    {id:"g_t11",time:"11:00pm", label:"Amen time",                  cat:"gloria",    dur:"1 hr",    detail:""},
+    {id:"g_t12",time:"12:00am", label:"Sleep",                      cat:"morning",   dur:"7 hrs",   detail:""},
+  ],
+  wednesday:[
+    {id:"g_w1", time:"7:00am",  label:"Wake up + Devotion",         cat:"faith",     dur:"30 min",  detail:""},
+    {id:"g_w2", time:"7:30am",  label:"Light breakfast + get ready",cat:"nutrition", dur:"30 min",  detail:""},
+    {id:"g_w3", time:"9:30am",  label:"ITC 295 — Database Mgmt",    cat:"school",    dur:"1 hr 15", detail:"MW 9:30-10:45am · Glass Hall 0467 · Prof. Zhao, Weijie"},
+    {id:"g_w4", time:"11:00am", label:"ITC 235 — Computer Hardware",cat:"school",    dur:"1 hr 15", detail:"MW 11:00am-12:15pm · Glass Hall 0388 · Prof. Liu, Zongxi"},
+    {id:"g_w5", time:"12:15pm", label:"Heavy lunch",                cat:"nutrition", dur:"45 min",  detail:""},
+    {id:"g_w6", time:"1:00pm",  label:"Study + class review",       cat:"school",    dur:"2 hrs",   detail:""},
+    {id:"g_w7", time:"3:00pm",  label:"Online coursework",          cat:"school",    dur:"2 hrs",   detail:"ACC 211, MKT 350, or PLS 101."},
+    {id:"g_w8", time:"5:00pm",  label:"Personal time + errands",    cat:"morning",   dur:"2 hrs",   detail:""},
+    {id:"g_w9", time:"7:00pm",  label:"Dinner",                     cat:"nutrition", dur:"30 min",  detail:""},
+    {id:"g_w10",time:"7:30pm",  label:"Study / assignments",        cat:"school",    dur:"2 hrs",   detail:""},
+    {id:"g_w11",time:"10:30pm", label:"Prayer with Amen",           cat:"gloria",    dur:"30 min",  detail:""},
+    {id:"g_w12",time:"11:00pm", label:"Amen time",                  cat:"gloria",    dur:"1 hr",    detail:""},
+    {id:"g_w13",time:"12:00am", label:"Sleep",                      cat:"morning",   dur:"7 hrs",   detail:""},
+  ],
+  thursday:[
+    {id:"g_th1",time:"7:00am",  label:"Wake up + Devotion",         cat:"faith",     dur:"30 min",  detail:""},
+    {id:"g_th2",time:"7:30am",  label:"Light breakfast + get ready",cat:"nutrition", dur:"30 min",  detail:""},
+    {id:"g_th3",time:"9:30am",  label:"ITC 260 — Programming Logic",cat:"school",    dur:"1 hr 15", detail:"TTh 9:30-10:45am · Glass Hall 0236 · Prof. Sexton, Randall S"},
+    {id:"g_th4",time:"11:00am", label:"Study + class review",       cat:"school",    dur:"1 hr",    detail:""},
+    {id:"g_th5",time:"12:00pm", label:"Heavy lunch",                cat:"nutrition", dur:"45 min",  detail:""},
+    {id:"g_th6",time:"1:00pm",  label:"Online coursework",          cat:"school",    dur:"3 hrs",   detail:"ACC 211, MKT 350, PLS 101."},
+    {id:"g_th7",time:"4:00pm",  label:"Personal time",              cat:"morning",   dur:"2 hrs",   detail:""},
+    {id:"g_th8",time:"6:00pm",  label:"Study / assignments",        cat:"school",    dur:"2 hrs",   detail:""},
+    {id:"g_th9",time:"8:00pm",  label:"Dinner + wind down",         cat:"nutrition", dur:"1 hr",    detail:""},
+    {id:"g_th10",time:"10:30pm",label:"Prayer with Amen",           cat:"gloria",    dur:"30 min",  detail:""},
+    {id:"g_th11",time:"11:00pm",label:"Amen time",                  cat:"gloria",    dur:"1 hr",    detail:""},
+    {id:"g_th12",time:"12:00am",label:"Sleep",                      cat:"morning",   dur:"7 hrs",   detail:""},
+  ],
+  friday:[
+    {id:"g_f1", time:"7:00am",  label:"Wake up + Devotion",         cat:"faith",     dur:"30 min",  detail:""},
+    {id:"g_f2", time:"7:30am",  label:"Light breakfast",            cat:"nutrition", dur:"30 min",  detail:""},
+    {id:"g_f3", time:"9:00am",  label:"Online coursework",          cat:"school",    dur:"3 hrs",   detail:"Friday deep dive on online classes."},
+    {id:"g_f4", time:"12:00pm", label:"Heavy lunch",                cat:"nutrition", dur:"1 hr",    detail:""},
+    {id:"g_f5", time:"1:00pm",  label:"Study / catch up",           cat:"school",    dur:"3 hrs",   detail:"Weekly review of all subjects."},
+    {id:"g_f6", time:"4:00pm",  label:"Personal time + errands",    cat:"morning",   dur:"3 hrs",   detail:""},
+    {id:"g_f7", time:"7:00pm",  label:"Dinner",                     cat:"nutrition", dur:"30 min",  detail:""},
+    {id:"g_f8", time:"7:30pm",  label:"Free time",                  cat:"morning",   dur:"2 hrs",   detail:"Rest. Weekend starts now."},
+    {id:"g_f9", time:"10:30pm", label:"Prayer with Amen",           cat:"gloria",    dur:"30 min",  detail:""},
+    {id:"g_f10",time:"11:00pm", label:"Amen time",                  cat:"gloria",    dur:"1 hr",    detail:""},
+    {id:"g_f11",time:"12:00am", label:"Sleep",                      cat:"morning",   dur:"7 hrs",   detail:""},
+  ],
+  saturday:[
+    {id:"g_s1", time:"9:00am",  label:"Wake up + Devotion",         cat:"faith",     dur:"30 min",  detail:"Saturday slightly later."},
+    {id:"g_s2", time:"9:30am",  label:"Light breakfast",            cat:"nutrition", dur:"30 min",  detail:""},
+    {id:"g_s3", time:"10:00am", label:"Study + assignments",        cat:"school",    dur:"3 hrs",   detail:"Saturday morning study block."},
+    {id:"g_s4", time:"1:00pm",  label:"Heavy lunch",                cat:"nutrition", dur:"1 hr",    detail:""},
+    {id:"g_s5", time:"2:00pm",  label:"Personal time + errands",    cat:"morning",   dur:"3 hrs",   detail:"Laundry, groceries, self-care."},
+    {id:"g_s6", time:"5:00pm",  label:"Free time",                  cat:"morning",   dur:"4 hrs",   detail:"Rest, friends, whatever you need."},
+    {id:"g_s7", time:"10:30pm", label:"Prayer with Amen",           cat:"gloria",    dur:"30 min",  detail:""},
+    {id:"g_s8", time:"11:00pm", label:"Amen time",                  cat:"gloria",    dur:"1 hr",    detail:""},
+    {id:"g_s9", time:"12:00am", label:"Sleep",                      cat:"morning",   dur:"7 hrs",   detail:""},
+  ],
+  sunday:[
+    {id:"g_su1",time:"8:00am",  label:"Wake up + Devotion",         cat:"faith",     dur:"30 min",  detail:""},
+    {id:"g_su2",time:"9:00am",  label:"Church service",             cat:"faith",     dur:"3 hrs",   detail:"9am-12pm."},
+    {id:"g_su3",time:"12:00pm", label:"Rest + heavy lunch",         cat:"nutrition", dur:"1 hr",    detail:""},
+    {id:"g_su4",time:"1:00pm",  label:"Family / social time",       cat:"social",    dur:"2 hrs",   detail:"Family calls, reach out to people."},
+    {id:"g_su5",time:"3:00pm",  label:"Week plan with Amen",        cat:"gloria",    dur:"1 hr",    detail:"Align on the week ahead together."},
+    {id:"g_su6",time:"4:00pm",  label:"Study + prep for week",      cat:"school",    dur:"3 hrs",   detail:"Get ahead on coursework for the week."},
+    {id:"g_su7",time:"7:00pm",  label:"Meal prep",                  cat:"nutrition", dur:"1 hr",    detail:"Prep lunches for the week."},
+    {id:"g_su8",time:"8:00pm",  label:"Rest and wind down",         cat:"morning",   dur:"2 hrs",   detail:""},
+    {id:"g_su9",time:"10:30pm", label:"Prayer with Amen",           cat:"gloria",    dur:"30 min",  detail:""},
+    {id:"g_su10",time:"11:00pm",label:"Amen time",                  cat:"gloria",    dur:"1 hr",    detail:""},
+    {id:"g_su11",time:"12:00am",label:"Sleep",                      cat:"morning",   dur:"7 hrs",   detail:""},
+  ],
+};
+
+// ── Schedule Editor Component ─────────────────────────────────────────────────
+function ScheduleEditor({ T, data, save, profile }) {
+  const isGloria   = profile === "gloria";
+  const baseKey    = isGloria ? "gloriaSchedule" : "amenSchedule";
+  const baseData   = isGloria ? GLORIA_BASE_SCHEDULE : AMEN_BASE_SCHEDULE;
+  const color      = isGloria ? "#E84E8A" : "#C8B030";
+
+  const DAYS = ["monday","tuesday","wednesday","thursday","friday","saturday","sunday"];
+  const DAY_LABELS = {monday:"Mon",tuesday:"Tue",wednesday:"Wed",thursday:"Thu",friday:"Fri",saturday:"Sat",sunday:"Sun"};
+  const DAY_FULL   = {monday:"Monday",tuesday:"Tuesday",wednesday:"Wednesday",thursday:"Thursday",friday:"Friday",saturday:"Saturday",sunday:"Sunday"};
+
+  const todayKey = DAYS[new Date().getDay()===0?6:new Date().getDay()-1] || "monday";
+  const [activeDay, setActiveDay] = useState(todayKey);
+  const [editId,    setEditId]    = useState(null);
+  const [showAdd,   setShowAdd]   = useState(false);
+  const [dragId,    setDragId]    = useState(null);
+  const [dragOver,  setDragOver]  = useState(null);
+  const [editForm,  setEditForm]  = useState({});
+  const [addForm,   setAddForm]   = useState({time:"9:00am",label:"",cat:"school",dur:"1 hr",detail:""});
+
+  const schedKey = `${baseKey}_${activeDay}`;
+  const stored   = data[schedKey];
+  const blocks   = stored || baseData[activeDay] || [];
+
+  const sorted   = [...blocks].sort((a,b) => parseTimeMins(a.time) - parseTimeMins(b.time));
+
+  const cs = (ex={}) => ({background:T.surface, border:`1px solid ${T.border}`, borderRadius:14, ...ex});
+  const inp = {background:T.inputBg, border:`1px solid ${T.border}`, borderRadius:8, padding:"7px 10px", color:T.text, fontFamily:"'DM Sans',sans-serif", fontSize:13, outline:"none", width:"100%", boxSizing:"border-box"};
+
+  function saveBlocks(updated) {
+    save(p => ({...p, [schedKey]: updated}));
+  }
+
+  function deleteBlock(id) {
+    saveBlocks(blocks.filter(b => b.id !== id));
+    if (editId === id) setEditId(null);
+  }
+
+  function startEdit(block) {
+    setEditId(block.id);
+    setEditForm({...block});
+    setShowAdd(false);
+  }
+
+  function saveEdit() {
+    saveBlocks(blocks.map(b => b.id === editId ? {...editForm} : b));
+    setEditId(null);
+  }
+
+  function addBlock() {
+    if (!addForm.label.trim()) return;
+    const newBlock = {...addForm, id:`${isGloria?"g":"a"}_custom_${Date.now()}`};
+    saveBlocks([...blocks, newBlock]);
+    setAddForm({time:"9:00am", label:"", cat:"school", dur:"1 hr", detail:""});
+    setShowAdd(false);
+  }
+
+  function resetDay() {
+    save(p => { const n = {...p}; delete n[schedKey]; return n; });
+    setEditId(null);
+  }
+
+  // Drag and drop — reorders blocks and auto-adjusts times
+  function handleDrop(targetId) {
+    if (!dragId || dragId === targetId) { setDragId(null); setDragOver(null); return; }
+    const fromIdx = sorted.findIndex(b => b.id === dragId);
+    const toIdx   = sorted.findIndex(b => b.id === targetId);
+    if (fromIdx === -1 || toIdx === -1) return;
+
+    // Reorder
+    const reordered = [...sorted];
+    const [moved]   = reordered.splice(fromIdx, 1);
+    reordered.splice(toIdx, 0, moved);
+
+    // Auto-adjust times — keep the first block's time, add durations for the rest
+    const adjusted = reordered.map((block, i) => {
+      if (i === 0) return block;
+      const prev     = adjusted[i-1];
+      const prevMins = parseTimeMins(prev.time);
+      const prevDur  = prev.dur || "30 min";
+      // Parse duration to minutes
+      let durMins = 30;
+      const durMatch = prevDur.match(/(\d+)\s*hr/);
+      const minMatch = prevDur.match(/(\d+)\s*min/);
+      if (durMatch) durMins += parseInt(durMatch[1]) * 60;
+      if (minMatch) durMins += parseInt(minMatch[1]);
+      const newMins  = prevMins + durMins;
+      return {...block, time: minsToTime(newMins)};
+    });
+
+    saveBlocks(adjusted);
+    setDragId(null);
+    setDragOver(null);
+  }
+
+  const CATS = ["faith","school","thesis","work","fitness","nutrition","morning","gloria","social","evening"];
+
+  return (
+    <div style={{padding:"16px 16px 80px", fontFamily:"'DM Sans',sans-serif"}}>
+      {/* Header */}
+      <div style={{marginBottom:14}}>
+        <div style={{fontFamily:"'DM Serif Display',serif", fontSize:24, color, marginBottom:2}}>
+          📅 {isGloria ? "Gloria's" : "Amen's"} Schedule
+        </div>
+        <div style={{fontSize:12, color:T.textSub}}>Drag to reorder · Tap to edit · Times auto-adjust on drag</div>
+      </div>
+
+      {/* Day tabs */}
+      <div style={{display:"flex", gap:4, marginBottom:16, overflowX:"auto", paddingBottom:4}}>
+        {DAYS.map(d => {
+          const isToday   = d === todayKey;
+          const isSelected= d === activeDay;
+          const hasCustom = !!data[`${baseKey}_${d}`];
+          return (
+            <button key={d} onClick={()=>{setActiveDay(d); setEditId(null); setShowAdd(false);}}
+              style={{flexShrink:0, padding:"7px 13px", borderRadius:10, border:"none", cursor:"pointer",
+                fontFamily:"'DM Sans',sans-serif", fontSize:12, fontWeight:isSelected?700:400,
+                background:isSelected?color:isToday?`${color}22`:"transparent",
+                color:isSelected?"#111":isToday?color:T.textSub,
+                outline:isSelected?"none":isToday?`1px solid ${color}44`:`1px solid ${T.border}`,
+                position:"relative"}}>
+              {DAY_LABELS[d]}
+              {hasCustom&&<div style={{position:"absolute",top:3,right:3,width:4,height:4,borderRadius:"50%",background:color}}/>}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Day label + actions */}
+      <div style={{display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:12}}>
+        <div style={{fontFamily:"'DM Serif Display',serif", fontSize:18, color}}>
+          {DAY_FULL[activeDay]}
+          {activeDay===todayKey&&<span style={{fontSize:11,color:"#3DBF8A",fontFamily:"'DM Sans',sans-serif",marginLeft:8,fontWeight:700}}>← today</span>}
+        </div>
+        <div style={{display:"flex", gap:6}}>
+          <button onClick={()=>setShowAdd(!showAdd)}
+            style={{padding:"6px 12px", borderRadius:8, border:"none", background:color, color:"#fff", cursor:"pointer", fontFamily:"'DM Sans',sans-serif", fontSize:12, fontWeight:700}}>
+            + Add
+          </button>
+          {data[`${baseKey}_${activeDay}`]&&(
+            <button onClick={resetDay}
+              style={{padding:"6px 10px", borderRadius:8, border:`1px solid ${T.border}`, background:"transparent", color:T.textMuted, cursor:"pointer", fontFamily:"'DM Sans',sans-serif", fontSize:11}}>
+              Reset
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Add form */}
+      {showAdd&&(
+        <div style={{...cs({padding:"14px", marginBottom:12})}}>
+          <div style={{fontSize:12, fontWeight:700, color, marginBottom:10}}>Add new block</div>
+          <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginBottom:8}}>
+            <div>
+              <div style={{fontSize:10,fontWeight:700,color:T.textMuted,textTransform:"uppercase",marginBottom:3}}>Time</div>
+              <input style={inp} value={addForm.time} onChange={e=>setAddForm(f=>({...f,time:e.target.value}))} placeholder="e.g. 9:00am"/>
+            </div>
+            <div>
+              <div style={{fontSize:10,fontWeight:700,color:T.textMuted,textTransform:"uppercase",marginBottom:3}}>Duration</div>
+              <input style={inp} value={addForm.dur} onChange={e=>setAddForm(f=>({...f,dur:e.target.value}))} placeholder="e.g. 1 hr"/>
+            </div>
+          </div>
+          <div style={{marginBottom:8}}>
+            <div style={{fontSize:10,fontWeight:700,color:T.textMuted,textTransform:"uppercase",marginBottom:3}}>Label</div>
+            <input style={inp} value={addForm.label} onChange={e=>setAddForm(f=>({...f,label:e.target.value}))} placeholder="What is this block?"/>
+          </div>
+          <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginBottom:8}}>
+            <div>
+              <div style={{fontSize:10,fontWeight:700,color:T.textMuted,textTransform:"uppercase",marginBottom:3}}>Category</div>
+              <select style={inp} value={addForm.cat} onChange={e=>setAddForm(f=>({...f,cat:e.target.value}))}>
+                {CATS.map(cat=><option key={cat}>{cat}</option>)}
+              </select>
+            </div>
+          </div>
+          <div style={{marginBottom:10}}>
+            <div style={{fontSize:10,fontWeight:700,color:T.textMuted,textTransform:"uppercase",marginBottom:3}}>Detail / notes</div>
+            <input style={inp} value={addForm.detail} onChange={e=>setAddForm(f=>({...f,detail:e.target.value}))} placeholder="Any extra info..."/>
+          </div>
+          <div style={{display:"flex", gap:8}}>
+            <button onClick={addBlock} style={{flex:1,padding:"9px",borderRadius:9,border:"none",background:"#3DBF8A",color:"#fff",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700}}>Save block</button>
+            <button onClick={()=>setShowAdd(false)} style={{padding:"9px 14px",borderRadius:9,border:`1px solid ${T.border}`,background:"transparent",color:T.textMuted,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:13}}>Cancel</button>
+          </div>
+        </div>
+      )}
+
+      {/* Schedule blocks with drag and drop */}
+      <div style={{display:"flex", flexDirection:"column", gap:6}}>
+        {sorted.map((block, i) => {
+          const cc      = CAT[block.cat] || "#888";
+          const isEdit  = editId === block.id;
+          const isDragging = dragId === block.id;
+          const isOver  = dragOver === block.id;
+          return (
+            <div key={block.id}
+              draggable
+              onDragStart={()=>setDragId(block.id)}
+              onDragOver={e=>{e.preventDefault(); setDragOver(block.id);}}
+              onDragEnd={()=>{setDragId(null); setDragOver(null);}}
+              onDrop={()=>handleDrop(block.id)}
+              style={{
+                ...cs({padding:"12px 14px", borderLeft:`3px solid ${cc}`, cursor:"grab",
+                  opacity:isDragging?0.4:1, background:isOver?`${cc}11`:T.surface,
+                  outline:isOver?`2px dashed ${cc}`:"none", transition:"all 0.1s"
+                })
+              }}>
+              {isEdit ? (
+                // Edit mode
+                <div>
+                  <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginBottom:8}}>
+                    <div>
+                      <div style={{fontSize:10,fontWeight:700,color:T.textMuted,textTransform:"uppercase",marginBottom:3}}>Time</div>
+                      <input style={inp} value={editForm.time} onChange={e=>setEditForm(f=>({...f,time:e.target.value}))}/>
+                    </div>
+                    <div>
+                      <div style={{fontSize:10,fontWeight:700,color:T.textMuted,textTransform:"uppercase",marginBottom:3}}>Duration</div>
+                      <input style={inp} value={editForm.dur} onChange={e=>setEditForm(f=>({...f,dur:e.target.value}))}/>
+                    </div>
+                  </div>
+                  <div style={{marginBottom:8}}>
+                    <div style={{fontSize:10,fontWeight:700,color:T.textMuted,textTransform:"uppercase",marginBottom:3}}>Label</div>
+                    <input style={inp} value={editForm.label} onChange={e=>setEditForm(f=>({...f,label:e.target.value}))}/>
+                  </div>
+                  <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginBottom:8}}>
+                    <div>
+                      <div style={{fontSize:10,fontWeight:700,color:T.textMuted,textTransform:"uppercase",marginBottom:3}}>Category</div>
+                      <select style={inp} value={editForm.cat} onChange={e=>setEditForm(f=>({...f,cat:e.target.value}))}>
+                        {CATS.map(cat=><option key={cat}>{cat}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <div style={{fontSize:10,fontWeight:700,color:T.textMuted,textTransform:"uppercase",marginBottom:3}}>Duration</div>
+                      <input style={inp} value={editForm.dur} onChange={e=>setEditForm(f=>({...f,dur:e.target.value}))}/>
+                    </div>
+                  </div>
+                  <div style={{marginBottom:10}}>
+                    <div style={{fontSize:10,fontWeight:700,color:T.textMuted,textTransform:"uppercase",marginBottom:3}}>Detail</div>
+                    <input style={inp} value={editForm.detail} onChange={e=>setEditForm(f=>({...f,detail:e.target.value}))}/>
+                  </div>
+                  <div style={{display:"flex", gap:8}}>
+                    <button onClick={saveEdit} style={{flex:1,padding:"8px",borderRadius:8,border:"none",background:"#3DBF8A",color:"#fff",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:700}}>Save</button>
+                    <button onClick={()=>deleteBlock(block.id)} style={{padding:"8px 12px",borderRadius:8,border:"none",background:"#E8704A22",color:"#E8704A",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:12}}>Delete</button>
+                    <button onClick={()=>setEditId(null)} style={{padding:"8px 12px",borderRadius:8,border:`1px solid ${T.border}`,background:"transparent",color:T.textMuted,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:12}}>Cancel</button>
+                  </div>
+                </div>
+              ) : (
+                // View mode
+                <div style={{display:"flex", alignItems:"flex-start", gap:8}}>
+                  {/* Drag handle */}
+                  <div style={{display:"flex", flexDirection:"column", gap:3, padding:"4px 0 0", flexShrink:0, cursor:"grab"}}>
+                    {[0,1,2].map(j=><div key={j} style={{width:14, height:2, background:T.border, borderRadius:2}}/>)}
+                  </div>
+                  <div style={{flex:1, minWidth:0}}>
+                    <div style={{display:"flex", alignItems:"center", gap:8, flexWrap:"wrap"}}>
+                      <span style={{fontSize:12,fontWeight:700,color:cc,flexShrink:0}}>{block.time}</span>
+                      <span style={{fontSize:13,fontWeight:700,color:T.text,flex:1}}>{block.label}</span>
+                      <span style={{fontSize:10,color:T.textMuted,flexShrink:0}}>{block.dur}</span>
+                    </div>
+                    {block.detail&&<div style={{fontSize:11,color:T.textSub,lineHeight:1.5,marginTop:3}}>{block.detail}</div>}
+                  </div>
+                  <button onClick={()=>startEdit(block)}
+                    style={{padding:"4px 10px",borderRadius:7,border:`1px solid ${T.border}`,background:"transparent",color:T.textMuted,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:11,flexShrink:0}}>
+                    Edit
+                  </button>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {sorted.length===0&&(
+        <div style={{textAlign:"center",padding:"30px",color:T.textMuted,fontSize:13}}>
+          No blocks yet — tap + Add to build your {DAY_FULL[activeDay]} schedule
+        </div>
+      )}
+    </div>
+  );
+}
+
+
 export default function SummerApp({mode,T,onBack}) {
   const _td2=new Date(); const today=`${_td2.getFullYear()}-${String(_td2.getMonth()+1).padStart(2,'0')}-${String(_td2.getDate()).padStart(2,'0')}`;
   const dow=new Date().getDay();
@@ -2578,6 +3095,14 @@ export default function SummerApp({mode,T,onBack}) {
         optSavedAmount:0, optPremium:false, optUnemployedDays:0,
       };
       const merged = stored ? { ...defaults, ...stored } : defaults;
+      // Never let defaults overwrite data that exists in Supabase
+      // Archived tasks especially must come from stored, not defaults
+      if (stored) {
+        merged.archivedTasks_amen  = stored.archivedTasks_amen  || defaults.archivedTasks_amen;
+        merged.activeTasks_amen    = stored.activeTasks_amen    || defaults.activeTasks_amen;
+        merged.archivedTasks_gloria= stored.archivedTasks_gloria|| defaults.archivedTasks_gloria;
+        merged.activeTasks_gloria  = stored.activeTasks_gloria  || defaults.activeTasks_gloria;
+      }
       // Seed fall tasks if empty
       if (!merged.activeTasks_amen || merged.activeTasks_amen.length === 0) {
         merged.activeTasks_amen = FALL_STARTER_TASKS.map((t,i)=>({
@@ -4272,7 +4797,7 @@ export default function SummerApp({mode,T,onBack}) {
         {profile==="amen"&&pillar==="jobs"     && <JobsView T={T} data={data} save={save} isMobile={isMobile}/>}
         {profile==="amen"&&pillar==="archive"  && <ArchiveView T={T} data={data} save={save} TODAY={today}/>}
         {profile==="amen"&&pillar==="shopping" && <ShoppingView T={T} data={data} save={save} userKey="amen"/>}
-        {profile==="amen"&&pillar==="schedule"  && viewSchedule}
+        {profile==="amen"&&pillar==="schedule"  && <ScheduleEditor T={T} data={data} save={save} profile="amen"/>}
         {profile==="amen"&&pillar==="faith"     && viewFaith}
         {profile==="amen"&&pillar==="fitness"   && viewFitness}
         {profile==="amen"&&pillar==="thesis"    && viewThesis}
@@ -4291,7 +4816,7 @@ export default function SummerApp({mode,T,onBack}) {
         {profile==="gloria"&&pillar==="gloria_gym"      && viewGym}
         {profile==="gloria"&&pillar==="gloria_schools"  && viewSchools}
         {profile==="gloria"&&pillar==="gloria_time"     && <TimeView T={T}/>}
-        {profile==="gloria"&&pillar==="gloria_schedule" && viewGloriaSchedule}
+        {profile==="gloria"&&pillar==="gloria_schedule" && <ScheduleEditor T={T} data={data} save={save} profile="gloria"/>}
         {profile==="gloria"&&pillar==="gloria_faith"    && viewGloriaFaith}
         {profile==="gloria"&&pillar==="gloria_reading"  && viewGloriaReading}
         {profile==="gloria"&&pillar==="gloria_notes"    && viewGloriaNotes}
