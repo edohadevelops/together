@@ -2705,10 +2705,7 @@ function OnboardingTooltip({ T, pillar, data, save, profile }) {
   );
 }
 
-// Legacy hook — kept for compatibility
-function useOnboarding(profile, data, save) {
-  return { currentTip:null, dismissCurrent:()=>{}, dismissAll:()=>{} };
-}
+
 
 
 // ── Shared schedule editor — used by both Amen and Gloria ────────────────────
@@ -3237,7 +3234,6 @@ export default function SummerApp({mode,T,onBack}) {
   useEffect(()=>{const h=()=>setIsMobile(window.innerWidth<700); window.addEventListener("resize",h); return()=>window.removeEventListener("resize",h);},[]);
 
   const { permission, requestPermission } = useNotifications();
-  const { currentTip, dismissCurrent, dismissAll } = useOnboarding(profile, data||{}, save);
   const [showMenu, setShowMenu] = useState(false);
 
   const [profile,setProfile]=useState(()=>{try{return localStorage.getItem("summer_profile")||"amen";}catch{return"amen";}});
