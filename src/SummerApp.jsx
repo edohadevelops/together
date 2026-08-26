@@ -2520,6 +2520,197 @@ function NextStepsView({ T, data, save, isMobile }) {
 }
 
 
+
+// ── Onboarding tooltip system — per page, per action ─────────────────────────
+// One tip at a time, per user, per page. Persists in Supabase.
+// Shows until the user taps "Got it" (next tip) or "Don't show again" (all dismissed).
+// Completely independent between Amen and Gloria.
+
+const PAGE_TIPS = {
+  // ── HOME / OVERVIEW ────────────────────────────────────────────────────────
+  overview:[
+    { id:"home_welcome",  title:"Welcome to Our Life OS 🌟", body:"This is your home — it shows your daily progress, schedule completion, and quick stats. Everything you need at a glance." },
+    { id:"home_profile",  title:"Switch profiles",           body:"Tap your name at the top to switch between Amen and Gloria. Each person has their own data, schedule, and goals." },
+    { id:"home_notif",    title:"Enable notifications 🔔",   body:"Tap the bell icon in the top bar. You'll get reminders 15 min, 5 min, and at the exact start of every schedule block." },
+    { id:"home_nav",      title:"Navigate sections",         body:"Use the bottom bar to jump between Home, Goals, Review and Schedule. Tap ☰ More to see ALL sections." },
+    { id:"home_more",     title:"The More menu ☰",           body:"Tap ☰ More to open a full grid of every section — Gym, Schools, Jobs, Archive, Shopping, OPT tracker and more." },
+  ],
+  // ── SCHEDULE ───────────────────────────────────────────────────────────────
+  schedule:[
+    { id:"sched_days",    title:"Pick your day 📅",          body:"Tap Mon, Tue, Wed... to see that day's full schedule. A dot marks today automatically." },
+    { id:"sched_drag",    title:"Drag to reorder ↕",         body:"Grab the three lines on the left of any block and drag it up or down. Times auto-adjust for everything below it." },
+    { id:"sched_edit",    title:"Edit any block ✏️",          body:"Tap the Edit button on any block to change the time, label, category, or duration. Tap Save when done." },
+    { id:"sched_delete",  title:"Delete a block 🗑",          body:"Open Edit on any block — there's a red Delete button inside. Removed blocks are gone from that day only." },
+    { id:"sched_add",     title:"Add a new block ＋",         body:"Tap + Add at the top right. Set the time, label, category and duration. It sorts into the right place automatically." },
+    { id:"sched_reset",   title:"Reset a day 🔄",            body:"If you've customised a day and want to go back to the original, tap the Reset button that appears at the top right." },
+  ],
+  // ── GOALS ──────────────────────────────────────────────────────────────────
+  goals:[
+    { id:"goals_check",   title:"Check off a goal ✓",        body:"Tap the checkbox next to any December target to mark it complete. The overall progress bar updates instantly." },
+    { id:"goals_note",    title:"Add a progress note 📝",    body:"Tap the text field under any goal and type where you are with it. This saves automatically." },
+    { id:"goals_cats",    title:"Goals by category",         body:"Goals are grouped by Academic, Career, Finance, Faith and Relationship. Each category shows how many you've completed." },
+    { id:"goals_bar",     title:"Overall progress bar",      body:"The bar at the top shows your total percentage toward all December goals. Aim to move this every week." },
+  ],
+  // ── WEEKLY REVIEW ──────────────────────────────────────────────────────────
+  review:[
+    { id:"rev_yesno",     title:"Yes / No questions",        body:"Tap Yes or No for each question. Your week score at the top updates as you go. Be honest — this is just for you." },
+    { id:"rev_numbers",   title:"Log your numbers 📊",       body:"Enter your thesis hours, Spark earnings, job applications submitted, and gym sessions for the week." },
+    { id:"rev_text",      title:"Write your wins + struggles", body:"The three text fields at the bottom are the most important. What went well? What was hard? What's your #1 focus next week?" },
+    { id:"rev_projects",  title:"Log project work 🛠",       body:"Tap + Log Project Work to record what you built this week — name the project and how many hours you spent." },
+    { id:"rev_plan",      title:"Review your plan sections 📄", body:"Scroll down to see your vision, workplace goals, church goals, and research checklist. Open each one to reflect." },
+  ],
+  // ── NEXT STEPS ─────────────────────────────────────────────────────────────
+  nextsteps:[
+    { id:"ns_tabs",       title:"Three trackers in one 🗺",  body:"Use the tabs at the top to switch between your Roadmap (Sep-Dec plan), Schools (58 programs), and Jobs (29 roles)." },
+    { id:"ns_roadmap",    title:"Monthly roadmap",           body:"Tap any month to expand it. Tap each milestone to check it off. The progress bar shows how far through December you are." },
+    { id:"ns_schools",    title:"Filter schools by country 🌍", body:"Tap Canada, USA, Norway, Netherlands etc. to filter. Each school has a status dropdown — update it as you apply." },
+    { id:"ns_jobs",       title:"Filter jobs by state 📍",   body:"Tap Missouri, Kansas, Texas or Remote to filter. Add the company name and notes as you apply to each role." },
+    { id:"ns_opt",        title:"OPT journey 📋",           body:"Tap the OPT tab — it's a step-by-step journey from understanding OPT through to your STEM extension. Complete each phase to unlock the next." },
+    { id:"ns_optfund",    title:"OPT filing fund 💰",        body:"Inside the OPT tab, enter how much you've saved toward the $410 filing fee. Toggle premium processing to see the $2,190 target." },
+  ],
+  // ── ARCHIVE ────────────────────────────────────────────────────────────────
+  archive:[
+    { id:"arch_tabs",     title:"Three tabs: Active, Archived, Add", body:"Active shows your current task board. Archived shows everything you've cleared. Add lets you create new tasks." },
+    { id:"arch_add",      title:"Add new tasks ＋",          body:"Tap the Add tab. Set a title, section (@school, @work, @faith etc.), priority, and due date. Keep your active board to 10-15 tasks max." },
+    { id:"arch_archive",  title:"Archive a task 📦",         body:"In the Active tab, tap Archive on any task to move it out of your board. It goes to Archived where you can find it later." },
+    { id:"arch_restore",  title:"Restore a task 🔄",         body:"In the Archived tab, tap Restore on any task to bring it back to your active board." },
+    { id:"arch_bulk",     title:"Bulk archive 📦",           body:"Tap 'Archive All X Active Tasks' to clear your entire board at once. Everything is saved — nothing is deleted." },
+    { id:"arch_search",   title:"Search your tasks 🔍",      body:"Use the search bar in both Active and Archived tabs to find any task by keyword." },
+  ],
+  // ── SHOPPING ───────────────────────────────────────────────────────────────
+  shopping:[
+    { id:"shop_add",      title:"Add an item ＋",            body:"Tap + Add Item. Set the name, quantity, category (Home, Clothing, Tech etc.) and mark it urgent if needed." },
+    { id:"shop_check",    title:"Mark as bought ✓",          body:"Tap any item to mark it bought. It moves to the Bought section at the bottom with a strikethrough." },
+    { id:"shop_filter",   title:"Filter by category",        body:"Tap All, Home, Clothing, Food, Personal, Tech, Gift or Other at the top to see just that category." },
+    { id:"shop_clear",    title:"Clear bought items 🗑",     body:"Once you're back from shopping, tap 'Clear all' under the Bought section to clean up the list." },
+    { id:"shop_urgent",   title:"Mark as urgent ⚠️",         body:"When adding an item, tick the urgent checkbox. It gets an orange tag so you know what to prioritise." },
+  ],
+  // ── GYM ────────────────────────────────────────────────────────────────────
+  gym:[
+    { id:"gym_days",      title:"Three training days 💪",    body:"Day A is Monday (Squat Focus), Day B Wednesday (Deadlift), Day C Friday (Press). Tap each to see the exercises." },
+    { id:"gym_log",       title:"Log your sets 📝",          body:"Tap Start Workout on any day. Enter the weight and reps for each set as you go. This saves your Week 2 baseline." },
+    { id:"gym_nutrition", title:"Nutrition tab 🥗",          body:"See your daily targets (2,400 kcal, 180g protein) and full meal plan. Tap each day to log whether you hit your targets." },
+    { id:"gym_grocery",   title:"Grocery list 🛒",           body:"See exactly what to buy for the week. Tap any item to tick it off as you shop. Tap Reset to start fresh next week." },
+    { id:"gym_report",    title:"Coach Minnis report 📄",    body:"Tap the Report tab to see your week summary — sessions done, sets logged, nutrition compliance. Tap Print to export a PDF for Coach Minnis." },
+  ],
+  // ── JOBS ───────────────────────────────────────────────────────────────────
+  jobs:[
+    { id:"jobs_log",      title:"Log an application ＋",     body:"Tap + Log New Application. Enter the company, role, platform (LinkedIn, Handshake etc.), date, and status." },
+    { id:"jobs_status",   title:"Update status 🔄",          body:"As applications progress, use the status dropdown on each card — Applied, Interview, Offer, Rejected, Following up." },
+    { id:"jobs_filter",   title:"Filter by status",          body:"Tap the status pills at the top to filter — see just your Interviews, or just Following up applications." },
+    { id:"jobs_target",   title:"Offer target 🎯",           body:"The green bar shows progress toward your target of 3 job offers. Keep applying until that bar is full." },
+  ],
+  // ── FAITH ──────────────────────────────────────────────────────────────────
+  faith:[
+    { id:"faith_devo",    title:"Log your devotion ✦",       body:"Tap each day to mark devotion done. Streak builds as you stay consistent. This is your most important daily habit." },
+    { id:"faith_verse",   title:"Scripture for the week",    body:"Add a verse that speaks to your current season. Come back to it throughout the week." },
+  ],
+  // ── THESIS ─────────────────────────────────────────────────────────────────
+  thesis:[
+    { id:"thesis_tasks",  title:"Thesis task board 📝",      body:"Your thesis milestones broken into actionable tasks. Check each one off as you complete it." },
+    { id:"thesis_hours",  title:"Track your hours ⏱",       body:"Log thesis hours each session. Your weekly review pulls from this to show your total hours for the week." },
+  ],
+  // ── TIME ───────────────────────────────────────────────────────────────────
+  time:[
+    { id:"time_bar",      title:"Weekly time split ⏱",      body:"The coloured bar shows how your 168 weekly hours are distributed. Tap any section to see the detail." },
+    { id:"time_spark",    title:"Spark target breakdown 🚗", body:"See exactly how $600/week breaks across Mon, Wed, Fri, Sat and Sun with per-day targets." },
+    { id:"time_tap",      title:"Tap any category",          body:"Tap any row in the list to expand it and see exactly what that time block includes and why it matters." },
+  ],
+};
+
+// Flatten all tips with their page info for counting
+const ALL_TIP_IDS = Object.values(PAGE_TIPS).flat().map(t => t.id);
+
+function OnboardingTooltip({ T, pillar, data, save, profile }) {
+  const dismissedKey = `onboardDismissed_${profile}`;
+  const allDoneKey   = `onboardDone_${profile}`;
+  const dismissed    = data[dismissedKey] || [];
+  const allDone      = data[allDoneKey]   || false;
+
+  if (allDone) return null;
+
+  // Get tips for this pillar — strip gloria_ prefix for lookup
+  const pageKey = pillar.replace("gloria_","");
+  const pageTips = PAGE_TIPS[pageKey] || [];
+
+  // Find first undismissed tip on this page
+  const tip = pageTips.find(t => !dismissed.includes(t.id)) || null;
+  if (!tip) return null;
+
+  const pageIdx     = pageTips.findIndex(t => t.id === tip.id);
+  const totalOnPage = pageTips.length;
+
+  function dismissCurrent() {
+    save(p => ({...p, [dismissedKey]: [...(p[dismissedKey]||[]), tip.id]}));
+  }
+  function dismissAll() {
+    save(p => ({...p, [allDoneKey]: true, [dismissedKey]: ALL_TIP_IDS}));
+  }
+
+  const isDark = T.bg === "#0F1117" || T.bg === "#111418" || !T.bg;
+  const bgColor   = isDark ? "#FFFFFF" : "#1a1d26";
+  const textColor = isDark ? "#1a1d26" : "#FFFFFF";
+  const mutedColor= isDark ? "rgba(0,0,0,0.5)" : "rgba(255,255,255,0.55)";
+  const dotActive = "#E8A838";
+  const dotInactive= isDark ? "rgba(0,0,0,0.15)" : "rgba(255,255,255,0.2)";
+
+  return (
+    <div style={{
+      position:"fixed", bottom:86, left:14, right:14, zIndex:998,
+      background:bgColor, color:textColor,
+      borderRadius:18, padding:"14px 16px 12px",
+      boxShadow:"0 6px 28px rgba(0,0,0,0.22)",
+      border:"1px solid rgba(255,255,255,0.08)",
+      animation:"obSlideUp 0.22s ease",
+      fontFamily:"'DM Sans',sans-serif",
+    }}>
+      <style>{`@keyframes obSlideUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}`}</style>
+
+      {/* Page progress dots */}
+      <div style={{display:"flex", alignItems:"center", gap:4, marginBottom:9}}>
+        {pageTips.map((t,i)=>(
+          <div key={t.id} style={{
+            width: i===pageIdx?16:5, height:5, borderRadius:3,
+            background: dismissed.includes(t.id)?dotActive: i===pageIdx?dotActive:dotInactive,
+            transition:"width 0.2s",
+          }}/>
+        ))}
+        <span style={{fontSize:10, color:mutedColor, marginLeft:"auto"}}>
+          {pageIdx+1} of {totalOnPage} on this page
+        </span>
+      </div>
+
+      {/* Content */}
+      <div style={{fontSize:13, fontWeight:700, marginBottom:3}}>{tip.title}</div>
+      <div style={{fontSize:12, lineHeight:1.6, color:isDark?"rgba(0,0,0,0.75)":"rgba(255,255,255,0.82)", marginBottom:11}}>{tip.body}</div>
+
+      {/* Actions */}
+      <div style={{display:"flex", gap:7}}>
+        <button onClick={dismissCurrent}
+          style={{flex:1, padding:"8px", borderRadius:9, border:"none",
+            background:"#E8A838", color:"#111",
+            cursor:"pointer", fontFamily:"'DM Sans',sans-serif",
+            fontSize:12, fontWeight:700}}>
+          Got it →
+        </button>
+        <button onClick={dismissAll}
+          style={{padding:"8px 11px", borderRadius:9,
+            border:`1px solid ${isDark?"rgba(0,0,0,0.15)":"rgba(255,255,255,0.2)"}`,
+            background:"transparent", color:mutedColor,
+            cursor:"pointer", fontFamily:"'DM Sans',sans-serif", fontSize:11}}>
+          Don't show again
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// Legacy hook — kept for compatibility
+function useOnboarding(profile, data, save) {
+  return { currentTip:null, dismissCurrent:()=>{}, dismissAll:()=>{} };
+}
+
+
 // ── Shared schedule editor — used by both Amen and Gloria ────────────────────
 function parseTimeMins(t) {
   if (!t) return 0;
@@ -3046,6 +3237,7 @@ export default function SummerApp({mode,T,onBack}) {
   useEffect(()=>{const h=()=>setIsMobile(window.innerWidth<700); window.addEventListener("resize",h); return()=>window.removeEventListener("resize",h);},[]);
 
   const { permission, requestPermission } = useNotifications();
+  const { currentTip, dismissCurrent, dismissAll } = useOnboarding(profile, data||{}, save);
   const [showMenu, setShowMenu] = useState(false);
 
   const [profile,setProfile]=useState(()=>{try{return localStorage.getItem("summer_profile")||"amen";}catch{return"amen";}});
@@ -3093,6 +3285,8 @@ export default function SummerApp({mode,T,onBack}) {
         shoppingList_gloria:[],
         nextSteps_amen:{},
         optSavedAmount:0, optPremium:false, optUnemployedDays:0,
+        onboardDismissed_amen:[], onboardDone_amen:false,
+        onboardDismissed_gloria:[], onboardDone_gloria:false,
       };
       const merged = stored ? { ...defaults, ...stored } : defaults;
       // Never let defaults overwrite data that exists in Supabase
@@ -4825,6 +5019,8 @@ export default function SummerApp({mode,T,onBack}) {
       {/* ── Mobile bottom tabs ── */}
       {isMobile&&(
         <>
+        {/* Onboarding tooltip — per page, per action, per user */}
+        <OnboardingTooltip T={T} pillar={pillar} data={data} save={save} profile={profile}/>
         {showMenu&&(
           <div onClick={()=>setShowMenu(false)}
             style={{position:"fixed",inset:0,zIndex:28,background:"rgba(0,0,0,0.5)",backdropFilter:"blur(4px)"}}/>
