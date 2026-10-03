@@ -2019,6 +2019,8 @@ function NextStepsView({ T, data, save, isMobile }) {
   const [schoolFilter, setSchoolFilter] = useState("All");
   const [jobFilter, setJobFilter]       = useState("All");
   const [expandMonth, setExpandMonth]   = useState("September 2026");
+  const [selectedJob, setSelectedJob]   = useState(null); // modal
+  const [selectedSchool, setSelectedSchool] = useState(null);
 
   const nsKey   = "nextSteps_amen";
   const ns      = data[nsKey] || {};
@@ -2283,34 +2285,17 @@ function NextStepsView({ T, data, save, isMobile }) {
                     <div key={field} style={{marginBottom:12}}>
                       <div style={{fontSize:11, fontWeight:700, color:T.textMuted, textTransform:"uppercase", letterSpacing:"0.06em", marginBottom:6, paddingLeft:4}}>{field}</div>
                       {fieldJobs.map(j=>(
-                        <div key={j.oi} style={{...cs({padding:"12px 14px", marginBottom:6, borderLeft:`4px solid ${STATUS_COLORS[j.status]||"#888"}`})}}>
-                          {/* Header row */}
-                          <div style={{display:"flex", alignItems:"flex-start", justifyContent:"space-between", gap:8, marginBottom:6}}>
-                            <div style={{flex:1, minWidth:0}}>
-                              <div style={{fontSize:13, fontWeight:700, color:T.text, lineHeight:1.4}}>{j.title}</div>
-                              {j.company&&<div style={{fontSize:12, color:T.textSub, marginTop:1}}>{j.company}</div>}
-                              {j.salary&&<div style={{fontSize:11, color:"#3DBF8A", fontWeight:700, marginTop:2}}>{j.salary}</div>}
-                              {j.employers&&<div style={{fontSize:11, color:T.textMuted, marginTop:1}}>📍 {j.employers}</div>}
-                            </div>
-                            <select value={j.status} onChange={e=>updateJob(j.oi,"status",e.target.value)}
-                              style={{...inp, width:"auto", fontSize:11, padding:"4px 6px", color:STATUS_COLORS[j.status]||T.text, fontWeight:700, flexShrink:0}}>
-                              {["Searching","Applied","Interview","Offer","Rejected","Withdrawn"].map(st=><option key={st}>{st}</option>)}
-                            </select>
+                        <div key={j.oi} onClick={()=>setSelectedJob(j)}
+                          style={{...cs({padding:"11px 14px", marginBottom:5, borderLeft:`4px solid ${STATUS_COLORS[j.status]||"#888"}`, cursor:"pointer", display:"flex", alignItems:"center", gap:10})}}>
+                          <div style={{flex:1, minWidth:0}}>
+                            <div style={{fontSize:13, fontWeight:700, color:T.text, lineHeight:1.3}}>{j.title}</div>
+                            <div style={{fontSize:11, color:T.textSub, marginTop:2}}>{j.company} · {j.employers}</div>
+                            {j.salary&&j.salary!=="—"&&<div style={{fontSize:11, color:"#3DBF8A", fontWeight:700, marginTop:1}}>{j.salary}</div>}
                           </div>
-                          {/* Notes */}
-                          {j.notes&&<div style={{fontSize:11, color:T.textSub, lineHeight:1.5, marginBottom:8}}>{j.notes}</div>}
-                          {/* Apply link */}
-                          <div style={{display:"flex", gap:6, alignItems:"center", marginBottom:6}}>
-                            <input style={{...inp, flex:1, fontSize:11}} placeholder="Paste apply link here..." value={j.applyUrl||""} onChange={e=>updateJob(j.oi,"applyUrl",e.target.value)}/>
-                            {j.applyUrl&&(
-                              <a href={j.applyUrl.startsWith("http")?j.applyUrl:`https://${j.applyUrl}`} target="_blank" rel="noreferrer"
-                                style={{padding:"6px 12px", borderRadius:8, background:"#3B9EDB", color:"#fff", textDecoration:"none", fontFamily:"'DM Sans',sans-serif", fontSize:12, fontWeight:700, whiteSpace:"nowrap", flexShrink:0}}>
-                                Apply →
-                              </a>
-                            )}
+                          <div style={{display:"flex", flexDirection:"column", alignItems:"flex-end", gap:4, flexShrink:0}}>
+                            <div style={{fontSize:10, padding:"2px 7px", borderRadius:8, background:`${STATUS_COLORS[j.status]||"#888"}22`, color:STATUS_COLORS[j.status]||"#888", fontWeight:700}}>{j.status}</div>
+                            <div style={{fontSize:11, color:T.textMuted}}>tap to open →</div>
                           </div>
-                          {/* Company name editable */}
-                          <input style={{...inp, fontSize:11}} placeholder="Add company name if blank..." value={j.company||""} onChange={e=>updateJob(j.oi,"company",e.target.value)}/>
                         </div>
                       ))}
                     </div>
@@ -2321,6 +2306,79 @@ function NextStepsView({ T, data, save, isMobile }) {
           })}
         </div>
       )}
+
+      {/* ── JOB MODAL ── */}
+      {selectedJob&&(()=>{
+        const j = selectedJob;
+        const url = j.applyUrl ? (j.applyUrl.startsWith("http") ? j.applyUrl : `https://${j.applyUrl}`) : null;
+        return (
+          <>
+            {/* Backdrop */}
+            <div onClick={()=>setSelectedJob(null)}
+              style={{position:"fixed",inset:0,zIndex:200,background:"rgba(0,0,0,0.6)",backdropFilter:"blur(4px)"}}/>
+            {/* Modal */}
+            <div style={{position:"fixed",bottom:0,left:0,right:0,zIndex:201,background:T.surface,borderRadius:"20px 20px 0 0",padding:"20px 20px 40px",maxHeight:"85vh",overflowY:"auto",boxShadow:"0 -8px 40px rgba(0,0,0,0.4)"}}>
+              {/* Handle */}
+              <div style={{width:36,height:4,borderRadius:2,background:T.border,margin:"0 auto 16px"}}/>
+
+              {/* Status badge + close */}
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+                <div style={{fontSize:11,padding:"3px 10px",borderRadius:10,background:`${STATUS_COLORS[j.status]||"#888"}22`,color:STATUS_COLORS[j.status]||"#888",fontWeight:700}}>{j.status}</div>
+                <button onClick={()=>setSelectedJob(null)} style={{background:"transparent",border:"none",fontSize:20,color:T.textMuted,cursor:"pointer",padding:"0 4px",lineHeight:1}}>✕</button>
+              </div>
+
+              {/* Title */}
+              <div style={{fontFamily:"'DM Serif Display',serif",fontSize:20,color:T.text,lineHeight:1.3,marginBottom:6}}>{j.title}</div>
+
+              {/* Company & Location */}
+              {j.company&&<div style={{fontSize:14,fontWeight:600,color:T.textSub,marginBottom:3}}>{j.company}</div>}
+              {j.employers&&<div style={{fontSize:13,color:T.textMuted,marginBottom:j.salary?4:12}}>📍 {j.employers}</div>}
+              {j.salary&&j.salary!=="—"&&<div style={{fontSize:14,fontWeight:700,color:"#3DBF8A",marginBottom:12}}>{j.salary}</div>}
+
+              {/* Divider */}
+              <div style={{height:1,background:T.border,marginBottom:14}}/>
+
+              {/* Notes */}
+              {j.notes&&(
+                <div style={{marginBottom:16}}>
+                  <div style={{fontSize:11,fontWeight:700,color:T.textMuted,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:6}}>Notes</div>
+                  <div style={{fontSize:13,color:T.text,lineHeight:1.7}}>{j.notes}</div>
+                </div>
+              )}
+
+              {/* Update status */}
+              <div style={{marginBottom:16}}>
+                <div style={{fontSize:11,fontWeight:700,color:T.textMuted,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:6}}>Update status</div>
+                <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                  {["Searching","Applied","Interview","Offer","Rejected","Withdrawn"].map(st=>(
+                    <button key={st} onClick={()=>{updateJob(j.oi,"status",st); setSelectedJob({...j,status:st});}}
+                      style={{padding:"6px 12px",borderRadius:20,border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:j.status===st?700:400,background:j.status===st?(STATUS_COLORS[st]||"#888"):`${STATUS_COLORS[st]||"#888"}22`,color:j.status===st?"#fff":(STATUS_COLORS[st]||"#888")}}>
+                      {st}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Apply buttons */}
+              {url ? (
+                <a href={url} target="_blank" rel="noreferrer"
+                  style={{display:"block",width:"100%",padding:"14px",borderRadius:14,background:"#3B9EDB",color:"#fff",textDecoration:"none",textAlign:"center",fontFamily:"'DM Serif Display',serif",fontSize:16,fontWeight:700,boxSizing:"border-box",marginBottom:10}}>
+                  🔗 Go to Job Posting →
+                </a>
+              ) : (
+                <div style={{marginBottom:10}}>
+                  <div style={{fontSize:11,fontWeight:700,color:T.textMuted,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:6}}>Apply link</div>
+                  <input style={{...inp,marginBottom:8}} placeholder="Paste apply URL here..." value={j.applyUrl||""} onChange={e=>{updateJob(j.oi,"applyUrl",e.target.value); setSelectedJob({...j,applyUrl:e.target.value});}}/>
+                </div>
+              )}
+              <button onClick={()=>setSelectedJob(null)}
+                style={{width:"100%",padding:"12px",borderRadius:14,border:`1px solid ${T.border}`,background:"transparent",color:T.textSub,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:14}}>
+                Close
+              </button>
+            </div>
+          </>
+        );
+      })()}
 
       {/* ── OPT TAB ── */}
       {tab==="opt"&&(()=>{
