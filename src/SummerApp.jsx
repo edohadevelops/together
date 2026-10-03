@@ -2026,7 +2026,11 @@ function NextStepsView({ T, data, save, isMobile }) {
   const ns      = data[nsKey] || {};
   const roadmap = ns.roadmap || {};
   const schools = ns.schools || SCHOOLS_DATA;
-  const jobs    = ns.jobs    || JOBS_DATA;
+  // Always use JOBS_DATA as base (has built-in links), merge in saved statuses + notes
+  const jobs = JOBS_DATA.map((baseJob, i) => {
+    const saved = ns.jobs ? ns.jobs.find(s => s.title === baseJob.title && s.company === baseJob.company) : null;
+    return saved ? { ...baseJob, status: saved.status || baseJob.status, applyUrl: baseJob.applyUrl || saved.applyUrl } : baseJob;
+  });
 
   function saveNS(updated) {
     save(p=>({...p, [nsKey]:{...(p[nsKey]||{}), ...updated}}));
@@ -2317,7 +2321,7 @@ function NextStepsView({ T, data, save, isMobile }) {
             <div onClick={()=>setSelectedJob(null)}
               style={{position:"fixed",inset:0,zIndex:200,background:"rgba(0,0,0,0.6)",backdropFilter:"blur(4px)"}}/>
             {/* Modal */}
-            <div style={{position:"fixed",bottom:0,left:0,right:0,zIndex:201,background:T.surface,borderRadius:"20px 20px 0 0",padding:"20px 20px 40px",maxHeight:"85vh",overflowY:"auto",boxShadow:"0 -8px 40px rgba(0,0,0,0.4)"}}>
+            <div style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:480,zIndex:201,background:T.surface,borderRadius:"20px 20px 0 0",padding:"20px 20px 40px",maxHeight:"85vh",overflowY:"auto",boxShadow:"0 -8px 40px rgba(0,0,0,0.4)",boxSizing:"border-box"}}>
               {/* Handle */}
               <div style={{width:36,height:4,borderRadius:2,background:T.border,margin:"0 auto 16px"}}/>
 
