@@ -4021,7 +4021,6 @@ export default function SummerApp({mode,T,onBack}) {
             // override built-in labels/amounts/due/source/cat with any saved edits
             const builtinEdits = data.builtinDebtEdits_amen || {};
             const customDebts = data.customDebts_amen || [];
-            const builtinEdits = data.builtinDebtEdits_amen || {};
             const MERGED_BUILTINS = BUILTIN_DEBTS.map(d=>({...d,...(builtinEdits[d.id]||{})}));
             const ALL_DEBTS = [...MERGED_BUILTINS, ...customDebts];
             const debtPaid = data.debtPaid_amen || {}; // {id: amountPaid}
