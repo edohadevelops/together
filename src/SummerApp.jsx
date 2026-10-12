@@ -4018,148 +4018,188 @@ export default function SummerApp({mode,T,onBack}) {
               {id:"clothes",  label:"Winter clothes",      amount:400, due:"First week Nov", source:"November",  cat:"flex"},
               {id:"groceries",label:"Groceries",           amount:150, due:"Mid-month",      source:"Any",       cat:"essential"},
             ];
+            // override built-in labels/amounts/due/source/cat with any saved edits
+            const builtinEdits = data.builtinDebtEdits_amen || {};
             const customDebts = data.customDebts_amen || [];
-            const ALL_DEBTS = [...BUILTIN_DEBTS, ...customDebts];
-            const debtLog = data.debtPayments || [];
-            const paidIds = new Set(debtLog.map(p=>p.id));
-            const totalOwed = ALL_DEBTS.reduce((s,d)=>s+Number(d.amount),0);
-            const totalPaid = ALL_DEBTS.filter(d=>paidIds.has(d.id)).reduce((s,d)=>s+Number(d.amount),0);
-            const remaining = totalOwed - totalPaid;
+            const builtinEdits = data.builtinDebtEdits_amen || {};
+            const MERGED_BUILTINS = BUILTIN_DEBTS.map(d=>({...d,...(builtinEdits[d.id]||{})}));
+            const ALL_DEBTS = [...MERGED_BUILTINS, ...customDebts];
+            const debtPaid = data.debtPaid_amen || {}; // {id: amountPaid}
             const catColor = {bank:"#3B9EDB",essential:"#E84E8A",family:"#9B6EE8",personal:"#E8A838",flex:"#3DBF8A"};
+            const totalOwed = ALL_DEBTS.reduce((s,d)=>s+Number(d.amount),0);
+            const totalPaid = ALL_DEBTS.reduce((s,d)=>s+(Number(debtPaid[d.id])||0),0);
+            const remaining = totalOwed - totalPaid;
             const isEditing = debtEdit !== null;
             const editTarget = isEditing ? ALL_DEBTS.find(d=>d.id===debtEdit) : null;
             return(
               <div>
+                {/* Header */}
+                <div style={{fontFamily:"'DM Serif Display',serif",fontSize:22,color:"#9B6EE8",marginBottom:4}}>{"💳 October Payments"}</div>
+                <div style={{fontSize:13,color:T.textSub,marginBottom:20}}>{"Track every debt, installment by installment"}</div>
+
                 {/* Summary cards */}
-                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))",gap:10,marginBottom:20}}>
-                  <SCard T={T} label="Total obligations" value={`$${totalOwed.toLocaleString()}`} sub={`${ALL_DEBTS.length} items`} color="#E84E8A"/>
-                  <SCard T={T} label="Paid off" value={`$${totalPaid.toLocaleString()}`} sub={`${paidIds.size} cleared`} color="#3DBF8A"/>
-                  <SCard T={T} label="Still owed" value={`$${remaining.toLocaleString()}`} sub="Remaining" color={remaining===0?"#3DBF8A":"#E8A838"}/>
-                  <SCard T={T} label="Progress" value={`${totalOwed>0?Math.round(totalPaid/totalOwed*100):0}%`} sub="Cleared" color="#9B6EE8"/>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:10,marginBottom:16}}>
+                  <SCard T={T} label="Total owed" value={`$${totalOwed.toLocaleString()}`} sub={`${ALL_DEBTS.length} obligations`} color="#E84E8A"/>
+                  <SCard T={T} label="Paid so far" value={`$${totalPaid.toLocaleString()}`} sub={`$${remaining.toLocaleString()} remaining`} color="#3DBF8A"/>
                 </div>
 
-                {/* Progress bar */}
-                <div style={{...cs({marginBottom:20,padding:"14px 18px"})}}>
-                  <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
-                    <span style={{fontWeight:700,color:T.text,fontSize:13}}>{"October debt payoff"}</span>
-                    <span style={{fontWeight:700,color:"#3DBF8A",fontSize:13}}>{`$${totalPaid} / $${totalOwed}`}</span>
+                {/* Master progress bar */}
+                <div style={{...cs({marginBottom:20,padding:"16px 18px"})}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                    <span style={{fontWeight:700,color:T.text,fontSize:14}}>{"Overall progress"}</span>
+                    <span style={{fontWeight:800,fontSize:16,color:totalPaid>=totalOwed?"#3DBF8A":"#9B6EE8"}}>{`${totalOwed>0?Math.round(totalPaid/totalOwed*100):0}%`}</span>
                   </div>
-                  <PBar value={totalPaid} max={totalOwed} color={totalPaid>=totalOwed?"#3DBF8A":"#9B6EE8"} h={10} bg={T.inputBg}/>
-                  <div style={{fontSize:11,color:T.textMuted,marginTop:5}}>{`$${remaining} remaining · ${ALL_DEBTS.length-paidIds.size} items left`}</div>
-                </div>
-
-                {/* Income plan */}
-                <div style={{...cs({marginBottom:20,padding:"14px 18px",borderLeft:"3px solid #E8A838"})}}>
-                  <div style={{fontWeight:700,color:"#E8A838",fontSize:13,marginBottom:8}}>{"💰 October income plan"}</div>
-                  <div style={{display:"flex",gap:16,flexWrap:"wrap"}}>
-                    <div style={{fontSize:12,color:T.text}}><span style={{color:"#3DBF8A",fontWeight:700}}>{"Spark (weekends): "}</span>{"~$1,300"}</div>
-                    <div style={{fontSize:12,color:T.text}}><span style={{color:"#3B9EDB",fontWeight:700}}>{"Bank referrals: "}</span>{"~$1,200"}</div>
-                    <div style={{fontSize:12,color:T.text}}><span style={{color:"#9B6EE8",fontWeight:700}}>{"Projected total: "}</span>{"~$2,500"}</div>
+                  <div style={{height:12,borderRadius:6,background:T.inputBg,overflow:"hidden"}}>
+                    <div style={{height:"100%",width:`${totalOwed>0?Math.min(100,totalPaid/totalOwed*100):0}%`,background:"linear-gradient(90deg,#9B6EE8,#3DBF8A)",borderRadius:6,transition:"width 0.4s ease"}}/>
+                  </div>
+                  <div style={{display:"flex",justifyContent:"space-between",marginTop:6}}>
+                    <span style={{fontSize:11,color:T.textMuted}}>{`$${totalPaid.toLocaleString()} paid`}</span>
+                    <span style={{fontSize:11,color:T.textMuted}}>{`$${totalOwed.toLocaleString()} total`}</span>
                   </div>
                 </div>
 
-                {/* Add / Edit form */}
-                <Section title={isEditing?`Edit: ${editTarget?.label||""}`:"+ Add a payment"} color="#9B6EE8">
-                  <div style={{...cs({padding:"14px 18px"})}}>
-                    <div style={{display:"flex",gap:10,flexWrap:"wrap",marginBottom:10}}>
-                      <div style={{flex:"2 1 160px"}}>
-                        <label style={{...lbl}}>{"Label"}</label>
-                        <input style={{...inp}} placeholder="e.g. Car insurance" value={debtf.label} onChange={e=>setDebtf(p=>({...p,label:e.target.value}))}/>
-                      </div>
-                      <div style={{flex:"1 1 90px"}}>
-                        <label style={{...lbl}}>{"Amount ($)"}</label>
-                        <input style={{...inp}} type="number" placeholder="0" value={debtf.amount} onChange={e=>setDebtf(p=>({...p,amount:e.target.value}))}/>
-                      </div>
+                {/* Income plan pill strip */}
+                <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:20}}>
+                  {[["🚗 Spark","~$1,300","#3DBF8A"],["🏦 Referrals","~$1,200","#3B9EDB"],["💰 Total","~$2,500","#9B6EE8"]].map(([lbl,val,col])=>(
+                    <div key={lbl} style={{display:"flex",alignItems:"center",gap:6,padding:"6px 12px",borderRadius:20,background:`${col}18`,border:`1px solid ${col}44`}}>
+                      <span style={{fontSize:12,fontWeight:700,color:col}}>{lbl}</span>
+                      <span style={{fontSize:12,color:T.text,fontWeight:600}}>{val}</span>
                     </div>
-                    <div style={{display:"flex",gap:10,flexWrap:"wrap",marginBottom:12}}>
-                      <div style={{flex:"1 1 120px"}}>
-                        <label style={{...lbl}}>{"Due date"}</label>
-                        <input style={{...inp}} placeholder="e.g. Oct 25" value={debtf.due} onChange={e=>setDebtf(p=>({...p,due:e.target.value}))}/>
-                      </div>
-                      <div style={{flex:"1 1 120px"}}>
-                        <label style={{...lbl}}>{"Income source"}</label>
-                        <input style={{...inp}} placeholder="Spark / Referrals / Any" value={debtf.source} onChange={e=>setDebtf(p=>({...p,source:e.target.value}))}/>
-                      </div>
-                      <div style={{flex:"1 1 100px"}}>
-                        <label style={{...lbl}}>{"Category"}</label>
-                        <select style={{...inp}} value={debtf.cat} onChange={e=>setDebtf(p=>({...p,cat:e.target.value}))}>
-                          {["essential","personal","family","bank","flex"].map(c=><option key={c} value={c}>{c}</option>)}
-                        </select>
-                      </div>
+                  ))}
+                </div>
+
+                {/* Edit / Add form */}
+                <div style={{...cs({marginBottom:20,padding:"16px 18px",borderLeft:`3px solid ${isEditing?"#E8A838":"#9B6EE8"}`})}}>
+                  <div style={{fontWeight:700,fontSize:13,color:isEditing?"#E8A838":"#9B6EE8",marginBottom:12}}>
+                    {isEditing?`✏️ Editing: ${editTarget?.label||""}`:"+  Add new obligation"}
+                  </div>
+                  <div style={{display:"flex",gap:10,flexWrap:"wrap",marginBottom:10}}>
+                    <div style={{flex:"2 1 160px"}}>
+                      <label style={{...lbl}}>{"What is it?"}</label>
+                      <input style={{...inp}} placeholder="e.g. Phone bill" value={debtf.label} onChange={e=>setDebtf(p=>({...p,label:e.target.value}))}/>
                     </div>
-                    <div style={{display:"flex",gap:8}}>
-                      <button onClick={()=>{
-                        if(!debtf.label||!debtf.amount)return;
-                        if(isEditing){
-                          // editing a custom debt
+                    <div style={{flex:"1 1 90px"}}>
+                      <label style={{...lbl}}>{"Total amount ($)"}</label>
+                      <input style={{...inp}} type="number" placeholder="0" value={debtf.amount} onChange={e=>setDebtf(p=>({...p,amount:e.target.value}))}/>
+                    </div>
+                  </div>
+                  <div style={{display:"flex",gap:10,flexWrap:"wrap",marginBottom:12}}>
+                    <div style={{flex:"1 1 110px"}}>
+                      <label style={{...lbl}}>{"Due"}</label>
+                      <input style={{...inp}} placeholder="e.g. Oct 25" value={debtf.due} onChange={e=>setDebtf(p=>({...p,due:e.target.value}))}/>
+                    </div>
+                    <div style={{flex:"1 1 110px"}}>
+                      <label style={{...lbl}}>{"Pay from"}</label>
+                      <input style={{...inp}} placeholder="Spark / Referrals / Any" value={debtf.source} onChange={e=>setDebtf(p=>({...p,source:e.target.value}))}/>
+                    </div>
+                    <div style={{flex:"1 1 90px"}}>
+                      <label style={{...lbl}}>{"Category"}</label>
+                      <select style={{...inp}} value={debtf.cat} onChange={e=>setDebtf(p=>({...p,cat:e.target.value}))}>
+                        {["essential","personal","family","bank","flex"].map(c=><option key={c} value={c}>{c}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                  <div style={{display:"flex",gap:8}}>
+                    <button onClick={()=>{
+                      if(!debtf.label||!debtf.amount)return;
+                      if(isEditing){
+                        const isCustom=!!customDebts.find(c=>c.id===debtEdit);
+                        if(isCustom){
                           save(p=>({...p,customDebts_amen:(p.customDebts_amen||[]).map(d=>d.id===debtEdit?{...d,label:debtf.label,amount:Number(debtf.amount),due:debtf.due,source:debtf.source,cat:debtf.cat}:d)}));
-                          setDebtEdit(null);
                         } else {
-                          const newId="custom_"+Date.now();
-                          save(p=>({...p,customDebts_amen:[...(p.customDebts_amen||[]),{id:newId,label:debtf.label,amount:Number(debtf.amount),due:debtf.due||"Month end",source:debtf.source||"Any",cat:debtf.cat}]}));
+                          save(p=>({...p,builtinDebtEdits_amen:{...(p.builtinDebtEdits_amen||{}),[debtEdit]:{label:debtf.label,amount:Number(debtf.amount),due:debtf.due,source:debtf.source,cat:debtf.cat}}}));
                         }
-                        setDebtf({label:"",amount:"",due:"",source:"",cat:"personal"});
-                      }} style={{padding:"9px 20px",borderRadius:9,border:"none",background:"#9B6EE8",color:"#fff",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,cursor:"pointer"}}>
-                        {isEditing?"Save changes":"Add payment"}
-                      </button>
-                      {isEditing&&<button onClick={()=>{setDebtEdit(null);setDebtf({label:"",amount:"",due:"",source:"",cat:"personal"});}} style={{padding:"9px 16px",borderRadius:9,border:`1px solid ${T.border}`,background:"transparent",color:T.textSub,fontFamily:"'DM Sans',sans-serif",fontSize:13,cursor:"pointer"}}>{"Cancel"}</button>}
-                    </div>
+                        setDebtEdit(null);
+                      } else {
+                        const newId="custom_"+Date.now();
+                        save(p=>({...p,customDebts_amen:[...(p.customDebts_amen||[]),{id:newId,label:debtf.label,amount:Number(debtf.amount),due:debtf.due||"Month end",source:debtf.source||"Any",cat:debtf.cat}]}));
+                      }
+                      setDebtf({label:"",amount:"",due:"",source:"",cat:"personal"});
+                    }} style={{padding:"10px 22px",borderRadius:9,border:"none",background:isEditing?"#E8A838":"#9B6EE8",color:"#fff",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,cursor:"pointer"}}>
+                      {isEditing?"Save changes":"Add obligation"}
+                    </button>
+                    {isEditing&&<button onClick={()=>{setDebtEdit(null);setDebtf({label:"",amount:"",due:"",source:"",cat:"personal"});}} style={{padding:"10px 16px",borderRadius:9,border:`1px solid ${T.border}`,background:"transparent",color:T.textSub,fontFamily:"'DM Sans',sans-serif",fontSize:13,cursor:"pointer"}}>{"Cancel"}</button>}
                   </div>
-                </Section>
+                </div>
 
-                {/* Debt checklist */}
-                <Section title="Payment checklist" color="#9B6EE8">
-                  {ALL_DEBTS.map((d,i)=>{
-                    const paid = paidIds.has(d.id);
-                    const existing = debtLog.find(p=>p.id===d.id);
+                {/* Debt cards */}
+                <div style={{display:"flex",flexDirection:"column",gap:12}}>
+                  {ALL_DEBTS.map((d)=>{
+                    const amtPaid = Number(debtPaid[d.id])||0;
+                    const total = Number(d.amount);
+                    const pct = total>0?Math.min(100,amtPaid/total*100):0;
+                    const done = amtPaid>=total;
                     const isCustom = !!customDebts.find(c=>c.id===d.id);
-                    const isBeingEdited = debtEdit===d.id;
+                    const accent = catColor[d.cat]||"#888";
                     return(
-                      <div key={d.id} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 0",borderBottom:i<ALL_DEBTS.length-1?`1px solid ${T.border}`:"none",opacity:paid?0.5:1,background:isBeingEdited?`${T.inputBg}`:"transparent",borderRadius:isBeingEdited?8:0}}>
-                        {/* Paid toggle */}
-                        <button onClick={()=>{
-                          if(paid){
-                            save(p=>({...p,debtPayments:(p.debtPayments||[]).filter(x=>x.id!==d.id)}));
-                          } else {
-                            save(p=>({...p,debtPayments:[...(p.debtPayments||[]),{id:d.id,date:today,amount:Number(d.amount)}]}));
-                          }
-                        }} style={{width:24,height:24,borderRadius:"50%",border:`2px solid ${paid?"#3DBF8A":catColor[d.cat]||"#888"}`,background:paid?"#3DBF8A":"transparent",cursor:"pointer",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:13,fontWeight:700}}>
-                          {paid?"✓":""}
-                        </button>
-
-                        {/* Info */}
-                        <div style={{flex:1,minWidth:0}}>
-                          <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
-                            <span style={{fontWeight:700,fontSize:14,color:T.text,textDecoration:paid?"line-through":"none"}}>{d.label}</span>
-                            <span style={{fontSize:11,fontWeight:700,color:catColor[d.cat]||"#888",background:`${catColor[d.cat]}22`,padding:"2px 7px",borderRadius:5}}>{d.cat}</span>
-                            {isCustom&&<span style={{fontSize:10,color:T.textMuted,background:T.inputBg,padding:"1px 6px",borderRadius:4}}>{"custom"}</span>}
+                      <div key={d.id} style={{...cs({padding:"16px 18px",borderLeft:`4px solid ${done?"#3DBF8A":accent}`,opacity:done?0.7:1})}} >
+                        {/* Top row */}
+                        <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:8,marginBottom:10}}>
+                          <div style={{flex:1,minWidth:0}}>
+                            <div style={{display:"flex",alignItems:"center",gap:7,flexWrap:"wrap",marginBottom:3}}>
+                              {done&&<span style={{fontSize:14}}>{"✅"}</span>}
+                              <span style={{fontWeight:700,fontSize:15,color:T.text,textDecoration:done?"line-through":"none"}}>{d.label}</span>
+                              <span style={{fontSize:10,fontWeight:700,color:accent,background:`${accent}20`,padding:"2px 8px",borderRadius:10,textTransform:"uppercase",letterSpacing:"0.05em"}}>{d.cat}</span>
+                              {isCustom&&<span style={{fontSize:10,color:T.textMuted,background:T.inputBg,padding:"1px 6px",borderRadius:4}}>{"custom"}</span>}
+                            </div>
+                            <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
+                              <span style={{fontSize:12,color:T.textSub}}>{"📅 "}{d.due}</span>
+                              <span style={{fontSize:12,color:T.textMuted}}>{"💸 "}{d.source}</span>
+                            </div>
                           </div>
-                          <div style={{display:"flex",gap:12,marginTop:3,flexWrap:"wrap"}}>
-                            <span style={{fontSize:12,color:T.textSub}}>{"Due: "}{d.due}</span>
-                            <span style={{fontSize:12,color:T.textMuted}}>{"Source: "}{d.source}</span>
-                            {paid&&existing&&<span style={{fontSize:12,color:"#3DBF8A",fontWeight:600}}>{"Paid "}{new Date(existing.date+"T12:00:00").toLocaleDateString("en-US",{month:"short",day:"numeric"})}</span>}
+                          <div style={{textAlign:"right",flexShrink:0}}>
+                            <div style={{fontWeight:800,fontSize:16,color:done?"#3DBF8A":T.text}}>{`$${amtPaid.toLocaleString()}`}<span style={{fontWeight:400,fontSize:12,color:T.textMuted}}>{` / $${total.toLocaleString()}`}</span></div>
+                            <div style={{fontSize:11,color:done?"#3DBF8A":accent,fontWeight:700}}>{done?"Paid off":`$${(total-amtPaid).toLocaleString()} left`}</div>
                           </div>
                         </div>
 
-                        {/* Amount */}
-                        <span style={{fontWeight:700,fontSize:15,color:paid?"#3DBF8A":T.text,flexShrink:0}}>{`$${d.amount}`}</span>
-
-                        {/* Edit / Delete — custom items only */}
-                        {isCustom&&(
-                          <div style={{display:"flex",gap:4,flexShrink:0}}>
-                            <button onClick={()=>{
-                              setDebtEdit(d.id);
-                              setDebtf({label:d.label,amount:String(d.amount),due:d.due,source:d.source,cat:d.cat});
-                            }} style={{fontSize:11,color:"#9B6EE8",background:"none",border:"1px solid #9B6EE844",borderRadius:6,padding:"3px 8px",cursor:"pointer"}}>{"Edit"}</button>
-                            <button onClick={()=>{
-                              save(p=>({...p,customDebts_amen:(p.customDebts_amen||[]).filter(c=>c.id!==d.id),debtPayments:(p.debtPayments||[]).filter(x=>x.id!==d.id)}));
-                            }} style={{fontSize:11,color:"#E84E8A",background:"none",border:"1px solid #E84E8A44",borderRadius:6,padding:"3px 8px",cursor:"pointer"}}>{"Delete"}</button>
+                        {/* Progress bar */}
+                        <div style={{marginBottom:10}}>
+                          <div style={{height:7,borderRadius:4,background:T.inputBg,overflow:"hidden"}}>
+                            <div style={{height:"100%",width:`${pct}%`,background:done?"#3DBF8A":accent,borderRadius:4,transition:"width 0.3s ease"}}/>
                           </div>
-                        )}
+                        </div>
+
+                        {/* Slider */}
+                        <div style={{marginBottom:10}}>
+                          <label style={{...lbl,marginBottom:4}}>{"Drag to update amount paid"}</label>
+                          <input type="range" min={0} max={total} step={Math.max(1,Math.round(total/100))}
+                            value={amtPaid}
+                            onChange={e=>save(p=>({...p,debtPaid_amen:{...(p.debtPaid_amen||{}),[d.id]:Number(e.target.value)}}))}
+                            style={{width:"100%",accentColor:done?"#3DBF8A":accent,cursor:"pointer"}}
+                          />
+                          <div style={{display:"flex",justifyContent:"space-between",marginTop:2}}>
+                            <span style={{fontSize:10,color:T.textMuted}}>{"$0"}</span>
+                            <span style={{fontSize:11,fontWeight:700,color:accent}}>{`${Math.round(pct)}%`}</span>
+                            <span style={{fontSize:10,color:T.textMuted}}>{`$${total.toLocaleString()}`}</span>
+                          </div>
+                        </div>
+
+                        {/* Quick amount buttons */}
+                        <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:10}}>
+                          {[0,Math.round(total*0.25),Math.round(total*0.5),Math.round(total*0.75),total].map(v=>(
+                            <button key={v} onClick={()=>save(p=>({...p,debtPaid_amen:{...(p.debtPaid_amen||{}),[d.id]:v}}))}
+                              style={{padding:"4px 10px",borderRadius:7,border:`1px solid ${amtPaid===v?accent:T.border}`,background:amtPaid===v?`${accent}22`:"transparent",color:amtPaid===v?accent:T.textSub,fontSize:11,fontWeight:amtPaid===v?700:400,cursor:"pointer",fontFamily:"'DM Sans',sans-serif"}}>
+                              {v===0?"$0":v===total?"Full":`$${v}`}
+                            </button>
+                          ))}
+                        </div>
+
+                        {/* Edit / Delete row */}
+                        <div style={{display:"flex",gap:6}}>
+                          <button onClick={()=>{
+                            setDebtEdit(d.id);
+                            setDebtf({label:d.label,amount:String(d.amount),due:d.due,source:d.source,cat:d.cat});
+                            window.scrollTo({top:0,behavior:"smooth"});
+                          }} style={{fontSize:11,color:"#9B6EE8",background:"none",border:"1px solid #9B6EE844",borderRadius:6,padding:"4px 10px",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontWeight:600}}>{"✏️ Edit"}</button>
+                          {isCustom&&<button onClick={()=>{
+                            save(p=>({...p,customDebts_amen:(p.customDebts_amen||[]).filter(c=>c.id!==d.id),debtPaid_amen:{...(p.debtPaid_amen||{}),(()=>{const o={...p.debtPaid_amen};delete o[d.id];return o;})()}}));
+                          }} style={{fontSize:11,color:"#E84E8A",background:"none",border:"1px solid #E84E8A44",borderRadius:6,padding:"4px 10px",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontWeight:600}}>{"🗑 Delete"}</button>}
+                        </div>
                       </div>
                     );
                   })}
-                </Section>
+                </div>
               </div>
             );
           })()}
