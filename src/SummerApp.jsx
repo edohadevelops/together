@@ -4164,7 +4164,6 @@ export default function SummerApp({mode,T,onBack}) {
             );
           })()}
         </div>
-      )}        </div>
       )}
     </div>
   );
