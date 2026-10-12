@@ -32,9 +32,6 @@ const NOTIF_SCHEDULE = {
     { time:"15:15", msg:"Teaching class prep — review your lesson 📖",             urgent:true  },
     { time:"16:00", msg:"Teaching class MTH 101 — Mon/Wed 4:00pm 🏫",             urgent:true  },
     { time:"16:30", msg:"Teaching class MTH 101 — Tue/Thu 4:30pm 🏫",             urgent:true  },
-    { time:"18:00", msg:"Spark 🚗 Dinner rush is on — target $80+",               urgent:true  },
-    { time:"20:30", msg:"Quick dinner break during Spark 🍱",                      urgent:false },
-    { time:"22:00", msg:"Wind down from Spark 🛑",                                 urgent:false },
     { time:"22:30", msg:"Assignments + small tasks 📝 30 min",                    urgent:false },
     { time:"23:00", msg:"Gloria time ♥ + prayer 🙏 30 min undivided — phones away",                urgent:true  },
     { time:"23:30", msg:"Wind down — no screens 😴",                               urgent:false },
@@ -3536,6 +3533,8 @@ export default function SummerApp({mode,T,onBack}) {
   const [expf,setExpf]=useState({amount:"",category:"food",note:""});
   const [mealf,setMealf]=useState({meal:"breakfast",foods:"",protein:true,noSugar:true});
   const [ddf,setDdf]=useState({startTime:"",endTime:"",orders:0,earnings:"",tips:"",miles:"",note:""});
+  const [debtf,setDebtf]=useState({label:"",amount:"",due:"",source:"",cat:"personal"});
+  const [debtEdit,setDebtEdit]=useState(null); // id of item being edited
   const [thesisTaskForm,setThesisTaskForm]=useState(null);
   const [ttf,setTtf]=useState({title:"",category:"writing",dueDate:"",notes:""});
   const [taskIO,setTaskIO]=useState(null); // null | "export" | "import"
@@ -3554,7 +3553,7 @@ export default function SummerApp({mode,T,onBack}) {
         activeTasks_amen:[], archivedTasks_amen:[],
         decGoals_amen:{}, goalNotes_amen:{},
         jobApps_amen:[], weeklyReviews_amen:{}, personalProjects_amen:[],
-        shoppingList_amen:[],
+        shoppingList_amen:[], customDebts_amen:[], debtPayments:[],
         // New per-user keys — Gloria
         activeTasks_gloria:[], archivedTasks_gloria:[],
         decGoals_gloria:{}, goalNotes_gloria:{},
@@ -3667,7 +3666,7 @@ export default function SummerApp({mode,T,onBack}) {
 
       {/* Tab bar */}
       <div style={{display:"flex",gap:6,marginBottom:20,flexWrap:"wrap"}}>
-        {[["weight","⚖ Weight"],["gym","◈ Gym"],["meals","🍛 Meals"],["spending","💸 Spending"],["doordash","🚗 DoorDash"]].map(([id,label])=>(
+        {[["weight","⚖ Weight"],["gym","◈ Gym"],["meals","🍛 Meals"],["spending","💸 Spending"],["doordash","🚗 Spark"],["debts","💳 Debts"]].map(([id,label])=>(
           <button key={id} onClick={()=>setTrackerTab(id)}
             style={{padding:"8px 16px",borderRadius:9,border:`1px solid ${trackerTab===id?"#3B9EDB44":T.border}`,background:trackerTab===id?"#3B9EDB22":T.inputBg,color:trackerTab===id?"#3B9EDB":T.textSub,fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:trackerTab===id?700:400,cursor:"pointer"}}>
             {label}
@@ -3997,9 +3996,175 @@ export default function SummerApp({mode,T,onBack}) {
                 </div>
               );
             })}
-            {!monthDD.length&&<div style={{textAlign:"center",padding:"30px 0",color:T.textMuted,fontSize:13}}>{"No DoorDash sessions logged this month. Log your first shift."}</div>}
+            {!monthDD.length&&<div style={{textAlign:"center",padding:"30px 0",color:T.textMuted,fontSize:13}}>{"No Spark sessions logged this month. Log your first shift."}</div>}
           </Section>
         </div>
+      )}
+
+      {/* ── Debts tab ── */}
+      {trackerTab==="debts"&&(
+        <div>
+          {(()=>{
+            const BUILTIN_DEBTS = [
+              {id:"chase",    label:"Chase deposit",       amount:350, due:"Immediate",      source:"Spark",     cat:"bank"},
+              {id:"opt",      label:"OPT application",     amount:500, due:"Month end",      source:"Referrals", cat:"essential"},
+              {id:"flex",     label:"Flex payment",        amount:600, due:"Month end",      source:"Spark",     cat:"essential"},
+              {id:"utilities",label:"Utilities",           amount:80,  due:"Oct 21",         source:"Any",       cat:"essential"},
+              {id:"parents",  label:"Send home — parents", amount:150, due:"Month end",      source:"Referrals", cat:"family"},
+              {id:"emmanuel", label:"Emmanuel",            amount:300, due:"Month end",      source:"Referrals", cat:"personal"},
+              {id:"eluud",    label:"Eluud",               amount:300, due:"Month end",      source:"Referrals", cat:"personal"},
+              {id:"gloria",   label:"Gloria",              amount:100, due:"Month end",      source:"Referrals", cat:"personal"},
+              {id:"vacation", label:"Vacation deposits",   amount:200, due:"Month end",      source:"Referrals", cat:"flex"},
+              {id:"clothes",  label:"Winter clothes",      amount:400, due:"First week Nov", source:"November",  cat:"flex"},
+              {id:"groceries",label:"Groceries",           amount:150, due:"Mid-month",      source:"Any",       cat:"essential"},
+            ];
+            const customDebts = data.customDebts_amen || [];
+            const ALL_DEBTS = [...BUILTIN_DEBTS, ...customDebts];
+            const debtLog = data.debtPayments || [];
+            const paidIds = new Set(debtLog.map(p=>p.id));
+            const totalOwed = ALL_DEBTS.reduce((s,d)=>s+Number(d.amount),0);
+            const totalPaid = ALL_DEBTS.filter(d=>paidIds.has(d.id)).reduce((s,d)=>s+Number(d.amount),0);
+            const remaining = totalOwed - totalPaid;
+            const catColor = {bank:"#3B9EDB",essential:"#E84E8A",family:"#9B6EE8",personal:"#E8A838",flex:"#3DBF8A"};
+            const isEditing = debtEdit !== null;
+            const editTarget = isEditing ? ALL_DEBTS.find(d=>d.id===debtEdit) : null;
+            return(
+              <div>
+                {/* Summary cards */}
+                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))",gap:10,marginBottom:20}}>
+                  <SCard T={T} label="Total obligations" value={`$${totalOwed.toLocaleString()}`} sub={`${ALL_DEBTS.length} items`} color="#E84E8A"/>
+                  <SCard T={T} label="Paid off" value={`$${totalPaid.toLocaleString()}`} sub={`${paidIds.size} cleared`} color="#3DBF8A"/>
+                  <SCard T={T} label="Still owed" value={`$${remaining.toLocaleString()}`} sub="Remaining" color={remaining===0?"#3DBF8A":"#E8A838"}/>
+                  <SCard T={T} label="Progress" value={`${totalOwed>0?Math.round(totalPaid/totalOwed*100):0}%`} sub="Cleared" color="#9B6EE8"/>
+                </div>
+
+                {/* Progress bar */}
+                <div style={{...cs({marginBottom:20,padding:"14px 18px"})}}>
+                  <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
+                    <span style={{fontWeight:700,color:T.text,fontSize:13}}>{"October debt payoff"}</span>
+                    <span style={{fontWeight:700,color:"#3DBF8A",fontSize:13}}>{`$${totalPaid} / $${totalOwed}`}</span>
+                  </div>
+                  <PBar value={totalPaid} max={totalOwed} color={totalPaid>=totalOwed?"#3DBF8A":"#9B6EE8"} h={10} bg={T.inputBg}/>
+                  <div style={{fontSize:11,color:T.textMuted,marginTop:5}}>{`$${remaining} remaining · ${ALL_DEBTS.length-paidIds.size} items left`}</div>
+                </div>
+
+                {/* Income plan */}
+                <div style={{...cs({marginBottom:20,padding:"14px 18px",borderLeft:"3px solid #E8A838"})}}>
+                  <div style={{fontWeight:700,color:"#E8A838",fontSize:13,marginBottom:8}}>{"💰 October income plan"}</div>
+                  <div style={{display:"flex",gap:16,flexWrap:"wrap"}}>
+                    <div style={{fontSize:12,color:T.text}}><span style={{color:"#3DBF8A",fontWeight:700}}>{"Spark (weekends): "}</span>{"~$1,300"}</div>
+                    <div style={{fontSize:12,color:T.text}}><span style={{color:"#3B9EDB",fontWeight:700}}>{"Bank referrals: "}</span>{"~$1,200"}</div>
+                    <div style={{fontSize:12,color:T.text}}><span style={{color:"#9B6EE8",fontWeight:700}}>{"Projected total: "}</span>{"~$2,500"}</div>
+                  </div>
+                </div>
+
+                {/* Add / Edit form */}
+                <Section title={isEditing?`Edit: ${editTarget?.label||""}`:"+ Add a payment"} color="#9B6EE8">
+                  <div style={{...cs({padding:"14px 18px"})}}>
+                    <div style={{display:"flex",gap:10,flexWrap:"wrap",marginBottom:10}}>
+                      <div style={{flex:"2 1 160px"}}>
+                        <label style={{...lbl}}>{"Label"}</label>
+                        <input style={{...inp}} placeholder="e.g. Car insurance" value={debtf.label} onChange={e=>setDebtf(p=>({...p,label:e.target.value}))}/>
+                      </div>
+                      <div style={{flex:"1 1 90px"}}>
+                        <label style={{...lbl}}>{"Amount ($)"}</label>
+                        <input style={{...inp}} type="number" placeholder="0" value={debtf.amount} onChange={e=>setDebtf(p=>({...p,amount:e.target.value}))}/>
+                      </div>
+                    </div>
+                    <div style={{display:"flex",gap:10,flexWrap:"wrap",marginBottom:12}}>
+                      <div style={{flex:"1 1 120px"}}>
+                        <label style={{...lbl}}>{"Due date"}</label>
+                        <input style={{...inp}} placeholder="e.g. Oct 25" value={debtf.due} onChange={e=>setDebtf(p=>({...p,due:e.target.value}))}/>
+                      </div>
+                      <div style={{flex:"1 1 120px"}}>
+                        <label style={{...lbl}}>{"Income source"}</label>
+                        <input style={{...inp}} placeholder="Spark / Referrals / Any" value={debtf.source} onChange={e=>setDebtf(p=>({...p,source:e.target.value}))}/>
+                      </div>
+                      <div style={{flex:"1 1 100px"}}>
+                        <label style={{...lbl}}>{"Category"}</label>
+                        <select style={{...inp}} value={debtf.cat} onChange={e=>setDebtf(p=>({...p,cat:e.target.value}))}>
+                          {["essential","personal","family","bank","flex"].map(c=><option key={c} value={c}>{c}</option>)}
+                        </select>
+                      </div>
+                    </div>
+                    <div style={{display:"flex",gap:8}}>
+                      <button onClick={()=>{
+                        if(!debtf.label||!debtf.amount)return;
+                        if(isEditing){
+                          // editing a custom debt
+                          save(p=>({...p,customDebts_amen:(p.customDebts_amen||[]).map(d=>d.id===debtEdit?{...d,label:debtf.label,amount:Number(debtf.amount),due:debtf.due,source:debtf.source,cat:debtf.cat}:d)}));
+                          setDebtEdit(null);
+                        } else {
+                          const newId="custom_"+Date.now();
+                          save(p=>({...p,customDebts_amen:[...(p.customDebts_amen||[]),{id:newId,label:debtf.label,amount:Number(debtf.amount),due:debtf.due||"Month end",source:debtf.source||"Any",cat:debtf.cat}]}));
+                        }
+                        setDebtf({label:"",amount:"",due:"",source:"",cat:"personal"});
+                      }} style={{padding:"9px 20px",borderRadius:9,border:"none",background:"#9B6EE8",color:"#fff",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,cursor:"pointer"}}>
+                        {isEditing?"Save changes":"Add payment"}
+                      </button>
+                      {isEditing&&<button onClick={()=>{setDebtEdit(null);setDebtf({label:"",amount:"",due:"",source:"",cat:"personal"});}} style={{padding:"9px 16px",borderRadius:9,border:`1px solid ${T.border}`,background:"transparent",color:T.textSub,fontFamily:"'DM Sans',sans-serif",fontSize:13,cursor:"pointer"}}>{"Cancel"}</button>}
+                    </div>
+                  </div>
+                </Section>
+
+                {/* Debt checklist */}
+                <Section title="Payment checklist" color="#9B6EE8">
+                  {ALL_DEBTS.map((d,i)=>{
+                    const paid = paidIds.has(d.id);
+                    const existing = debtLog.find(p=>p.id===d.id);
+                    const isCustom = !!customDebts.find(c=>c.id===d.id);
+                    const isBeingEdited = debtEdit===d.id;
+                    return(
+                      <div key={d.id} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 0",borderBottom:i<ALL_DEBTS.length-1?`1px solid ${T.border}`:"none",opacity:paid?0.5:1,background:isBeingEdited?`${T.inputBg}`:"transparent",borderRadius:isBeingEdited?8:0}}>
+                        {/* Paid toggle */}
+                        <button onClick={()=>{
+                          if(paid){
+                            save(p=>({...p,debtPayments:(p.debtPayments||[]).filter(x=>x.id!==d.id)}));
+                          } else {
+                            save(p=>({...p,debtPayments:[...(p.debtPayments||[]),{id:d.id,date:today,amount:Number(d.amount)}]}));
+                          }
+                        }} style={{width:24,height:24,borderRadius:"50%",border:`2px solid ${paid?"#3DBF8A":catColor[d.cat]||"#888"}`,background:paid?"#3DBF8A":"transparent",cursor:"pointer",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:13,fontWeight:700}}>
+                          {paid?"✓":""}
+                        </button>
+
+                        {/* Info */}
+                        <div style={{flex:1,minWidth:0}}>
+                          <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+                            <span style={{fontWeight:700,fontSize:14,color:T.text,textDecoration:paid?"line-through":"none"}}>{d.label}</span>
+                            <span style={{fontSize:11,fontWeight:700,color:catColor[d.cat]||"#888",background:`${catColor[d.cat]}22`,padding:"2px 7px",borderRadius:5}}>{d.cat}</span>
+                            {isCustom&&<span style={{fontSize:10,color:T.textMuted,background:T.inputBg,padding:"1px 6px",borderRadius:4}}>{"custom"}</span>}
+                          </div>
+                          <div style={{display:"flex",gap:12,marginTop:3,flexWrap:"wrap"}}>
+                            <span style={{fontSize:12,color:T.textSub}}>{"Due: "}{d.due}</span>
+                            <span style={{fontSize:12,color:T.textMuted}}>{"Source: "}{d.source}</span>
+                            {paid&&existing&&<span style={{fontSize:12,color:"#3DBF8A",fontWeight:600}}>{"Paid "}{new Date(existing.date+"T12:00:00").toLocaleDateString("en-US",{month:"short",day:"numeric"})}</span>}
+                          </div>
+                        </div>
+
+                        {/* Amount */}
+                        <span style={{fontWeight:700,fontSize:15,color:paid?"#3DBF8A":T.text,flexShrink:0}}>{`$${d.amount}`}</span>
+
+                        {/* Edit / Delete — custom items only */}
+                        {isCustom&&(
+                          <div style={{display:"flex",gap:4,flexShrink:0}}>
+                            <button onClick={()=>{
+                              setDebtEdit(d.id);
+                              setDebtf({label:d.label,amount:String(d.amount),due:d.due,source:d.source,cat:d.cat});
+                            }} style={{fontSize:11,color:"#9B6EE8",background:"none",border:"1px solid #9B6EE844",borderRadius:6,padding:"3px 8px",cursor:"pointer"}}>{"Edit"}</button>
+                            <button onClick={()=>{
+                              save(p=>({...p,customDebts_amen:(p.customDebts_amen||[]).filter(c=>c.id!==d.id),debtPayments:(p.debtPayments||[]).filter(x=>x.id!==d.id)}));
+                            }} style={{fontSize:11,color:"#E84E8A",background:"none",border:"1px solid #E84E8A44",borderRadius:6,padding:"3px 8px",cursor:"pointer"}}>{"Delete"}</button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </Section>
+              </div>
+            );
+          })()}
+        </div>
+      )}        </div>
       )}
     </div>
   );
