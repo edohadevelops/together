@@ -4193,7 +4193,7 @@ export default function SummerApp({mode,T,onBack}) {
                             window.scrollTo({top:0,behavior:"smooth"});
                           }} style={{fontSize:11,color:"#9B6EE8",background:"none",border:"1px solid #9B6EE844",borderRadius:6,padding:"4px 10px",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontWeight:600}}>{"✏️ Edit"}</button>
                           {isCustom&&<button onClick={()=>{
-                            save(p=>({...p,customDebts_amen:(p.customDebts_amen||[]).filter(c=>c.id!==d.id),debtPaid_amen:{...(p.debtPaid_amen||{}),(()=>{const o={...p.debtPaid_amen};delete o[d.id];return o;})()}}));
+                            save(p=>{const pd={...(p.debtPaid_amen||{})};delete pd[d.id];return{...p,customDebts_amen:(p.customDebts_amen||[]).filter(c=>c.id!==d.id),debtPaid_amen:pd};});
                           }} style={{fontSize:11,color:"#E84E8A",background:"none",border:"1px solid #E84E8A44",borderRadius:6,padding:"4px 10px",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontWeight:600}}>{"🗑 Delete"}</button>}
                         </div>
                       </div>
