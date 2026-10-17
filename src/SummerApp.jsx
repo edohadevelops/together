@@ -253,6 +253,7 @@ const TOTAL_WEEK_HRS = 168;
 const PILLARS = [
   {id:"overview",  label:"Home",     icon:"◉",  color:"#E8A838"},
   {id:"nextsteps", label:"Next",     icon:"🚀",  color:"#3DBF8A"},
+  {id:"planb",     label:"Plan B",   icon:"🎓",  color:"#7B61FF"},
   {id:"goals",     label:"Goals",    icon:"🎯",  color:"#E8A838"},
   {id:"review",    label:"Review",   icon:"📋",  color:"#20B2AA"},
   {id:"jobs",      label:"Jobs",     icon:"💼",  color:"#3B9EDB"},
@@ -2043,6 +2044,430 @@ const STATUS_COLORS = {
   "Interview":"#9B6EE8", "Offer":"#3DBF8A", "Rejected":"#E8704A",
   "Searching":"#3B9EDB", "Applied":"#E8A838", "Withdrawn":"#888",
 };
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PlanBView — Post-Graduation Plan B / Plan C / All Options tracker
+// ─────────────────────────────────────────────────────────────────────────────
+
+const PLANB_D = [
+  ["University of Nebraska Omaha","Omaha, NE","other","now",true,"MS/MA Math with Statistics concentration; separate MS Data Science in the same department","GTA about $15,500/yr plus tuition waiver","Spring GTA window closes about Nov 6, 2026","Ask whether Data Science MS students can hold the math GTA.","https://www.unomaha.edu/college-of-arts-and-sciences/mathematics/student-opportunities/scholarships/g-scholarships.php","math","high"],
+  ["UT San Antonio","San Antonio, TX","TX","now",true,"MS Math; math GTAs open to UTSA grad students in closely related programs","Math GTA (up to 19 hrs/week)","Spring GTA applications due Nov 14","MS Statistics & Data Science and MS Data Analytics admit Fall only. Ask if a spring CS admit could hold a math GTA.","https://sciences.utsa.edu/mathematics/students/teaching-assistantship-grad.html","math","high"],
+  ["Marshall University","Huntington, WV","other","now",false,"MS Mathematics","Full GA (20 hrs/week) with tuition benefit and stipend","Spring GA offers start after Nov 15, then rolling","Submit the separate GA form to the graduate director.","https://www.marshall.edu/math/graduate/assistantships/","math","high"],
+  ["Wichita State University","Wichita, KS","other","ask",false,"MS Mathematics","TA $14,400 over 9 months","Spring first-consideration Oct 1 passed; considered until filled","Grad school international spring dates (Aug 31 / Sep 30) have passed; ask whether an in-US SEVIS transfer can still be admitted.","https://www.wichita.edu/academics/fairmount_las/mathematics/mathstat/msprog/msfinancesupport.php","math","high"],
+  ["Emporia State University","Emporia, KS","other","now",false,"MS Mathematics","GTA $6,000/semester plus tuition waiver up to 12 hrs","Spring decisions made by October. Email this week","Up to 5 GTAs per year; low stipend but cheap town.","https://www.emporia.edu/school-of-science-mathematics/school-of-science-mathematics-graduate-programs/graduate-teaching-assistantships-mathematics/","math","high"],
+  ["Missouri S&T","Rolla, MO","MO","ask",true,"Math & Statistics dept (Statistics option on GA form)","Most grad students hold a GTA; full tuition and fee remission for thesis MS","Spring positions sometimes open; Fall full consideration Feb 1","Closest strong option to Springfield. Ask about spring.","https://math.mst.edu/academic-programs/graduateprogram/","math","high"],
+  ["Southern Illinois Univ. Carbondale","Carbondale, IL","other","ask",true,"MS Mathematics (Probability & Statistics area)","Most master's students hold a TA with tuition waiver, stipend and health insurance","Spring deadline Oct 1 passed; late files considered if openings","Email the director of graduate studies now.","https://gradschool.siu.edu/academics/mathematics.php","math","high"],
+  ["Arkansas State University","Jonesboro, AR","other","now",false,"MS Mathematics","Graduate assistantships offered","Spring international deadline Nov 14 (verify)","Deadline from a directory listing.","https://www.petersons.com/graduate-schools/arkansas-state-university--jonesboro-college-of-sciences-and-mathematics-department-of-mathematics-and-statistics-000_10020674.aspx","math","high"],
+  ["Sam Houston State University","Huntsville, TX","TX","now",true,"MS Statistics (and Data Science); MS Mathematics","Graduate assistantships offered","Spring international deadline Nov 12 (verify)","Deadline from a directory listing.","https://www.petersons.com/graduate-schools/sam-houston-state-university-college-of-arts-and-sciences-department-of-mathematics-and-statistics-000_10024306.aspx","math","high"],
+  ["Lamar University","Beaumont, TX","TX","now",false,"MS Mathematics","Program advertises well-funded GTA positions","Spring international deadline Dec 1 (verify)","Small program; good odds if they have an opening.","https://lamar.edu/academics/degrees/mathematics/mathematics-masters-degree.html","math","high"],
+  ["Tarleton State University","Stephenville, TX","TX","ask",true,"MS Mathematics with Data Science emphasis","GTA (instructor of record) or GRA at $25,000/yr","Assistantship applications reviewed on a rolling basis","Data Science emphasis plus GRA via the Tarleton Analytics Institute.","https://www.tarleton.edu/math/?p=843","math","high"],
+  ["Stephen F. Austin State Univ.","Nacogdoches, TX","TX","ask",true,"MS Statistics; MS Mathematics","GA with scholarship covering about half of tuition and fees, plus stipend","Spring admission Dec 15; financial award deadline Mar 1 (verify)","Partial tuition only.","https://math.sfasu.edu/gradprogs.html","math","high"],
+  ["UMKC","Kansas City, MO","MO","ask",true,"MS Statistics; MS Mathematics","Teaching assistantships offered","Spring deadline Oct 15 (verify; may be today)","Call or email today if interested.","https://petersons.com/graduate-schools/university-of-missouri-kansas-city-college-of-arts-and-sciences-department-of-mathematics-and-statistics-000_10040938.aspx","math","high"],
+  ["University of Missouri","Columbia, MO","MO","ask",true,"MA Statistics (Dept of Statistics & Data Science)","Teaching and research assistantships available","Spring deadline listed as Oct 15 in older catalog (verify)","Strong stats department; spring TA unlikely but ask.","https://stat.missouri.edu/sites/default/files/grad-files/2021-11/graduate_catalogue_2020-2022.pdf","math","high"],
+  ["Pittsburg State University","Pittsburg, KS","other","ask",false,"MS Mathematics","GTAs offered; FAFSA-based award deadline Feb 1","Spring international deadline Oct 15 (verify)","90 minutes from Springfield.","https://www.petersons.com/graduate-schools/pittsburg-state-university-college-of-arts-and-sciences-department-of-mathematics-000_10028520.aspx","math","high"],
+  ["Northern Illinois University","DeKalb, IL","other","closed",true,"MS Mathematics; MS Statistics","Teaching assistantships offered","Spring international Oct 1 passed","Fall 2027 option.","https://petersons.com/graduate-schools/northern-illinois-university-college-of-liberal-arts-and-sciences-department-of-mathematical-sciences-000_10046926.aspx","math","high"],
+  ["New Mexico State University","Las Cruces, NM","other","closed",true,"MS Mathematics (can focus on statistics)","Most students hold a TA, about $19,000/yr; tuition (about $6,000) not included","Spring international Oct 1 passed; Fall Jun 1","All admits automatically reviewed for a TA. Low cost of living.","https://math.nmsu.edu/prospective-students/graduate.html","math","high"],
+  ["UTEP","El Paso, TX","TX","closed",true,"MS Statistics & Data Science","Admits automatically considered for TAs; no separate form","Spring international Oct 1 passed","Strong Fall 2027 option.","https://www.utep.edu/science/math/academic-programs/graduate/msstatistics.html","math","high"],
+  ["Oklahoma State University","Stillwater, OK","other","closed",true,"MS Statistics","Teaching and research assistantships for MS students","Spring with assistantship Oct 1 passed; Fall Feb 15","Fall 2027 option.","https://go.okstate.edu/graduate-academics/programs/masters/statistics-ms","math","high"],
+  ["Purdue University","West Lafayette, IN","other","closed",true,"MS Statistics","Many students funded by TAs with tuition reduction","Spring Oct 1 passed; Fall Dec 1","Competitive.","https://www.stat.purdue.edu/academic_programs/graduate/gradAdmission.html","math","high"],
+  ["Texas Tech University","Lubbock, TX","TX","fall",true,"MS Statistics; MS Mathematics","All applicants considered; $2,000/month plus most tuition remitted; 2 years guaranteed","Dec 15 for full consideration; rolling after","One of the best funded options in Texas. Fall admission only.","https://www.depts.ttu.edu/math/graduate/finacialsupport/teaching_assistantships.php","math","high"],
+  ["University of North Texas","Denton, TX","TX","fall",false,"MS/MA Mathematics","Almost all full-time grad students supported as teaching fellows or assistants","Check department deadline","Dallas area.","https://www.unt.edu/academics/programs/mathematics-masters.html","math","high"],
+  ["UT Arlington","Arlington, TX","TX","fall",true,"MS Mathematics (statistics and data science emphases)","GTA, 20 hrs/week; stipend scales with progress","Feb 1 for full Fall consideration","Dallas-Fort Worth.","https://www.uta.edu/math/academics/support/gta-stipends.php","math","high"],
+  ["Texas State University","San Marcos, TX","TX","fall",true,"MS Mathematics (applied or statistics concentration)","Instructional assistantships; stipend does not include tuition","Feb 1 priority; outside-department applicants submit a supplemental form","Can hold a math GA while in another program.","https://www.math.txst.edu/programs-degrees/masters/financial-supp/assistantships.html","math","high"],
+  ["East Texas A&M University","Commerce, TX","TX","fall",false,"MS Mathematics","GA $8,000/yr; tuition remission or in-state tuition possible","Mar 15 for full admission","Current GTAs teach Intermediate Algebra like MTH 101.","https://inside.tamuc.edu/academics/colleges/scienceEngineeringAgriculture/departments/mathematics/scholarships/default.aspx","math","high"],
+  ["UT Rio Grande Valley","Edinburg, TX","TX","fall",true,"MS Math (Statistics concentration); MS Applied Statistics & Data Science","GTAs at the MS level; separate GA application","GA applications taken each spring for fall; deadlines flexible","Coordinator can reopen applications after deadline.","https://mathalliance.science.purdue.edu/wp-content/uploads/2018/06/UTRGV_GPG-Minimum-Requirements.pdf","math","high"],
+  ["Texas A&M Kingsville","Kingsville, TX","TX","ask",true,"MS Statistical Analytics, Computing & Modeling","Assistantship details not confirmed","Rolling admission","Small program; email the chair about funding.","https://petersons.com/graduate-schools/texas-a-and-m-university-kingsville-college-of-arts-and-sciences-department-of-mathematics-000_10040741.aspx","math","high"],
+  ["Univ. of Central Missouri","Warrensburg, MO","MO","ask",true,"MS Mathematics (Actuarial Science & Statistics option)","Limited GTAs","Check department","Also offers MS Computer Science.","https://www.ucmo.edu/academics/programs/masters-degrees/chst/mathematics-actuarial-sci-and-statistics/mathematics/ms-mathematics-mathematics-option/index.php","math","high"],
+  ["Univ. of Missouri-St. Louis","St. Louis, MO","MO","fall",true,"Math & Statistics graduate programs","TA/RA with stipend and educational fee scholarship","Feb 1 for financial assistance","Non-native speakers cannot teach in first term.","https://www.umsl.edu/mpas/degrees-and-programs/mathematics-and-statistics/graduate-information.html","math","high"],
+  ["University of Kentucky","Lexington, KY","other","fall",true,"MS Statistics","Almost all admitted MS students get full tuition plus stipend","Rolling admissions","Closest to a guarantee.","https://www.profellow.com/?p=88758","math","high"],
+  ["Wake Forest University","Winston-Salem, NC","other","fall",true,"MS Statistical Sciences","All admits get aid; most get TA/RA with full tuition plus $19,390","Jan 15","No spring admission.","https://stats.wfu.edu/m-s-statistical-sciences/","math","high"],
+  ["South Dakota State University","Brookings, SD","other","fall",true,"MS Statistics; MS Mathematics","Most fall entrants who want one get a GA; near-total tuition waiver","Feb 15 recommended","Spring awards uncommon.","https://www.sdstate.edu/mathematics-statistics/graduate-assistantships-mathematics-statistics","math","high"],
+  ["Bowling Green State University","Bowling Green, OH","other","fall",true,"MS Applied Statistics","About two-thirds fully funded; $12,500 stipend","Jan 31","","https://www.bgsu.edu/gradadmitdeadlines","math","high"],
+  ["Mississippi State University","Starkville, MS","other","fall",true,"MS Statistics; separate Data Science Institute TA roles","GTA up to $17,400 plus full tuition waiver (competitive)","Selection starts mid-January","Data Science Institute TA is open to grad students with Python/R skills.","https://www.math.msstate.edu/graduate/grad-financial","math","high"],
+  ["Ball State University","Muncie, IN","other","fall",true,"MS/MA Statistics","Graduate assistantships offered","Rolling admission","Stipend not confirmed.","https://www.petersons.com/graduate-schools/ball-state-university-college-of-sciences-and-humanities-department-of-mathematical-sciences-000_10050801.aspx","math","high"],
+  ["UA Little Rock","Little Rock, AR","other","fall",true,"MS Mathematical Sciences (Applied Statistics certificate)","Limited GAs: $4,000/semester plus tuition (not fees)","Apply for GA after admission","Low stipend.","https://ualr.edu/mathematics/graduate-program/","math","high"],
+  ["Miami University","Oxford, OH","other","fall",true,"MS Statistics","Competitive full GA: 100% tuition waiver plus stipend","Fall; spring funding generally unavailable","Some GAs placed at Procter & Gamble.","https://miamioh.edu/cas/graduate-programs/statistics/index.html","math","high"],
+  ["Western Michigan University","Kalamazoo, MI","other","fall",false,"MA Mathematics; MS Applied & Computational Math","Math GTAs","GTA applications through Feb 15","","https://wmich.edu/math/teaching-assistantship-application","math","high"],
+  ["Univ. of Minnesota Duluth","Duluth, MN","other","fall",true,"MS Mathematical Sciences (stats track)","Master's students typically supported by a GTA","GTA request by Jan 25; spring GTAs only in exceptional years","","https://scse.d.umn.edu/departments-and-programs/mathematics-statistics-department/math-graduate-program/application","math","high"],
+  ["Univ. of Arkansas","Fayetteville, AR","other","fall",true,"MS Statistics & Analytics; MS Mathematics","Graduate assistantships in Mathematical Sciences","Check department","","https://math.uark.edu/_resources/pdf/information/graduate-handbook-2025.pdf","math","high"],
+  ["SIU Carbondale (campus GAs)","Carbondale, IL","other","now",false,"Any SIUC master's program; Spring 2027 GA postings open to enrolled grad students","50% GAs with tuition waiver","Liberal Arts GA due Nov 2; Social Work GA due Nov 15","Must be admitted to an SIUC program first.","https://siu.edu/admissions/graduate/funding-aid/grad-assistantships/job-posting.php","campus","varies"],
+  ["Missouri State (campus GAs)","Springfield, MO","MO","ask",false,"Any Missouri State master's (Student Affairs, Education, Computer Science)","Stipend for about 20 hrs/week plus fee waiver covering tuition","GAs can start in spring; Spring 2027 Kinesiology GA already posted","No transfer needed since you're already here. Ask departments directly.","https://Graduate.missouristate.edu/Catalog/assistance.htm","campus","varies"],
+  ["Missouri State Student Affairs in Higher Ed","Springfield, MO","MO","ask",false,"MS Student Affairs in Higher Education","GA with monthly stipend plus tuition and fees; residence hall GAs also get housing and meals","Rolling GA review; all 17 listed 2026-27 GAs filled","Ask whether a spring start is possible and whether new GA listings are coming.","https://education.missouristate.edu/SELPS/StudentAffairs/assistantships.htm","edu","low"],
+  ["Univ. of Illinois Urbana-Champaign","Urbana, IL","other","ask",false,"Any Illinois grad program; campus Assistantship Clearinghouse","Assistantships come with tuition waivers","Spring 2027 postings appear (one was due Oct 30)","Competitive; must be admitted to an Illinois program.","https://grad.illinois.edu/funding/assistantships/assistantship-clearinghouse","campus","varies"],
+  ["University of Kansas","Lawrence, KS","other","fall",false,"MSE Higher Education Administration (33 credits)","Full-time students must hold a GA: full tuition waiver, stipend and health insurance","Fall priority Jan 6, 2027; spring is part-time only (Dec 2)","No comprehensive exam; ends with a capstone course. Closest thing to guaranteed funding in a low-exam field.","https://elps.ku.edu/academics/higher-education-administration/masters/details","edu","low"],
+  ["Indiana University of Pennsylvania","Indiana, PA","other","fall",false,"MA Student Affairs in Higher Education","About 90% hold GAs: tuition waiver plus $5,540/yr; resident director GAs get room, board and $5,800","Submit by Jan 15; most students start Summer II (July)","Includes two 150-hour practica, so total weekly hours run high.","https://www.iup.edu/studentsuccess/grad/student-affairs-higher-education-ma/faq.html","edu","low"],
+  ["Oklahoma State (Housing GA)","Stillwater, OK","other","fall",false,"Any full-time OSU grad program; preference for Higher Ed & Student Affairs","$1,200/month, on-campus apartment with utilities, $1,000/semester dining, full tuition waiver","Must start early July; contact Housing for dates","On-call nights and weekends.","https://studentaffairs.okstate.edu/students/graduateassistantships/reslife-ga","campus","varies"],
+  ["Bowling Green State (M.Ed.)","Bowling Green, OH","other","fall",false,"M.Ed. Curriculum & Teaching","Some GAs: $11,000/yr for 20 hrs/week plus tuition scholarship","Jan 15","Fall start only.","https://www.bgsu.edu/education-and-human-development/inclusive-teacher-education/master-of-education-in-curriculum-teaching/assistantships.html","edu","low"],
+  ["St. Cloud State University","St. Cloud, MN","other","fall",false,"MS Higher Education Administration","Assistantships available (amount not listed)","Jan 15 priority for GAs; Mar 15; rolling to Aug 1","Fall cohort only. No GRE.","https://stcloudstate.edu/graduate/hied/details.aspx","edu","low"],
+  ["Eastern Illinois University","Charleston, IL","other","fall",false,"MA Communication Studies","GTA $1,000/month for 9 months plus tuition waiver (some fees not waived)","Contact coordinator for deadlines","Very competitive; teach two sections of public speaking.","https://www.eiu.edu/commstudiesgrad/fuding.php","comm","low"],
+  ["Texas Tech (Communication)","Lubbock, TX","TX","fall",false,"MA Communication Studies","GTA $11,000/9 months; about half of tuition waived plus in-state rate","Jan 15 for full funding","Spring starts allowed but GTAs go only to Fall starts.","https://www.depts.ttu.edu/comc/graduate/ma/coms/","comm","low"],
+  ["UL Lafayette (Institutional Research GA)","Lafayette, LA","other","fall",true,"MS Computer Science or Informatics plus campus data GA","$11,500/yr plus full tuition and mandatory fees","2026-27 posting closed; watch for next cycle","Example of a tech GA that fits your SQL and Python skills.","https://louisiana.edu/sites/default/files/2026-07/GA%20Opening%20-%20Academic%20Affairs%20Institutional%20Research%20GRA%20%282026-2027%29%20-%20FINAL.pdf","campus","varies"],
+  ["Oklahoma State (Math Ed PhD)","Stillwater, OK","other","ask",false,"PhD Mathematics Education","Grant-funded assistantships through the STEM teaching research center (competitive)","Spring final Dec 1; funding priority date Sep 15 passed","Writing sample and interview required.","https://go.okstate.edu/graduate-academics/programs/doctoral/mathematics-education-phd","phd","varies"],
+  ["Middle Tennessee State (Math & Sci Ed PhD)","Murfreesboro, TN","other","ask",false,"PhD Mathematics and Science Education","Assistantships from $20,100 plus tuition; out-of-state fees waived","Contact program director for deadlines","","https://mtsu.edu/programs/math-science-education-phd","phd","varies"],
+  ["Texas State (Math Ed PhD)","San Marcos, TX","TX","fall",false,"PhD Mathematics Education","Almost all doctoral students funded as instructional or research assistants","Spring funding very limited","Written qualifying exams in two math areas plus math education.","https://txstate-preview.courseleaf.com/graduate/science-engineering/mathematics/education-phd/education-phd.pdf","phd","high"],
+];
+
+const PLANB_STATUS_MAP = {now:["Act now","#3DBF8A"],ask:["Ask","#E8A838"],fall:["Fall 2027","#9B6EE8"],closed:["Spring closed","#888"]};
+const PLANB_FL = {math:"Math & Stats",edu:"Education",comm:"Communication",campus:"Campus GA",phd:"Education PhD"};
+const PLANB_EL = {high:"Exam-based",low:"Few exams",varies:"Depends"};
+const PLANB_MY_STAGES = ["none","emailed","applied","interview","offer","declined"];
+const PLANB_MY_LABELS = {none:"Not started",emailed:"Emailed",applied:"Applied",interview:"Interview",offer:"Offer",declined:"Declined"};
+const PLANB_MY_COLORS = {none:"#888",emailed:"#3B9EDB",applied:"#9B6EE8",interview:"#E8A838",offer:"#3DBF8A",declined:"#E8704A"};
+
+const PLANC_SCHOOLS = [
+  {name:"Arkansas Tech University",loc:"Russellville, AR · ~4 hr",prog:"MS Information Technology",credits:"~30",sem9:"$4,089",sem12:"~$5,100",dl:"Not posted; ask",note:"Cheapest on the list: $334/credit for international grads.",url:"https://www.atu.edu/imsso/costs.php"},
+  {name:"University of Central Oklahoma",loc:"Edmond, OK · ~4.5 hr",prog:"MS Computer Science",credits:"33",sem9:"~$3,750",sem12:"~$5,000",dl:"Nov 15, 2026",note:"Near Oklahoma City. Confirm the international date.",url:"https://www.mastersportal.com/studies/262463/computer-science.html"},
+  {name:"University of Central Arkansas",loc:"Conway, AR · ~4 hr",prog:"MS Computer Science",credits:"30-33",sem9:"~$4,020-6,990",sem12:"~$5,320-9,280",dl:"Nov 1, 2026",note:"Lower figure if out-of-state surcharge waived for international students.",url:"https://uca.edu/internationaladmissions/files/2026/05/Graduate-Brochure-26-27.pdf"},
+  {name:"University of Southern Mississippi",loc:"Hattiesburg, MS · ~9.5 hr",prog:"MS Computer Science",credits:"33",sem9:"~$3,100",sem12:"~$4,100",dl:"Jan 5, 2027",note:"Listing shows $6,142/yr for everyone -- verify before counting on it.",url:"https://www.mastersportal.com/studies/130451/computer-science.html"},
+  {name:"Alcorn State University",loc:"Lorman, MS · ~9 hr",prog:"MS Computer and Information Sciences",credits:"~30",sem9:"~$4,500",sem12:"~$6,000",dl:"Nov 25, 2026",note:"HBCU, small program.",url:"https://www.alcorn.edu/application-deadlines/"},
+  {name:"Southern Arkansas University",loc:"Magnolia, AR · ~6 hr",prog:"MS Computer and Information Science",credits:"30",sem9:"~$4,900",sem12:"~$6,540",dl:"Dec 5, 2026",note:"Some courses online. Confirm in-person requirement for F-1.",url:"https://www.mastersportal.com/studies/203209/computer-and-information-science.html"},
+  {name:"Kentucky State University",loc:"Frankfort, KY · ~8 hr",prog:"MS Computer Science",credits:"30",sem9:"~$5,450",sem12:"~$7,260",dl:"Nov 15, 2026",note:"Flat $605/credit for all students.",url:"https://www.mastersportal.com/studies/219243/computer-science.html"},
+  {name:"Lamar University",loc:"Beaumont, TX · ~9.5 hr",prog:"MS Computer Science",credits:"34-37",sem9:"~$5,300",sem12:"~$6,900",dl:"Dec 1, 2026",note:"Listing figures conflict; confirm with Lamar.",url:"https://www.mastersportal.com/studies/144626/computer-science.html"},
+  {name:"Northwest Missouri State",loc:"Maryville, MO · ~4 hr",prog:"MS Applied Computer Science",credits:"~30",sem9:"~$5,500",sem12:"~$7,330",dl:"Nov 1, 2026",note:"Large international CS program. GAs pay up to $6,000/yr.",url:"https://www.nwmissouri.edu/studentaccounts/PDF/RateSchedule2627.pdf"},
+  {name:"McNeese State University",loc:"Lake Charles, LA · ~9.5 hr",prog:"MS Mathematical Sciences, CS option",credits:"30/36",sem9:"~$5,700",sem12:"~$7,600",dl:"Dec 1, 2026 (national)",note:"Math department program, which suits your background.",url:"https://www.mastersportal.com/studies/434901/computer-science.html"},
+  {name:"University of Memphis",loc:"Memphis, TN · ~4.5 hr",prog:"MS Computer Science",credits:"33",sem9:"~$6,300",sem12:"~$8,400",dl:"Dec 1, 2026",note:"Big city, research university, many GAs.",url:"https://www.mastersportal.com/studies/129290/computer-science.html"},
+  {name:"Webster University",loc:"Webster Groves (St. Louis), MO · ~3.5 hr",prog:"MS Cybersecurity",credits:"36",sem9:"~$7,200",sem12:"~$9,600",dl:"~Nov 10, 2026 (10 wks before start)",note:"Private, $800/credit. Eight-week terms.",url:"https://www.mastersportal.com/studies/168362/cybersecurity.html"},
+  {name:"Southeast Missouri State",loc:"Cape Girardeau, MO · ~4 hr",prog:"MS Applied Computer Science",credits:"30",sem9:"~$7,490",sem12:"~$9,980",dl:"Dec 1, 2026",note:"$832/credit including the course fee.",url:"https://semo.edu/student-support/financial-services/_pdfs/fy27-fee-schedule-main-shared.pdf"},
+  {name:"Tennessee State University",loc:"Nashville, TN · ~7 hr",prog:"MS Computer Science",credits:"33",sem9:"~$7,640",sem12:"~$10,190",dl:"Nov 1, 2026 (national; ask)",note:"HBCU in Nashville.",url:"https://www.mastersportal.com/studies/164614/computer-science.html"},
+  {name:"Louisiana Tech University",loc:"Ruston, LA · ~7.5 hr",prog:"MS Computer Science",credits:"30/36",sem9:"~$7,800/qtr",sem12:"n/a (quarter system)",dl:"Jan 1, 2027 for March 2027 term",note:"Quarter system. Spring quarter starts in March, so there is a gap after December.",url:"https://www.mastersportal.com/studies/140963/computer-science.html"},
+  {name:"Arkansas State University",loc:"Jonesboro, AR · ~4 hr",prog:"MS Computer Science",credits:"~30",sem9:"~$7,950",sem12:"~$10,480",dl:"~Nov 14, 2026 (verify)",note:"Includes the $350/term fee.",url:"https://www.astate.edu/admissions-and-aid/tuition-and-fees/international-students.html"},
+  {name:"Missouri State University",loc:"Springfield, MO · 0 hr",prog:"MS Computer Science",credits:"30",sem9:"~$8,880",sem12:"~$11,540",dl:"Nov 1, 2026 (confirm)",note:"No move and no SEVIS transfer. A GA would cover tuition -- but without one this is Plan C.",url:"https://www.missouristate.edu/registrar/detailed-tuition-and-fees.htm"},
+  {name:"Western Kentucky University",loc:"Bowling Green, KY · ~6.5 hr",prog:"MS Computer Science",credits:"33",sem9:"~$8,950",sem12:"~$11,940",dl:"Not listed; ask (Jan 16 start)",note:"Confirm the deadline directly.",url:"https://www.mastersportal.com/studies/101301/computer-science.html"},
+  {name:"Northern Illinois University",loc:"DeKalb, IL · ~8 hr",prog:"MS Computer Science",credits:"31",sem9:"~$9,090",sem12:"~$12,120",dl:"Dec 10, 2026 (national)",note:"About $1,010/credit for international students.",url:"https://www.mastersportal.com/studies/63379/computer-science.html"},
+  {name:"SIU Edwardsville",loc:"Edwardsville, IL · ~4 hr",prog:"MS Computer Science",credits:"30-33",sem9:"~$9,780",sem12:"~$13,040",dl:"Final Nov 1, 2026; later dates possible for transfers",note:"SIUE says US transfers may get later deadlines.",url:"https://www.siue.edu/paying-for-college/international.shtml"},
+];
+
+function PlanBView({ T, data, save }) {
+  const [tab, setTab]   = useState("planb");
+  const [rfil, setRfil] = useState("all");
+  const [sfil, setSfil] = useState("all");
+  const [ffil, setFfil] = useState("all");
+  const [mfil, setMfil] = useState("all");
+  const [q,    setQ]    = useState("");
+
+  const pbKey    = "planb_mystatus";
+  const myStatus = data[pbKey] || {};
+  function getMs(name) { return myStatus[name] || "none"; }
+  function cycleMs(name) {
+    const cur = getMs(name);
+    const nxt = PLANB_MY_STAGES[(PLANB_MY_STAGES.indexOf(cur)+1) % PLANB_MY_STAGES.length];
+    save(p => ({ ...p, [pbKey]: { ...(p[pbKey]||{}), [name]: nxt } }));
+  }
+
+  const cbKey  = "planb_checks";
+  const checks = data[cbKey] || {};
+  function toggleCheck(id) {
+    save(p => ({ ...p, [cbKey]: { ...(p[cbKey]||{}), [id]: !(p[cbKey]||{})[id] } }));
+  }
+
+  const cs  = (ex={}) => ({ background:T.surface, border:`1px solid ${T.border}`, borderRadius:14, ...ex });
+  const inp = { background:T.inputBg, border:`1px solid ${T.border}`, borderRadius:8, padding:"7px 10px", color:T.text, fontFamily:"'DM Sans',sans-serif", fontSize:12, outline:"none", boxSizing:"border-box" };
+
+  const sortOrder = {now:0,ask:1,closed:2,fall:3};
+  const rows = PLANB_D.filter(r => {
+    const ms = getMs(r[0]);
+    return (rfil==="all"||r[2]===rfil) &&
+           (sfil==="all"||r[3]===sfil) &&
+           (ffil==="all"||r[10]===ffil) &&
+           (mfil==="all"||ms===mfil) &&
+           (!q || (r[0]+" "+r[1]).toLowerCase().includes(q.toLowerCase()));
+  }).sort((a,b) => sortOrder[a[3]] - sortOrder[b[3]]);
+
+  const counts = {none:0,emailed:0,applied:0,interview:0,offer:0,declined:0};
+  PLANB_D.forEach(r => { counts[getMs(r[0])]++; });
+
+  const CheckItem = ({id, label}) => (
+    <label style={{display:"flex", alignItems:"flex-start", gap:10, cursor:"pointer", padding:"7px 0", borderBottom:`1px solid ${T.border}`, fontSize:13, color:T.text, lineHeight:1.45}}>
+      <input type="checkbox" checked={!!checks[id]} onChange={()=>toggleCheck(id)}
+        style={{width:16,height:16,marginTop:2,accentColor:"#7B61FF",flexShrink:0}}/>
+      <span style={{textDecoration:checks[id]?"line-through":"none", color:checks[id]?T.textMuted:T.text}}>{label}</span>
+    </label>
+  );
+
+  const StatusPill = ({status}) => {
+    const [label,color] = PLANB_STATUS_MAP[status] || ["?","#888"];
+    return <span style={{fontSize:10, fontWeight:700, padding:"2px 8px", borderRadius:20, background:color+"22", color, whiteSpace:"nowrap"}}>{label}</span>;
+  };
+
+  const TabBtn = ({id,label}) => (
+    <button onClick={()=>setTab(id)} style={{flex:1, minWidth:80, padding:"9px 6px", borderRadius:8, border:"none", cursor:"pointer",
+      fontFamily:"'DM Sans',sans-serif", fontSize:12, fontWeight:tab===id?700:400,
+      background:tab===id?"#7B61FF":"transparent", color:tab===id?"#fff":T.textSub}}>
+      {label}
+    </button>
+  );
+
+  const FChip = ({label, active, onClick}) => (
+    <button onClick={onClick} style={{padding:"5px 10px", borderRadius:20, border:`1px solid ${active?"#7B61FF":T.border}`,
+      background:active?"#7B61FF22":"transparent", color:active?"#7B61FF":T.textSub,
+      fontFamily:"'DM Sans',sans-serif", fontSize:11, fontWeight:active?700:400, cursor:"pointer", whiteSpace:"nowrap"}}>
+      {label}
+    </button>
+  );
+
+  return (
+    <div style={{padding:"16px 16px 90px", fontFamily:"'DM Sans',sans-serif"}}>
+      <div style={{marginBottom:16}}>
+        <div style={{fontFamily:"'DM Serif Display',serif", fontSize:26, color:"#7B61FF", marginBottom:4}}>🎓 Plan B</div>
+        <div style={{fontSize:13, color:T.textSub}}>Post-graduation backup — funded GA or self-funded CS, Spring 2027.</div>
+      </div>
+
+      <div style={{display:"flex", gap:2, background:T.inputBg, borderRadius:10, padding:3, marginBottom:18}}>
+        <TabBtn id="planb"   label="📋 Plan B"/>
+        <TabBtn id="planc"   label="💻 Plan C"/>
+        <TabBtn id="tracker" label="📊 All Options"/>
+      </div>
+
+      {/* ── PLAN B ── */}
+      {tab==="planb" && (
+        <div>
+          <div style={{...cs({padding:"18px 20px", marginBottom:14, borderTop:"4px solid #7B61FF"})}}>
+            <div style={{fontSize:15, fontWeight:700, color:T.text, marginBottom:10}}>The decision</div>
+            <p style={{fontSize:13, color:T.text, lineHeight:1.6, margin:"0 0 10px"}}>Plan A is a job on OPT after the M.S. in Mathematics (December 2026). Plan B, only if no job comes through, is a <strong>funded second master's starting Spring 2027</strong> — MS Computer Science at Missouri State as the lead option.</p>
+            {[
+              ["Why CS","STEM, builds on full stack experience, leads to higher-paying software jobs — fits the goal of making real money before Canada."],
+              ["Why Missouri State","No transfer, I already know the system, and GAs can start in spring."],
+              ["Priorities","Guaranteed or near-guaranteed funding, few exams, enough free time for 30-40 hrs/week of personal projects."],
+              ["Either / or","If I take a job on OPT now, a second master's later gives no new OPT. If I go straight into Plan B, I keep OPT for after the CS degree."],
+            ].map(([k,v]) => (
+              <div key={k} style={{display:"flex", gap:10, padding:"8px 0", borderTop:`1px solid ${T.border}`, fontSize:13}}>
+                <span style={{fontWeight:700, color:"#7B61FF", minWidth:120, flexShrink:0}}>{k}</span>
+                <span style={{color:T.text, lineHeight:1.5}}>{v}</span>
+              </div>
+            ))}
+          </div>
+
+          <div style={{...cs({padding:"18px 20px", marginBottom:14})}}>
+            <div style={{fontSize:15, fontWeight:700, color:T.text, marginBottom:12}}>Missouri State GA rules for a second master's</div>
+            <p style={{fontSize:13, color:T.textSub, marginBottom:10, lineHeight:1.5}}>A second master's at Missouri State gets <strong>2 semesters</strong> of GA support. Policy Op 3.16.1 gives a second same-level program half the semesters tied to that program (master's = 4, so second = 2).</p>
+            <div style={{overflowX:"auto"}}>
+              <table style={{borderCollapse:"collapse", width:"100%", minWidth:480, fontSize:12}}>
+                <thead><tr>{["Rule","What it says","What it means for me"].map(h=>(
+                  <th key={h} style={{textAlign:"left", padding:"8px 10px", borderBottom:`2px solid ${T.border}`, color:T.textMuted, fontWeight:700, whiteSpace:"nowrap"}}>{h}</th>
+                ))}</tr></thead>
+                <tbody>{[
+                  ["Master's limit","Maximum 4 academic semesters","Applies to the first M.S."],
+                  ["Second same level","Half the semesters for that program","2 semesters for a second master's"],
+                  ["Timing","Must graduate from first, then be admitted to second","Graduate Dec 2026 → Spring 2027"],
+                  ["Summer","Summer GAs do not count toward the limit","A summer GA is possible on top"],
+                  ["GPA","3.00 to start and keep","Keep grades up"],
+                  ["Enrollment","9 graduate hours each fall and spring","Minimum load"],
+                  ["Tuition waiver","Up to 12 credit hours per semester","12 is the practical max"],
+                  ["Other jobs","No other university job while holding a GA","GA is the only campus income"],
+                  ["International","20 hours/week max in fall and spring","GA uses the full 20"],
+                ].map(([a,b,c],i)=>(
+                  <tr key={i} style={{background:i%2===0?T.inputBg+"44":"transparent"}}>
+                    {[a,b,c].map((v,j)=>(
+                      <td key={j} style={{padding:"8px 10px", borderBottom:`1px solid ${T.border}`, color:T.text, fontSize:12, lineHeight:1.4}}>{v}</td>
+                    ))}
+                  </tr>
+                ))}</tbody>
+              </table>
+            </div>
+          </div>
+
+          <div style={{...cs({padding:"18px 20px", marginBottom:14})}}>
+            <div style={{fontSize:15, fontWeight:700, color:T.text, marginBottom:8}}>MS Computer Science: credit plan</div>
+            <div style={{overflowX:"auto"}}>
+              <table style={{borderCollapse:"collapse", width:"100%", minWidth:420, fontSize:12}}>
+                <thead><tr>{["Program size","My 2 CS courses transfer","Credits left","Schedule"].map(h=>(
+                  <th key={h} style={{textAlign:"left", padding:"8px 10px", borderBottom:`2px solid ${T.border}`, color:T.textMuted, fontWeight:700}}>{h}</th>
+                ))}</tr></thead>
+                <tbody>{[
+                  ["30 credits","Yes (~6)","24","12 spring + 12 fall, no summer"],
+                  ["30 credits","No","30","12 spring + 6 summer + 12 fall"],
+                  ["33 credits","Yes (~6)","27","12 spring + 3 summer + 12 fall"],
+                  ["33 credits","No","33","12 spring + 9 summer + 12 fall (tight)"],
+                ].map(([a,b,c,d],i)=>(
+                  <tr key={i} style={{background:i%2===0?T.inputBg+"44":"transparent"}}>
+                    {[a,b,c,d].map((v,j)=>(
+                      <td key={j} style={{padding:"8px 10px", borderBottom:`1px solid ${T.border}`, color:T.text, fontSize:12}}>{v}</td>
+                    ))}
+                  </tr>
+                ))}</tbody>
+              </table>
+            </div>
+          </div>
+
+          <div style={{...cs({padding:"18px 20px", marginBottom:14})}}>
+            <div style={{fontSize:15, fontWeight:700, color:T.text, marginBottom:10}}>F-1 / OPT / immigration rules</div>
+            {[
+              ["On-campus work","Up to 20 hrs/week during classes, all campus jobs combined; more only during official breaks."],
+              ["Personal projects","Building your own apps is fine. Paid work for US clients counts as employment on F-1."],
+              ["OPT","12 months per degree level. Using OPT after the math M.S. means no new OPT after the second master's."],
+              ["STEM extension","CS is STEM → OPT + 24-month extension. Can also be based on an earlier STEM degree."],
+              ["Duration of Status rule","DHS rule barring a second same-level degree on F-1 is blocked by a nationwide preliminary injunction since Sep 14, 2026. A second master's is allowed right now."],
+              ["Before acting","Confirm the plan with Missouri State International Services."],
+            ].map(([k,v])=>(
+              <div key={k} style={{display:"flex", gap:10, padding:"8px 0", borderBottom:`1px solid ${T.border}`, fontSize:13}}>
+                <span style={{fontWeight:700, color:"#7B61FF", minWidth:130, flexShrink:0}}>{k}</span>
+                <span style={{color:T.text, lineHeight:1.5}}>{v}</span>
+              </div>
+            ))}
+          </div>
+
+          <div style={{...cs({padding:"18px 20px", marginBottom:14})}}>
+            <div style={{fontSize:15, fontWeight:700, color:T.text, marginBottom:4}}>Questions for CS department</div>
+            {[
+              ["qcs1","How many credits does the MS CS require, and is there a non-thesis option?"],
+              ["qcs2","Can my two graduate CSC courses count toward the MS CS, even if they counted toward my math M.S.?"],
+              ["qcs3","Does the program admit students for Spring 2027, and what is the deadline?"],
+              ["qcs4","Will I need any prerequisite or leveling courses coming from a math background?"],
+              ["qcs5","Are enough courses offered in spring, summer and fall to finish in about a year?"],
+              ["qcs6","Can I take 12 credits per semester, or more with Dean approval?"],
+              ["qcs7","How much of the program is exams versus projects?"],
+              ["qcs8","Does the CS department have GA openings for Spring 2027, and who decides them?"],
+            ].map(([id,label]) => <CheckItem key={id} id={id} label={label}/>)}
+            <div style={{fontSize:13, fontWeight:700, color:T.text, marginTop:14, marginBottom:4}}>Questions for the Graduate College</div>
+            {[
+              ["qgc1","Confirm in writing that a second master's gets 2 semesters of GA support for me."],
+              ["qgc2","Which offices have GA openings for Spring 2027 that a CS student could hold (web, data, IT)?"],
+            ].map(([id,label]) => <CheckItem key={id} id={id} label={label}/>)}
+          </div>
+
+          <div style={{...cs({padding:"18px 20px"})}}>
+            <div style={{fontSize:15, fontWeight:700, color:T.text, marginBottom:4}}>Next steps</div>
+            {[
+              ["ns1","This week: email the Graduate College to confirm the 2-semester GA rule and ask which offices have Spring 2027 GA openings."],
+              ["ns2","Next week: meet the CS department head or advisor with the questions above."],
+              ["ns3","If the CS answers work: apply to the MS CS for Spring 2027 and to any open campus GAs."],
+              ["ns4","By about Nov 6: decide on the UNO spring GTA as a backup; UTSA by Nov 14."],
+              ["ns5","Keep applying for jobs — Plan A still comes first."],
+              ["ns6","Before December graduation: check with International Services how to move from M.S. to a second program without a gap in status."],
+              ["ns7","Spring 2027 classes at Missouri State begin January 11, 2027."],
+            ].map(([id,label]) => <CheckItem key={id} id={id} label={label}/>)}
+          </div>
+        </div>
+      )}
+
+      {/* ── PLAN C ── */}
+      {tab==="planc" && (
+        <div>
+          <div style={{...cs({padding:"18px 20px", marginBottom:14, borderTop:"4px solid #3B9EDB"})}}>
+            <div style={{fontSize:15, fontWeight:700, color:T.text, marginBottom:8}}>What is Plan C?</div>
+            <p style={{fontSize:13, color:T.text, lineHeight:1.6, margin:"0 0 10px"}}>Plan C is <strong>self-funded enrollment in a cheap MS Computer Science program</strong> — no assistantship, no free ride — if Plan B falls through and no OPT job materializes either. The goal is still CS and STEM OPT, but you pay your own way.</p>
+            <p style={{fontSize:13, color:T.text, lineHeight:1.6, margin:"0 0 10px"}}>The 20 programs below admit for <strong>Spring 2027</strong>, cost less than most US schools for international students, and are within about 10 hours of Springfield. Sorted cheapest to most expensive.</p>
+            <div style={{background:"#3B9EDB11", borderRadius:10, padding:"12px 14px", fontSize:12, color:T.text, lineHeight:1.6}}>
+              <strong style={{color:"#3B9EDB"}}>Tip:</strong> You are already on F-1 in the US, so several schools will take a transfer on the domestic date. Email the international office and ask.
+            </div>
+          </div>
+          <div style={{overflowX:"auto", background:T.surface, border:`1px solid ${T.border}`, borderRadius:14}}>
+            <table style={{borderCollapse:"collapse", width:"100%", minWidth:760, fontSize:12}}>
+              <thead><tr style={{background:T.inputBg}}>
+                {["School","Program","Cr","Per sem (9 cr)","Per sem (12 cr)","Spring 2027 deadline","Notes"].map(h=>(
+                  <th key={h} style={{textAlign:"left", padding:"10px 12px", borderBottom:`2px solid ${T.border}`, color:T.textMuted, fontWeight:700, whiteSpace:"nowrap", fontSize:11}}>{h}</th>
+                ))}
+              </tr></thead>
+              <tbody>
+                {PLANC_SCHOOLS.map((s,i) => (
+                  <tr key={i} style={{background:i%2===0?T.inputBg+"44":"transparent"}}>
+                    <td style={{padding:"10px 12px", borderBottom:`1px solid ${T.border}`, minWidth:180}}>
+                      <a href={s.url} target="_blank" rel="noopener noreferrer" style={{color:"#3B9EDB", fontWeight:700, textDecoration:"none"}}>{s.name}</a>
+                      <div style={{fontSize:11, color:T.textMuted, marginTop:2}}>{s.loc}</div>
+                    </td>
+                    <td style={{padding:"10px 12px", borderBottom:`1px solid ${T.border}`, color:T.text, minWidth:150}}>{s.prog}</td>
+                    <td style={{padding:"10px 12px", borderBottom:`1px solid ${T.border}`, color:T.text, fontFamily:"monospace", whiteSpace:"nowrap"}}>{s.credits}</td>
+                    <td style={{padding:"10px 12px", borderBottom:`1px solid ${T.border}`, color:"#3DBF8A", fontFamily:"monospace", fontWeight:700, whiteSpace:"nowrap"}}>{s.sem9}</td>
+                    <td style={{padding:"10px 12px", borderBottom:`1px solid ${T.border}`, color:T.text, fontFamily:"monospace", whiteSpace:"nowrap"}}>{s.sem12}</td>
+                    <td style={{padding:"10px 12px", borderBottom:`1px solid ${T.border}`, color:"#E8A838", fontWeight:600, fontSize:11, whiteSpace:"nowrap"}}>{s.dl}</td>
+                    <td style={{padding:"10px 12px", borderBottom:`1px solid ${T.border}`, color:T.textSub, fontSize:11, minWidth:160}}>{s.note}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* ── TRACKER ── */}
+      {tab==="tracker" && (
+        <div>
+          <div style={{display:"flex", gap:8, flexWrap:"wrap", marginBottom:14}}>
+            {Object.entries(PLANB_MY_LABELS).filter(([k])=>k!=="none").map(([k,v]) => (
+              <div key={k} style={{...cs({padding:"10px 14px", flex:"1 1 80px", textAlign:"center"})}}>
+                <div style={{fontSize:20, fontWeight:800, color:PLANB_MY_COLORS[k]}}>{counts[k]}</div>
+                <div style={{fontSize:11, color:T.textMuted, marginTop:2}}>{v}</div>
+              </div>
+            ))}
+            <div style={{...cs({padding:"10px 14px", flex:"1 1 80px", textAlign:"center"})}}>
+              <div style={{fontSize:20, fontWeight:800, color:T.textMuted}}>{counts.none}</div>
+              <div style={{fontSize:11, color:T.textMuted, marginTop:2}}>Not started</div>
+            </div>
+          </div>
+
+          <div style={{marginBottom:14}}>
+            <input value={q} onChange={e=>setQ(e.target.value)} placeholder="Search schools..." style={{...inp, width:"100%", marginBottom:10}}/>
+            <div style={{display:"flex", gap:6, flexWrap:"wrap", marginBottom:6}}>
+              <span style={{fontSize:11, color:T.textMuted, alignSelf:"center", minWidth:50}}>Region</span>
+              {[["all","All"],["MO","Missouri"],["TX","Texas"],["other","Other"]].map(([v,l]) => (
+                <FChip key={v} label={l} active={rfil===v} onClick={()=>setRfil(v)}/>
+              ))}
+            </div>
+            <div style={{display:"flex", gap:6, flexWrap:"wrap", marginBottom:6}}>
+              <span style={{fontSize:11, color:T.textMuted, alignSelf:"center", minWidth:50}}>Status</span>
+              {[["all","All"],["now","Act now"],["ask","Ask"],["fall","Fall 2027"],["closed","Closed"]].map(([v,l]) => (
+                <FChip key={v} label={l} active={sfil===v} onClick={()=>setSfil(v)}/>
+              ))}
+            </div>
+            <div style={{display:"flex", gap:6, flexWrap:"wrap", marginBottom:6}}>
+              <span style={{fontSize:11, color:T.textMuted, alignSelf:"center", minWidth:50}}>Field</span>
+              {[["all","All"],["math","Math & Stats"],["edu","Education"],["comm","Communication"],["campus","Campus GA"],["phd","PhD"]].map(([v,l]) => (
+                <FChip key={v} label={l} active={ffil===v} onClick={()=>setFfil(v)}/>
+              ))}
+            </div>
+            <div style={{display:"flex", gap:6, flexWrap:"wrap"}}>
+              <span style={{fontSize:11, color:T.textMuted, alignSelf:"center", minWidth:50}}>Mine</span>
+              {[["all","All"],["none","Not started"],["emailed","Emailed"],["applied","Applied"],["interview","Interview"],["offer","Offer"],["declined","Declined"]].map(([v,l]) => (
+                <FChip key={v} label={l} active={mfil===v} onClick={()=>setMfil(v)}/>
+              ))}
+            </div>
+          </div>
+
+          <div style={{fontSize:12, color:T.textMuted, marginBottom:10}}>{rows.length} of {PLANB_D.length} shown · <strong style={{color:"#7B61FF"}}>Tap My Status badge to cycle stages</strong></div>
+
+          {rows.length===0 ? (
+            <div style={{textAlign:"center", padding:"40px 0", color:T.textMuted, fontSize:13}}>No results — try a different filter.</div>
+          ) : rows.map((r,i) => {
+            const ms = getMs(r[0]);
+            const [,statusColor] = PLANB_STATUS_MAP[r[3]] || ["?","#888"];
+            let host="";
+            try { host=new URL(r[9]).hostname.replace("www.",""); } catch(e) {}
+            return (
+              <div key={i} style={{...cs({padding:"14px 16px", marginBottom:8, borderLeft:`4px solid ${statusColor}`})}}>
+                <div style={{display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:8, flexWrap:"wrap"}}>
+                  <div style={{flex:1, minWidth:0}}>
+                    <div style={{fontSize:13, fontWeight:700, color:T.text}}>{r[0]}</div>
+                    <div style={{fontSize:11, color:T.textMuted, marginTop:1}}>{r[1]}</div>
+                  </div>
+                  <div style={{display:"flex", gap:6, flexShrink:0, alignItems:"center"}}>
+                    <StatusPill status={r[3]}/>
+                    <button onClick={()=>cycleMs(r[0])}
+                      style={{fontSize:11, fontWeight:700, padding:"3px 10px", borderRadius:20, border:"none", cursor:"pointer",
+                        background:PLANB_MY_COLORS[ms]+"22", color:PLANB_MY_COLORS[ms], fontFamily:"'DM Sans',sans-serif"}}>
+                      {PLANB_MY_LABELS[ms]}
+                    </button>
+                  </div>
+                </div>
+                <div style={{marginTop:8, display:"flex", gap:6, flexWrap:"wrap"}}>
+                  <span style={{fontSize:10, background:T.inputBg, color:T.textMuted, borderRadius:5, padding:"2px 7px"}}>{PLANB_FL[r[10]]}</span>
+                  <span style={{fontSize:10, background:T.inputBg, color:T.textMuted, borderRadius:5, padding:"2px 7px"}}>{PLANB_EL[r[11]]}</span>
+                  {r[4] && <span style={{fontSize:10, background:"#3DBF8A22", color:"#3DBF8A", borderRadius:5, padding:"2px 7px", fontWeight:700}}>Stats OK</span>}
+                </div>
+                <div style={{fontSize:12, color:T.text, marginTop:8, lineHeight:1.5}}>{r[5]}</div>
+                {r[8] && <div style={{fontSize:11, color:T.textMuted, marginTop:4, fontStyle:"italic"}}>{r[8]}</div>}
+                <div style={{display:"flex", justifyContent:"space-between", marginTop:8, flexWrap:"wrap", gap:6}}>
+                  <div style={{fontSize:11, color:T.text}}><span style={{color:"#E8A838", fontWeight:700}}>Funding:</span> {r[6]}</div>
+                  <div style={{fontSize:11, color:T.textMuted}}>Deadline: {r[7]}</div>
+                  {host && <a href={r[9]} target="_blank" rel="noopener noreferrer" style={{fontSize:11, color:"#3B9EDB"}}>{host} →</a>}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function NextStepsView({ T, data, save, isMobile }) {
   const [tab, setTab]           = useState("roadmap"); // roadmap | schools | jobs
@@ -5395,6 +5820,7 @@ export default function SummerApp({mode,T,onBack}) {
         {profile==="amen"&&pillar==="tracker"   && viewTracker}
         {profile==="amen"&&pillar==="overview"  && viewOverview}
         {profile==="amen"&&pillar==="nextsteps" && <NextStepsView T={T} data={data} save={save} isMobile={isMobile}/>}
+        {profile==="amen"&&pillar==="planb"    && <PlanBView T={T} data={data} save={save}/>}
         {profile==="amen"&&pillar==="goals"    && <GoalsView T={T} data={data} save={save} isMobile={isMobile}/>}
         {profile==="amen"&&pillar==="review"   && <WeeklyReviewView T={T} data={data} save={save} TODAY={today}/>}
         {profile==="amen"&&pillar==="jobs"     && <JobsView T={T} data={data} save={save} isMobile={isMobile}/>}
